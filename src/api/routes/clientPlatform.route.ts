@@ -1,0 +1,102 @@
+import { Router } from 'express';
+import { clientPlatformController } from '../controllers/clientPlatform.controller';
+import { asyncHandler } from '../middlewares/asyncHandler';
+import { requirePlatformAdminAccess } from '../middlewares/requirePlatformAdminAccess';
+
+export const clientPlatformRouter = Router();
+
+clientPlatformRouter.post('/platform/clients', asyncHandler(clientPlatformController.createClient));
+clientPlatformRouter.get(
+  '/public/salons',
+  asyncHandler(clientPlatformController.listPublicSalons)
+);
+clientPlatformRouter.get(
+  '/platform/clients/:clientId',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.getClient)
+);
+clientPlatformRouter.patch(
+  '/platform/clients/:clientId/business-profile',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.updateBusinessProfile)
+);
+clientPlatformRouter.patch(
+  '/platform/clients/:clientId/service-types',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.updateServiceTypes)
+);
+clientPlatformRouter.patch(
+  '/platform/clients/:clientId/business-settings',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.updateBusinessSettings)
+);
+clientPlatformRouter.patch(
+  '/platform/clients/:clientId/account-type',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.updateAccountType)
+);
+clientPlatformRouter.patch(
+  '/platform/clients/:clientId/service-location',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.updateServiceLocation)
+);
+clientPlatformRouter.patch(
+  '/platform/clients/:clientId/venue-location',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.updateVenueLocation)
+);
+clientPlatformRouter.patch(
+  '/platform/clients/:clientId/preferred-language',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.updatePreferredLanguage)
+);
+clientPlatformRouter.post(
+  '/platform/clients/:clientId/team-members',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.addTeamMember)
+);
+clientPlatformRouter.patch(
+  '/platform/clients/:clientId/team-members/:teamMemberId',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.updateTeamMember)
+);
+clientPlatformRouter.delete(
+  '/platform/clients/:clientId/team-members/:teamMemberId',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.removeTeamMember)
+);
+clientPlatformRouter.post(
+  '/platform/clients/:clientId/services',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.addService)
+);
+clientPlatformRouter.post(
+  '/platform/clients/:clientId/packages',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.createPackagePlan)
+);
+clientPlatformRouter.put(
+  '/platform/clients/:clientId/loyalty-program',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.updateLoyaltyProgram)
+);
+clientPlatformRouter.post(
+  '/platform/clients/:clientId/package-sales',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.sellPackage)
+);
+clientPlatformRouter.post(
+  '/platform/clients/:clientId/complete',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.completeOnboarding)
+);
+clientPlatformRouter.get(
+  '/platform/clients/:clientId/launch-links',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.getLaunchLinks)
+);
+clientPlatformRouter.get(
+  '/platform/clients/:clientId/dashboard',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.getDashboard)
+);

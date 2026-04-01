@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Calendar</title>
+    <meta
+      name="description"
+      content="Business calendar dashboard after onboarding."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="calendar-page">
+      <aside class="calendar-sidebar">
+        <a class="calendar-brand" id="calendar-brand" href="/for-businesses">fresha</a>
+
+        <nav class="calendar-nav" aria-label="Primary">
+          <button class="calendar-side-icon" id="calendar-home-action" type="button" aria-label="Home">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M4 10.5L12 4l8 6.5V20H4z"></path></svg>
+          </button>
+          <a
+            class="calendar-side-icon is-active"
+            id="calendar-nav-calendar"
+            href="/calendar"
+            aria-label="Calendar"
+          >
+            <svg viewBox="0 0 24 24" focusable="false"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg>
+          </a>
+          <button
+            class="calendar-side-icon"
+            id="calendar-sales-toggle"
+            type="button"
+            aria-label="Sales"
+            aria-expanded="false"
+            aria-controls="calendar-sales-panel"
+          >
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M3 12l9-9h7l2 2v7l-9 9z"></path><circle cx="16" cy="8" r="1.5"></circle></svg>
+          </button>
+          <button
+            class="calendar-side-icon"
+            id="calendar-clients-toggle"
+            type="button"
+            aria-label="Clients"
+            aria-expanded="false"
+            aria-controls="calendar-clients-panel"
+          >
+            <svg viewBox="0 0 24 24" focusable="false"><circle cx="10" cy="10" r="4"></circle><path d="M4 19a6 6 0 0112 0"></path><path d="M18 8v6M15 11h6"></path></svg>
+          </button>
+          <button
+            class="calendar-side-icon"
+            id="calendar-catalog-toggle"
+            type="button"
+            aria-label="Catalog"
+            aria-expanded="false"
+            aria-controls="calendar-catalog-panel"
+          >
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M5 4h14v16H5z"></path><path d="M9 4v16M5 10h14"></path></svg>
+          </button>
+          <button class="calendar-side-icon" id="calendar-profile-action" type="button" aria-label="Profile">
+            <svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="8" r="3"></circle><path d="M5 20a7 7 0 0114 0"></path><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>
+          </button>
+          <button class="calendar-side-icon" id="calendar-marketing-action" type="button" aria-label="Marketing">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M4 13V7l11-3v16L4 17v-4"></path><path d="M15 10h3a2 2 0 012 2v0a2 2 0 01-2 2h-3"></path></svg>
+          </button>
+          <button
+            class="calendar-side-icon"
+            id="calendar-team-toggle"
+            type="button"
+            aria-label="Team"
+            aria-expanded="false"
+            aria-controls="calendar-team-panel"
+          >
+            <svg viewBox="0 0 24 24" focusable="false"><circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="10" r="2.5"></circle><path d="M4 19a5 5 0 0110 0"></path><path d="M14 19a4 4 0 018 0"></path></svg>
+          </button>
+          <button
+            class="calendar-side-icon"
+            id="calendar-reports-toggle"
+            type="button"
+            aria-label="Reports"
+            aria-expanded="false"
+            aria-controls="calendar-reports-view"
+          >
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M4 19h16"></path><path d="M6 16l4-5 3 2 5-6"></path></svg>
+          </button>
+          <button class="calendar-side-icon" id="calendar-more-action" type="button" aria-label="More">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M7 7h4v4H7zM13 7h4v4h-4zM7 13h4v4H7zM13 13h4v4h-4z"></path><path d="M19 19l2 2"></path></svg>
+          </button>
+        </nav>
+      </aside>
+
+      <main class="calendar-main">
+        <header class="calendar-topbar">
+          <div class="calendar-top-spacer"></div>
+
+          <div class="calendar-top-actions">
+            <a class="calendar-setup-button" id="calendar-setup-button" href="/guides/legendary-learner">
+              <span class="calendar-setup-icon">
+                <svg viewBox="0 0 24 24" focusable="false"><path d="M12 3l2.4 4.8L20 10l-4 3.9.9 5.6-4.9-2.6-4.9 2.6.9-5.6L4 10l5.6-2.2z"></path></svg>
+              </span>
+              <span id="calendar-setup-label">Continue setup</span>
+            </a>
+
+            <button class="calendar-top-icon" id="calendar-search-action" type="button" aria-label="Search">
+              <svg viewBox="0 0 24 24" focusable="false"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l5 5"></path></svg>
+            </button>
+            <button class="calendar-top-icon" id="calendar-analytics-action" type="button" aria-label="Analytics">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M4 19h16"></path><path d="M7 15V9M12 15V5M17 15v-3"></path></svg>
+            </button>
+            <button class="calendar-top-icon" id="calendar-notifications-action" type="button" aria-label="Notifications">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M12 4a4 4 0 00-4 4v2.2c0 1.3-.5 2.6-1.4 3.6L5 15h14l-1.6-1.2A5.6 5.6 0 0116 10.2V8a4 4 0 00-4-4z"></path><path d="M10 18a2 2 0 004 0"></path></svg>
+              <span class="calendar-notification-badge is-hidden" id="calendar-notifications-badge">0</span>
+            </button>
+
+            <div class="calendar-user-avatar" id="calendar-user-avatar">m</div>
+          </div>
+        </header>
+
+        <section class="calendar-toolbar">
+          <div class="calendar-toolbar-left">
+            <button class="calendar-chip" id="calendar-today-action" type="button">Today</button>
+            <button class="calendar-round-button" id="calendar-prev-day-action" type="button" aria-label="Previous day">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M14.5 6l-6 6 6 6"></path></svg>
+            </button>
+            <div class="calendar-date-chip" id="calendar-date-label">Today</div>
+            <button class="calendar-round-button" id="calendar-next-day-action" type="button" aria-label="Next day">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M9.5 6l6 6-6 6"></path></svg>
+            </button>
+            <button class="calendar-round-button" id="calendar-team-shortcut" type="button" aria-label="Team">
+              <svg viewBox="0 0 24 24" focusable="false"><circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="10" r="2.5"></circle><path d="M4 19a5 5 0 0110 0"></path><path d="M14 19a4 4 0 018 0"></path></svg>
+            </button>
+            <button class="calendar-round-button" id="calendar-filters-action" type="button" aria-label="Filters">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M5 7h14M7 12h10M9 17h6"></path><circle cx="9" cy="7" r="1.5"></circle><circle cx="15" cy="12" r="1.5"></circle><circle cx="12" cy="17" r="1.5"></circle></svg>
+            </button>
+          </div>
+
+          <div class="calendar-toolbar-right">
+            <button class="calendar-round-button" id="calendar-settings-action" type="button" aria-label="Settings">
+              <svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1 1 0 00.2 1.1l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1 1 0 00-1.1-.2 1 1 0 00-.6.9V20a2 2 0 01-4 0v-.2a1 1 0 00-.6-.9 1 1 0 00-1.1.2l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1 1 0 00.2-1.1 1 1 0 00-.9-.6H4a2 2 0 010-4h.2a1 1 0 00.9-.6 1 1 0 00-.2-1.1l-.1-.1a2 2 0 012.8-2.8l.1.1a1 1 0 001.1.2h.1a1 1 0 00.6-.9V4a2 2 0 014 0v.2a1 1 0 00.6.9h.1a1 1 0 001.1-.2l.1-.1a2 2 0 012.8 2.8l-.1.1a1 1 0 00-.2 1.1v.1a1 1 0 00.9.6H20a2 2 0 010 4h-.2a1 1 0 00-.9.6z"></path></svg>
+            </button>
+            <button class="calendar-round-button" id="calendar-appointments-action" type="button" aria-label="Appointments">
+              <svg viewBox="0 0 24 24" focusable="false"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path><path d="M9 14h6"></path></svg>
+            </button>
+            <button class="calendar-round-button" id="calendar-refresh-action" type="button" aria-label="Refresh">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M20 11a8 8 0 10.5 4"></path><path d="M20 4v7h-7"></path></svg>
+            </button>
+            <button class="calendar-view-chip" id="calendar-view-toggle" type="button">Day</button>
+            <div class="calendar-add-wrap">
+              <button
+                class="calendar-add-button"
+                id="calendar-add-button"
+                type="button"
+                aria-expanded="false"
+                aria-haspopup="menu"
+                aria-controls="calendar-add-menu"
+              >
+                <span>Add</span>
+                <span class="calendar-add-chevron" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false"><path d="M7 14l5-5 5 5"></path></svg>
+                </span>
+              </button>
+
+              <div class="calendar-add-menu is-hidden" id="calendar-add-menu" role="menu" aria-label="Add menu">
+                <button
+                  class="calendar-add-item"
+                  id="calendar-book-appointment-action"
+                  type="button"
+                  role="menuitem"
+                >
+                  <span class="calendar-add-item-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path><path d="M12 13v4M10 15h4"></path></svg>
+                  </span>
+                  <span>Book appointment</span>
+                </button>
+                <button
+                  class="calendar-add-item"
+                  id="calendar-show-qr-action"
+                  type="button"
+                  role="menuitem"
+                >
+                  <span class="calendar-add-item-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"></path><path d="M16 14h-2v2h2v-2zm4 0h-2v6h2v-6zm-4 4h-2v2h2v-2z"></path></svg>
+                  </span>
+                  <span>Show QR code</span>
+                </button>
+                <button class="calendar-add-item" id="calendar-group-appointment-action" type="button" role="menuitem">
+                  <span class="calendar-add-item-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false"><circle cx="8.5" cy="10" r="3"></circle><circle cx="15.5" cy="12" r="2.5"></circle><path d="M3.5 19a5 5 0 0110 0"></path><path d="M13 19a4 4 0 017 0"></path><path d="M16 6v4M14 8h4"></path></svg>
+                  </span>
+                  <span>Group appointment</span>
+                </button>
+                <button class="calendar-add-item" id="calendar-blocked-time-action" type="button" role="menuitem">
+                  <span class="calendar-add-item-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path><path d="M9 14l6 6M15 14l-6 6"></path></svg>
+                  </span>
+                  <span>Blocked time</span>
+                </button>
+                <button
+                  class="calendar-add-item"
+                  id="calendar-sale-action"
+                  type="button"
+                  role="menuitem"
+                  aria-expanded="false"
+                  aria-controls="calendar-sales-panel"
+                >
+                  <span class="calendar-add-item-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false"><path d="M20 12l-8 8-8-8 8-8h6l2 2z"></path><circle cx="15.5" cy="8.5" r="1.5"></circle></svg>
+                  </span>
+                  <span>Sale</span>
+                </button>
+                <button class="calendar-add-item" id="calendar-quick-payment-action" type="button" role="menuitem">
+                  <span class="calendar-add-item-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false"><ellipse cx="8" cy="8" rx="4" ry="2.5"></ellipse><path d="M4 8v4c0 1.4 1.8 2.5 4 2.5s4-1.1 4-2.5V8"></path><ellipse cx="16" cy="12" rx="4" ry="2.5"></ellipse><path d="M12 12v4c0 1.4 1.8 2.5 4 2.5s4-1.1 4-2.5v-4"></path></svg>
+                  </span>
+                  <span>Quick payment</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="calendar-reports-view" id="calendar-reports-view" aria-label="Reporting and analytics">
+          <aside class="calendar-reports-sidebar">
+            <h2 id="calendar-reports-sidebar-title">Reports</h2>
+
+            <div class="calendar-reports-menu" id="calendar-reports-menu"></div>
+
+            <div class="calendar-reports-folder-block">
+              <h3 id="calendar-reports-folder-title">Folders</h3>
+              <button class="calendar-reports-folder-action" id="calendar-reports-folder-action" type="button">
+                Add folder
+              </button>
+            </div>
+
+            <div class="calendar-reports-connector">
+              <span class="calendar-reports-connector-dot" aria-hidden="true"></span>
+              <span id="calendar-reports-connector-label">Data connector</span>
+            </div>
+          </aside>
+
+          <div class="calendar-reports-main">
+            <div class="calendar-reports-header">
+              <div>
+                <h1 id="calendar-reports-title">Reporting and analytics</h1>
+                <p id="calendar-reports-subtitle">Access all of your Fresha reports. Learn more</p>
+              </div>
+              <span class="calendar-reports-total" id="calendar-reports-total">53</span>
+            </div>
+
+            <div class="calendar-reports-summary" id="calendar-reports-summary"></div>
+
+            <div class="calendar-reports-toolbar">
+              <label class="calendar-reports-search">
+                <span class="calendar-reports-search-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l5 5"></path></svg>
+                </span>
+                <input id="calendar-reports-search-input" type="text" value="" placeholder="Search by report name or description" />
+              </label>
+
+              <div class="calendar-reports-filters" id="calendar-reports-filters"></div>
+            </div>
+
+            <div class="calendar-reports-workspace-bar">
+              <div class="calendar-reports-range" id="calendar-reports-range"></div>
+              <div class="calendar-reports-actions-bar" id="calendar-reports-actions-bar"></div>
+            </div>
+
+            <div class="calendar-reports-tabs" id="calendar-reports-tabs"></div>
+
+            <div class="calendar-reports-cards" id="calendar-reports-cards"></div>
+          </div>
+        </section>
+
+        <aside class="calendar-side-drawer calendar-sales-panel" id="calendar-sales-panel" aria-label="Sales">
+          <h2 id="calendar-sales-title">Sales</h2>
+          <div id="calendar-sales-content"></div>
+        </aside>
+
+        <aside
+          class="calendar-side-drawer calendar-clients-panel"
+          id="calendar-clients-panel"
+          aria-label="Clients"
+        >
+          <h2 id="calendar-clients-title">Clients</h2>
+          <div id="calendar-clients-content"></div>
+        </aside>
+
+        <aside
+          class="calendar-side-drawer calendar-catalog-panel"
+          id="calendar-catalog-panel"
+          aria-label="Catalog"
+        >
+          <h2 id="calendar-catalog-title">Catalog</h2>
+          <div id="calendar-catalog-content"></div>
+        </aside>
+
+        <aside
+          class="calendar-side-drawer calendar-team-panel"
+          id="calendar-team-panel"
+          aria-label="Team"
+        >
+          <h2 id="calendar-team-title">Team</h2>
+          <div id="calendar-team-content"></div>
+        </aside>
+
+        <section class="calendar-board">
+          <div class="calendar-staff-row">
+            <div class="calendar-staff-card">
+              <div class="calendar-staff-avatar" id="calendar-staff-avatar">o</div>
+              <strong id="calendar-staff-name">Owner</strong>
+            </div>
+          </div>
+
+          <div class="calendar-grid-wrap">
+            <aside class="calendar-times" aria-label="Business time slots"></aside>
+
+            <div class="calendar-grid">
+              <div class="calendar-now-line">
+                <span class="calendar-now-badge" id="calendar-now-badge">--:--</span>
+              </div>
+
+              <div class="calendar-appointments-overlay" id="calendar-appointments-overlay"></div>
+            </div>
+          </div>
+
+        <section class="calendar-appointments-panel">
+            <div class="calendar-filter-bar is-hidden" id="calendar-filter-bar">
+              <button class="calendar-filter-chip is-active" id="calendar-filter-all" type="button">All</button>
+              <button class="calendar-filter-chip" id="calendar-filter-booked" type="button">Booked</button>
+              <button class="calendar-filter-chip" id="calendar-filter-qr" type="button">QR source</button>
+            </div>
+
+            <div class="calendar-appointments-header">
+              <div>
+                <h2>Online bookings</h2>
+                <p>Appointments booked through your public salon links, social links, and QR code.</p>
+              </div>
+              <a
+                class="calendar-booking-link"
+                id="calendar-booking-link"
+                href="#"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open booking page
+              </a>
+            </div>
+
+            <div class="calendar-overview" aria-label="Booking overview">
+              <article class="calendar-overview-card">
+                <span>Selected day</span>
+                <strong id="calendar-overview-day-count">0</strong>
+                <small>appointments on this date</small>
+              </article>
+              <article class="calendar-overview-card">
+                <span>Live bookings</span>
+                <strong id="calendar-overview-booked-count">0</strong>
+                <small>currently active appointments</small>
+              </article>
+              <article class="calendar-overview-card">
+                <span>Next client</span>
+                <strong id="calendar-overview-next-client">No bookings yet</strong>
+                <small>upcoming on the selected day</small>
+              </article>
+            </div>
+
+            <div class="calendar-appointments-list" id="calendar-appointments-list">
+              <article class="calendar-appointment-empty">
+                <strong>No bookings yet</strong>
+                <p>Share your booking page, social links, or QR code to start collecting appointments.</p>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <div class="calendar-qr-modal is-hidden" id="calendar-qr-modal" aria-hidden="true">
+          <div class="calendar-qr-dialog" role="dialog" aria-modal="true" aria-labelledby="calendar-qr-title">
+            <div class="calendar-qr-header">
+              <div>
+                <p class="calendar-qr-eyebrow">Share booking QR</p>
+                <h2 id="calendar-qr-title">Scan to book</h2>
+              </div>
+              <button class="calendar-qr-close" id="calendar-qr-close" type="button" aria-label="Close QR code">
+                <svg viewBox="0 0 24 24" focusable="false"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </button>
+            </div>
+
+            <div class="calendar-qr-body">
+              <img id="calendar-qr-image" alt="Booking QR code" />
+              <div class="calendar-qr-copy">
+                <p>Place this QR code on your salon door so clients can scan and book instantly.</p>
+                <a class="calendar-booking-link" id="calendar-qr-link" href="#" target="_blank" rel="noreferrer">
+                  Open booking page
+                </a>
+                <button class="calendar-tool-action" id="calendar-qr-print" type="button">
+                  Print QR code
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="calendar-tool-modal is-hidden" id="calendar-tool-modal" aria-hidden="true">
+          <div class="calendar-tool-dialog" role="dialog" aria-modal="true" aria-labelledby="calendar-tool-title">
+            <div class="calendar-tool-header">
+              <div>
+                <p class="calendar-qr-eyebrow" id="calendar-tool-eyebrow">Dashboard tool</p>
+                <h2 id="calendar-tool-title">Tool</h2>
+              </div>
+              <button class="calendar-qr-close" id="calendar-tool-close" type="button" aria-label="Close tool dialog">
+                <svg viewBox="0 0 24 24" focusable="false"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+              </button>
+            </div>
+            <div class="calendar-tool-body">
+              <p id="calendar-tool-description"></p>
+              <div class="calendar-tool-actions" id="calendar-tool-actions"></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

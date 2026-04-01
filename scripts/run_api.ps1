@@ -1,0 +1,3 @@
+﻿param()
+
+npm run dev

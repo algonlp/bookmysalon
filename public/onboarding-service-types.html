@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Select service types</title>
+    <meta
+      name="description"
+      content="Choose the categories that best describe the business."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="onboarding-page">
+      <div class="onboarding-shell">
+        <header class="onboarding-header">
+          <div class="onboarding-top-left">
+            <a class="onboarding-back" href="/onboarding/business-name" aria-label="Go back">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M15 5l-7 7 7 7"></path>
+              </svg>
+            </a>
+
+            <div class="onboarding-progress">
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar"></span>
+            </div>
+          </div>
+        </header>
+
+        <main class="onboarding-main onboarding-main-wide">
+          <section class="onboarding-copy">
+            <p class="onboarding-eyebrow">Account setup</p>
+            <h1>Select categories that best describe your business</h1>
+            <p class="onboarding-description">
+              Choose every category that matches your business
+            </p>
+          </section>
+
+          <section class="service-type-section">
+            <div class="selected-summary is-empty" id="selected-summary">
+              No categories selected yet
+            </div>
+
+            <div class="service-type-grid" id="service-type-grid">
+              <button class="service-type-card" type="button" data-service-type="Hair salon">
+                <span class="service-type-icon">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M7 18V9a5 5 0 0110 0v9"></path>
+                    <path d="M7 12h10"></path>
+                  </svg>
+                </span>
+                <span>Hair salon</span>
+              </button>
+
+              <button class="service-type-card" type="button" data-service-type="Nails">
+                <span class="service-type-icon">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M8 18V8a4 4 0 118 0v10"></path>
+                    <path d="M10 7h4"></path>
+                  </svg>
+                </span>
+                <span>Nails</span>
+              </button>
+
+              <button class="service-type-card" type="button" data-service-type="Eyebrows & lashes">
+                <span class="service-type-icon">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M4 12c2.2-2.4 4.8-3.6 8-3.6s5.8 1.2 8 3.6"></path>
+                    <path d="M8 13l1-1M12 14v-2M16 13l-1-1"></path>
+                  </svg>
+                </span>
+                <span>Eyebrows & lashes</span>
+              </button>
+
+              <button class="service-type-card" type="button" data-service-type="Beauty salon">
+                <span class="service-type-icon">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <rect x="7" y="6" width="10" height="12" rx="2"></rect>
+                    <path d="M9 6V4h6v2"></path>
+                  </svg>
+                </span>
+                <span>Beauty salon</span>
+              </button>
+
+              <button class="service-type-card" type="button" data-service-type="Medspa">
+                <span class="service-type-icon">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M12 5l1.2 3.3L16.5 9l-3.3 1.2L12 13.5l-1.2-3.3L7.5 9l3.3-1.2z"></path>
+                  </svg>
+                </span>
+                <span>Medspa</span>
+              </button>
+
+              <button class="service-type-card" type="button" data-service-type="Barber">
+                <span class="service-type-icon">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M9 6v5a3 3 0 006 0V6"></path>
+                    <path d="M8 17h8"></path>
+                    <path d="M12 11v6"></path>
+                  </svg>
+                </span>
+                <span>Barber</span>
+              </button>
+
+              <button class="service-type-card" type="button" data-service-type="Massage">
+                <span class="service-type-icon">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M5 11h14"></path>
+                    <path d="M7 11V8h10v3"></path>
+                    <path d="M8 11v5M16 11v5"></path>
+                  </svg>
+                </span>
+                <span>Massage</span>
+              </button>
+
+              <button class="service-type-card" type="button" data-service-type="Spa & sauna">
+                <span class="service-type-icon">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M9 18V7h6v11"></path>
+                    <path d="M15 9h2a2 2 0 010 4h-2"></path>
+                  </svg>
+                </span>
+                <span>Spa & sauna</span>
+              </button>
+
+              <button class="service-type-card" type="button" data-service-type="Waxing salon">
+                <span class="service-type-icon">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <rect x="7" y="8" width="10" height="9" rx="2"></rect>
+                    <path d="M9 8V5h6v3"></path>
+                  </svg>
+                </span>
+                <span>Waxing salon</span>
+              </button>
+            </div>
+          </section>
+        </main>
+
+        <div class="onboarding-footer onboarding-footer-wide">
+          <a
+            class="continue-button onboarding-continue onboarding-continue-disabled"
+            id="service-types-continue"
+            href="/onboarding/account-type"
+            aria-disabled="true"
+          >
+            Continue
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

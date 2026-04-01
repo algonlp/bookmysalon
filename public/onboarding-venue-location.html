@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Venue location</title>
+    <meta
+      name="description"
+      content="Add and preview the physical location of your venue."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="onboarding-page">
+      <div class="onboarding-shell">
+        <header class="onboarding-header">
+          <div class="onboarding-top-left">
+            <a class="onboarding-back" href="/onboarding/service-location" aria-label="Go back">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M15 5l-7 7 7 7"></path>
+              </svg>
+            </a>
+
+            <div class="onboarding-progress">
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+            </div>
+          </div>
+        </header>
+
+        <main class="onboarding-main onboarding-main-address">
+          <section class="onboarding-copy venue-location-copy">
+            <p class="onboarding-eyebrow">Account setup</p>
+            <h1>Set your venue's physical location</h1>
+            <p class="onboarding-description">
+              Add your primary business location so your clients can easily find you.
+              Additional locations can be added later.
+            </p>
+          </section>
+
+          <div class="venue-location-layout">
+            <section class="venue-location-panel">
+              <div class="venue-address-card">
+                <div class="venue-address-copy">
+                  <strong>Enter your venue address</strong>
+                  <span>
+                    Enter the exact address clients should see when they book with you.
+                  </span>
+                </div>
+
+                <label class="venue-search-shell" for="venue-address-search">
+                  <span class="venue-search-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                      <path d="M12 21s-6-4.6-6-10a6 6 0 1112 0c0 5.4-6 10-6 10z"></path>
+                      <circle cx="12" cy="11" r="2.5"></circle>
+                    </svg>
+                  </span>
+                  <textarea
+                    id="venue-address-search"
+                    name="venue-address"
+                    placeholder="Example: Shop 12, Main Boulevard, Gulberg III, Lahore, Punjab, Pakistan"
+                    autocomplete="off"
+                  ></textarea>
+                </label>
+
+                <div class="venue-address-guidance">
+                  <strong>Tips for a clear address</strong>
+                  <p>
+                    Include shop number, street, area, city, and country so clients can find you
+                    without calling first.
+                  </p>
+                </div>
+              </div>
+
+              <div class="selected-venue-card">
+                <div>
+                  <p class="selected-venue-label">Selected location</p>
+                  <p class="selected-venue-address" id="selected-venue-address">
+                    Start typing your venue address to preview it here.
+                  </p>
+                </div>
+
+                <button class="selected-venue-edit" id="venue-address-edit" type="button">
+                  Edit address
+                </button>
+              </div>
+
+              <div class="map-confirm-copy">
+                <strong>Live preview</strong>
+                <span>Your client-facing location updates as you type.</span>
+              </div>
+            </section>
+
+            <section class="venue-map-card" aria-label="Location preview map">
+              <div class="map-surface">
+                <span class="map-road map-road-a"></span>
+                <span class="map-road map-road-b"></span>
+                <span class="map-road map-road-c"></span>
+                <span class="map-road map-road-d"></span>
+                <span class="map-park map-park-a"></span>
+                <span class="map-park map-park-b"></span>
+                <span class="map-water"></span>
+                <span class="map-block map-block-a"></span>
+                <span class="map-block map-block-b"></span>
+                <span class="map-block map-block-c"></span>
+                <span class="map-block map-block-d"></span>
+                <span class="map-block map-block-e"></span>
+                <span class="map-block map-block-f"></span>
+
+                <div class="map-pin" id="venue-map-pin">
+                  <span class="map-pin-dot"></span>
+                </div>
+
+                <div class="map-label" id="venue-map-label">Your venue</div>
+
+                <div class="venue-map-summary">
+                  <p class="venue-map-summary-eyebrow">Client-facing location</p>
+                  <strong id="venue-map-title">Your venue</strong>
+                  <p class="venue-map-summary-copy" id="venue-map-address">
+                    Start typing your address to preview how it will appear on your booking page.
+                  </p>
+                </div>
+              </div>
+            </section>
+          </div>
+        </main>
+
+        <div class="onboarding-footer onboarding-footer-address">
+          <div class="onboarding-actions">
+            <a class="onboarding-close" href="/">Close</a>
+            <button
+              class="continue-button onboarding-continue onboarding-continue-disabled"
+              id="venue-address-continue"
+              type="button"
+              disabled
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

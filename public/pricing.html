@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Pricing</title>
+    <meta
+      name="description"
+      content="Pricing plans for independent businesses, teams, and enterprise groups."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="pricing-page">
+      <header class="business-header">
+        <a class="business-brand" href="/" aria-label="QR schedule.com home">QR schedule.com</a>
+
+        <nav class="business-nav" aria-label="Business navigation">
+          <div class="business-nav-item">
+            <button
+              class="business-nav-toggle"
+              id="business-types-toggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="business-types-menu"
+            >
+              <span>Business types</span>
+            </button>
+
+            <div class="business-types-menu is-hidden" id="business-types-menu">
+              <a href="/">Salon</a>
+              <a href="/">Barber</a>
+              <a href="/">Nails</a>
+              <a href="/" class="is-active">Spa &amp; sauna</a>
+              <a href="/">Medspa</a>
+              <a href="/">Massage</a>
+              <a href="/">Fitness &amp; recovery</a>
+              <a href="/">Physical therapy</a>
+              <a href="/">Health practices</a>
+              <a href="/">Tattooing &amp; piercing</a>
+            </div>
+          </div>
+          <a href="/">Features</a>
+          <a href="/pricing" class="active">Pricing</a>
+        </nav>
+
+        <div class="business-actions">
+          <a class="business-pill ghost" href="/">Marketplace</a>
+          <a class="business-pill dark" href="/signup">Sign up</a>
+          <button class="business-pill ghost business-menu-button" type="button">
+            <span>Menu</span>
+            <span class="menu-lines" aria-hidden="true">
+              <span></span>
+              <span></span>
+            </span>
+          </button>
+        </div>
+      </header>
+
+      <main class="pricing-main">
+        <section class="pricing-grid">
+          <article class="pricing-card pricing-card-a">
+            <div class="pricing-top">
+              <h2>Independent</h2>
+              <span class="trial-pill">7 day trial</span>
+            </div>
+            <div class="price-wrap">
+              <strong>PKR 1,260</strong>
+              <span>per month</span>
+            </div>
+            <div class="pricing-copy">
+              <p class="pricing-label">Includes</p>
+              <ul>
+                <li>Single calendar column</li>
+                <li>20 free messages</li>
+                <li>50 free marketing emails</li>
+                <li>Email and chat support</li>
+              </ul>
+            </div>
+            <a class="pricing-cta" href="/">Start now</a>
+          </article>
+
+          <article class="pricing-card pricing-card-b">
+            <div class="pricing-top">
+              <h2>Team</h2>
+              <span class="trial-pill">7 day trial</span>
+            </div>
+            <div class="price-wrap">
+              <strong>PKR 840</strong>
+              <span>per team member monthly</span>
+            </div>
+            <div class="pricing-copy">
+              <p class="pricing-label">Includes</p>
+              <ul>
+                <li>Multiple calendar columns</li>
+                <li>20 free messages per team member</li>
+                <li>50 free marketing emails per team member</li>
+                <li>Phone, chat, and email support</li>
+              </ul>
+            </div>
+            <a class="pricing-cta" href="/">Start now</a>
+          </article>
+
+          <article class="pricing-card pricing-card-c">
+            <div class="pricing-top">
+              <h2>Enterprise</h2>
+            </div>
+            <div class="price-wrap enterprise-copy">
+              <strong>Custom rates</strong>
+              <span>Enterprise solutions available for high-volume businesses with over 20 team members</span>
+            </div>
+            <a class="pricing-cta" href="/">Contact sales</a>
+          </article>
+        </section>
+      </main>
+
+      <script src="/main.js"></script>
+    </div>
+  </body>
+</html>

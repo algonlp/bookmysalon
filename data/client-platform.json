@@ -1,0 +1,660 @@
+{
+  "clients": [
+    {
+      "id": "d336a440-760f-401d-991f-1504c1fb907c",
+      "adminToken": "d68b7411-94de-42f4-bffb-9ab6482a7790",
+      "email": "review@example.com",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "Review Salon",
+      "website": "",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Barber"
+      ],
+      "services": [
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "PKR 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "PKR 800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        },
+        {
+          "id": "d27030ca-3d4e-4d53-a155-f8d6d81c8cf9",
+          "name": "Long Service",
+          "durationMinutes": 120,
+          "categoryName": "Barber",
+          "priceLabel": "PKR 5000",
+          "description": "",
+          "isActive": true
+        }
+      ],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "teamMembers": [
+        {
+          "id": "f9d6ded9-6ebb-4e57-b848-54b208060286",
+          "name": "A",
+          "role": "Barber",
+          "phone": "",
+          "expertise": "",
+          "isActive": true,
+          "createdAt": "2026-03-27T19:47:25.179Z",
+          "updatedAt": "2026-03-27T19:47:25.179Z"
+        },
+        {
+          "id": "460261fe-b7dd-459d-b3e3-8b39b57abc0d",
+          "name": "B",
+          "role": "Barber",
+          "phone": "",
+          "expertise": "",
+          "isActive": true,
+          "createdAt": "2026-03-27T19:47:25.190Z",
+          "updatedAt": "2026-03-27T19:47:25.190Z"
+        }
+      ],
+      "accountType": null,
+      "serviceLocation": [],
+      "venueAddress": "",
+      "onboardingCompleted": false,
+      "createdAt": "2026-03-27T19:47:25.116Z",
+      "updatedAt": "2026-03-27T19:47:25.233Z"
+    },
+    {
+      "id": "demo-luna-luxe",
+      "adminToken": "demo-admin-luna-luxe",
+      "email": "hello@lunaluxe.demo",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "Luna Luxe Salon",
+      "website": "www.lunaluxe.demo",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "PKR 2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "PKR 1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        },
+        {
+          "id": "beauty-salon-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "PKR 2,700",
+          "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "teamMembers": [
+        {
+          "id": "team-luna-1",
+          "name": "Mina",
+          "role": "Stylist",
+          "phone": "+923001110001",
+          "expertise": "Colour and blow-dry",
+          "isActive": true,
+          "createdAt": "2026-03-01T09:00:00.000Z",
+          "updatedAt": "2026-03-12T08:30:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Clifton Block 5, Schon Circle, Karachi, Sindh, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-03-01T09:00:00.000Z",
+      "updatedAt": "2026-03-12T08:30:00.000Z"
+    },
+    {
+      "id": "demo-urban-trim",
+      "adminToken": "demo-admin-urban-trim",
+      "email": "hello@urbantrim.demo",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "Urban Trim Studio",
+      "website": "www.urbantrim.demo",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Barber"
+      ],
+      "services": [
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "PKR 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "PKR 800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        }
+      ],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "teamMembers": [],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "MM Alam Road, Gulberg III, Lahore, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-03-02T10:00:00.000Z",
+      "updatedAt": "2026-03-12T08:00:00.000Z"
+    },
+    {
+      "id": "demo-serene-glow",
+      "adminToken": "demo-admin-serene-glow",
+      "email": "hello@sereneglow.demo",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "Serene Glow Spa",
+      "website": "www.sereneglow.demo",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Massage",
+        "Spa & sauna"
+      ],
+      "services": [
+        {
+          "id": "massage-deep-tissue-massage",
+          "name": "Deep tissue massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "PKR 3,200",
+          "description": "Targeted pressure massage designed for muscle recovery.",
+          "isActive": true
+        },
+        {
+          "id": "massage-relaxation-massage",
+          "name": "Relaxation massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "PKR 2,900",
+          "description": "Full-body relaxation massage to reduce stress and tension.",
+          "isActive": true
+        },
+        {
+          "id": "spa-sauna-spa-session",
+          "name": "Spa session",
+          "durationMinutes": 60,
+          "categoryName": "Spa & sauna",
+          "priceLabel": "PKR 3,500",
+          "description": "Unwind with a restorative spa session in a calm setting.",
+          "isActive": true
+        }
+      ],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "teamMembers": [
+        {
+          "id": "team-serene-1",
+          "name": "Hira",
+          "role": "Therapist",
+          "phone": "+923001110002",
+          "expertise": "Deep tissue massage",
+          "isActive": true,
+          "createdAt": "2026-03-03T11:00:00.000Z",
+          "updatedAt": "2026-03-12T07:30:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Blue Area, Jinnah Avenue, Islamabad, Islamabad Capital Territory, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-03-03T11:00:00.000Z",
+      "updatedAt": "2026-03-12T07:30:00.000Z"
+    },
+    {
+      "id": "d5e44696-dfeb-4665-ae5f-3d0100521072",
+      "adminToken": "ed578d8a-1bd5-4d69-b7ea-f4aa5a8ef652",
+      "email": "maqsoodparacha1479@gmail.com",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "hammmad",
+      "website": "",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Hair salon",
+        "Nails"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "PKR 2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "PKR 1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        },
+        {
+          "id": "nails-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "PKR 1,600",
+          "description": "Nail shaping, cuticle care, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "nails-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Nails",
+          "priceLabel": "PKR 2,100",
+          "description": "Foot soak, nail care, exfoliation, and polish refresh.",
+          "isActive": true
+        }
+      ],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "teamMembers": [
+        {
+          "id": "684d37ff-12b5-44e0-88e2-a3507fb63e2e",
+          "name": "admin",
+          "role": "Barber",
+          "phone": "+92 349-4548161",
+          "expertise": "fade",
+          "isActive": true,
+          "createdAt": "2026-03-31T06:35:44.609Z",
+          "updatedAt": "2026-03-31T06:35:44.609Z"
+        }
+      ],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "karachi",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-03-31T06:30:39.738Z",
+      "updatedAt": "2026-03-31T06:35:44.609Z"
+    },
+    {
+      "id": "1e1f7206-883c-4723-b78e-143c418f0c90",
+      "adminToken": "71aac042-3d3c-4235-a6da-a0728d55ed36",
+      "email": "maqsoodparacha1479@gmail.com",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "paracha",
+      "website": "",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Nails"
+      ],
+      "services": [
+        {
+          "id": "nails-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "PKR 1,600",
+          "description": "Nail shaping, cuticle care, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "nails-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Nails",
+          "priceLabel": "PKR 2,100",
+          "description": "Foot soak, nail care, exfoliation, and polish refresh.",
+          "isActive": true
+        }
+      ],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "teamMembers": [
+        {
+          "id": "abf7117b-cd6d-4998-9ee5-c28e6973eec0",
+          "name": "maqsood",
+          "role": "Staff member",
+          "phone": "+92 349-4548161",
+          "expertise": "fade",
+          "isActive": true,
+          "createdAt": "2026-03-31T07:00:38.199Z",
+          "updatedAt": "2026-03-31T07:00:38.199Z"
+        }
+      ],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical",
+        "mobile"
+      ],
+      "venueAddress": "karachi",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-03-31T06:59:22.666Z",
+      "updatedAt": "2026-03-31T07:00:38.199Z"
+    },
+    {
+      "id": "12a95450-fc40-429b-8c69-dcfba3bec621",
+      "adminToken": "5ffe1cea-cf59-44e6-8ada-76916aec1854",
+      "email": "maqsoodparacha1479@gmail.com",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "hammmad",
+      "website": "",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Hair salon",
+        "Nails",
+        "Eyebrows & lashes"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "PKR 2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "PKR 1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        },
+        {
+          "id": "nails-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "PKR 1,600",
+          "description": "Nail shaping, cuticle care, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "nails-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Nails",
+          "priceLabel": "PKR 2,100",
+          "description": "Foot soak, nail care, exfoliation, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "PKR 900",
+          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-lash-lift",
+          "name": "Lash lift",
+          "durationMinutes": 45,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "PKR 1,800",
+          "description": "Lift and curl natural lashes for a brighter eye look.",
+          "isActive": true
+        }
+      ],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "teamMembers": [
+        {
+          "id": "c5b1f4b9-b6a8-4f04-9583-1b09ae5c02a5",
+          "name": "ahmad",
+          "role": "Staff member",
+          "phone": "+92 349-4548161",
+          "expertise": "fade",
+          "isActive": true,
+          "createdAt": "2026-04-01T06:14:23.962Z",
+          "updatedAt": "2026-04-01T06:14:23.962Z"
+        },
+        {
+          "id": "fa251d2b-44ab-4a10-85e1-c71927cb5fcc",
+          "name": "zahid",
+          "role": "Staff member",
+          "phone": "+923000000000",
+          "expertise": "haircut",
+          "isActive": true,
+          "createdAt": "2026-04-01T06:16:54.995Z",
+          "updatedAt": "2026-04-01T06:16:54.995Z"
+        }
+      ],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical",
+        "mobile"
+      ],
+      "venueAddress": "faisalabad",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-03-31T14:20:51.309Z",
+      "updatedAt": "2026-04-01T06:16:54.995Z",
+      "customerProfiles": [
+        {
+          "id": "phone:+923494548161",
+          "customerName": "maqsood",
+          "customerPhone": "+923494548161",
+          "customerEmail": "maqsoodparacha1479@gmail.com",
+          "totalVisits": 4,
+          "bookedVisits": 2,
+          "completedVisits": 2,
+          "cancelledVisits": 0,
+          "lastService": "Cut and style",
+          "lastAppointmentDate": "2026-04-03",
+          "lastAppointmentTime": "09:00",
+          "firstSeenAt": "2026-03-31T14:22:35.223Z",
+          "lastSeenAt": "2026-04-01T06:10:44.096Z",
+          "createdAt": "2026-03-31T14:22:35.223Z",
+          "updatedAt": "2026-04-01T06:10:44.096Z"
+        }
+      ],
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      }
+    },
+    {
+      "id": "73d45321-b669-484f-a83a-c2b27dc61372",
+      "adminToken": "1aa48a52-8dad-4f7d-952f-bf3c6c6b5222",
+      "email": "maqsoodparacha1479@gmail.com",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "salon beauty",
+      "website": "",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Hair salon",
+        "Nails"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        },
+        {
+          "id": "nails-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "nails-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 2,100",
+          "description": "Foot soak, nail care, exfoliation, and polish refresh.",
+          "isActive": true
+        }
+      ],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [
+        {
+          "id": "phone:+923494548161",
+          "customerName": "maqsood",
+          "customerPhone": "+923494548161",
+          "customerEmail": "maqsoodparacha1479@gmail.com",
+          "totalVisits": 1,
+          "bookedVisits": 1,
+          "completedVisits": 0,
+          "cancelledVisits": 0,
+          "lastService": "Cut and style",
+          "lastAppointmentDate": "2026-04-01",
+          "lastAppointmentTime": "12:00",
+          "firstSeenAt": "2026-04-01T06:28:57.923Z",
+          "lastSeenAt": "2026-04-01T06:28:57.923Z",
+          "createdAt": "2026-04-01T06:28:57.923Z",
+          "updatedAt": "2026-04-01T06:28:57.923Z"
+        },
+        {
+          "id": "phone:+923337167515",
+          "customerName": "sakib ali",
+          "customerPhone": "+923337167515",
+          "customerEmail": "",
+          "totalVisits": 1,
+          "bookedVisits": 1,
+          "completedVisits": 0,
+          "cancelledVisits": 0,
+          "lastService": "Cut and style",
+          "lastAppointmentDate": "2026-04-08",
+          "lastAppointmentTime": "11:00",
+          "firstSeenAt": "2026-04-01T06:25:03.422Z",
+          "lastSeenAt": "2026-04-01T06:25:03.422Z",
+          "createdAt": "2026-04-01T06:25:03.422Z",
+          "updatedAt": "2026-04-01T06:25:03.422Z"
+        }
+      ],
+      "teamMembers": [
+        {
+          "id": "a3df7cdf-e70d-46b5-b428-3c39b78dba81",
+          "name": "maqsood",
+          "role": "Staff member",
+          "phone": "+923000000000",
+          "expertise": "Hair salon",
+          "isActive": true,
+          "createdAt": "2026-04-01T06:41:06.313Z",
+          "updatedAt": "2026-04-01T06:41:06.313Z"
+        }
+      ],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical",
+        "mobile",
+        "virtual"
+      ],
+      "venueAddress": "lahore",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-04-01T06:22:29.192Z",
+      "updatedAt": "2026-04-01T06:41:06.313Z"
+    }
+  ]
+}

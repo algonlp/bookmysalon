@@ -1,0 +1,100 @@
+import { Router } from 'express';
+import { appointmentController } from '../controllers/appointment.controller';
+import { asyncHandler } from '../middlewares/asyncHandler';
+import { requirePlatformAdminAccess } from '../middlewares/requirePlatformAdminAccess';
+
+export const appointmentRouter = Router();
+
+appointmentRouter.get(
+  '/public/book/:clientId',
+  asyncHandler(appointmentController.getPublicBookingPage)
+);
+appointmentRouter.get(
+  '/public/book/:clientId/slots',
+  asyncHandler(appointmentController.getAvailableSlots)
+);
+appointmentRouter.get(
+  '/public/book/:clientId/history',
+  asyncHandler(appointmentController.listPublicBookingHistory)
+);
+appointmentRouter.get(
+  '/public/book/:clientId/benefits',
+  asyncHandler(appointmentController.listPublicBenefits)
+);
+appointmentRouter.get(
+  '/public/book/:clientId/appointments/:appointmentId',
+  asyncHandler(appointmentController.getPublicAppointmentManagement)
+);
+appointmentRouter.get(
+  '/public/book/:clientId/reviews',
+  asyncHandler(appointmentController.listPublicReviews)
+);
+appointmentRouter.post(
+  '/public/book/:clientId/appointments',
+  asyncHandler(appointmentController.createAppointment)
+);
+appointmentRouter.post(
+  '/public/book/:clientId/waitlist',
+  asyncHandler(appointmentController.createWaitlistEntry)
+);
+appointmentRouter.patch(
+  '/public/book/:clientId/appointments/:appointmentId/reschedule',
+  asyncHandler(appointmentController.reschedulePublicAppointment)
+);
+appointmentRouter.post(
+  '/public/book/:clientId/appointments/:appointmentId/cancel',
+  asyncHandler(appointmentController.cancelPublicAppointment)
+);
+appointmentRouter.post(
+  '/public/book/:clientId/reviews',
+  asyncHandler(appointmentController.createReview)
+);
+appointmentRouter.get(
+  '/public/book/:clientId/qr',
+  asyncHandler(appointmentController.getBookingQrCode)
+);
+appointmentRouter.get(
+  '/platform/clients/:clientId/appointments',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(appointmentController.listAppointments)
+);
+appointmentRouter.get(
+  '/platform/clients/:clientId/payments',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(appointmentController.listPayments)
+);
+appointmentRouter.patch(
+  '/platform/clients/:clientId/appointments/:appointmentId',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(appointmentController.rescheduleAppointment)
+);
+appointmentRouter.post(
+  '/platform/clients/:clientId/appointments/:appointmentId/payments',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(appointmentController.createPayment)
+);
+appointmentRouter.post(
+  '/platform/clients/:clientId/appointments/:appointmentId/cancel',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(appointmentController.cancelAppointment)
+);
+appointmentRouter.post(
+  '/platform/clients/:clientId/appointments/:appointmentId/complete',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(appointmentController.completeAppointment)
+);
+appointmentRouter.post(
+  '/platform/clients/:clientId/appointments/:appointmentId/running-late',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(appointmentController.sendRunningLateNotification)
+);
+appointmentRouter.get(
+  '/platform/clients/:clientId/waitlist',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(appointmentController.listWaitlist)
+);
+appointmentRouter.get(
+  '/platform/clients/:clientId/reviews',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(appointmentController.listPlatformReviews)
+);

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Launch links</title>
+    <meta
+      name="description"
+      content="Review your dashboard, booking page, QR code, and social booking links before finishing setup."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="onboarding-page onboarding-complete-page">
+      <main class="launch-links-shell">
+        <p class="onboarding-eyebrow onboarding-complete-eyebrow">Account setup</p>
+        <h1>Review your launch links</h1>
+        <p class="onboarding-complete-copy">
+          Your setup is almost finished. Check the links you will use to manage bookings and
+          share your booking page with clients across QR, Instagram, Facebook, and Apple Maps.
+        </p>
+
+        <div class="launch-links-grid">
+          <article class="launch-link-card">
+            <p class="launch-link-label">Dashboard link</p>
+            <strong>Open your business dashboard</strong>
+            <a class="launch-link-value" id="launch-dashboard-link" href="/calendar"></a>
+          </article>
+
+          <article class="launch-link-card">
+            <p class="launch-link-label">Booking page link</p>
+            <strong>Share this page with clients</strong>
+            <a class="launch-link-value" id="launch-booking-link" href="/"></a>
+          </article>
+
+          <article class="launch-link-card">
+            <p class="launch-link-label">Instagram bio link</p>
+            <strong>Track clients who book from Instagram</strong>
+            <a class="launch-link-value" id="launch-instagram-link" href="/"></a>
+          </article>
+
+          <article class="launch-link-card">
+            <p class="launch-link-label">Facebook booking link</p>
+            <strong>Use this in your page button or posts</strong>
+            <a class="launch-link-value" id="launch-facebook-link" href="/"></a>
+          </article>
+
+          <article class="launch-link-card">
+            <p class="launch-link-label">Apple Maps booking link</p>
+            <strong>Add this link to your Apple Maps business profile</strong>
+            <a class="launch-link-value" id="launch-applemaps-link" href="/"></a>
+          </article>
+
+          <article class="launch-link-card launch-link-card-qr">
+            <div class="launch-link-card-copy">
+              <p class="launch-link-label">QR code link</p>
+              <strong>Use this QR for quick bookings</strong>
+              <a class="launch-link-value" id="launch-qr-link" href="/"></a>
+            </div>
+
+            <div class="launch-qr-preview">
+              <img id="launch-qr-image" src="" alt="Booking QR code" />
+            </div>
+          </article>
+        </div>
+
+        <button class="continue-button onboarding-complete-done" id="launch-links-continue" type="button">
+          Continue
+          <span class="continue-button-arrow" aria-hidden="true">&rarr;</span>
+        </button>
+      </main>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Service location</title>
+    <meta
+      name="description"
+      content="Choose where the business provides its services."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="onboarding-page">
+      <div class="onboarding-shell">
+        <header class="onboarding-header">
+          <div class="onboarding-top-left">
+            <a class="onboarding-back" href="/onboarding/account-type" aria-label="Go back">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M15 5l-7 7 7 7"></path>
+              </svg>
+            </a>
+
+            <div class="onboarding-progress">
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar"></span>
+            </div>
+          </div>
+        </header>
+
+        <main class="onboarding-main">
+          <section class="onboarding-copy">
+            <p class="onboarding-eyebrow">Account setup</p>
+            <h1>Where do you provide your services?</h1>
+            <p class="onboarding-description">
+              Choose every way clients can receive your services so the setup matches your business.
+            </p>
+          </section>
+
+          <section class="location-option-grid">
+            <button
+              class="location-option-card"
+              type="button"
+              data-service-location="physical"
+            >
+              Clients come to me at a physical location
+            </button>
+
+            <button
+              class="location-option-card"
+              type="button"
+              data-service-location="mobile"
+            >
+              I visit my clients as a mobile operator
+            </button>
+
+            <button
+              class="location-option-card"
+              type="button"
+              data-service-location="virtual"
+            >
+              I provide virtual services online
+            </button>
+          </section>
+        </main>
+
+        <div class="onboarding-footer">
+          <div class="onboarding-actions">
+            <a class="onboarding-close" href="/">Close</a>
+            <a
+              class="continue-button onboarding-continue onboarding-continue-disabled"
+              id="service-location-continue"
+              href="/onboarding/venue-location"
+              aria-disabled="true"
+            >
+              Continue
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

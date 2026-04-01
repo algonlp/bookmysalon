@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Account setup</title>
+    <meta
+      name="description"
+      content="Account setup step for entering the business name and website."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="onboarding-page">
+      <div class="onboarding-shell">
+        <header class="onboarding-header">
+          <div class="onboarding-top-left">
+            <div class="onboarding-progress">
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar"></span>
+            </div>
+          </div>
+        </header>
+
+        <main class="onboarding-main">
+          <section class="onboarding-copy">
+            <p class="onboarding-eyebrow">Account setup</p>
+            <h1>What's your business name?</h1>
+            <p class="onboarding-description">
+              This is the brand name your clients will see. Your billing and legal name can be
+              added later.
+            </p>
+          </section>
+
+          <form class="onboarding-form onboarding-form-card" id="business-profile-form">
+            <div class="onboarding-form-intro">
+              <strong>Business profile</strong>
+              <span>Add the public-facing details your clients will recognize first.</span>
+            </div>
+
+            <label class="onboarding-field">
+              <span>Business name</span>
+              <input id="business-name-input" type="text" name="businessName" />
+            </label>
+
+            <label class="onboarding-field">
+              <span>Website <small>(Optional)</small></span>
+              <input
+                id="business-website-input"
+                type="text"
+                name="website"
+                placeholder="www.yoursite.com"
+              />
+            </label>
+          </form>
+        </main>
+
+        <div class="onboarding-footer">
+          <a
+            class="continue-button onboarding-continue"
+            id="business-profile-continue"
+            href="/onboarding/service-types"
+          >
+            Continue
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

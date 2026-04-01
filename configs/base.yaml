@@ -1,0 +1,5 @@
+﻿app:
+  name: algonlp-fresha
+  env: base
+logging:
+  level: INFO

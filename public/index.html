@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Book local selfcare services</title>
+    <meta
+      name="description"
+      content="Front page hero styled to match the Fresha homepage screenshot."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="site-header">
+        <a class="brand" href="/" aria-label="QR schedule.com home">QR schedule.com</a>
+
+        <div class="header-actions">
+          <a class="login-link" href="/login">Log in</a>
+          <a class="pill-button fill" href="/for-businesses">List your business</a>
+          <div class="menu-wrap">
+            <button
+              class="pill-button menu-button"
+              id="menu-toggle"
+              type="button"
+              aria-label="Open menu"
+              aria-expanded="false"
+              aria-controls="site-menu"
+            >
+              <span>Menu</span>
+              <span class="menu-lines" aria-hidden="true">
+                <span></span>
+                <span></span>
+              </span>
+            </button>
+
+            <div class="menu-popover is-hidden" id="site-menu">
+              <div class="menu-section">
+                <p class="menu-heading">For customers</p>
+                <a href="/login">Log in or sign up</a>
+                <a href="/">Download the app</a>
+                <a href="/">Help and support</a>
+                <a href="/" class="menu-language">
+                  <span class="language-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                      <circle cx="12" cy="12" r="8"></circle>
+                      <path d="M4 12h16M12 4a14 14 0 010 16M12 4a14 14 0 000 16"></path>
+                    </svg>
+                  </span>
+                  <span>English</span>
+                </a>
+              </div>
+
+              <div class="menu-divider"></div>
+
+              <a href="/for-businesses" class="menu-business-link">
+                <span>For businesses</span>
+                <span class="business-arrow" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M5 12h14"></path>
+                    <path d="M13 6l6 6-6 6"></path>
+                  </svg>
+                </span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="hero">
+        <section class="hero-inner">
+          <h1>
+            Book local
+            <span class="hero-title-accent">selfcare services</span>
+          </h1>
+          <p class="subtitle">
+            Discover top-rated salons, barbers, medspas, wellness studios and beauty experts
+            trusted by millions worldwide
+          </p>
+          <div class="hero-trust-row" aria-label="Platform highlights">
+            <span class="hero-trust-pill">Instant booking</span>
+            <span class="hero-trust-pill">Verified salons</span>
+            <span class="hero-trust-pill">QR-powered check-ins</span>
+          </div>
+
+          <form class="search-bar" id="search-panel">
+            <label class="search-item">
+              <span class="search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <circle cx="11" cy="11" r="6.5"></circle>
+                  <path d="M16 16l5 5"></path>
+                </svg>
+              </span>
+              <input
+                id="service-query"
+                name="service"
+                type="text"
+                placeholder="All treatments and venues"
+              />
+            </label>
+
+            <label class="search-item">
+              <span class="search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M12 21s6-5.3 6-11a6 6 0 10-12 0c0 5.7 6 11 6 11z"></path>
+                  <circle cx="12" cy="10" r="2.5"></circle>
+                </svg>
+              </span>
+              <input id="city-query" name="city" type="text" placeholder="Current location" />
+            </label>
+
+            <label class="search-item">
+              <span class="search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <rect x="4" y="5" width="16" height="15" rx="2"></rect>
+                  <path d="M8 3v4M16 3v4M4 10h16"></path>
+                </svg>
+              </span>
+              <input id="time-query" name="time" type="text" placeholder="Any time" />
+            </label>
+
+            <button class="search-button" type="submit">Search</button>
+          </form>
+
+          <p class="booking-count"><strong>450,904</strong> appointments booked today</p>
+
+          <div class="hero-highlight-grid" aria-label="Platform trust signals">
+            <article class="hero-highlight-card">
+              <strong>12k+</strong>
+              <span>beauty and wellness businesses onboarded</span>
+            </article>
+            <article class="hero-highlight-card">
+              <strong>4.9/5</strong>
+              <span>average booking experience rating</span>
+            </article>
+            <article class="hero-highlight-card">
+              <strong>24/7</strong>
+              <span>online booking access for clients and teams</span>
+            </article>
+          </div>
+
+          <a class="app-link" href="/">
+            <span>Get the app</span>
+            <span class="app-badge" aria-hidden="true">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </span>
+          </a>
+        </section>
+
+        <section class="public-salon-showcase" aria-labelledby="public-salon-showcase-title">
+          <div class="public-salon-showcase-copy">
+            <p class="public-salon-showcase-eyebrow">Book real salons</p>
+            <h2 id="public-salon-showcase-title">Newly launched salons ready for booking</h2>
+            <p>
+              When a business completes setup, it appears here for customers to review services,
+              compare prices, and book appointments online.
+            </p>
+            <p
+              class="public-salon-showcase-status"
+              id="public-salon-showcase-status"
+              aria-live="polite"
+            >
+              Showing all salons ready for booking.
+            </p>
+          </div>
+
+          <div class="public-salon-showcase-list" id="public-salon-showcase-list"></div>
+          <p class="public-salon-showcase-empty is-hidden" id="public-salon-showcase-empty">
+            No salons have completed setup yet.
+          </p>
+        </section>
+      </main>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

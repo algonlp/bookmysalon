@@ -1,0 +1,309 @@
+import type { AppointmentSource, BusinessService } from '../appointments/appointment.types';
+
+export type AuthProvider = 'email' | 'facebook' | 'google' | 'apple';
+
+export type AccountType = 'independent' | 'team';
+
+export type ServiceLocation = 'physical' | 'mobile' | 'virtual';
+
+export type PreferredLanguage = 'english' | 'urdu' | 'arabic';
+
+export interface ReportMetadataRecord {
+  pageTitle: string;
+  pageSubtitle: string;
+}
+
+export interface BusinessSettingsRecord {
+  currencyCode: string;
+  currencyLocale: string;
+  slotTimes: string[];
+  useServiceTemplates: boolean;
+  reportMetadata: ReportMetadataRecord;
+}
+
+export interface TeamMemberRecord {
+  id: string;
+  name: string;
+  role: string;
+  phone: string;
+  expertise: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PackagePlanRecord {
+  id: string;
+  name: string;
+  includedServiceIds: string[];
+  totalUses: number;
+  priceLabel: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LoyaltyProgramRecord {
+  id: string;
+  isEnabled: boolean;
+  triggerCompletedVisits: number;
+  rewardType: 'discount_percent';
+  rewardValue: number;
+  includedServiceIds: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomerProfileRecord {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  totalVisits: number;
+  bookedVisits: number;
+  completedVisits: number;
+  cancelledVisits: number;
+  lastService: string;
+  lastAppointmentDate: string;
+  lastAppointmentTime: string;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClientRecord {
+  id: string;
+  adminToken: string;
+  email: string;
+  mobileNumber: string;
+  provider: AuthProvider;
+  businessName: string;
+  website: string;
+  profileImageUrl: string;
+  serviceTypes: string[];
+  services: BusinessService[];
+  packagePlans: PackagePlanRecord[];
+  loyaltyProgram: LoyaltyProgramRecord | null;
+  businessSettings: BusinessSettingsRecord;
+  customerProfiles: CustomerProfileRecord[];
+  teamMembers: TeamMemberRecord[];
+  accountType: AccountType | null;
+  serviceLocation: ServiceLocation[];
+  venueAddress: string;
+  preferredLanguage: PreferredLanguage | null;
+  onboardingCompleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PublicClientRecord {
+  id: string;
+  email: string;
+  mobileNumber: string;
+  provider: AuthProvider;
+  businessName: string;
+  website: string;
+  profileImageUrl: string;
+  serviceTypes: string[];
+  services: BusinessService[];
+  packagePlans: PackagePlanRecord[];
+  loyaltyProgram: LoyaltyProgramRecord | null;
+  businessSettings: BusinessSettingsRecord;
+  customerProfiles: CustomerProfileRecord[];
+  teamMembers: TeamMemberRecord[];
+  accountType: AccountType | null;
+  serviceLocation: ServiceLocation[];
+  venueAddress: string;
+  preferredLanguage: PreferredLanguage | null;
+  onboardingCompleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateClientInput {
+  email?: string;
+  mobileNumber?: string;
+  provider: AuthProvider;
+}
+
+export interface BusinessProfileInput {
+  businessName: string;
+  website?: string;
+  profileImageUrl?: string;
+}
+
+export interface ServiceTypesInput {
+  serviceTypes: string[];
+}
+
+export interface AccountTypeInput {
+  accountType: AccountType;
+}
+
+export interface ServiceLocationInput {
+  serviceLocation: ServiceLocation[];
+}
+
+export interface VenueLocationInput {
+  venueAddress: string;
+}
+
+export interface UpdatePreferredLanguageInput {
+  preferredLanguage: PreferredLanguage;
+}
+
+export interface UpdateBusinessSettingsInput {
+  currencyCode?: string;
+  currencyLocale?: string;
+  slotTimes?: string[];
+  useServiceTemplates?: boolean;
+  reportMetadata?: Partial<ReportMetadataRecord>;
+}
+
+export interface CreateTeamMemberInput {
+  name: string;
+  role?: string;
+  phone?: string;
+  expertise?: string;
+}
+
+export interface UpdateTeamMemberInput {
+  name: string;
+  role?: string;
+  phone?: string;
+  expertise?: string;
+}
+
+export interface CreateBusinessServiceInput {
+  name: string;
+  categoryName?: string;
+  durationMinutes: number;
+  priceLabel: string;
+  description?: string;
+}
+
+export interface CreatePackagePlanInput {
+  name: string;
+  includedServiceIds?: string[];
+  totalUses: number;
+  priceLabel: string;
+}
+
+export interface UpdateLoyaltyProgramInput {
+  isEnabled: boolean;
+  triggerCompletedVisits: number;
+  rewardValue: number;
+  includedServiceIds?: string[];
+}
+
+export interface DashboardMeta {
+  type: 'count' | 'dot';
+  value?: string;
+}
+
+export interface DashboardListItem {
+  label: string;
+  subtitle?: string;
+  active?: boolean;
+  meta?: DashboardMeta;
+}
+
+export interface DashboardDrawerSection {
+  title?: string;
+  items: DashboardListItem[];
+}
+
+export interface DashboardDrawer {
+  title: string;
+  sections: DashboardDrawerSection[];
+}
+
+export interface DashboardReportCard {
+  title: string;
+  description: string;
+}
+
+export interface DashboardReportsView {
+  sidebarTitle: string;
+  menu: DashboardListItem[];
+  folderTitle: string;
+  folderActionLabel: string;
+  connectorLabel: string;
+  pageTitle: string;
+  pageSubtitle: string;
+  totalLabel: string;
+  searchPlaceholder: string;
+  filters: string[];
+  tabs: DashboardListItem[];
+  cards: DashboardReportCard[];
+}
+
+export interface DashboardAppointmentViewModel {
+  id: string;
+  customerName: string;
+  serviceName: string;
+  teamMemberName?: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  status: 'booked' | 'cancelled' | 'completed';
+  source: AppointmentSource;
+}
+
+export interface LaunchLinksViewModel {
+  dashboardLink: string;
+  bookingPageLink: string;
+  instagramBookingLink: string;
+  facebookBookingLink: string;
+  appleMapsBookingLink: string;
+  qrCodeImageLink: string;
+  qrBookingPageLink: string;
+}
+
+export interface DashboardViewModel {
+  businessName: string;
+  ownerName: string;
+  avatarInitial: string;
+  profileImageUrl: string;
+  setupButtonLabel: string;
+  setupButtonPath: string;
+  bookingLink: string;
+  launchLinks: LaunchLinksViewModel;
+  commerce: DashboardCommerceViewModel;
+  currentDateLabel: string;
+  currentTimeLabel: string;
+  appointments: DashboardAppointmentViewModel[];
+  sideDrawers: {
+    sales: DashboardDrawer;
+    clients: DashboardDrawer;
+    catalog: DashboardDrawer;
+    team: DashboardDrawer;
+  };
+  reportsView: DashboardReportsView;
+}
+
+export interface DashboardCommerceViewModel {
+  activePackagePlans: number;
+  packagesSold: number;
+  activePackageBalances: number;
+  availableLoyaltyRewards: number;
+  loyaltyProgramEnabled: boolean;
+}
+
+export interface PublicSalonShowcaseItem {
+  clientId: string;
+  businessName: string;
+  serviceTypes: string[];
+  serviceLocation: ServiceLocation[];
+  venueAddress: string;
+  bookingLink: string;
+  reviewSummary: {
+    averageRating: number | null;
+    totalReviews: number;
+  };
+  services: Array<{
+    name: string;
+    durationMinutes: number;
+    priceLabel: string;
+  }>;
+}

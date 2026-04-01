@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Select language</title>
+    <meta
+      name="description"
+      content="Choose the default language for your business setup and customer-facing experience."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="onboarding-page">
+      <div class="onboarding-shell">
+        <header class="onboarding-header">
+          <div class="onboarding-top-left">
+            <a class="onboarding-back" href="/onboarding/launch-links" aria-label="Go back">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M15 5l-7 7 7 7"></path>
+              </svg>
+            </a>
+
+            <div class="onboarding-progress">
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+            </div>
+          </div>
+        </header>
+
+        <main class="onboarding-main">
+          <section class="onboarding-copy">
+            <p class="onboarding-eyebrow">Account setup</p>
+            <h1>Select your default language</h1>
+            <p class="onboarding-description">
+              Choose the language you want to use first in setup and client-facing screens.
+              You can change it later from your dashboard settings.
+            </p>
+          </section>
+
+          <section class="account-type-grid">
+            <button class="account-type-card" type="button" data-preferred-language="english">
+              <span class="account-type-icon">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M4 12h16"></path>
+                  <path d="M12 4a12 12 0 000 16"></path>
+                  <path d="M12 4a12 12 0 010 16"></path>
+                </svg>
+              </span>
+              <span>English</span>
+            </button>
+
+            <button class="account-type-card" type="button" data-preferred-language="urdu">
+              <span class="account-type-icon">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M5 18c2.5 0 4.2-1.5 4.2-4.1V6"></path>
+                  <path d="M9.2 13.9c0 2.5 1.7 4.1 4.2 4.1"></path>
+                  <path d="M13.4 18c2.5 0 4.1-1.4 4.1-3.8V9.5"></path>
+                </svg>
+              </span>
+              <span>Urdu</span>
+            </button>
+
+            <button class="account-type-card" type="button" data-preferred-language="arabic">
+              <span class="account-type-icon">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M6 17.5c1.5 0 2.7-.7 3.5-1.8"></path>
+                  <path d="M9.5 15.7c.7 1.2 1.8 1.8 3.3 1.8"></path>
+                  <path d="M12.8 17.5c2.3 0 4.2-1.3 5.2-3.6"></path>
+                </svg>
+              </span>
+              <span>Arabic</span>
+            </button>
+          </section>
+        </main>
+
+        <div class="onboarding-footer">
+          <a
+            class="continue-button onboarding-continue onboarding-continue-disabled"
+            id="preferred-language-continue"
+            href="/onboarding/complete"
+            aria-disabled="true"
+          >
+            Continue
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

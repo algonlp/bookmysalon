@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Select account type</title>
+    <meta
+      name="description"
+      content="Choose whether the business is independent or has a team."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="onboarding-page">
+      <div class="onboarding-shell">
+        <header class="onboarding-header">
+          <div class="onboarding-top-left">
+            <a class="onboarding-back" href="/onboarding/service-types" aria-label="Go back">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M15 5l-7 7 7 7"></path>
+              </svg>
+            </a>
+
+            <div class="onboarding-progress">
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar"></span>
+            </div>
+          </div>
+        </header>
+
+        <main class="onboarding-main">
+          <section class="onboarding-copy">
+            <p class="onboarding-eyebrow">Account setup</p>
+            <h1>Select account type</h1>
+            <p class="onboarding-description">
+              This will help us set up your account correctly
+            </p>
+          </section>
+
+          <section class="account-type-grid">
+            <button class="account-type-card" type="button" data-account-type="independent">
+              <span class="account-type-icon">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <circle cx="12" cy="8" r="3.2"></circle>
+                  <path d="M6.5 18a5.5 5.5 0 0111 0"></path>
+                </svg>
+              </span>
+              <span>I'm an independent</span>
+            </button>
+
+            <button class="account-type-card" type="button" data-account-type="team">
+              <span class="account-type-icon">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <circle cx="9" cy="8.2" r="2.8"></circle>
+                  <circle cx="16.5" cy="9.4" r="2.4"></circle>
+                  <path d="M4.8 18a4.8 4.8 0 019.6 0"></path>
+                  <path d="M13.5 18a3.6 3.6 0 017.2 0"></path>
+                </svg>
+              </span>
+              <span>I have a team</span>
+            </button>
+          </section>
+        </main>
+
+        <div class="onboarding-footer">
+          <a
+            class="continue-button onboarding-continue onboarding-continue-disabled"
+            id="account-type-continue"
+            href="/onboarding/service-location"
+            aria-disabled="true"
+          >
+            Continue
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

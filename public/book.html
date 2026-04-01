@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Book appointment</title>
+    <meta
+      name="description"
+      content="Book a salon appointment directly from the salon QR code."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="booking-page">
+      <main class="booking-shell">
+        <section class="booking-hero">
+          <p class="booking-eyebrow">Scan to book</p>
+          <h1 id="booking-business-name">Book your appointment</h1>
+          <p id="booking-business-copy">
+            Choose your service, pick a time, and get confirmation by SMS.
+          </p>
+
+          <div class="booking-meta">
+            <span class="booking-badge">Salon QR booking</span>
+            <span class="booking-badge" id="booking-service-types">Loading services...</span>
+          </div>
+
+          <div class="booking-trust-card">
+            <strong>Why clients love this flow</strong>
+            <ul class="booking-trust-list">
+              <li>Fast booking in under a minute</li>
+              <li>Live slot availability from the salon dashboard</li>
+              <li>SMS-ready confirmation workflow for staff and clients</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="booking-card">
+          <div class="booking-summary-card" id="booking-summary-card">
+            <p class="booking-summary-eyebrow">Booking summary</p>
+            <strong id="booking-summary-title">Choose a service to begin</strong>
+            <p id="booking-summary-copy">
+              Select a service, day, and time to see your appointment details here.
+            </p>
+          </div>
+
+          <form class="booking-form" id="public-booking-form">
+            <label class="booking-field">
+              <span>Phone number</span>
+              <input
+                id="booking-customer-phone"
+                type="tel"
+                placeholder="+92 300 1234567"
+                required
+              />
+              <small>You and the salon will receive SMS updates on this number.</small>
+            </label>
+
+            <div class="booking-history-panel is-hidden" id="booking-phone-history">
+              <strong>Previous bookings</strong>
+              <div class="booking-history-list" id="booking-phone-history-list"></div>
+            </div>
+
+            <div class="booking-history-panel is-hidden" id="booking-benefits-panel">
+              <strong>Available packages and rewards</strong>
+              <div class="booking-history-list" id="booking-benefits-list"></div>
+            </div>
+
+            <label class="booking-field is-hidden" id="booking-benefit-field">
+              <span>Apply package or reward</span>
+              <select id="booking-benefit-select">
+                <option value="">No saved benefit</option>
+              </select>
+              <small>Use an active package balance or an available loyalty reward on this visit.</small>
+            </label>
+
+            <label class="booking-field is-hidden" id="booking-team-member-field">
+              <span>Barber</span>
+              <select id="booking-team-member-select">
+                <option value="">Select a barber</option>
+              </select>
+              <small>You can change this, or keep the first barber selected by default.</small>
+            </label>
+
+            <div class="booking-field-row">
+              <label class="booking-field">
+                <span>Date</span>
+                <input id="booking-date-input" type="date" required />
+                <small>Pick the day you want to visit the salon.</small>
+              </label>
+
+              <label class="booking-field">
+                <span>Time</span>
+                <select id="booking-time-select" required>
+                  <option value="">Select a time</option>
+                </select>
+                <small>Available times are shown in local salon time.</small>
+              </label>
+            </div>
+
+            <div class="booking-history-panel is-hidden" id="booking-waitlist-panel">
+              <strong>Waitlist</strong>
+              <p id="booking-waitlist-copy">
+                If no slot works for you, join the waitlist and we will text you when one opens.
+              </p>
+              <button class="continue-button booking-submit" id="booking-waitlist-button" type="button">
+                Join waitlist
+              </button>
+            </div>
+
+            <label class="booking-field">
+              <span>Full name</span>
+              <input id="booking-customer-name" type="text" placeholder="Customer name" required />
+              <small>This helps the salon identify your booking.</small>
+            </label>
+
+            <div class="booking-field-row">
+              <label class="booking-field">
+                <span>Service</span>
+                <select id="booking-service-select" required>
+                  <option value="">Select a service</option>
+                </select>
+                <small>Choose the service you want to book.</small>
+              </label>
+
+              <label class="booking-field">
+                <span>Email (optional)</span>
+                <input id="booking-customer-email" type="email" placeholder="name@example.com" />
+                <small>Add email if you also want a written contact reference.</small>
+              </label>
+            </div>
+
+            <button class="continue-button booking-submit" type="submit">
+              Confirm appointment
+            </button>
+          </form>
+
+          <div class="booking-success is-hidden" id="booking-success">
+            <strong>Appointment confirmed</strong>
+            <p id="booking-success-copy"></p>
+          </div>
+
+          <section class="booking-reviews-card" aria-labelledby="booking-reviews-title">
+            <form class="booking-review-form" id="booking-review-form">
+              <div class="booking-reviews-header booking-reviews-header-form">
+                <div>
+                  <p class="booking-summary-eyebrow">After your visit</p>
+                  <strong id="booking-reviews-title">Rate your experience</strong>
+                </div>
+              </div>
+
+              <input id="booking-review-reference" type="hidden" />
+              <input id="booking-review-rating" type="hidden" required />
+
+              <div
+                class="booking-stars"
+                id="booking-review-stars"
+                role="radiogroup"
+                aria-label="Select your rating"
+              >
+                <button class="booking-star-button" type="button" data-rating="1" aria-label="1 star">★</button>
+                <button class="booking-star-button" type="button" data-rating="2" aria-label="2 stars">★</button>
+                <button class="booking-star-button" type="button" data-rating="3" aria-label="3 stars">★</button>
+                <button class="booking-star-button" type="button" data-rating="4" aria-label="4 stars">★</button>
+                <button class="booking-star-button" type="button" data-rating="5" aria-label="5 stars">★</button>
+              </div>
+            </form>
+
+            <div class="booking-success is-hidden" id="booking-review-success">
+              <strong>Review submitted</strong>
+              <p id="booking-review-success-copy"></p>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

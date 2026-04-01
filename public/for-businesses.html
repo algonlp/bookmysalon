@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | For businesses</title>
+    <meta
+      name="description"
+      content="Business booking software landing page for salons and spas."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="business-page">
+      <header class="business-header">
+        <a class="business-brand" href="/" aria-label="QR schedule.com home">QR schedule.com</a>
+
+        <nav class="business-nav" aria-label="Business navigation">
+          <div class="business-nav-item">
+            <button
+              class="business-nav-toggle"
+              id="business-types-toggle"
+              type="button"
+              aria-expanded="false"
+              aria-controls="business-types-menu"
+            >
+              <span>Business types</span>
+            </button>
+
+            <div class="business-types-menu is-hidden" id="business-types-menu">
+              <a href="/">Salon</a>
+              <a href="/">Barber</a>
+              <a href="/">Nails</a>
+              <a href="/" class="is-active">Spa &amp; sauna</a>
+              <a href="/">Medspa</a>
+              <a href="/">Massage</a>
+              <a href="/">Fitness &amp; recovery</a>
+              <a href="/">Physical therapy</a>
+              <a href="/">Health practices</a>
+              <a href="/">Tattooing &amp; piercing</a>
+            </div>
+          </div>
+          <a href="/">Features</a>
+          <a href="/pricing">Pricing</a>
+        </nav>
+
+        <div class="business-actions">
+          <a class="business-pill ghost" href="/">Marketplace</a>
+          <a class="business-pill dark" href="/signup">Sign up</a>
+          <button class="business-pill ghost business-menu-button" type="button">
+            <span>Menu</span>
+            <span class="menu-lines" aria-hidden="true">
+              <span></span>
+              <span></span>
+            </span>
+          </button>
+        </div>
+      </header>
+
+      <main class="business-hero">
+        <section class="business-copy">
+          <h1>The #1 software for Salons and Spas</h1>
+          <p>Simple, flexible and powerful booking software for your business.</p>
+
+          <div class="business-cta-row">
+            <a class="business-cta primary" href="/signup">Get started now</a>
+            <a class="business-cta secondary" href="/">
+              <span class="play-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <path d="M8 6l10 6-10 6z"></path>
+                </svg>
+              </span>
+              <span>Watch an overview</span>
+            </a>
+          </div>
+        </section>
+
+        <section class="software-preview" aria-hidden="true">
+          <div class="preview-window">
+            <div class="preview-topbar">
+              <span class="preview-brand">QR schedule.com</span>
+              <div class="preview-icons">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+                <span class="avatar"></span>
+              </div>
+            </div>
+
+            <div class="preview-toolbar">
+              <div class="toolbar-left">
+                <span class="mini-chip selected">Today</span>
+                <span class="mini-chip">Wednesday 21 Jun</span>
+                <span class="mini-chip">Trendy salon</span>
+                <span class="mini-chip">Scheduled team</span>
+              </div>
+              <div class="toolbar-right">
+                <span class="tiny-icon"></span>
+                <span class="tiny-icon"></span>
+                <span class="tiny-icon"></span>
+              </div>
+            </div>
+
+            <div class="preview-body">
+              <aside class="preview-sidebar">
+                <span class="side-icon active"></span>
+                <span class="side-icon"></span>
+                <span class="side-icon"></span>
+              </aside>
+
+              <div class="preview-grid">
+                <div class="team-row">
+                  <article class="team-member">
+                    <span class="member-avatar avatar-a"></span>
+                    <strong>John</strong>
+                  </article>
+                  <article class="team-member">
+                    <span class="member-avatar avatar-b"></span>
+                    <strong>Maria</strong>
+                  </article>
+                  <article class="team-member">
+                    <span class="member-avatar avatar-c"></span>
+                    <strong>Wendy</strong>
+                  </article>
+                  <article class="team-member">
+                    <span class="member-avatar avatar-d"></span>
+                    <strong>Amy</strong>
+                  </article>
+                  <article class="team-member">
+                    <span class="member-avatar avatar-e"></span>
+                    <strong>Michael</strong>
+                  </article>
+                </div>
+
+                <div class="schedule-grid">
+                  <div class="time-column">
+                    <span>8:00</span>
+                    <span>9:00</span>
+                    <span>10:00</span>
+                  </div>
+                  <div class="schedule-lanes">
+                    <div class="lane">
+                      <span class="booking-block booking-one"></span>
+                    </div>
+                    <div class="lane">
+                      <span class="booking-block booking-two"></span>
+                    </div>
+                    <div class="lane">
+                      <span class="booking-block booking-three"></span>
+                    </div>
+                    <div class="lane">
+                      <span class="booking-block booking-four"></span>
+                    </div>
+                    <div class="lane">
+                      <span class="booking-block booking-five"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

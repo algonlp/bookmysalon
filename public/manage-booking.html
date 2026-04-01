@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Manage appointment</title>
+    <meta
+      name="description"
+      content="Reschedule or cancel a confirmed salon appointment."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="booking-page">
+      <main class="booking-shell manage-booking-shell">
+        <section class="booking-hero manage-booking-hero">
+          <p class="booking-eyebrow">Manage booking</p>
+          <h1 id="manage-booking-title">Update your appointment</h1>
+          <p id="manage-booking-copy">
+            Review your booking details, reschedule to a new time, or cancel the appointment.
+          </p>
+        </section>
+
+        <section class="booking-card manage-booking-card">
+          <div class="booking-summary-card">
+            <p class="booking-summary-eyebrow">Appointment details</p>
+            <strong id="manage-booking-summary-title">Loading appointment...</strong>
+            <p id="manage-booking-summary-copy">Please wait while we load your appointment.</p>
+          </div>
+
+          <div class="manage-booking-status" id="manage-booking-status"></div>
+
+          <form class="booking-form manage-booking-form" id="manage-booking-form">
+            <div class="booking-field-row">
+              <label class="booking-field">
+                <span>New date</span>
+                <input id="manage-booking-date" type="date" required />
+                <small>Choose the new day for your appointment.</small>
+              </label>
+
+              <label class="booking-field">
+                <span>New time</span>
+                <select id="manage-booking-time" required>
+                  <option value="">Select a time</option>
+                </select>
+                <small>Only currently available times are shown.</small>
+              </label>
+            </div>
+
+            <div class="manage-booking-actions">
+              <button class="continue-button booking-submit" id="manage-booking-reschedule" type="submit">
+                Reschedule appointment
+              </button>
+              <button class="manage-booking-cancel" id="manage-booking-cancel" type="button">
+                Cancel appointment
+              </button>
+            </div>
+          </form>
+
+          <div class="booking-success is-hidden" id="manage-booking-success">
+            <strong>Appointment updated</strong>
+            <p id="manage-booking-success-copy"></p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

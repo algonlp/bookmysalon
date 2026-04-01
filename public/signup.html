@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Fresha for professionals</title>
+    <meta
+      name="description"
+      content="Create an account or log in to manage your business."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="pro-signup-page">
+      <div class="pro-signup-shell">
+        <section class="pro-signup-panel">
+          <div class="login-topbar">
+            <a class="back-link" href="/for-businesses" aria-label="Go back">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M15 5l-7 7 7 7"></path>
+              </svg>
+            </a>
+          </div>
+
+          <div class="pro-signup-content">
+            <h1>Fresha for professionals</h1>
+            <p>Create an account or log in to manage your business.</p>
+
+            <form class="pro-signup-form" id="pro-signup-form" action="/onboarding/business-name">
+              <div class="pro-signup-form-intro">
+                <strong>Start your professional workspace</strong>
+                <span>Use your email or mobile number to create an account, then continue setup for your salon or studio.</span>
+              </div>
+
+              <label class="signup-input-wrap">
+                <input
+                  id="professional-email"
+                  name="email"
+                  type="email"
+                  placeholder="Enter your email address"
+                />
+              </label>
+
+              <div class="signup-input-divider">
+                <span>or</span>
+              </div>
+
+              <label class="signup-input-wrap">
+                <input
+                  id="professional-mobile"
+                  name="mobileNumber"
+                  type="tel"
+                  inputmode="tel"
+                  placeholder="Enter your mobile number"
+                />
+              </label>
+
+              <button class="continue-button" type="submit">
+                <span>Continue</span>
+                <span class="continue-button-arrow" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M5 12h14"></path>
+                    <path d="M13 6l6 6-6 6"></path>
+                  </svg>
+                </span>
+              </button>
+            </form>
+
+            <span class="divider-copy">OR</span>
+
+            <div class="social-stack">
+              <button class="social-button" type="button" data-auth-provider="facebook">
+                <span class="social-icon facebook">f</span>
+                <span>Continue with Facebook</span>
+              </button>
+              <button class="social-button" type="button" data-auth-provider="google">
+                <span class="social-icon google">G</span>
+                <span>Continue with Google</span>
+              </button>
+              <button class="social-button" type="button" data-auth-provider="apple">
+                <span class="social-icon apple">a</span>
+                <span>Continue with Apple</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="pro-signup-footer">
+            <p>Are you a customer looking to book an appointment?</p>
+          </div>
+        </section>
+
+        <section class="pro-signup-visual" aria-hidden="true">
+          <img
+            class="pro-signup-photo"
+            src="/signup-photo.jpeg"
+            alt=""
+          />
+          <div class="pro-signup-photo-overlay">
+            <span>Built for ambitious professionals</span>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>
