@@ -3266,6 +3266,18 @@ textarea:focus-visible {
   color: #4439bf;
 }
 
+.calendar-round-button.is-active {
+  border-color: rgba(31, 51, 93, 0.12);
+  background: linear-gradient(180deg, #284172, #1f335d);
+  box-shadow: 0 14px 24px rgba(31, 51, 93, 0.18);
+  color: #ffffff;
+}
+
+.calendar-round-button.is-active:hover,
+.calendar-round-button.is-active:focus-visible {
+  color: #ffffff;
+}
+
 .calendar-notification-badge {
   position: absolute;
   top: -4px;
@@ -3337,7 +3349,9 @@ textarea:focus-visible {
 }
 
 .calendar-date-chip {
+  gap: 10px;
   min-width: 188px;
+  cursor: pointer;
 }
 
 .calendar-view-chip {
@@ -3346,6 +3360,8 @@ textarea:focus-visible {
 
 .calendar-chip:hover,
 .calendar-chip:focus-visible,
+.calendar-date-chip:hover,
+.calendar-date-chip:focus-visible,
 .calendar-view-chip:hover,
 .calendar-view-chip:focus-visible {
   transform: translateY(-2px);
@@ -3353,6 +3369,37 @@ textarea:focus-visible {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 238, 255, 0.84));
   box-shadow: 0 14px 24px rgba(108, 76, 245, 0.1);
   color: #4439bf;
+}
+
+.calendar-date-chip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-date-chip-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.calendar-date-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .calendar-add-button {
@@ -4787,6 +4834,15 @@ textarea:focus-visible {
 .calendar-notification-item p {
   margin-top: 6px;
   color: #655f59;
+}
+
+.calendar-notification-item .calendar-tool-inline-actions {
+  margin-top: 10px;
+}
+
+.calendar-notification-read-action {
+  min-height: 38px;
+  padding: 0 14px;
 }
 
 .calendar-client-detail-card {

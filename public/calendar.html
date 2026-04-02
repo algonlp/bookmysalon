@@ -128,7 +128,13 @@
             <button class="calendar-round-button" id="calendar-prev-day-action" type="button" aria-label="Previous day">
               <svg viewBox="0 0 24 24" focusable="false"><path d="M14.5 6l-6 6 6 6"></path></svg>
             </button>
-            <div class="calendar-date-chip" id="calendar-date-label">Today</div>
+            <button class="calendar-date-chip" id="calendar-date-label" type="button" aria-label="Select date">
+              <span class="calendar-date-chip-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path></svg>
+              </span>
+              <span id="calendar-date-label-text">Today</span>
+            </button>
+            <input class="calendar-date-input" id="calendar-date-input" type="date" aria-hidden="true" tabindex="-1" />
             <button class="calendar-round-button" id="calendar-next-day-action" type="button" aria-label="Next day">
               <svg viewBox="0 0 24 24" focusable="false"><path d="M9.5 6l6 6-6 6"></path></svg>
             </button>
@@ -359,7 +365,7 @@
                 <small>appointments on this date</small>
               </article>
               <article class="calendar-overview-card">
-                <span>Live bookings</span>
+                <span>Coming appointment</span>
                 <strong id="calendar-overview-booked-count">0</strong>
                 <small>currently active appointments</small>
               </article>

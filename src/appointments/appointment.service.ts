@@ -69,6 +69,22 @@ const getBusinessOrThrow = async (businessId: string) => {
   return business;
 };
 
+const getBusinessDisplayName = (
+  business: Awaited<ReturnType<typeof getBusinessOrThrow>>
+): string => {
+  const businessName =
+    typeof business.businessName === 'string' ? business.businessName.trim() : '';
+
+  if (businessName) {
+    return businessName;
+  }
+
+  const emailLabel =
+    typeof business.email === 'string' ? business.email.split('@')[0]?.trim() ?? '' : '';
+
+  return emailLabel || business.id;
+};
+
 const getActiveTeamMembersForBusiness = (
   business: Awaited<ReturnType<typeof getBusinessOrThrow>>
 ): AppointmentTeamMemberOption[] =>
@@ -1002,7 +1018,7 @@ export const appointmentService = {
 
     return {
       businessId: business.id,
-      businessName: business.businessName || 'fresha',
+      businessName: getBusinessDisplayName(business),
       serviceTypes: business.serviceTypes,
       services,
       teamMembers,
@@ -1347,7 +1363,7 @@ export const appointmentService = {
     const appointment: AppointmentRecord = {
       id: randomUUID(),
       businessId,
-      businessName: business.businessName || 'fresha',
+      businessName: getBusinessDisplayName(business),
       publicAccessToken: randomUUID(),
       serviceId: selectedService.id,
       categoryName: selectedService.categoryName,

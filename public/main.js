@@ -1,6 +1,7 @@
 const CLIENT_STORAGE_KEY = 'qr-platform-client-id';
 const NOTIFICATION_READ_STORAGE_KEY = 'qr-platform-read-notifications';
 const REPORTS_WORKSPACE_STORAGE_KEY = 'qr-platform-reports-workspace';
+const DASHBOARD_NOTIFICATION_REFRESH_INTERVAL_MS = 30000;
 const DEFAULT_CALENDAR_TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
 const DEFAULT_BUSINESS_SETTINGS = {
   currencyCode: 'PKR',
@@ -2055,6 +2056,8 @@ const initCalendar = () => {
   const staffAvatar = document.querySelector('#calendar-staff-avatar');
   const staffName = document.querySelector('#calendar-staff-name');
   const dateLabel = document.querySelector('#calendar-date-label');
+  const dateLabelText = document.querySelector('#calendar-date-label-text');
+  const dateInput = document.querySelector('#calendar-date-input');
   const nowBadge = document.querySelector('#calendar-now-badge');
   const addButton = document.querySelector('#calendar-add-button');
   const addMenu = document.querySelector('#calendar-add-menu');
@@ -2151,7 +2154,9 @@ const initCalendar = () => {
     !(userAvatar instanceof HTMLDivElement) ||
     !(staffAvatar instanceof HTMLDivElement) ||
     !(staffName instanceof HTMLElement) ||
-    !(dateLabel instanceof HTMLDivElement) ||
+    !(dateLabel instanceof HTMLButtonElement) ||
+    !(dateLabelText instanceof HTMLElement) ||
+    !(dateInput instanceof HTMLInputElement) ||
     !(nowBadge instanceof HTMLSpanElement) ||
     !(reportsToggle instanceof HTMLButtonElement) ||
     !(reportsView instanceof HTMLElement) ||
@@ -2187,6 +2192,7 @@ const initCalendar = () => {
   let reportsWorkspace = getReportsWorkspaceState(getClientId());
   let activeReportsMenu = 'all reports';
   let activeReportsTab = 'all reports';
+  let isNotificationRefreshInFlight = false;
   let activeReportsFilters = {
     createdBy: 'all',
     category: 'all'
@@ -2208,6 +2214,19 @@ const initCalendar = () => {
 
     toolModal.classList.add('is-hidden');
     toolModal.setAttribute('aria-hidden', 'true');
+  };
+
+  const setFilterBarVisibility = (isVisible) => {
+    if (!(filterBar instanceof HTMLElement)) {
+      return;
+    }
+
+    filterBar.classList.toggle('is-hidden', !isVisible);
+
+    if (filtersAction instanceof HTMLButtonElement) {
+      filtersAction.classList.toggle('is-active', isVisible);
+      filtersAction.setAttribute('aria-pressed', isVisible ? 'true' : 'false');
+    }
   };
 
   const openToolModal = ({ eyebrow = 'Calendar tool', title, description, actions = [] }) => {
@@ -5911,7 +5930,9 @@ const initCalendar = () => {
   };
 
   const updateCalendarDateLabel = () => {
-    dateLabel.textContent = formatDateForDisplay(getSelectedDateValue());
+    const selectedDateValue = getSelectedDateValue();
+    dateLabelText.textContent = formatDateForDisplay(selectedDateValue);
+    dateInput.value = selectedDateValue;
   };
 
   const updateViewToggleLabel = () => {
@@ -5966,6 +5987,24 @@ const initCalendar = () => {
     return getNotificationAppointments().filter((appointment) => !readNotificationIds.has(appointment.id));
   };
 
+  const syncReadNotificationIds = () => {
+    const clientId = getClientId();
+
+    if (!clientId) {
+      return;
+    }
+
+    const activeNotificationIds = new Set(
+      getNotificationAppointments().map((appointment) => appointment.id)
+    );
+    const readNotificationIds = getReadNotificationIds(clientId);
+    const nextReadNotificationIds = [...readNotificationIds].filter((id) =>
+      activeNotificationIds.has(id)
+    );
+
+    setReadNotificationIds(clientId, nextReadNotificationIds);
+  };
+
   const markNotificationsAsRead = (appointments = getNotificationAppointments()) => {
     const clientId = getClientId();
 
@@ -5979,12 +6018,15 @@ const initCalendar = () => {
       readNotificationIds.add(appointment.id);
     }
 
-    const activeNotificationIds = new Set(getNotificationAppointments().map((appointment) => appointment.id));
+    const activeNotificationIds = new Set(
+      getNotificationAppointments().map((appointment) => appointment.id)
+    );
     const nextReadNotificationIds = [...readNotificationIds].filter((id) =>
       activeNotificationIds.has(id)
     );
 
     setReadNotificationIds(clientId, nextReadNotificationIds);
+    updateNotificationsUi();
   };
 
   const updateNotificationsUi = () => {
@@ -5992,6 +6034,7 @@ const initCalendar = () => {
       return;
     }
 
+    syncReadNotificationIds();
     const count = getUnreadNotificationAppointments().length;
     notificationsAction.setAttribute(
       'aria-label',
@@ -6051,26 +6094,32 @@ const initCalendar = () => {
       appointment.appointmentTime
     )} - ${formatBookingSourceLabel(appointment.source)}`;
 
-    item.append(title, meta);
+    const actions = document.createElement('div');
+    actions.className = 'calendar-tool-inline-actions';
+
+    const markReadButton = createToolActionButton('Mark as read', () => {
+      markNotificationsAsRead([appointment]);
+      openNotificationsModal();
+    });
+    markReadButton.classList.add('calendar-notification-read-action');
+
+    actions.append(markReadButton);
+    item.append(title, meta, actions);
     return item;
   };
 
-  const openNotificationsModal = () => {
-    const unreadAppointments = getUnreadNotificationAppointments();
-    const previewItems = unreadAppointments
-      .slice(0, 5)
-      .map((appointment) => createNotificationItem(appointment));
+  const openNotificationsModal = (
+    appointments = getUnreadNotificationAppointments(),
+    options = {}
+  ) => {
+    const notificationAppointments = Array.isArray(appointments) ? appointments : [];
+    const previewItems = notificationAppointments.map((appointment) =>
+      createNotificationItem(appointment)
+    );
     const actions = [];
 
     if (previewItems.length > 0) {
       actions.push(...previewItems);
-      actions.push(
-        createToolActionButton('Read all', () => {
-          markNotificationsAsRead(unreadAppointments);
-          updateNotificationsUi();
-          openNotificationsModal();
-        })
-      );
     }
 
     actions.push(
@@ -6083,13 +6132,58 @@ const initCalendar = () => {
 
     openToolModal({
       eyebrow: 'Notifications',
-      title: 'Appointment updates',
+      title: options.title ?? 'Appointment updates',
       description:
-        unreadAppointments.length > 0
-          ? `You have ${unreadAppointments.length} unread appointment notification${unreadAppointments.length === 1 ? '' : 's'}. Latest bookings are shown below.`
-          : 'No unread appointment notifications.',
+        options.description ??
+        (notificationAppointments.length > 0
+          ? `You have ${notificationAppointments.length} unread appointment notification${notificationAppointments.length === 1 ? '' : 's'}. Mark each booking as read after reviewing it.`
+          : 'No unread appointment notifications.'),
       actions
     });
+  };
+
+  const refreshDashboardNotifications = async () => {
+    if (isNotificationRefreshInFlight) {
+      return;
+    }
+
+    isNotificationRefreshInFlight = true;
+
+    try {
+      const previousUnreadIds = new Set(
+        getUnreadNotificationAppointments().map((appointment) => appointment.id)
+      );
+
+      await loadDashboard();
+
+      const newUnreadAppointments = getUnreadNotificationAppointments().filter(
+        (appointment) => !previousUnreadIds.has(appointment.id)
+      );
+
+      if (
+        newUnreadAppointments.length === 0 ||
+        document.visibilityState !== 'visible' ||
+        !(toolModal instanceof HTMLDivElement) ||
+        !toolModal.classList.contains('is-hidden')
+      ) {
+        return;
+      }
+
+      openNotificationsModal(newUnreadAppointments, {
+        title:
+          newUnreadAppointments.length === 1
+            ? 'New appointment booking'
+            : 'New appointment bookings',
+        description:
+          newUnreadAppointments.length === 1
+            ? 'A new appointment has been booked. Review it below and mark it as read when done.'
+            : `${newUnreadAppointments.length} new appointments have been booked. Review them below and mark each one as read when done.`
+      });
+    } catch (_error) {
+      // Ignore polling failures so the dashboard stays usable.
+    } finally {
+      isNotificationRefreshInFlight = false;
+    }
   };
 
   const getFilteredAppointments = () => {
@@ -6666,9 +6760,7 @@ const initCalendar = () => {
         setMainView('calendar');
         setActiveDrawer('');
         appointmentFilter = 'all';
-        if (filterBar instanceof HTMLElement) {
-          filterBar.classList.remove('is-hidden');
-        }
+        setFilterBarVisibility(true);
         syncAppointmentsUi();
         appointmentsList?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
@@ -6940,6 +7032,29 @@ const initCalendar = () => {
     });
   }
 
+  dateLabel.addEventListener('click', () => {
+    setMainView('calendar');
+    dateInput.value = getSelectedDateValue();
+
+    if (typeof dateInput.showPicker === 'function') {
+      dateInput.showPicker();
+      return;
+    }
+
+    dateInput.focus();
+    dateInput.click();
+  });
+
+  dateInput.addEventListener('change', () => {
+    if (!dateInput.value) {
+      return;
+    }
+
+    selectedDate = new Date(`${dateInput.value}T00:00:00`);
+    setMainView('calendar');
+    syncAppointmentsUi();
+  });
+
   if (teamShortcut instanceof HTMLButtonElement && hasTeamDrawer) {
     teamShortcut.addEventListener('click', () => {
       closeAddMenu();
@@ -6958,13 +7073,14 @@ const initCalendar = () => {
   if (filtersAction instanceof HTMLButtonElement && filterBar instanceof HTMLElement) {
     filtersAction.addEventListener('click', () => {
       setMainView('calendar');
-      filterBar.classList.toggle('is-hidden');
+      setFilterBarVisibility(filterBar.classList.contains('is-hidden'));
     });
   }
 
   if (filterAll instanceof HTMLButtonElement) {
     filterAll.addEventListener('click', () => {
       appointmentFilter = 'all';
+      setFilterBarVisibility(true);
       syncAppointmentsUi();
     });
   }
@@ -6972,6 +7088,7 @@ const initCalendar = () => {
   if (filterBooked instanceof HTMLButtonElement) {
     filterBooked.addEventListener('click', () => {
       appointmentFilter = 'booked';
+      setFilterBarVisibility(true);
       syncAppointmentsUi();
     });
   }
@@ -6979,6 +7096,7 @@ const initCalendar = () => {
   if (filterQr instanceof HTMLButtonElement) {
     filterQr.addEventListener('click', () => {
       appointmentFilter = 'qr';
+      setFilterBarVisibility(true);
       syncAppointmentsUi();
     });
   }
@@ -7050,9 +7168,7 @@ const initCalendar = () => {
       setMainView('calendar');
       selectedDate = new Date();
       appointmentFilter = 'all';
-      if (filterBar instanceof HTMLElement) {
-        filterBar.classList.add('is-hidden');
-      }
+      setFilterBarVisibility(false);
       syncAppointmentsUi();
     });
   }
@@ -7243,6 +7359,8 @@ const initCalendar = () => {
     return;
   }
 
+  setFilterBarVisibility(false);
+
   loadDashboard()
     .catch((error) => {
       safeAlert(error instanceof Error ? error.message : 'Unable to load dashboard');
@@ -7257,6 +7375,16 @@ const initCalendar = () => {
       }
     });
   }
+
+  window.setInterval(() => {
+    refreshDashboardNotifications();
+  }, DASHBOARD_NOTIFICATION_REFRESH_INTERVAL_MS);
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      refreshDashboardNotifications();
+    }
+  });
 
   if (qrClose instanceof HTMLButtonElement) {
     qrClose.addEventListener('click', () => {
@@ -7296,6 +7424,7 @@ const initCalendar = () => {
 const initPublicBooking = () => {
   const bookingForm = document.querySelector('#public-booking-form');
   const businessName = document.querySelector('#booking-business-name');
+  const businessCopy = document.querySelector('#booking-business-copy');
   const serviceTypes = document.querySelector('#booking-service-types');
   const teamMemberField = document.querySelector('#booking-team-member-field');
   const teamMemberSelect = document.querySelector('#booking-team-member-select');
@@ -7335,10 +7464,12 @@ const initPublicBooking = () => {
   let lastAutofilledEmail = '';
   let activeWaitlistOffer = null;
   let savedWaitlistSignature = '';
+  let currentBusinessName = '';
 
   if (
     !(bookingForm instanceof HTMLFormElement) ||
     !(businessName instanceof HTMLElement) ||
+    !(businessCopy instanceof HTMLParagraphElement) ||
     !(serviceTypes instanceof HTMLElement) ||
     !(teamMemberField instanceof HTMLElement) ||
     !(teamMemberSelect instanceof HTMLSelectElement) ||
@@ -7595,10 +7726,7 @@ const initPublicBooking = () => {
     const selectedBenefit = getSelectedBenefit();
     const serviceLabel = selectedService?.name || '';
     const teamMemberLabel = selectedTeamMember?.name || '';
-    const salonLabel =
-      businessName instanceof HTMLElement
-        ? businessName.textContent.replace(/^Book an appointment at\s+/i, '').trim()
-        : '';
+    const salonLabel = currentBusinessName;
     const formattedDateTime = formatDateTimeForDisplay(dateInput.value, timeSelect.value);
 
     if (!serviceLabel && !formattedDateTime) {
@@ -7736,7 +7864,15 @@ const initPublicBooking = () => {
     }`
   )
     .then(async (payload) => {
-      businessName.textContent = `Book an appointment at ${payload.businessName}`;
+      currentBusinessName =
+        typeof payload.businessName === 'string' ? payload.businessName.trim() : '';
+      businessName.textContent = currentBusinessName || 'Book your appointment';
+      businessCopy.textContent = currentBusinessName
+        ? `Choose your service, pick a time, and book directly with ${currentBusinessName}.`
+        : 'Choose your service, pick a time, and get confirmation by SMS.';
+      document.title = currentBusinessName
+        ? `${currentBusinessName} | Book appointment`
+        : 'QR schedule.com | Book appointment';
       serviceTypes.textContent =
         payload.serviceTypes.length > 0 ? payload.serviceTypes.join(' | ') : 'Salon services';
       populateTeamMembers(payload.teamMembers);
