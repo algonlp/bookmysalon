@@ -1,7 +1,10 @@
 import type { CookieOptions, Request, Response } from 'express';
 import { env } from '../config/env';
 
-const secureCookies = env.APP_ENV === 'prod';
+const secureCookies =
+  env.APP_ENV === 'prod' && typeof env.PUBLIC_BASE_URL === 'string'
+    ? env.PUBLIC_BASE_URL.startsWith('https://')
+    : false;
 
 export const getRequestOrigin = (req: Request): string => {
   if (env.PUBLIC_BASE_URL) {
