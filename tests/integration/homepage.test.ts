@@ -1,6 +1,18 @@
 import request from 'supertest';
 import { app } from '../../src/app';
 
+const createAdminSession = async (): Promise<{ clientId: string; adminCookie: string[] }> => {
+  const response = await request(app).post('/api/platform/clients').send({
+    email: 'homepage-admin@example.com',
+    provider: 'email'
+  });
+
+  return {
+    clientId: response.body.client.id as string,
+    adminCookie: response.headers['set-cookie'] ?? []
+  };
+};
+
 describe('GET /', () => {
   it('serves the single landing page', async () => {
     const response = await request(app).get('/');
@@ -78,7 +90,10 @@ describe('GET /', () => {
   });
 
   it('serves the onboarding business name page', async () => {
-    const response = await request(app).get('/onboarding/business-name');
+    const { clientId, adminCookie } = await createAdminSession();
+    const response = await request(app)
+      .get(`/onboarding/business-name?clientId=${clientId}`)
+      .set('Cookie', adminCookie);
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
@@ -89,7 +104,10 @@ describe('GET /', () => {
   });
 
   it('serves the legendary learner guide page', async () => {
-    const response = await request(app).get('/guides/legendary-learner');
+    const { clientId, adminCookie } = await createAdminSession();
+    const response = await request(app)
+      .get(`/guides/legendary-learner?clientId=${clientId}`)
+      .set('Cookie', adminCookie);
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
@@ -100,7 +118,10 @@ describe('GET /', () => {
   });
 
   it('serves the onboarding service types page', async () => {
-    const response = await request(app).get('/onboarding/service-types');
+    const { clientId, adminCookie } = await createAdminSession();
+    const response = await request(app)
+      .get(`/onboarding/service-types?clientId=${clientId}`)
+      .set('Cookie', adminCookie);
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
@@ -112,7 +133,10 @@ describe('GET /', () => {
   });
 
   it('serves the onboarding account type page', async () => {
-    const response = await request(app).get('/onboarding/account-type');
+    const { clientId, adminCookie } = await createAdminSession();
+    const response = await request(app)
+      .get(`/onboarding/account-type?clientId=${clientId}`)
+      .set('Cookie', adminCookie);
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
@@ -122,7 +146,10 @@ describe('GET /', () => {
   });
 
   it('serves the onboarding service location page', async () => {
-    const response = await request(app).get('/onboarding/service-location');
+    const { clientId, adminCookie } = await createAdminSession();
+    const response = await request(app)
+      .get(`/onboarding/service-location?clientId=${clientId}`)
+      .set('Cookie', adminCookie);
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
@@ -135,7 +162,10 @@ describe('GET /', () => {
   });
 
   it('serves the onboarding venue location page', async () => {
-    const response = await request(app).get('/onboarding/venue-location');
+    const { clientId, adminCookie } = await createAdminSession();
+    const response = await request(app)
+      .get(`/onboarding/venue-location?clientId=${clientId}`)
+      .set('Cookie', adminCookie);
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
@@ -147,7 +177,10 @@ describe('GET /', () => {
   });
 
   it('serves the onboarding launch links page', async () => {
-    const response = await request(app).get('/onboarding/launch-links');
+    const { clientId, adminCookie } = await createAdminSession();
+    const response = await request(app)
+      .get(`/onboarding/launch-links?clientId=${clientId}`)
+      .set('Cookie', adminCookie);
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
@@ -162,7 +195,10 @@ describe('GET /', () => {
   });
 
   it('serves the onboarding complete page', async () => {
-    const response = await request(app).get('/onboarding/complete');
+    const { clientId, adminCookie } = await createAdminSession();
+    const response = await request(app)
+      .get(`/onboarding/complete?clientId=${clientId}`)
+      .set('Cookie', adminCookie);
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
@@ -172,7 +208,10 @@ describe('GET /', () => {
   });
 
   it('serves the onboarding language page', async () => {
-    const response = await request(app).get('/onboarding/language');
+    const { clientId, adminCookie } = await createAdminSession();
+    const response = await request(app)
+      .get(`/onboarding/language?clientId=${clientId}`)
+      .set('Cookie', adminCookie);
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
@@ -183,7 +222,10 @@ describe('GET /', () => {
   });
 
   it('serves the calendar dashboard page', async () => {
-    const response = await request(app).get('/calendar');
+    const { clientId, adminCookie } = await createAdminSession();
+    const response = await request(app)
+      .get(`/calendar?clientId=${clientId}`)
+      .set('Cookie', adminCookie);
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
@@ -194,6 +236,13 @@ describe('GET /', () => {
     expect(response.text).toContain('--:--');
     expect(response.text).toContain('Book appointment');
     expect(response.text).toContain('Show QR code');
+  });
+
+  it('redirects protected admin pages to signup without a valid session', async () => {
+    const response = await request(app).get('/calendar');
+
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe('/signup');
   });
 
   it('serves the public booking page', async () => {

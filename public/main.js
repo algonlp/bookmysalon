@@ -328,6 +328,7 @@ const requireClientId = () => {
 
 const apiRequest = async (path, options = {}) => {
   const response = await fetch(path, {
+    credentials: 'include',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -919,6 +920,22 @@ const createToolInfoCard = (title, description) => {
   return card;
 };
 
+const createMetricPill = (label, value) => {
+  const pill = document.createElement('article');
+  pill.className = 'calendar-client-directory-metric';
+
+  const heading = document.createElement('span');
+  heading.className = 'calendar-client-directory-metric-label';
+  heading.textContent = label;
+
+  const copy = document.createElement('strong');
+  copy.className = 'calendar-client-directory-metric-value';
+  copy.textContent = value;
+
+  pill.append(heading, copy);
+  return pill;
+};
+
 const createSearchResultButton = ({ title, description, metaLabel, onSelect }) => {
   const button = document.createElement('button');
   button.type = 'button';
@@ -1065,6 +1082,73 @@ const createClientDetailCard = (client, options = {}) => {
   for (const [label, value] of metricRows) {
     const row = document.createElement('div');
     row.className = 'calendar-client-detail-row';
+
+    const rowLabel = document.createElement('span');
+    rowLabel.textContent = label;
+
+    const rowValue = document.createElement('strong');
+    rowValue.textContent = value;
+
+    row.append(rowLabel, rowValue);
+    metrics.append(row);
+  }
+
+  card.append(header, metrics);
+  return card;
+};
+
+const createClientDirectoryCard = (client, loyaltyProgram = null) => {
+  const loyaltyStatus = getClientLoyaltyStatus(client, loyaltyProgram);
+  const card = document.createElement('article');
+  card.className = 'calendar-client-directory-card';
+
+  const header = document.createElement('div');
+  header.className = 'calendar-client-directory-card-header';
+
+  const identity = document.createElement('div');
+  identity.className = 'calendar-client-directory-card-identity';
+
+  const name = document.createElement('strong');
+  name.textContent = client.customerName || 'Client';
+
+  const contact = document.createElement('p');
+  contact.textContent = formatClientContactLabel(client);
+
+  identity.append(name, contact);
+
+  const badges = document.createElement('div');
+  badges.className = 'calendar-client-directory-card-badges';
+
+  for (const badgeConfig of loyaltyStatus.badges) {
+    const badge = document.createElement('span');
+    badge.className = `calendar-client-detail-badge is-${badgeConfig.tone}`;
+    badge.textContent = badgeConfig.label;
+    badges.append(badge);
+  }
+
+  header.append(identity);
+  if (badges.childElementCount > 0) {
+    header.append(badges);
+  }
+
+  const metrics = document.createElement('div');
+  metrics.className = 'calendar-client-directory-card-metrics';
+
+  const metricRows = [
+    ['Visits', String(client.visits ?? 0)],
+    ['Completed', String(client.completedVisits ?? 0)],
+    ['Booked', String(client.bookedVisits ?? 0)],
+    ['Last service', client.lastService || 'No service yet'],
+    [
+      'Last booking',
+      client.lastDate ? formatDateTimeForDisplay(client.lastDate, client.lastTime) : 'No appointment yet'
+    ],
+    ['Reward progress', loyaltyStatus.progressLabel]
+  ];
+
+  for (const [label, value] of metricRows) {
+    const row = document.createElement('div');
+    row.className = 'calendar-client-directory-card-row';
 
     const rowLabel = document.createElement('span');
     rowLabel.textContent = label;
@@ -1563,8 +1647,8 @@ const initSignup = () => {
         })
       });
 
-      setAdminSession(payload.client.id, payload.adminToken);
-      redirectTo('/onboarding/business-name', payload.client.id);
+      setAdminSession(payload.client.id);
+      window.location.assign(payload.nextStep || buildPathWithClientId('/onboarding/business-name', payload.client.id));
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to create dashboard');
     }
@@ -2138,6 +2222,7 @@ const initCalendar = () => {
   const qrLink = document.querySelector('#calendar-qr-link');
   const qrPrint = document.querySelector('#calendar-qr-print');
   const toolModal = document.querySelector('#calendar-tool-modal');
+  const toolDialog = document.querySelector('.calendar-tool-dialog');
   const toolClose = document.querySelector('#calendar-tool-close');
   const toolEyebrow = document.querySelector('#calendar-tool-eyebrow');
   const toolTitle = document.querySelector('#calendar-tool-title');
@@ -2214,6 +2299,10 @@ const initCalendar = () => {
 
     toolModal.classList.add('is-hidden');
     toolModal.setAttribute('aria-hidden', 'true');
+
+    if (toolDialog instanceof HTMLDivElement) {
+      toolDialog.classList.remove('calendar-tool-dialog-wide');
+    }
   };
 
   const setFilterBarVisibility = (isVisible) => {
@@ -2229,9 +2318,16 @@ const initCalendar = () => {
     }
   };
 
-  const openToolModal = ({ eyebrow = 'Calendar tool', title, description, actions = [] }) => {
+  const openToolModal = ({
+    eyebrow = 'Calendar tool',
+    title,
+    description,
+    actions = [],
+    dialogClassName = ''
+  }) => {
     if (
       !(toolModal instanceof HTMLDivElement) ||
+      !(toolDialog instanceof HTMLDivElement) ||
       !(toolEyebrow instanceof HTMLElement) ||
       !(toolTitle instanceof HTMLElement) ||
       !(toolDescription instanceof HTMLElement) ||
@@ -2245,6 +2341,7 @@ const initCalendar = () => {
     toolTitle.textContent = title;
     toolDescription.textContent = description;
     toolActions.replaceChildren(...actions);
+    toolDialog.classList.toggle('calendar-tool-dialog-wide', dialogClassName === 'wide');
     toolModal.classList.remove('is-hidden');
     toolModal.setAttribute('aria-hidden', 'false');
   };
@@ -2493,15 +2590,31 @@ const initCalendar = () => {
     return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="${stroke}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="${points}"></polyline></svg>`;
   };
 
-  const createTrendCard = (title, valueLabel, subtitle, values, tone = 'blue') => {
-    const tones = {
+const createTrendCard = (
+  title,
+  valueLabel,
+  subtitle,
+  values,
+  tone = 'blue',
+  options = {}
+) => {
+  const tones = {
       blue: '#1f335d',
       green: '#116549',
       gold: '#a85e14',
       plum: '#6f4ab5'
     };
-    const card = document.createElement('article');
-    card.className = 'calendar-reports-summary-card';
+    const hasClickHandler = typeof options.onClick === 'function';
+    const card = document.createElement(hasClickHandler ? 'button' : 'article');
+    card.className = hasClickHandler
+      ? 'calendar-reports-summary-card is-interactive'
+      : 'calendar-reports-summary-card';
+
+    if (hasClickHandler) {
+      card.type = 'button';
+      card.setAttribute('aria-label', options.ariaLabel ?? title);
+      card.addEventListener('click', options.onClick);
+    }
 
     const titleElement = document.createElement('span');
     titleElement.className = 'calendar-reports-summary-label';
@@ -3420,7 +3533,13 @@ const initCalendar = () => {
         String(clientInsights.totalClients),
         `${clientInsights.repeatClients} repeat • ${teamMembers.length} team`,
         repeatTrend,
-        'gold'
+        'gold',
+        {
+          onClick: () => {
+            openClientsListModal();
+          },
+          ariaLabel: 'Open client directory'
+        }
       )
     );
   };
@@ -3560,6 +3679,11 @@ const initCalendar = () => {
     const report = buildReportsCatalog().find((entry) => entry.id === reportId);
 
     if (!report) {
+      return;
+    }
+
+    if (report.id === 'loyalty-dashboard') {
+      openClientsListModal();
       return;
     }
 
@@ -5344,6 +5468,105 @@ const initCalendar = () => {
     const topClients = [];
     const rankedClients = sortClientsForRetention(insights.clients);
     const loyaltyProgram = getDashboardLoyaltyProgram();
+
+    const directory = document.createElement('section');
+    directory.className = 'calendar-client-directory';
+
+    const metrics = document.createElement('div');
+    metrics.className = 'calendar-client-directory-metrics';
+    metrics.append(
+      createMetricPill('Total clients', String(insights.totalClients)),
+      createMetricPill('Repeat clients', String(insights.repeatClients)),
+      createMetricPill('Loyalty-ready', String(insights.loyaltyCandidates))
+    );
+
+    const searchWrap = document.createElement('label');
+    searchWrap.className = 'calendar-client-directory-search';
+
+    const searchIcon = document.createElement('span');
+    searchIcon.className = 'calendar-client-directory-search-icon';
+    searchIcon.setAttribute('aria-hidden', 'true');
+    searchIcon.innerHTML =
+      '<svg viewBox="0 0 24 24" focusable="false"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l5 5"></path></svg>';
+
+    const searchInput = document.createElement('input');
+    searchInput.type = 'search';
+    searchInput.placeholder = 'Search client name, phone, email, or last service';
+    searchWrap.append(searchIcon, searchInput);
+
+    const helper = document.createElement('p');
+    helper.className = 'calendar-client-directory-helper';
+    helper.textContent =
+      'Review every saved client profile with live visit history, recent activity, and loyalty progress.';
+
+    const results = document.createElement('div');
+    results.className = 'calendar-client-directory-results';
+
+    const renderClientDirectory = () => {
+      const query = normalizeSearchValue(searchInput.value);
+      const filteredClients = rankedClients.filter((client) =>
+        normalizeSearchValue(
+          [
+            client.customerName,
+            client.customerPhone,
+            client.customerEmail,
+            client.lastService,
+            client.lastDate,
+            client.lastTime
+          ]
+            .filter(Boolean)
+            .join(' ')
+        ).includes(query)
+      );
+
+      results.replaceChildren();
+
+      if (filteredClients.length === 0) {
+        const emptyState = document.createElement('article');
+        emptyState.className = 'calendar-client-directory-empty';
+
+        const title = document.createElement('strong');
+        title.textContent = query ? 'No matching clients' : 'No clients recorded yet';
+
+        const copy = document.createElement('p');
+        copy.textContent = query
+          ? 'Try a different name, phone number, email, or service.'
+          : 'Client profiles will appear here automatically as bookings are created and completed.';
+
+        emptyState.append(title, copy);
+        results.append(emptyState);
+        return;
+      }
+
+      results.append(
+        ...filteredClients.map((client) => createClientDirectoryCard(client, loyaltyProgram))
+      );
+    };
+
+    searchInput.addEventListener('input', renderClientDirectory);
+
+    directory.append(metrics, searchWrap, helper, results);
+    renderClientDirectory();
+
+    openToolModal({
+      eyebrow: 'Clients',
+      title: 'Client directory',
+      description: `${insights.totalClients} client${insights.totalClients === 1 ? '' : 's'} recorded across your business.`,
+      dialogClassName: 'wide',
+      actions: [
+        directory,
+        createToolActionButton('Open appointments', () => {
+          closeToolModal();
+          setMainView('calendar');
+          setActiveDrawer('');
+          appointmentFilter = 'all';
+          syncAppointmentsUi();
+          appointmentsList?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        })
+      ]
+    });
+
+    return;
 
     openToolModal({
       eyebrow: 'Clients',

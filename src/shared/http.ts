@@ -1,10 +1,7 @@
 import type { CookieOptions, Request, Response } from 'express';
 import { env } from '../config/env';
 
-const secureCookies =
-  env.APP_ENV === 'prod' && typeof env.PUBLIC_BASE_URL === 'string'
-    ? env.PUBLIC_BASE_URL.startsWith('https://')
-    : false;
+const secureCookies = env.APP_ENV === 'prod';
 
 export const getRequestOrigin = (req: Request): string => {
   if (env.PUBLIC_BASE_URL) {
@@ -35,31 +32,24 @@ export const getCookieValue = (req: Request, cookieName: string): string | undef
   return undefined;
 };
 
-export const getAdminSessionCookiePath = (clientId: string): string =>
-  `/api/platform/clients/${encodeURIComponent(clientId)}`;
-
-export const getAdminSessionCookieOptions = (clientId: string): CookieOptions => ({
+export const getAdminSessionCookieOptions = (): CookieOptions => ({
   httpOnly: true,
   sameSite: 'lax',
   secure: secureCookies,
-  path: getAdminSessionCookiePath(clientId),
+  path: '/',
   maxAge: env.ADMIN_SESSION_TTL_DAYS * 24 * 60 * 60 * 1000
 });
 
-export const setAdminSessionCookie = (
-  res: Response,
-  clientId: string,
-  adminToken: string
-): void => {
+export const setAdminSessionCookie = (res: Response, adminToken: string): void => {
   res.cookie(
     env.PLATFORM_ADMIN_COOKIE_NAME,
     adminToken,
-    getAdminSessionCookieOptions(clientId)
+    getAdminSessionCookieOptions()
   );
 };
 
-export const clearAdminSessionCookie = (res: Response, clientId: string): void => {
-  const { maxAge: _maxAge, ...cookieOptions } = getAdminSessionCookieOptions(clientId);
+export const clearAdminSessionCookie = (res: Response): void => {
+  const { maxAge: _maxAge, ...cookieOptions } = getAdminSessionCookieOptions();
   res.clearCookie(
     env.PLATFORM_ADMIN_COOKIE_NAME,
     cookieOptions

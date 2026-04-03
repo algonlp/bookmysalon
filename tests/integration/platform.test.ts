@@ -16,6 +16,33 @@ describe('Client platform API', () => {
     await resetAppointmentRepositoryForTests();
   });
 
+  it('sets an admin session cookie for the whole app and accepts it on protected routes', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'cookie-admin@example.com',
+      provider: 'email'
+    });
+
+    expect(createResponse.status).toBe(201);
+    expect(createResponse.headers['set-cookie']).toEqual(
+      expect.arrayContaining([expect.stringContaining('Path=/')])
+    );
+
+    const clientId = createResponse.body.client.id as string;
+    const adminCookie = createResponse.headers['set-cookie'] ?? [];
+
+    const authorizedPageResponse = await request(app)
+      .get(`/calendar?clientId=${clientId}`)
+      .set('Cookie', adminCookie);
+
+    expect(authorizedPageResponse.status).toBe(200);
+
+    const authorizedApiResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}`)
+      .set('Cookie', adminCookie);
+
+    expect(authorizedApiResponse.status).toBe(200);
+  });
+
   it('creates a client, saves onboarding data, and serves a dashboard payload', async () => {
     const createResponse = await request(app).post('/api/platform/clients').send({
       email: 'owner@example.com',

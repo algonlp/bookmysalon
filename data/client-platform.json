@@ -73,183 +73,6 @@
       "updatedAt": "2026-03-27T19:47:25.233Z"
     },
     {
-      "id": "demo-luna-luxe",
-      "adminToken": "demo-admin-luna-luxe",
-      "email": "hello@lunaluxe.demo",
-      "mobileNumber": "",
-      "provider": "email",
-      "businessName": "Luna Luxe Salon",
-      "website": "www.lunaluxe.demo",
-      "profileImageUrl": "",
-      "serviceTypes": [
-        "Hair salon",
-        "Beauty salon"
-      ],
-      "services": [
-        {
-          "id": "hair-salon-cut-and-style",
-          "name": "Cut and style",
-          "durationMinutes": 60,
-          "categoryName": "Hair salon",
-          "priceLabel": "PKR 2,200",
-          "description": "Signature haircut finished with a professional blow-dry.",
-          "isActive": true
-        },
-        {
-          "id": "hair-salon-blow-dry",
-          "name": "Blow dry",
-          "durationMinutes": 45,
-          "categoryName": "Hair salon",
-          "priceLabel": "PKR 1,500",
-          "description": "Smooth blow-dry with styling tailored to the guest.",
-          "isActive": true
-        },
-        {
-          "id": "beauty-salon-facial-treatment",
-          "name": "Facial treatment",
-          "durationMinutes": 60,
-          "categoryName": "Beauty salon",
-          "priceLabel": "PKR 2,700",
-          "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
-          "isActive": true
-        }
-      ],
-      "packagePlans": [],
-      "loyaltyProgram": null,
-      "teamMembers": [
-        {
-          "id": "team-luna-1",
-          "name": "Mina",
-          "role": "Stylist",
-          "phone": "+923001110001",
-          "expertise": "Colour and blow-dry",
-          "isActive": true,
-          "createdAt": "2026-03-01T09:00:00.000Z",
-          "updatedAt": "2026-03-12T08:30:00.000Z"
-        }
-      ],
-      "accountType": "team",
-      "serviceLocation": [
-        "physical"
-      ],
-      "venueAddress": "Clifton Block 5, Schon Circle, Karachi, Sindh, Pakistan",
-      "preferredLanguage": "english",
-      "onboardingCompleted": true,
-      "createdAt": "2026-03-01T09:00:00.000Z",
-      "updatedAt": "2026-03-12T08:30:00.000Z"
-    },
-    {
-      "id": "demo-urban-trim",
-      "adminToken": "demo-admin-urban-trim",
-      "email": "hello@urbantrim.demo",
-      "mobileNumber": "",
-      "provider": "email",
-      "businessName": "Urban Trim Studio",
-      "website": "www.urbantrim.demo",
-      "profileImageUrl": "",
-      "serviceTypes": [
-        "Barber"
-      ],
-      "services": [
-        {
-          "id": "barber-haircut",
-          "name": "Haircut",
-          "durationMinutes": 45,
-          "categoryName": "Barber",
-          "priceLabel": "PKR 1,200",
-          "description": "Classic barber haircut with clipper and scissor finishing.",
-          "isActive": true
-        },
-        {
-          "id": "barber-beard-trim",
-          "name": "Beard trim",
-          "durationMinutes": 30,
-          "categoryName": "Barber",
-          "priceLabel": "PKR 800",
-          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
-          "isActive": true
-        }
-      ],
-      "packagePlans": [],
-      "loyaltyProgram": null,
-      "teamMembers": [],
-      "accountType": "independent",
-      "serviceLocation": [
-        "physical"
-      ],
-      "venueAddress": "MM Alam Road, Gulberg III, Lahore, Punjab, Pakistan",
-      "preferredLanguage": "english",
-      "onboardingCompleted": true,
-      "createdAt": "2026-03-02T10:00:00.000Z",
-      "updatedAt": "2026-03-12T08:00:00.000Z"
-    },
-    {
-      "id": "demo-serene-glow",
-      "adminToken": "demo-admin-serene-glow",
-      "email": "hello@sereneglow.demo",
-      "mobileNumber": "",
-      "provider": "email",
-      "businessName": "Serene Glow Spa",
-      "website": "www.sereneglow.demo",
-      "profileImageUrl": "",
-      "serviceTypes": [
-        "Massage",
-        "Spa & sauna"
-      ],
-      "services": [
-        {
-          "id": "massage-deep-tissue-massage",
-          "name": "Deep tissue massage",
-          "durationMinutes": 60,
-          "categoryName": "Massage",
-          "priceLabel": "PKR 3,200",
-          "description": "Targeted pressure massage designed for muscle recovery.",
-          "isActive": true
-        },
-        {
-          "id": "massage-relaxation-massage",
-          "name": "Relaxation massage",
-          "durationMinutes": 60,
-          "categoryName": "Massage",
-          "priceLabel": "PKR 2,900",
-          "description": "Full-body relaxation massage to reduce stress and tension.",
-          "isActive": true
-        },
-        {
-          "id": "spa-sauna-spa-session",
-          "name": "Spa session",
-          "durationMinutes": 60,
-          "categoryName": "Spa & sauna",
-          "priceLabel": "PKR 3,500",
-          "description": "Unwind with a restorative spa session in a calm setting.",
-          "isActive": true
-        }
-      ],
-      "packagePlans": [],
-      "loyaltyProgram": null,
-      "teamMembers": [
-        {
-          "id": "team-serene-1",
-          "name": "Hira",
-          "role": "Therapist",
-          "phone": "+923001110002",
-          "expertise": "Deep tissue massage",
-          "isActive": true,
-          "createdAt": "2026-03-03T11:00:00.000Z",
-          "updatedAt": "2026-03-12T07:30:00.000Z"
-        }
-      ],
-      "accountType": "team",
-      "serviceLocation": [
-        "physical"
-      ],
-      "venueAddress": "Blue Area, Jinnah Avenue, Islamabad, Islamabad Capital Territory, Pakistan",
-      "preferredLanguage": "english",
-      "onboardingCompleted": true,
-      "createdAt": "2026-03-03T11:00:00.000Z",
-      "updatedAt": "2026-03-12T07:30:00.000Z"
-    },
-    {
       "id": "d5e44696-dfeb-4665-ae5f-3d0100521072",
       "adminToken": "ed578d8a-1bd5-4d69-b7ea-f4aa5a8ef652",
       "email": "maqsoodparacha1479@gmail.com",
@@ -655,6 +478,131 @@
       "onboardingCompleted": true,
       "createdAt": "2026-04-01T06:22:29.192Z",
       "updatedAt": "2026-04-01T06:41:06.313Z"
+    },
+    {
+      "id": "a42b4d7e-f08e-430f-a016-88aaaa1dc552",
+      "adminToken": "0cf391c2-5321-4950-a985-01658fddaaf6",
+      "email": "maqsoodparacha1479@gmail.com",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "paracha",
+      "website": "",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        }
+      ],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [
+        {
+          "id": "phone:+923494548161",
+          "customerName": "maqsood",
+          "customerPhone": "+923494548161",
+          "customerEmail": "maqsoodparacha1479@gmail.com",
+          "totalVisits": 1,
+          "bookedVisits": 0,
+          "completedVisits": 1,
+          "cancelledVisits": 0,
+          "lastService": "Cut and style",
+          "lastAppointmentDate": "2026-04-02",
+          "lastAppointmentTime": "14:00",
+          "firstSeenAt": "2026-04-02T08:35:06.523Z",
+          "lastSeenAt": "2026-04-02T10:27:37.668Z",
+          "createdAt": "2026-04-02T08:35:06.523Z",
+          "updatedAt": "2026-04-02T10:27:37.668Z"
+        }
+      ],
+      "teamMembers": [],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "faisalabad",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-04-02T08:33:41.721Z",
+      "updatedAt": "2026-04-02T10:27:59.292Z"
+    },
+    {
+      "id": "5eaff244-38cd-407d-91b6-3f60f0e3496d",
+      "adminToken": "26f4bac7-3de9-4d4d-835d-cb7384b501aa",
+      "email": "maqsoodparacha1479@gmail.com",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "",
+      "website": "",
+      "profileImageUrl": "",
+      "serviceTypes": [],
+      "services": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": null,
+      "serviceLocation": [],
+      "venueAddress": "",
+      "preferredLanguage": null,
+      "onboardingCompleted": false,
+      "createdAt": "2026-04-03T12:15:57.079Z",
+      "updatedAt": "2026-04-03T12:15:57.079Z"
     }
   ]
 }

@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { z } from 'zod';
+import { env } from '../../config/env';
 import { HttpError } from '../../shared/errors/httpError';
 import {
   clientPlatformService,
@@ -19,6 +20,11 @@ const isValidProfileImageValue = (value: string): boolean => {
 
   return /^data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=]+$/i.test(value);
 };
+
+const shouldExposeAdminTokenForTests = (): boolean =>
+  env.APP_ENV === 'test' ||
+  process.env.NODE_ENV === 'test' ||
+  process.env.VITEST === 'true';
 
 const createClientSchema = z.object({
   email: z.string().trim().email().optional(),
@@ -140,10 +146,10 @@ const getTeamMemberId = (req: Request): string => {
 export const clientPlatformController = {
   async createClient(req: Request, res: Response, _next: NextFunction): Promise<void> {
     const client = await clientPlatformService.createClient(createClientSchema.parse(req.body));
-    setAdminSessionCookie(res, client.id, client.adminToken);
+    setAdminSessionCookie(res, client.adminToken);
     res.status(201).json({
       client: serializeClientForResponse(client),
-      adminToken: client.adminToken,
+      ...(shouldExposeAdminTokenForTests() ? { adminToken: client.adminToken } : {}),
       nextStep: `/onboarding/business-name?clientId=${client.id}`
     });
   },

@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { env } from '../config/env';
 import { HttpError } from '../shared/errors/httpError';
 import { clientPlatformRepository } from './clientPlatform.repository';
 import { appointmentService } from '../appointments/appointment.service';
@@ -477,10 +478,7 @@ const toPublicClientRecord = (client: ClientRecord): PublicClientRecord => ({
   updatedAt: client.updatedAt
 });
 
-const isTestEnvironment = (): boolean =>
-  process.env.APP_ENV === 'test' ||
-  process.env.NODE_ENV === 'test' ||
-  process.env.VITEST === 'true';
+const shouldSeedDemoSalons = (): boolean => env.APP_ENV === 'dev';
 
 const DEMO_SALONS: ClientRecord[] = [
   {
@@ -586,7 +584,7 @@ const DEMO_SALONS: ClientRecord[] = [
 ];
 
 const ensureDemoSalons = async (): Promise<void> => {
-  if (isTestEnvironment()) {
+  if (!shouldSeedDemoSalons()) {
     return;
   }
 
