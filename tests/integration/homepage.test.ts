@@ -205,6 +205,7 @@ describe('GET /', () => {
     expect(response.text).toContain('Your business is set up!');
     expect(response.text).toContain('Enjoy 7 days free of using Fresha for business');
     expect(response.text).toContain('Done');
+    expect(response.text).toContain('<script src="/main.js"></script>');
   });
 
   it('serves the onboarding language page', async () => {
