@@ -13,6 +13,8 @@ const optionalAppointmentAccessTokenSchema = appointmentAccessTokenSchema.option
 const optionalAppointmentIdSchema = z.string().uuid('Valid appointment id is required').optional();
 const optionalWaitlistEntryIdSchema = z.string().uuid('Valid waitlist entry id is required').optional();
 const optionalWaitlistOfferTokenSchema = z.string().uuid('Valid waitlist offer token is required').optional();
+const optionalTeamMemberIdSchema = z.string().trim().optional().or(z.literal(''));
+const optionalServiceNameSchema = z.string().trim().optional().or(z.literal(''));
 
 const createAppointmentSchema = z.object({
   serviceName: z.string().trim().min(1, 'Service is required'),
@@ -114,6 +116,8 @@ export const appointmentController = {
     const waitlistEntryId = optionalWaitlistEntryIdSchema.parse(req.query.waitlistEntryId);
     const waitlistOfferToken = optionalWaitlistOfferTokenSchema.parse(req.query.waitlistOfferToken);
     const appointmentAccessToken = optionalAppointmentAccessTokenSchema.parse(req.query.accessToken);
+    const teamMemberId = optionalTeamMemberIdSchema.parse(req.query.teamMemberId);
+    const serviceName = optionalServiceNameSchema.parse(req.query.serviceName);
 
     res.status(200).json(
       await appointmentService.getAvailableSlots(
@@ -122,7 +126,30 @@ export const appointmentController = {
         excludeAppointmentId,
         waitlistEntryId,
         waitlistOfferToken,
-        appointmentAccessToken
+        appointmentAccessToken,
+        teamMemberId,
+        serviceName
+      )
+    );
+  },
+
+  async getPlatformAvailableSlots(
+    req: Request,
+    res: Response,
+    _next: NextFunction
+  ): Promise<void> {
+    const appointmentDate = bookingDateSchema.parse(req.query.date);
+    const excludeAppointmentId = optionalAppointmentIdSchema.parse(req.query.excludeAppointmentId);
+    const teamMemberId = optionalTeamMemberIdSchema.parse(req.query.teamMemberId);
+    const serviceName = optionalServiceNameSchema.parse(req.query.serviceName);
+
+    res.status(200).json(
+      await appointmentService.getPlatformAvailableSlots(
+        getBusinessId(req),
+        appointmentDate,
+        excludeAppointmentId,
+        teamMemberId,
+        serviceName
       )
     );
   },

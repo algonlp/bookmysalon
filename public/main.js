@@ -51,6 +51,15 @@ const PAYMENT_METHOD_OPTIONS = [
 const PAYMENT_METHOD_LABELS = Object.fromEntries(
   PAYMENT_METHOD_OPTIONS.map((option) => [option.value, option.label])
 );
+const TEAM_MEMBER_WEEKDAY_IDS = [
+  'sunday',
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday'
+];
 
 const normalizeBookingSource = (sourceValue) => {
   if (typeof sourceValue !== 'string') {
@@ -119,6 +128,33 @@ const formatDateTimeForDisplay = (dateValue, timeValue) => {
   }
 
   return formattedDate || formattedTime;
+};
+
+const getWeekdayDisplayOptions = () => {
+  const formatter = new Intl.DateTimeFormat(undefined, { weekday: 'long' });
+  const sundayReferenceDate = new Date('2026-01-04T00:00:00');
+
+  return TEAM_MEMBER_WEEKDAY_IDS.map((weekdayId, index) => {
+    const date = new Date(sundayReferenceDate);
+    date.setDate(sundayReferenceDate.getDate() + index);
+    return {
+      value: weekdayId,
+      label: formatter.format(date)
+    };
+  });
+};
+
+const addMinutesToTimeValue = (timeValue, minutesToAdd) => {
+  if (typeof timeValue !== 'string' || !/^\d{2}:\d{2}$/.test(timeValue)) {
+    return timeValue;
+  }
+
+  const [hoursValue, minutesValue] = timeValue.split(':');
+  const totalMinutes = Number(hoursValue) * 60 + Number(minutesValue) + minutesToAdd;
+  const normalizedMinutes = ((totalMinutes % (24 * 60)) + 24 * 60) % (24 * 60);
+  const hours = Math.floor(normalizedMinutes / 60);
+  const minutes = normalizedMinutes % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 };
 
 const getAppointmentStatusMeta = (statusValue) =>
@@ -352,6 +388,25 @@ const apiRequest = async (path, options = {}) => {
   return payload;
 };
 
+let publicConfigRequest = null;
+let currentPublicConfig = null;
+
+const loadPublicConfig = async () => {
+  if (!publicConfigRequest) {
+    publicConfigRequest = apiRequest('/api/public-config')
+      .then((payload) => {
+        currentPublicConfig = payload ?? {};
+        return currentPublicConfig;
+      })
+      .catch((error) => {
+        publicConfigRequest = null;
+        throw error;
+      });
+  }
+
+  return publicConfigRequest;
+};
+
 const formatAddressSingleLine = (address) =>
   typeof address === 'string'
     ? address
@@ -364,6 +419,20 @@ const formatAddressSingleLine = (address) =>
 
 const safeAlert = (message) => {
   window.alert(message);
+};
+
+const debounce = (callback, delayMs) => {
+  let timeoutId = null;
+
+  return (...args) => {
+    if (timeoutId) {
+      window.clearTimeout(timeoutId);
+    }
+
+    timeoutId = window.setTimeout(() => {
+      callback(...args);
+    }, delayMs);
+  };
 };
 
 const setMultilineAddress = (element, address) => {
@@ -1746,11 +1815,15 @@ const initBusinessProfile = () => {
 const initServiceTypes = () => {
   const selectedSummary = document.querySelector('#selected-summary');
   const continueButton = document.querySelector('#service-types-continue');
+  const selectAllButton = document.querySelector('#service-types-select-all');
+  const clearAllButton = document.querySelector('#service-types-clear-all');
   const cards = document.querySelectorAll('[data-service-type]');
 
   if (
     !(selectedSummary instanceof HTMLDivElement) ||
     !(continueButton instanceof HTMLAnchorElement) ||
+    !(selectAllButton instanceof HTMLButtonElement) ||
+    !(clearAllButton instanceof HTMLButtonElement) ||
     cards.length === 0
   ) {
     return;
@@ -1769,6 +1842,8 @@ const initServiceTypes = () => {
       selectedSummary.classList.add('is-empty');
       continueButton.classList.add('onboarding-continue-disabled');
       continueButton.setAttribute('aria-disabled', 'true');
+      clearAllButton.disabled = true;
+      selectAllButton.disabled = false;
       return;
     }
 
@@ -1776,6 +1851,8 @@ const initServiceTypes = () => {
     selectedSummary.classList.remove('is-empty');
     continueButton.classList.remove('onboarding-continue-disabled');
     continueButton.setAttribute('aria-disabled', 'false');
+    clearAllButton.disabled = false;
+    selectAllButton.disabled = selectedServices.size === cards.length;
   };
 
   const applySelection = (serviceType, card, forceSelected = null) => {
@@ -1808,6 +1885,38 @@ const initServiceTypes = () => {
       applySelection(serviceType, card);
     });
   }
+
+  selectAllButton.addEventListener('click', () => {
+    for (const card of cards) {
+      if (!(card instanceof HTMLButtonElement)) {
+        continue;
+      }
+
+      const serviceType = card.dataset.serviceType;
+
+      if (!serviceType) {
+        continue;
+      }
+
+      applySelection(serviceType, card, true);
+    }
+  });
+
+  clearAllButton.addEventListener('click', () => {
+    for (const card of cards) {
+      if (!(card instanceof HTMLButtonElement)) {
+        continue;
+      }
+
+      const serviceType = card.dataset.serviceType;
+
+      if (!serviceType) {
+        continue;
+      }
+
+      applySelection(serviceType, card, false);
+    }
+  });
 
   continueButton.addEventListener('click', async (event) => {
     event.preventDefault();
@@ -2037,6 +2146,11 @@ const initVenueLocation = () => {
   const selectedVenueAddress = document.querySelector('#selected-venue-address');
   const venueAddressContinue = document.querySelector('#venue-address-continue');
   const venueAddressEdit = document.querySelector('#venue-address-edit');
+  const venueCurrentLocation = document.querySelector('#venue-current-location');
+  const venueLocationStatus = document.querySelector('#venue-location-status');
+  const venueSearchResults = document.querySelector('#venue-search-results');
+  const venueSearchResultsTitle = document.querySelector('#venue-search-results-title');
+  const venueSearchResultsStatus = document.querySelector('#venue-search-results-status');
   const venueMapLabel = document.querySelector('#venue-map-label');
   const venueMapTitle = document.querySelector('#venue-map-title');
   const venueMapAddress = document.querySelector('#venue-map-address');
@@ -2045,6 +2159,9 @@ const initVenueLocation = () => {
     !(venueAddressInput instanceof HTMLTextAreaElement) ||
     !(selectedVenueAddress instanceof HTMLParagraphElement) ||
     !(venueAddressContinue instanceof HTMLButtonElement) ||
+    !(venueSearchResults instanceof HTMLDivElement) ||
+    !(venueSearchResultsTitle instanceof HTMLElement) ||
+    !(venueSearchResultsStatus instanceof HTMLElement) ||
     !(venueMapLabel instanceof HTMLDivElement) ||
     !(venueMapTitle instanceof HTMLElement) ||
     !(venueMapAddress instanceof HTMLParagraphElement)
@@ -2058,6 +2175,34 @@ const initVenueLocation = () => {
   }
 
   let selectedVenue = '';
+  let activeSearchAbortController = null;
+  let latestSearchRequestId = 0;
+  let locationCountryLabel = '';
+
+  const setLocationStatus = (message) => {
+    if (venueLocationStatus instanceof HTMLParagraphElement) {
+      venueLocationStatus.textContent = message;
+    }
+  };
+
+  const setResultsStatus = (message) => {
+    venueSearchResultsStatus.textContent = message;
+  };
+
+  const clearSearchResults = () => {
+    venueSearchResults.replaceChildren();
+    venueSearchResults.classList.add('is-hidden');
+  };
+
+  const setCurrentLocationButtonLoading = (isLoading) => {
+    if (!(venueCurrentLocation instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    venueCurrentLocation.classList.toggle('is-loading', isLoading);
+    venueCurrentLocation.disabled = isLoading;
+    venueCurrentLocation.textContent = isLoading ? 'Detecting location...' : 'Use current location';
+  };
 
   const updateContinue = () => {
     const disabled = selectedVenue.trim().length < 3;
@@ -2085,14 +2230,198 @@ const initVenueLocation = () => {
     updateContinue();
   };
 
+  const applyLocationConfig = (config) => {
+    locationCountryLabel = config.locationSearchCountryLabel?.trim() ?? '';
+    venueSearchResultsTitle.textContent = locationCountryLabel
+      ? `Location suggestions in ${locationCountryLabel}`
+      : 'Location suggestions';
+    venueAddressInput.placeholder = locationCountryLabel
+      ? `Example: Shop number, street, area, city, province, ${locationCountryLabel}`
+      : 'Example: Shop number, street, area, city, province, country';
+  };
+
+  const applySuggestedVenue = (nextVenue) => {
+    venueAddressInput.value = nextVenue;
+    syncVenuePreview(nextVenue);
+    clearSearchResults();
+    setResultsStatus(
+      locationCountryLabel
+        ? `Suggestion selected. You can keep editing to search more places in ${locationCountryLabel}.`
+        : 'Suggestion selected. You can keep editing to search more places.'
+    );
+  };
+
+  const renderSearchResults = (suggestions) => {
+    venueSearchResults.replaceChildren();
+
+    if (!Array.isArray(suggestions) || suggestions.length === 0) {
+      clearSearchResults();
+      setResultsStatus(
+        locationCountryLabel
+          ? `No matching locations found in ${locationCountryLabel}.`
+          : 'No matching locations found.'
+      );
+      return;
+    }
+
+    suggestions.forEach((suggestion) => {
+      const resultButton = document.createElement('button');
+      resultButton.type = 'button';
+      resultButton.className = 'venue-search-result';
+      resultButton.innerHTML = `
+        <strong>${escapeHtml(suggestion.primaryLabel || suggestion.label || 'Location')}</strong>
+        <span>${escapeHtml(suggestion.secondaryLabel || suggestion.label || '')}</span>
+      `;
+      resultButton.addEventListener('click', () => {
+        applySuggestedVenue(suggestion.label || '');
+        venueAddressInput.focus();
+      });
+      venueSearchResults.append(resultButton);
+    });
+
+    venueSearchResults.classList.remove('is-hidden');
+    setResultsStatus(
+      locationCountryLabel
+        ? `Choose a matching place in ${locationCountryLabel}, or keep typing to refine the search.`
+        : 'Choose a matching place, or keep typing to refine the search.'
+    );
+  };
+
+  const searchLocations = async (query) => {
+    const trimmedQuery = query.trim();
+
+    if (trimmedQuery.length < 2) {
+      clearSearchResults();
+      setResultsStatus(
+        locationCountryLabel
+          ? `Start typing to search locations in ${locationCountryLabel}.`
+          : 'Start typing to search for matching locations.'
+      );
+      return;
+    }
+
+    if (activeSearchAbortController instanceof AbortController) {
+      activeSearchAbortController.abort();
+    }
+
+    latestSearchRequestId += 1;
+    const requestId = latestSearchRequestId;
+    activeSearchAbortController = new AbortController();
+
+    setResultsStatus(
+      locationCountryLabel
+        ? `Searching locations in ${locationCountryLabel}...`
+        : 'Searching locations...'
+    );
+
+    try {
+      const payload = await apiRequest(
+        `/api/public/locations/search?q=${encodeURIComponent(trimmedQuery)}`,
+        { signal: activeSearchAbortController.signal }
+      );
+
+      if (requestId !== latestSearchRequestId) {
+        return;
+      }
+
+      if (payload?.countryLabel) {
+        locationCountryLabel = payload.countryLabel.trim();
+        venueSearchResultsTitle.textContent = locationCountryLabel
+          ? `Location suggestions in ${locationCountryLabel}`
+          : 'Location suggestions';
+      }
+
+      renderSearchResults(payload?.suggestions ?? []);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+
+      clearSearchResults();
+      setResultsStatus(error instanceof Error ? error.message : 'Unable to search locations');
+    }
+  };
+
+  const debouncedSearchLocations = debounce((query) => {
+    void searchLocations(query);
+  }, 280);
+
+  const detectCurrentLocation = async () => {
+    if (!(venueCurrentLocation instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      setLocationStatus('Location access is not available in this browser. Enter the address manually.');
+      return;
+    }
+
+    setCurrentLocationButtonLoading(true);
+    setLocationStatus('Requesting your current location...');
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const params = new URLSearchParams({
+            latitude: String(position.coords.latitude),
+            longitude: String(position.coords.longitude)
+          });
+          const payload = await apiRequest(`/api/public/locations/reverse?${params.toString()}`);
+          const detectedLocation = payload?.location?.label?.trim() ?? '';
+
+          if (!detectedLocation) {
+            setLocationStatus('Location detected, but no address could be resolved. You can enter it manually.');
+            return;
+          }
+
+          applySuggestedVenue(detectedLocation);
+          setLocationStatus('Current location detected. You can edit the address if you need changes.');
+        } catch (error) {
+          setLocationStatus(
+            error instanceof Error
+              ? error.message
+              : 'Unable to detect the current location right now.'
+          );
+        } finally {
+          setCurrentLocationButtonLoading(false);
+        }
+      },
+      (error) => {
+        const errorMessage =
+          error.code === error.PERMISSION_DENIED
+            ? 'Location permission was denied. You can still enter the address manually.'
+            : error.code === error.POSITION_UNAVAILABLE
+              ? 'Current location is unavailable right now. Try again or enter the address manually.'
+              : error.code === error.TIMEOUT
+                ? 'Location detection timed out. Try again or enter the address manually.'
+                : 'Unable to access your current location right now.';
+
+        setLocationStatus(errorMessage);
+        setCurrentLocationButtonLoading(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 300000
+      }
+    );
+  };
+
   venueAddressInput.addEventListener('input', () => {
     syncVenuePreview(venueAddressInput.value);
+    debouncedSearchLocations(venueAddressInput.value);
   });
 
   if (venueAddressEdit instanceof HTMLButtonElement) {
     venueAddressEdit.addEventListener('click', () => {
       venueAddressInput.focus();
       venueAddressInput.select();
+    });
+  }
+
+  if (venueCurrentLocation instanceof HTMLButtonElement) {
+    venueCurrentLocation.addEventListener('click', () => {
+      void detectCurrentLocation();
     });
   }
 
@@ -2113,6 +2442,19 @@ const initVenueLocation = () => {
     }
   });
 
+  loadPublicConfig()
+    .then((config) => {
+      applyLocationConfig(config ?? {});
+      setResultsStatus(
+        locationCountryLabel
+          ? `Start typing to search locations in ${locationCountryLabel}.`
+          : 'Start typing to search for matching locations.'
+      );
+    })
+    .catch(() => {
+      setResultsStatus('Start typing to search for matching locations.');
+    });
+
   apiRequest(`/api/platform/clients/${clientId}`)
     .then((payload) => {
       const savedVenue = payload.client.venueAddress;
@@ -2120,10 +2462,15 @@ const initVenueLocation = () => {
       if (savedVenue) {
         venueAddressInput.value = savedVenue;
         syncVenuePreview(savedVenue);
+        setLocationStatus('Saved location loaded. You can edit it or use your current location.');
         return;
       }
 
       syncVenuePreview('');
+      setLocationStatus('Allow location access to detect your current venue and edit it if needed.');
+      window.setTimeout(() => {
+        void detectCurrentLocation();
+      }, 300);
     })
     .catch((error) => {
       safeAlert(error instanceof Error ? error.message : 'Unable to load venue location');
@@ -2131,6 +2478,8 @@ const initVenueLocation = () => {
 };
 
 const initCalendar = () => {
+  void loadPublicConfig().catch(() => {});
+
   const calendarMain = document.querySelector('.calendar-main');
   const calendarToolbar = document.querySelector('.calendar-toolbar');
   const brand = document.querySelector('#calendar-brand');
@@ -2401,6 +2750,16 @@ const initCalendar = () => {
     return Array.isArray(services) ? services : [];
   };
 
+  const getDashboardProducts = () => {
+    const products = dashboardPayload?.client?.products;
+    return Array.isArray(products) ? products : [];
+  };
+
+  const getDashboardProductSales = () => {
+    const productSales = dashboardPayload?.client?.productSales;
+    return Array.isArray(productSales) ? productSales : [];
+  };
+
   const getDashboardPackagePlans = () => {
     const packagePlans = dashboardPayload?.client?.packagePlans;
     return Array.isArray(packagePlans) ? packagePlans : [];
@@ -2420,7 +2779,11 @@ const initCalendar = () => {
         packagesSold: 0,
         activePackageBalances: 0,
         availableLoyaltyRewards: 0,
-        loyaltyProgramEnabled: false
+        loyaltyProgramEnabled: false,
+        activeProducts: 0,
+        productsSold: 0,
+        productUnitsSold: 0,
+        lowStockProducts: 0
       };
     }
 
@@ -2465,11 +2828,513 @@ const initCalendar = () => {
     return Array.isArray(customerProfiles) ? customerProfiles : [];
   };
 
-  const getBusinessRoleLabel = () => {
+  const formatRoleLabelDisplay = (value) =>
+    String(value)
+      .split(' ')
+      .filter(Boolean)
+      .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
+      .join(' ');
+
+  const getServiceUiCopy = () => ({
+    singular:
+      typeof currentPublicConfig?.serviceLabelSingular === 'string'
+        ? currentPublicConfig.serviceLabelSingular.trim()
+        : '',
+    plural:
+      typeof currentPublicConfig?.serviceLabelPlural === 'string'
+        ? currentPublicConfig.serviceLabelPlural.trim()
+        : '',
+    menuTitle:
+      typeof currentPublicConfig?.serviceMenuTitle === 'string'
+        ? currentPublicConfig.serviceMenuTitle.trim()
+        : '',
+    menuDescription:
+      typeof currentPublicConfig?.serviceMenuDescription === 'string'
+        ? currentPublicConfig.serviceMenuDescription.trim()
+        : '',
+    coverageLabel:
+      typeof currentPublicConfig?.serviceCoverageLabel === 'string'
+        ? currentPublicConfig.serviceCoverageLabel.trim()
+        : '',
+    emptyTitle:
+      typeof currentPublicConfig?.serviceEmptyTitle === 'string'
+        ? currentPublicConfig.serviceEmptyTitle.trim()
+        : '',
+    emptyDescription:
+      typeof currentPublicConfig?.serviceEmptyDescription === 'string'
+        ? currentPublicConfig.serviceEmptyDescription.trim()
+        : '',
+    actionAdd:
+      typeof currentPublicConfig?.serviceActionAdd === 'string'
+        ? currentPublicConfig.serviceActionAdd.trim()
+        : '',
+    actionEdit:
+      typeof currentPublicConfig?.serviceActionEdit === 'string'
+        ? currentPublicConfig.serviceActionEdit.trim()
+        : '',
+    actionRemove:
+      typeof currentPublicConfig?.serviceActionRemove === 'string'
+        ? currentPublicConfig.serviceActionRemove.trim()
+        : '',
+    actionSave:
+      typeof currentPublicConfig?.serviceActionSave === 'string'
+        ? currentPublicConfig.serviceActionSave.trim()
+        : '',
+    actionUpdate:
+      typeof currentPublicConfig?.serviceActionUpdate === 'string'
+        ? currentPublicConfig.serviceActionUpdate.trim()
+        : '',
+    actionOpenBooking:
+      typeof currentPublicConfig?.serviceActionOpenBooking === 'string'
+        ? currentPublicConfig.serviceActionOpenBooking.trim()
+        : '',
+    actionStayInCatalog:
+      typeof currentPublicConfig?.serviceActionStayInCatalog === 'string'
+        ? currentPublicConfig.serviceActionStayInCatalog.trim()
+        : '',
+    fieldName:
+      typeof currentPublicConfig?.serviceFieldNameLabel === 'string'
+        ? currentPublicConfig.serviceFieldNameLabel.trim()
+        : '',
+    fieldCategory:
+      typeof currentPublicConfig?.serviceFieldCategoryLabel === 'string'
+        ? currentPublicConfig.serviceFieldCategoryLabel.trim()
+        : '',
+    fieldDuration:
+      typeof currentPublicConfig?.serviceFieldDurationLabel === 'string'
+        ? currentPublicConfig.serviceFieldDurationLabel.trim()
+        : '',
+    fieldPrice:
+      typeof currentPublicConfig?.serviceFieldPriceLabel === 'string'
+        ? currentPublicConfig.serviceFieldPriceLabel.trim()
+        : '',
+    fieldDescription:
+      typeof currentPublicConfig?.serviceFieldDescriptionLabel === 'string'
+        ? currentPublicConfig.serviceFieldDescriptionLabel.trim()
+        : '',
+    formAddDescription:
+      typeof currentPublicConfig?.serviceFormAddDescription === 'string'
+        ? currentPublicConfig.serviceFormAddDescription.trim()
+        : '',
+    formEditDescription:
+      typeof currentPublicConfig?.serviceFormEditDescription === 'string'
+        ? currentPublicConfig.serviceFormEditDescription.trim()
+        : '',
+    validationRequired:
+      typeof currentPublicConfig?.serviceValidationRequired === 'string'
+        ? currentPublicConfig.serviceValidationRequired.trim()
+        : '',
+    validationDuration:
+      typeof currentPublicConfig?.serviceValidationDuration === 'string'
+        ? currentPublicConfig.serviceValidationDuration.trim()
+        : '',
+    errorAdd:
+      typeof currentPublicConfig?.serviceErrorAdd === 'string'
+        ? currentPublicConfig.serviceErrorAdd.trim()
+        : '',
+    errorUpdate:
+      typeof currentPublicConfig?.serviceErrorUpdate === 'string'
+        ? currentPublicConfig.serviceErrorUpdate.trim()
+        : '',
+    errorRemove:
+      typeof currentPublicConfig?.serviceErrorRemove === 'string'
+        ? currentPublicConfig.serviceErrorRemove.trim()
+        : ''
+  });
+
+  const getPackageUiCopy = () => ({
+    singular:
+      typeof currentPublicConfig?.packageLabelSingular === 'string'
+        ? currentPublicConfig.packageLabelSingular.trim()
+        : '',
+    plural:
+      typeof currentPublicConfig?.packageLabelPlural === 'string'
+        ? currentPublicConfig.packageLabelPlural.trim()
+        : '',
+    menuTitle:
+      typeof currentPublicConfig?.packageMenuTitle === 'string'
+        ? currentPublicConfig.packageMenuTitle.trim()
+        : '',
+    menuDescription:
+      typeof currentPublicConfig?.packageMenuDescription === 'string'
+        ? currentPublicConfig.packageMenuDescription.trim()
+        : '',
+    emptyTitle:
+      typeof currentPublicConfig?.packageEmptyTitle === 'string'
+        ? currentPublicConfig.packageEmptyTitle.trim()
+        : '',
+    emptyDescription:
+      typeof currentPublicConfig?.packageEmptyDescription === 'string'
+        ? currentPublicConfig.packageEmptyDescription.trim()
+        : '',
+    actionAdd:
+      typeof currentPublicConfig?.packageActionAdd === 'string'
+        ? currentPublicConfig.packageActionAdd.trim()
+        : '',
+    actionEdit:
+      typeof currentPublicConfig?.packageActionEdit === 'string'
+        ? currentPublicConfig.packageActionEdit.trim()
+        : '',
+    actionRemove:
+      typeof currentPublicConfig?.packageActionRemove === 'string'
+        ? currentPublicConfig.packageActionRemove.trim()
+        : '',
+    actionSave:
+      typeof currentPublicConfig?.packageActionSave === 'string'
+        ? currentPublicConfig.packageActionSave.trim()
+        : '',
+    actionUpdate:
+      typeof currentPublicConfig?.packageActionUpdate === 'string'
+        ? currentPublicConfig.packageActionUpdate.trim()
+        : '',
+    actionSell:
+      typeof currentPublicConfig?.packageActionSell === 'string'
+        ? currentPublicConfig.packageActionSell.trim()
+        : '',
+    actionOpenReports:
+      typeof currentPublicConfig?.packageActionOpenReports === 'string'
+        ? currentPublicConfig.packageActionOpenReports.trim()
+        : '',
+    actionOpenCatalog:
+      typeof currentPublicConfig?.packageActionOpenCatalog === 'string'
+        ? currentPublicConfig.packageActionOpenCatalog.trim()
+        : '',
+    fieldName:
+      typeof currentPublicConfig?.packageFieldNameLabel === 'string'
+        ? currentPublicConfig.packageFieldNameLabel.trim()
+        : '',
+    fieldTotalUses:
+      typeof currentPublicConfig?.packageFieldTotalUsesLabel === 'string'
+        ? currentPublicConfig.packageFieldTotalUsesLabel.trim()
+        : '',
+    fieldPrice:
+      typeof currentPublicConfig?.packageFieldPriceLabel === 'string'
+        ? currentPublicConfig.packageFieldPriceLabel.trim()
+        : '',
+    fieldIncludedServices:
+      typeof currentPublicConfig?.packageFieldIncludedServicesLabel === 'string'
+        ? currentPublicConfig.packageFieldIncludedServicesLabel.trim()
+        : '',
+    formAddDescription:
+      typeof currentPublicConfig?.packageFormAddDescription === 'string'
+        ? currentPublicConfig.packageFormAddDescription.trim()
+        : '',
+    formEditDescription:
+      typeof currentPublicConfig?.packageFormEditDescription === 'string'
+        ? currentPublicConfig.packageFormEditDescription.trim()
+        : '',
+    validationRequired:
+      typeof currentPublicConfig?.packageValidationRequired === 'string'
+        ? currentPublicConfig.packageValidationRequired.trim()
+        : '',
+    errorAdd:
+      typeof currentPublicConfig?.packageErrorAdd === 'string'
+        ? currentPublicConfig.packageErrorAdd.trim()
+        : '',
+    errorUpdate:
+      typeof currentPublicConfig?.packageErrorUpdate === 'string'
+        ? currentPublicConfig.packageErrorUpdate.trim()
+        : '',
+    errorRemove:
+      typeof currentPublicConfig?.packageErrorRemove === 'string'
+        ? currentPublicConfig.packageErrorRemove.trim()
+        : '',
+    soldLabel:
+      typeof currentPublicConfig?.packageSoldLabel === 'string'
+        ? currentPublicConfig.packageSoldLabel.trim()
+        : '',
+    activeBalancesLabel:
+      typeof currentPublicConfig?.packageActiveBalancesLabel === 'string'
+        ? currentPublicConfig.packageActiveBalancesLabel.trim()
+        : '',
+    publishedLabel:
+      typeof currentPublicConfig?.packagePublishedLabel === 'string'
+        ? currentPublicConfig.packagePublishedLabel.trim()
+        : ''
+  });
+
+  const getProductUiCopy = () => ({
+    singular:
+      typeof currentPublicConfig?.productLabelSingular === 'string'
+        ? currentPublicConfig.productLabelSingular.trim()
+        : '',
+    plural:
+      typeof currentPublicConfig?.productLabelPlural === 'string'
+        ? currentPublicConfig.productLabelPlural.trim()
+        : '',
+    menuTitle:
+      typeof currentPublicConfig?.productMenuTitle === 'string'
+        ? currentPublicConfig.productMenuTitle.trim()
+        : '',
+    menuDescription:
+      typeof currentPublicConfig?.productMenuDescription === 'string'
+        ? currentPublicConfig.productMenuDescription.trim()
+        : '',
+    emptyTitle:
+      typeof currentPublicConfig?.productEmptyTitle === 'string'
+        ? currentPublicConfig.productEmptyTitle.trim()
+        : '',
+    emptyDescription:
+      typeof currentPublicConfig?.productEmptyDescription === 'string'
+        ? currentPublicConfig.productEmptyDescription.trim()
+        : '',
+    actionAdd:
+      typeof currentPublicConfig?.productActionAdd === 'string'
+        ? currentPublicConfig.productActionAdd.trim()
+        : '',
+    actionEdit:
+      typeof currentPublicConfig?.productActionEdit === 'string'
+        ? currentPublicConfig.productActionEdit.trim()
+        : '',
+    actionRemove:
+      typeof currentPublicConfig?.productActionRemove === 'string'
+        ? currentPublicConfig.productActionRemove.trim()
+        : '',
+    actionSave:
+      typeof currentPublicConfig?.productActionSave === 'string'
+        ? currentPublicConfig.productActionSave.trim()
+        : '',
+    actionUpdate:
+      typeof currentPublicConfig?.productActionUpdate === 'string'
+        ? currentPublicConfig.productActionUpdate.trim()
+        : '',
+    actionSell:
+      typeof currentPublicConfig?.productActionSell === 'string'
+        ? currentPublicConfig.productActionSell.trim()
+        : '',
+    actionViewRecords:
+      typeof currentPublicConfig?.productActionViewRecords === 'string'
+        ? currentPublicConfig.productActionViewRecords.trim()
+        : '',
+    actionOpenReports:
+      typeof currentPublicConfig?.productActionOpenReports === 'string'
+        ? currentPublicConfig.productActionOpenReports.trim()
+        : '',
+    fieldName:
+      typeof currentPublicConfig?.productFieldNameLabel === 'string'
+        ? currentPublicConfig.productFieldNameLabel.trim()
+        : '',
+    fieldCategory:
+      typeof currentPublicConfig?.productFieldCategoryLabel === 'string'
+        ? currentPublicConfig.productFieldCategoryLabel.trim()
+        : '',
+    fieldSku:
+      typeof currentPublicConfig?.productFieldSkuLabel === 'string'
+        ? currentPublicConfig.productFieldSkuLabel.trim()
+        : '',
+    fieldPrice:
+      typeof currentPublicConfig?.productFieldPriceLabel === 'string'
+        ? currentPublicConfig.productFieldPriceLabel.trim()
+        : '',
+    fieldStock:
+      typeof currentPublicConfig?.productFieldStockLabel === 'string'
+        ? currentPublicConfig.productFieldStockLabel.trim()
+        : '',
+    fieldDescription:
+      typeof currentPublicConfig?.productFieldDescriptionLabel === 'string'
+        ? currentPublicConfig.productFieldDescriptionLabel.trim()
+        : '',
+    fieldQuantity:
+      typeof currentPublicConfig?.productFieldQuantityLabel === 'string'
+        ? currentPublicConfig.productFieldQuantityLabel.trim()
+        : '',
+    fieldCustomerName:
+      typeof currentPublicConfig?.productFieldCustomerNameLabel === 'string'
+        ? currentPublicConfig.productFieldCustomerNameLabel.trim()
+        : '',
+    fieldCustomerPhone:
+      typeof currentPublicConfig?.productFieldCustomerPhoneLabel === 'string'
+        ? currentPublicConfig.productFieldCustomerPhoneLabel.trim()
+        : '',
+    fieldCustomerEmail:
+      typeof currentPublicConfig?.productFieldCustomerEmailLabel === 'string'
+        ? currentPublicConfig.productFieldCustomerEmailLabel.trim()
+        : '',
+    formAddDescription:
+      typeof currentPublicConfig?.productFormAddDescription === 'string'
+        ? currentPublicConfig.productFormAddDescription.trim()
+        : '',
+    formEditDescription:
+      typeof currentPublicConfig?.productFormEditDescription === 'string'
+        ? currentPublicConfig.productFormEditDescription.trim()
+        : '',
+    salesDescription:
+      typeof currentPublicConfig?.productSalesDescription === 'string'
+        ? currentPublicConfig.productSalesDescription.trim()
+        : '',
+    validationRequired:
+      typeof currentPublicConfig?.productValidationRequired === 'string'
+        ? currentPublicConfig.productValidationRequired.trim()
+        : '',
+    validationStock:
+      typeof currentPublicConfig?.productValidationStock === 'string'
+        ? currentPublicConfig.productValidationStock.trim()
+        : '',
+    errorAdd:
+      typeof currentPublicConfig?.productErrorAdd === 'string'
+        ? currentPublicConfig.productErrorAdd.trim()
+        : '',
+    errorUpdate:
+      typeof currentPublicConfig?.productErrorUpdate === 'string'
+        ? currentPublicConfig.productErrorUpdate.trim()
+        : '',
+    errorRemove:
+      typeof currentPublicConfig?.productErrorRemove === 'string'
+        ? currentPublicConfig.productErrorRemove.trim()
+        : '',
+    errorSell:
+      typeof currentPublicConfig?.productErrorSell === 'string'
+        ? currentPublicConfig.productErrorSell.trim()
+        : '',
+    metricActive:
+      typeof currentPublicConfig?.productMetricActiveLabel === 'string'
+        ? currentPublicConfig.productMetricActiveLabel.trim()
+        : '',
+    metricStock:
+      typeof currentPublicConfig?.productMetricStockLabel === 'string'
+        ? currentPublicConfig.productMetricStockLabel.trim()
+        : '',
+    metricSold:
+      typeof currentPublicConfig?.productMetricSoldLabel === 'string'
+        ? currentPublicConfig.productMetricSoldLabel.trim()
+        : '',
+    metricLowStock:
+      typeof currentPublicConfig?.productMetricLowStockLabel === 'string'
+        ? currentPublicConfig.productMetricLowStockLabel.trim()
+        : ''
+  });
+
+  const getTeamMemberScheduleUiCopy = () => ({
+    openingTimeLabel:
+      typeof currentPublicConfig?.teamMemberFieldOpeningTimeLabel === 'string'
+        ? currentPublicConfig.teamMemberFieldOpeningTimeLabel.trim()
+        : '',
+    closingTimeLabel:
+      typeof currentPublicConfig?.teamMemberFieldClosingTimeLabel === 'string'
+        ? currentPublicConfig.teamMemberFieldClosingTimeLabel.trim()
+        : '',
+    offDaysLabel:
+      typeof currentPublicConfig?.teamMemberFieldOffDaysLabel === 'string'
+        ? currentPublicConfig.teamMemberFieldOffDaysLabel.trim()
+        : '',
+    offDaysEmpty:
+      typeof currentPublicConfig?.teamMemberFieldOffDaysEmpty === 'string'
+        ? currentPublicConfig.teamMemberFieldOffDaysEmpty.trim()
+        : ''
+  });
+
+  const getProfileUiCopy = () => ({
+    titleSuffix:
+      typeof currentPublicConfig?.profileTitleSuffix === 'string'
+        ? currentPublicConfig.profileTitleSuffix.trim()
+        : '',
+    description:
+      typeof currentPublicConfig?.profileDescription === 'string'
+        ? currentPublicConfig.profileDescription.trim()
+        : '',
+    fieldBusinessNameLabel:
+      typeof currentPublicConfig?.profileFieldBusinessNameLabel === 'string'
+        ? currentPublicConfig.profileFieldBusinessNameLabel.trim()
+        : '',
+    fieldBusinessNamePlaceholder:
+      typeof currentPublicConfig?.profileFieldBusinessNamePlaceholder === 'string'
+        ? currentPublicConfig.profileFieldBusinessNamePlaceholder.trim()
+        : '',
+    fieldWebsiteLabel:
+      typeof currentPublicConfig?.profileFieldWebsiteLabel === 'string'
+        ? currentPublicConfig.profileFieldWebsiteLabel.trim()
+        : '',
+    fieldWebsitePlaceholder:
+      typeof currentPublicConfig?.profileFieldWebsitePlaceholder === 'string'
+        ? currentPublicConfig.profileFieldWebsitePlaceholder.trim()
+        : '',
+    fieldAddressLabel:
+      typeof currentPublicConfig?.profileFieldAddressLabel === 'string'
+        ? currentPublicConfig.profileFieldAddressLabel.trim()
+        : '',
+    fieldAddressPlaceholder:
+      typeof currentPublicConfig?.profileFieldAddressPlaceholder === 'string'
+        ? currentPublicConfig.profileFieldAddressPlaceholder.trim()
+        : '',
+    fieldImageLabel:
+      typeof currentPublicConfig?.profileFieldImageLabel === 'string'
+        ? currentPublicConfig.profileFieldImageLabel.trim()
+        : '',
+    fieldImagePlaceholder:
+      typeof currentPublicConfig?.profileFieldImagePlaceholder === 'string'
+        ? currentPublicConfig.profileFieldImagePlaceholder.trim()
+        : '',
+    actionUploadImage:
+      typeof currentPublicConfig?.profileActionUploadImage === 'string'
+        ? currentPublicConfig.profileActionUploadImage.trim()
+        : '',
+    actionRemoveImage:
+      typeof currentPublicConfig?.profileActionRemoveImage === 'string'
+        ? currentPublicConfig.profileActionRemoveImage.trim()
+        : '',
+    actionSave:
+      typeof currentPublicConfig?.profileActionSave === 'string'
+        ? currentPublicConfig.profileActionSave.trim()
+        : '',
+    validationRequired:
+      typeof currentPublicConfig?.profileValidationRequired === 'string'
+        ? currentPublicConfig.profileValidationRequired.trim()
+        : '',
+    errorUpdate:
+      typeof currentPublicConfig?.profileErrorUpdate === 'string'
+        ? currentPublicConfig.profileErrorUpdate.trim()
+        : ''
+  });
+
+  const getBusinessRoleLabels = () => {
+    const configuredSingular =
+      typeof currentPublicConfig?.teamMemberLabelSingular === 'string'
+        ? currentPublicConfig.teamMemberLabelSingular.trim().toLowerCase()
+        : '';
+    const configuredPlural =
+      typeof currentPublicConfig?.teamMemberLabelPlural === 'string'
+        ? currentPublicConfig.teamMemberLabelPlural.trim().toLowerCase()
+        : '';
+
+    if (configuredSingular) {
+      return {
+        singular: configuredSingular,
+        plural: configuredPlural || `${configuredSingular}s`
+      };
+    }
+
+    const configuredRoleOptions = Array.isArray(currentPublicConfig?.teamMemberRoleOptions)
+      ? currentPublicConfig.teamMemberRoleOptions
+      : [];
+    const firstConfiguredRole = configuredRoleOptions.find(
+      (entry) => typeof entry === 'string' && entry.trim()
+    );
+
+    if (typeof firstConfiguredRole === 'string' && firstConfiguredRole.trim()) {
+      const normalizedRole = firstConfiguredRole.trim().toLowerCase();
+      return {
+        singular: normalizedRole,
+        plural: `${normalizedRole}s`
+      };
+    }
+
     const serviceTypes = Array.isArray(dashboardPayload?.client?.serviceTypes)
       ? dashboardPayload.client.serviceTypes
       : [];
-    return serviceTypes.includes('Barber') ? 'barber' : 'staff member';
+
+    if (serviceTypes.includes('Barber')) {
+      return { singular: 'barber', plural: 'barbers' };
+    }
+
+    return { singular: 'team member', plural: 'team members' };
+  };
+
+  const getBusinessRoleLabel = () => {
+    return getBusinessRoleLabels().singular;
+  };
+
+  const getBusinessRoleLabelPlural = () => {
+    return getBusinessRoleLabels().plural;
   };
 
   const getReportRangeDays = () => {
@@ -2737,8 +3602,17 @@ const createTrendCard = (
 
   const getCatalogInsights = () => {
     const services = getDashboardServices();
+    const products = getDashboardProducts();
     const activeServices = services.filter((service) => service.isActive !== false);
     const inactiveServices = services.filter((service) => service.isActive === false);
+    const activeProducts = products.filter((product) => product.isActive !== false);
+    const totalProductStock = activeProducts.reduce(
+      (sum, product) => sum + Math.max(0, Number(product.stockQuantity) || 0),
+      0
+    );
+    const lowStockProducts = activeProducts.filter(
+      (product) => Math.max(0, Number(product.stockQuantity) || 0) <= 3
+    );
     const categories = new Set(
       activeServices
         .map((service) => service.categoryName?.trim())
@@ -2754,9 +3628,14 @@ const createTrendCard = (
       totalServices: services.length,
       activeServices: activeServices.length,
       inactiveServices: inactiveServices.length,
+      totalProducts: products.length,
+      activeProducts: activeProducts.length,
+      totalProductStock,
+      lowStockProducts: lowStockProducts.length,
       categoryCount: categories.size,
       averagePrice,
-      featuredServices: activeServices.slice(0, 3)
+      featuredServices: activeServices.slice(0, 3),
+      featuredProducts: activeProducts.slice(0, 3)
     };
   };
 
@@ -3829,6 +4708,8 @@ const createTrendCard = (
 
     const catalogDrawer = dashboardPayload?.dashboard?.sideDrawers?.catalog;
     const commerce = getDashboardCommerce();
+    const productUiCopy = getProductUiCopy();
+    const productLabelSingular = productUiCopy.singular || 'product';
 
     if (!catalogDrawer) {
       return;
@@ -3862,7 +4743,10 @@ const createTrendCard = (
           if (label === 'products') {
             return {
               ...item,
-              subtitle: `${formatCurrencyLabel(insights.averagePrice)} average service ticket reference`
+              subtitle:
+                commerce.activeProducts > 0
+                  ? `${commerce.activeProducts} active ${productLabelSingular}${commerce.activeProducts === 1 ? '' : 's'} | ${commerce.productUnitsSold} sold`
+                  : `0 active products | ${insights.totalProductStock} in stock`
             };
           }
 
@@ -3995,6 +4879,11 @@ const createTrendCard = (
         createToolActionButton('Open sales reports', () => {
           closeToolModal();
           activateReportsTab('Sales');
+        }),
+        ...serviceCards,
+        createToolActionButton('Add service', () => {
+          closeToolModal();
+          openServiceFormModal({ mode: 'add' });
         }),
         createToolActionButton('Open booking page', () => {
           closeToolModal();
@@ -4382,6 +5271,36 @@ const createTrendCard = (
     await loadDashboard();
   };
 
+  const updatePackagePlan = async (packagePlanId, { name, totalUses, priceLabel, includedServiceIds }) => {
+    if (!clientId) {
+      return;
+    }
+
+    await apiRequest(`/api/platform/clients/${clientId}/packages/${encodeURIComponent(packagePlanId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        name: name.trim(),
+        totalUses,
+        priceLabel: priceLabel.trim(),
+        includedServiceIds
+      })
+    });
+
+    await loadDashboard();
+  };
+
+  const removePackagePlan = async (packagePlanId) => {
+    if (!clientId) {
+      return;
+    }
+
+    await apiRequest(`/api/platform/clients/${clientId}/packages/${encodeURIComponent(packagePlanId)}`, {
+      method: 'DELETE'
+    });
+
+    await loadDashboard();
+  };
+
   const saveLoyaltyProgram = async ({ isEnabled, triggerCompletedVisits, rewardValue, includedServiceIds }) => {
     if (!clientId) {
       return;
@@ -4418,7 +5337,89 @@ const createTrendCard = (
     await loadDashboard();
   };
 
-  const openCreatePackagePlanModal = () => {
+  const createProduct = async ({ name, categoryName, sku, priceLabel, stockQuantity, description }) => {
+    if (!clientId) {
+      return;
+    }
+
+    await apiRequest(`/api/platform/clients/${clientId}/products`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: name.trim(),
+        categoryName: categoryName.trim(),
+        sku: sku.trim(),
+        priceLabel: priceLabel.trim(),
+        stockQuantity: Math.max(0, Math.round(stockQuantity)),
+        description: description.trim()
+      })
+    });
+
+    await loadDashboard();
+  };
+
+  const updateProduct = async (
+    productId,
+    { name, categoryName, sku, priceLabel, stockQuantity, description }
+  ) => {
+    if (!clientId) {
+      return;
+    }
+
+    await apiRequest(`/api/platform/clients/${clientId}/products/${encodeURIComponent(productId)}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        name: name.trim(),
+        categoryName: categoryName.trim(),
+        sku: sku.trim(),
+        priceLabel: priceLabel.trim(),
+        stockQuantity: Math.max(0, Math.round(stockQuantity)),
+        description: description.trim()
+      })
+    });
+
+    await loadDashboard();
+  };
+
+  const removeProduct = async (productId) => {
+    if (!clientId) {
+      return;
+    }
+
+    await apiRequest(`/api/platform/clients/${clientId}/products/${encodeURIComponent(productId)}`, {
+      method: 'DELETE'
+    });
+
+    await loadDashboard();
+  };
+
+  const createProductSale = async ({ productId, quantity, customerName, customerPhone, customerEmail }) => {
+    if (!clientId) {
+      return;
+    }
+
+    await apiRequest(`/api/platform/clients/${clientId}/product-sales`, {
+      method: 'POST',
+      body: JSON.stringify({
+        productId,
+        quantity: Math.max(1, Math.round(quantity)),
+        customerName: customerName.trim(),
+        customerPhone: customerPhone.trim(),
+        customerEmail: customerEmail.trim()
+      })
+    });
+
+    await loadDashboard();
+  };
+
+  const openPackagePlanFormModal = ({ mode = 'add', packagePlan = null } = {}) => {
+    const packageUiCopy = getPackageUiCopy();
+    const packageLabelSingular = packageUiCopy.singular || 'package';
+    const packageLabelPlural = packageUiCopy.plural || `${packageLabelSingular}s`;
+    const packageLabelDisplay = formatRoleLabelDisplay(packageLabelSingular);
+    const saveActionLabel = packageUiCopy.actionSave || `Save ${packageLabelSingular}`;
+    const updateActionLabel = packageUiCopy.actionUpdate || `Update ${packageLabelSingular}`;
+    const addActionLabel = packageUiCopy.actionAdd || `Add ${packageLabelSingular}`;
+    const editActionLabel = packageUiCopy.actionEdit || 'Edit';
     const services = getDashboardServices();
     const form = document.createElement('form');
     form.className = 'calendar-tool-form';
@@ -4426,37 +5427,39 @@ const createTrendCard = (
     const nameField = document.createElement('label');
     nameField.className = 'calendar-tool-field';
     const nameLabel = document.createElement('span');
-    nameLabel.textContent = 'Package name';
+    nameLabel.textContent = packageUiCopy.fieldName || `${packageLabelDisplay} name`;
     const nameInput = document.createElement('input');
     nameInput.type = 'text';
-    nameInput.placeholder = 'e.g. 5 Haircuts';
+    nameInput.placeholder = `Enter ${packageLabelSingular} name`;
+    nameInput.value = packagePlan?.name ?? '';
     nameInput.required = true;
     nameField.append(nameLabel, nameInput);
 
     const usesField = document.createElement('label');
     usesField.className = 'calendar-tool-field';
     const usesLabel = document.createElement('span');
-    usesLabel.textContent = 'Total uses';
+    usesLabel.textContent = packageUiCopy.fieldTotalUses || 'Total uses';
     const usesInput = document.createElement('input');
     usesInput.type = 'number';
     usesInput.min = '1';
     usesInput.max = '100';
-    usesInput.value = '5';
+    usesInput.value = String(packagePlan?.totalUses ?? 5);
     usesInput.required = true;
     usesField.append(usesLabel, usesInput);
 
     const priceField = document.createElement('label');
     priceField.className = 'calendar-tool-field';
     const priceLabel = document.createElement('span');
-    priceLabel.textContent = 'Package price';
+    priceLabel.textContent = packageUiCopy.fieldPrice || `${packageLabelDisplay} price`;
     const priceInput = document.createElement('input');
     priceInput.type = 'text';
     priceInput.placeholder = `e.g. ${formatCurrencyExampleLabel(4500)}`;
+    priceInput.value = packagePlan?.priceLabel ?? '';
     priceInput.required = true;
     priceField.append(priceLabel, priceInput);
 
     const servicesFieldConfig = createMultiSelectField(
-      'Included services',
+      packageUiCopy.fieldIncludedServices || 'Included services',
       services.map((service) => ({
         value: service.id,
         label: `${service.name} - ${service.priceLabel}`
@@ -4464,10 +5467,16 @@ const createTrendCard = (
       'Add services first'
     );
 
+    if (packagePlan?.includedServiceIds?.length) {
+      for (const option of servicesFieldConfig.select.options) {
+        option.selected = packagePlan.includedServiceIds.includes(option.value);
+      }
+    }
+
     const submitButton = document.createElement('button');
     submitButton.className = 'calendar-tool-action calendar-tool-submit';
     submitButton.type = 'submit';
-    submitButton.textContent = 'Save package';
+    submitButton.textContent = mode === 'edit' ? updateActionLabel : saveActionLabel;
 
     form.append(nameField, usesField, priceField, servicesFieldConfig.field, submitButton);
 
@@ -4475,33 +5484,56 @@ const createTrendCard = (
       event.preventDefault();
 
       if (!nameInput.value.trim() || !priceInput.value.trim()) {
-        safeAlert('Please enter a package name and price.');
+        safeAlert(
+          packageUiCopy.validationRequired ||
+            `Please enter a ${packageLabelSingular} name and price.`
+        );
         return;
       }
 
       submitButton.disabled = true;
-      submitButton.textContent = 'Saving...';
+      submitButton.textContent = `${mode === 'edit' ? updateActionLabel : saveActionLabel}...`;
 
       try {
-        await createPackagePlan({
-          name: nameInput.value,
-          totalUses: Number(usesInput.value),
-          priceLabel: priceInput.value,
-          includedServiceIds: getSelectedValues(servicesFieldConfig.select)
-        });
+        if (mode === 'edit' && packagePlan?.id) {
+          await updatePackagePlan(packagePlan.id, {
+            name: nameInput.value,
+            totalUses: Number(usesInput.value),
+            priceLabel: priceInput.value,
+            includedServiceIds: getSelectedValues(servicesFieldConfig.select)
+          });
+        } else {
+          await createPackagePlan({
+            name: nameInput.value,
+            totalUses: Number(usesInput.value),
+            priceLabel: priceInput.value,
+            includedServiceIds: getSelectedValues(servicesFieldConfig.select)
+          });
+        }
         closeToolModal();
         openCatalogMembershipsModal();
       } catch (error) {
         submitButton.disabled = false;
-        submitButton.textContent = 'Save package';
-        safeAlert(error instanceof Error ? error.message : 'Unable to save package');
+        submitButton.textContent = mode === 'edit' ? updateActionLabel : saveActionLabel;
+        safeAlert(
+          error instanceof Error
+            ? error.message
+            : mode === 'edit'
+              ? packageUiCopy.errorUpdate || `Unable to update ${packageLabelSingular}`
+              : packageUiCopy.errorAdd || `Unable to add ${packageLabelSingular}`
+        );
       }
     });
 
     openToolModal({
       eyebrow: 'Catalog',
-      title: 'Create package',
-      description: 'Publish a prepaid package that clients can buy and redeem on eligible services.',
+      title: mode === 'edit' ? `${editActionLabel} ${packagePlan?.name || packageLabelSingular}` : addActionLabel,
+      description:
+        mode === 'edit'
+          ? packageUiCopy.formEditDescription ||
+            `Update the ${packageLabelSingular} details used for prepaid balances and redemption.`
+          : packageUiCopy.formAddDescription ||
+            `Create a new ${packageLabelSingular} and add it to your live ${packageLabelPlural} list.`,
       actions: [form]
     });
   };
@@ -4606,10 +5638,14 @@ const createTrendCard = (
   };
 
   const openSellPackageModal = () => {
+    const packageUiCopy = getPackageUiCopy();
+    const packageLabelSingular = packageUiCopy.singular || 'package';
+    const packageLabelPlural = packageUiCopy.plural || `${packageLabelSingular}s`;
+    const sellActionLabel = packageUiCopy.actionSell || `Sell ${packageLabelSingular}`;
     const packagePlans = getDashboardPackagePlans().filter((packagePlan) => packagePlan.isActive !== false);
 
     if (packagePlans.length === 0) {
-      safeAlert('Create a package first.');
+      safeAlert(packageUiCopy.emptyDescription || `Add your first ${packageLabelSingular} before selling it.`);
       openCatalogMembershipsModal();
       return;
     }
@@ -4620,7 +5656,7 @@ const createTrendCard = (
     const packageField = document.createElement('label');
     packageField.className = 'calendar-tool-field';
     const packageLabel = document.createElement('span');
-    packageLabel.textContent = 'Package plan';
+    packageLabel.textContent = `${formatRoleLabelDisplay(packageLabelSingular)} plan`;
     const packageSelect = document.createElement('select');
     for (const packagePlan of packagePlans) {
       const option = document.createElement('option');
@@ -4662,7 +5698,7 @@ const createTrendCard = (
     const submitButton = document.createElement('button');
     submitButton.className = 'calendar-tool-action calendar-tool-submit';
     submitButton.type = 'submit';
-    submitButton.textContent = 'Sell package';
+    submitButton.textContent = sellActionLabel;
 
     form.append(packageField, nameField, phoneField, emailField, submitButton);
 
@@ -4670,7 +5706,7 @@ const createTrendCard = (
       event.preventDefault();
 
       submitButton.disabled = true;
-      submitButton.textContent = 'Saving...';
+      submitButton.textContent = `${sellActionLabel}...`;
 
       try {
         await createPackageSale({
@@ -4683,45 +5719,57 @@ const createTrendCard = (
         openMembershipsModal();
       } catch (error) {
         submitButton.disabled = false;
-        submitButton.textContent = 'Sell package';
-        safeAlert(error instanceof Error ? error.message : 'Unable to sell package');
+        submitButton.textContent = sellActionLabel;
+        safeAlert(error instanceof Error ? error.message : `Unable to sell ${packageLabelSingular}`);
       }
     });
 
     openToolModal({
       eyebrow: 'Sales',
-      title: 'Sell package',
-      description: 'Assign a prepaid package balance to a customer so it can be redeemed during booking.',
+      title: sellActionLabel,
+      description: `Assign a prepaid ${packageLabelSingular} balance to a customer so it can be redeemed during booking.`,
       actions: [form]
     });
   };
 
   const openMembershipsModal = () => {
+    const packageUiCopy = getPackageUiCopy();
+    const packageLabelSingular = packageUiCopy.singular || 'package';
+    const packageLabelPlural = packageUiCopy.plural || `${packageLabelSingular}s`;
+    const sellActionLabel = packageUiCopy.actionSell || `Sell ${packageLabelSingular}`;
+    const openCatalogActionLabel = packageUiCopy.actionOpenCatalog || `Open ${packageLabelPlural}`;
+    const openReportsActionLabel = packageUiCopy.actionOpenReports || 'Open finance reports';
     const commerce = getDashboardCommerce();
     const packagePlans = getDashboardPackagePlans().filter((packagePlan) => packagePlan.isActive !== false);
 
     openToolModal({
       eyebrow: 'Sales',
-      title: 'Packages sold',
-      description: 'Sell prepaid service bundles, track remaining balances, and connect them directly to bookings.',
+      title: packageUiCopy.soldLabel || `${formatRoleLabelDisplay(packageLabelPlural)} sold`,
+      description: `Sell prepaid ${packageLabelPlural}, track remaining balances, and connect them directly to bookings.`,
       actions: [
-        createToolInfoCard('Packages sold', String(commerce.packagesSold)),
-        createToolInfoCard('Active balances', String(commerce.activePackageBalances)),
         createToolInfoCard(
-          'Published plans',
+          packageUiCopy.soldLabel || `${formatRoleLabelDisplay(packageLabelPlural)} sold`,
+          String(commerce.packagesSold)
+        ),
+        createToolInfoCard(
+          packageUiCopy.activeBalancesLabel || 'Active balances',
+          String(commerce.activePackageBalances)
+        ),
+        createToolInfoCard(
+          packageUiCopy.publishedLabel || 'Published plans',
           packagePlans.length > 0
             ? packagePlans.map((packagePlan) => packagePlan.name).join(' | ')
-            : 'No package plans published yet.'
+            : packageUiCopy.emptyDescription || `No ${packageLabelPlural} published yet.`
         ),
-        createToolActionButton('Sell package', () => {
+        createToolActionButton(sellActionLabel, () => {
           closeToolModal();
           openSellPackageModal();
         }),
-        createToolActionButton('Open packages', () => {
+        createToolActionButton(openCatalogActionLabel, () => {
           closeToolModal();
           openCatalogMembershipsModal();
         }),
-        createToolActionButton('Open finance reports', () => {
+        createToolActionButton(openReportsActionLabel, () => {
           closeToolModal();
           activateReportsTab('Finance');
         })
@@ -4732,6 +5780,48 @@ const createTrendCard = (
   const getDefaultTeamMemberRole = () => {
     const roleLabel = getBusinessRoleLabel();
     return roleLabel.charAt(0).toUpperCase() + roleLabel.slice(1);
+  };
+
+  const getTeamRoleOptions = async (teamMember = null) => {
+    const roleOptions = [];
+    const seenRoleOptions = new Set();
+    const appendRoleOption = (value) => {
+      const normalizedValue = typeof value === 'string' ? value.trim() : '';
+
+      if (!normalizedValue) {
+        return;
+      }
+
+      const dedupeKey = normalizedValue.toLowerCase();
+
+      if (seenRoleOptions.has(dedupeKey)) {
+        return;
+      }
+
+      seenRoleOptions.add(dedupeKey);
+      roleOptions.push(normalizedValue);
+    };
+
+    try {
+      const config = await loadPublicConfig();
+
+      if (Array.isArray(config?.teamMemberRoleOptions)) {
+        for (const roleOption of config.teamMemberRoleOptions) {
+          appendRoleOption(roleOption);
+        }
+      }
+    } catch (_error) {
+      // Fall back to existing saved roles when public config is unavailable.
+    }
+
+    for (const savedTeamMember of getDashboardTeamMembers()) {
+      appendRoleOption(savedTeamMember?.role);
+    }
+
+    appendRoleOption(teamMember?.role);
+    appendRoleOption(getDefaultTeamMemberRole());
+
+    return roleOptions;
   };
 
   const getTeamExpertiseOptions = (teamMember = null) => {
@@ -4770,6 +5860,25 @@ const createTrendCard = (
     return [...expertiseOptions].sort((left, right) => left.localeCompare(right));
   };
 
+  const formatTeamMemberScheduleSummary = (teamMember) => {
+    const weekdayLabels = new Map(getWeekdayDisplayOptions().map((option) => [option.value, option.label]));
+    const openingTimeLabel = formatTimeForDisplay(teamMember?.openingTime);
+    const closingTimeLabel = formatTimeForDisplay(teamMember?.closingTime);
+    const offDays = Array.isArray(teamMember?.offDays) ? teamMember.offDays : [];
+    const offDayLabels = offDays.map((offDay) => weekdayLabels.get(offDay) || offDay).filter(Boolean);
+    const scheduleParts = [];
+
+    if (openingTimeLabel && closingTimeLabel) {
+      scheduleParts.push(`${openingTimeLabel} - ${closingTimeLabel}`);
+    }
+
+    if (offDayLabels.length > 0) {
+      scheduleParts.push(offDayLabels.join(', '));
+    }
+
+    return scheduleParts.join(' | ');
+  };
+
   const refreshTeamMembersView = async () => {
     await loadDashboard();
     setMainView('calendar');
@@ -4778,7 +5887,7 @@ const createTrendCard = (
     openTeamMembersModal();
   };
 
-  const addTeamMember = async ({ name, role, phone, expertise }) => {
+  const addTeamMember = async ({ name, role, phone, expertise, openingTime, closingTime, offDays }) => {
     if (!clientId) {
       return;
     }
@@ -4789,14 +5898,20 @@ const createTrendCard = (
         name: name.trim(),
         role: role.trim(),
         phone: phone.trim(),
-        expertise: expertise.trim()
+        expertise: expertise.trim(),
+        openingTime: openingTime.trim(),
+        closingTime: closingTime.trim(),
+        offDays
       })
     });
 
     await refreshTeamMembersView();
   };
 
-  const updateTeamMember = async (teamMemberId, { name, role, phone, expertise }) => {
+  const updateTeamMember = async (
+    teamMemberId,
+    { name, role, phone, expertise, openingTime, closingTime, offDays }
+  ) => {
     if (!clientId) {
       return;
     }
@@ -4807,7 +5922,10 @@ const createTrendCard = (
         name: name.trim(),
         role: role.trim(),
         phone: phone.trim(),
-        expertise: expertise.trim()
+        expertise: expertise.trim(),
+        openingTime: openingTime.trim(),
+        closingTime: closingTime.trim(),
+        offDays
       })
     });
 
@@ -4826,20 +5944,25 @@ const createTrendCard = (
     await refreshTeamMembersView();
   };
 
-  const openTeamMemberFormModal = ({ mode = 'add', teamMember = null } = {}) => {
+  const openTeamMemberFormModal = async ({ mode = 'add', teamMember = null } = {}) => {
     const roleLabel = getBusinessRoleLabel();
+    const roleLabelDisplay = formatRoleLabelDisplay(roleLabel);
+    const scheduleUiCopy = getTeamMemberScheduleUiCopy();
     const defaultRole = teamMember?.role || getDefaultTeamMemberRole();
+    const roleOptions = await getTeamRoleOptions(teamMember);
     const expertiseOptions = getTeamExpertiseOptions(teamMember);
+    const weekdayOptions = getWeekdayDisplayOptions();
     const currentExpertise =
       typeof teamMember?.expertise === 'string' ? teamMember.expertise.trim() : '';
     const hasPresetExpertise = currentExpertise && expertiseOptions.includes(currentExpertise);
+    const currentOffDays = new Set(Array.isArray(teamMember?.offDays) ? teamMember.offDays : []);
     const form = document.createElement('form');
     form.className = 'calendar-tool-form';
 
     const nameField = document.createElement('label');
     nameField.className = 'calendar-tool-field';
     const nameLabel = document.createElement('span');
-    nameLabel.textContent = `${roleLabel} name`;
+    nameLabel.textContent = `${roleLabelDisplay} name`;
     const nameInput = document.createElement('input');
     nameInput.type = 'text';
     nameInput.name = 'name';
@@ -4853,12 +5976,84 @@ const createTrendCard = (
     const roleFieldLabel = document.createElement('span');
     roleFieldLabel.textContent = 'Role';
     const roleInput = document.createElement('input');
-    roleInput.type = 'text';
+    roleInput.type = 'hidden';
     roleInput.name = 'role';
-    roleInput.placeholder = `e.g. ${defaultRole}`;
     roleInput.value = defaultRole;
     roleInput.required = true;
-    roleField.append(roleFieldLabel, roleInput);
+    const rolePicker = document.createElement('div');
+    rolePicker.className = 'calendar-role-picker';
+    const roleTrigger = document.createElement('button');
+    roleTrigger.type = 'button';
+    roleTrigger.className = 'calendar-role-picker-trigger';
+    roleTrigger.setAttribute('aria-haspopup', 'listbox');
+    roleTrigger.setAttribute('aria-expanded', 'false');
+    const roleTriggerLabel = document.createElement('span');
+    roleTriggerLabel.className = 'calendar-role-picker-trigger-label';
+    const roleTriggerIcon = document.createElement('span');
+    roleTriggerIcon.className = 'calendar-role-picker-trigger-icon';
+    roleTriggerIcon.setAttribute('aria-hidden', 'true');
+    roleTriggerIcon.innerHTML =
+      '<svg viewBox="0 0 24 24" focusable="false"><path d="M7 10l5 5 5-5"></path></svg>';
+    roleTrigger.append(roleTriggerLabel, roleTriggerIcon);
+    const roleMenu = document.createElement('div');
+    roleMenu.className = 'calendar-role-picker-menu';
+    roleMenu.setAttribute('role', 'listbox');
+
+    const setRolePickerOpen = (isOpen) => {
+      rolePicker.classList.toggle('is-open', isOpen);
+      roleTrigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    };
+
+    const syncRoleSelection = (nextRole) => {
+      roleInput.value = nextRole;
+      roleTriggerLabel.textContent = nextRole;
+
+      for (const optionButton of roleMenu.querySelectorAll('.calendar-role-picker-option')) {
+        if (!(optionButton instanceof HTMLButtonElement)) {
+          continue;
+        }
+
+        const isSelected = optionButton.dataset.roleValue === nextRole;
+        optionButton.classList.toggle('is-selected', isSelected);
+        optionButton.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+      }
+    };
+
+    for (const roleOption of roleOptions) {
+      const roleOptionButton = document.createElement('button');
+      roleOptionButton.type = 'button';
+      roleOptionButton.className = 'calendar-role-picker-option';
+      roleOptionButton.dataset.roleValue = roleOption;
+      roleOptionButton.setAttribute('role', 'option');
+      roleOptionButton.textContent = roleOption;
+      roleOptionButton.addEventListener('click', () => {
+        syncRoleSelection(roleOption);
+        setRolePickerOpen(false);
+      });
+      roleMenu.append(roleOptionButton);
+    }
+
+    roleTrigger.addEventListener('click', () => {
+      setRolePickerOpen(!rolePicker.classList.contains('is-open'));
+    });
+
+    const closeRolePickerOnPointerDown = (event) => {
+      if (!document.body.contains(rolePicker)) {
+        document.removeEventListener('pointerdown', closeRolePickerOnPointerDown, true);
+        return;
+      }
+
+      if (event.target instanceof Node && rolePicker.contains(event.target)) {
+        return;
+      }
+
+      setRolePickerOpen(false);
+    };
+
+    document.addEventListener('pointerdown', closeRolePickerOnPointerDown, true);
+    syncRoleSelection(roleInput.value || roleOptions[0] || defaultRole);
+    rolePicker.append(roleTrigger, roleMenu);
+    roleField.append(roleFieldLabel, roleInput, rolePicker);
 
     const phoneField = document.createElement('label');
     phoneField.className = 'calendar-tool-field';
@@ -4870,6 +6065,44 @@ const createTrendCard = (
     phoneInput.placeholder = 'e.g. +923001234567';
     phoneInput.value = teamMember?.phone ?? '';
     phoneField.append(phoneLabel, phoneInput);
+
+    const openingTimeField = document.createElement('label');
+    openingTimeField.className = 'calendar-tool-field';
+    const openingTimeLabel = document.createElement('span');
+    openingTimeLabel.textContent = scheduleUiCopy.openingTimeLabel || 'Opening time';
+    const openingTimeInput = document.createElement('input');
+    openingTimeInput.type = 'time';
+    openingTimeInput.name = 'openingTime';
+    openingTimeInput.value = teamMember?.openingTime ?? getCalendarTimeSlots()[0] ?? '09:00';
+    openingTimeInput.required = true;
+    openingTimeField.append(openingTimeLabel, openingTimeInput);
+
+    const closingTimeField = document.createElement('label');
+    closingTimeField.className = 'calendar-tool-field';
+    const closingTimeLabel = document.createElement('span');
+    closingTimeLabel.textContent = scheduleUiCopy.closingTimeLabel || 'Closing time';
+    const closingTimeInput = document.createElement('input');
+    closingTimeInput.type = 'time';
+    closingTimeInput.name = 'closingTime';
+    closingTimeInput.value =
+      teamMember?.closingTime ??
+      (() => {
+        const slotTimes = getCalendarTimeSlots();
+        const lastSlot = slotTimes[slotTimes.length - 1] ?? '17:00';
+        return addMinutesToTimeValue(lastSlot, 60) || '18:00';
+      })();
+    closingTimeInput.required = true;
+    closingTimeField.append(closingTimeLabel, closingTimeInput);
+
+    const offDaysFieldConfig = createMultiSelectField(
+      scheduleUiCopy.offDaysLabel || 'Off days',
+      weekdayOptions,
+      scheduleUiCopy.offDaysEmpty || 'No day options available'
+    );
+
+    for (const option of offDaysFieldConfig.select.options) {
+      option.selected = currentOffDays.has(option.value);
+    }
 
     const expertiseField = document.createElement('label');
     expertiseField.className = 'calendar-tool-field';
@@ -4927,7 +6160,17 @@ const createTrendCard = (
     submitButton.type = 'submit';
     submitButton.textContent = mode === 'edit' ? 'Save changes' : `Save ${roleLabel}`;
 
-    form.append(nameField, roleField, phoneField, expertiseField, customExpertiseField, submitButton);
+    form.append(
+      nameField,
+      roleField,
+      phoneField,
+      openingTimeField,
+      closingTimeField,
+      offDaysFieldConfig.field,
+      expertiseField,
+      customExpertiseField,
+      submitButton
+    );
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -4937,10 +6180,16 @@ const createTrendCard = (
         return;
       }
 
+      if (openingTimeInput.value && closingTimeInput.value && openingTimeInput.value >= closingTimeInput.value) {
+        safeAlert('Closing time must be later than opening time.');
+        return;
+      }
+
       const expertiseValue =
         expertiseSelect.value === customExpertiseValue
           ? customExpertiseInput.value.trim()
           : expertiseSelect.value.trim();
+      const offDaysValue = getSelectedValues(offDaysFieldConfig.select);
 
       submitButton.disabled = true;
       submitButton.textContent = 'Saving...';
@@ -4951,14 +6200,20 @@ const createTrendCard = (
             name: nameInput.value,
             role: roleInput.value,
             phone: phoneInput.value,
-            expertise: expertiseValue
+            expertise: expertiseValue,
+            openingTime: openingTimeInput.value,
+            closingTime: closingTimeInput.value,
+            offDays: offDaysValue
           });
         } else {
           await addTeamMember({
             name: nameInput.value,
             role: roleInput.value,
             phone: phoneInput.value,
-            expertise: expertiseValue
+            expertise: expertiseValue,
+            openingTime: openingTimeInput.value,
+            closingTime: closingTimeInput.value,
+            offDays: offDaysValue
           });
         }
       } catch (error) {
@@ -4976,7 +6231,7 @@ const createTrendCard = (
 
     openToolModal({
       eyebrow: 'Team',
-      title: mode === 'edit' ? `Edit ${teamMember?.name || roleLabel}` : `Add ${roleLabel}`,
+      title: mode === 'edit' ? `Edit ${teamMember?.name || roleLabelDisplay}` : `Add ${roleLabelDisplay}`,
       description:
         mode === 'edit'
           ? `Update this ${roleLabel}'s profile details.`
@@ -4988,11 +6243,11 @@ const createTrendCard = (
   };
 
   const openAddTeamMemberModal = () => {
-    openTeamMemberFormModal();
+    void openTeamMemberFormModal();
   };
 
   const openEditTeamMemberModal = (teamMember) => {
-    openTeamMemberFormModal({ mode: 'edit', teamMember });
+    void openTeamMemberFormModal({ mode: 'edit', teamMember });
   };
 
   const createTeamMemberCard = (teamMember) => {
@@ -5004,10 +6259,12 @@ const createTrendCard = (
     heading.textContent = teamMember.name;
 
     const copy = document.createElement('p');
+    const scheduleSummary = formatTeamMemberScheduleSummary(teamMember);
     copy.textContent = [
       teamMember.role || getDefaultTeamMemberRole(),
       `Mobile: ${teamMember.phone || '-'}`,
-      teamMember.expertise ? `Expertise: ${teamMember.expertise}` : null
+      teamMember.expertise ? `Expertise: ${teamMember.expertise}` : null,
+      scheduleSummary || null
     ]
       .filter(Boolean)
       .join(' | ');
@@ -5046,48 +6303,21 @@ const createTrendCard = (
     return card;
   };
 
-  const addBusinessService = async () => {
+  const updateBusinessService = async (
+    serviceId,
+    { name, categoryName, durationMinutes, priceLabel, description }
+  ) => {
     if (!clientId) {
       return;
     }
 
-    const serviceName = window.prompt('Enter service name');
-
-    if (serviceName === null) {
-      return;
-    }
-
-    if (!serviceName.trim()) {
-      safeAlert('Please enter a service name.');
-      return;
-    }
-
-    const priceExampleLabel = formatCurrencyExampleLabel(1200);
-    const defaultPriceLabel = formatCurrencyExampleLabel(1000);
-    const priceLabel =
-      window.prompt(`Enter price, for example ${priceExampleLabel}`) ?? defaultPriceLabel;
-    const durationValue = window.prompt('Enter duration in minutes', '30') ?? '30';
-    const durationMinutes = Number(durationValue);
-
-    if (!Number.isFinite(durationMinutes) || durationMinutes < 15) {
-      safeAlert('Please enter a valid duration of at least 15 minutes.');
-      return;
-    }
-
-    const categoryName =
-      window.prompt(
-        'Enter category, for example Barber or Hair salon (optional)',
-        dashboardPayload?.client?.serviceTypes?.[0] ?? 'General'
-      ) ?? '';
-    const description = window.prompt('Enter service description (optional)') ?? '';
-
-    await apiRequest(`/api/platform/clients/${clientId}/services`, {
-      method: 'POST',
+    await apiRequest(`/api/platform/clients/${clientId}/services/${encodeURIComponent(serviceId)}`, {
+      method: 'PATCH',
       body: JSON.stringify({
-        name: serviceName.trim(),
+        name: name.trim(),
         categoryName: categoryName.trim(),
         durationMinutes: Math.round(durationMinutes),
-        priceLabel: priceLabel.trim() || defaultPriceLabel,
+        priceLabel: priceLabel.trim(),
         description: description.trim()
       })
     });
@@ -5099,15 +6329,253 @@ const createTrendCard = (
     openServiceMenuModal();
   };
 
+  const removeBusinessService = async (serviceId) => {
+    if (!clientId) {
+      return;
+    }
+
+    await apiRequest(`/api/platform/clients/${clientId}/services/${encodeURIComponent(serviceId)}`, {
+      method: 'DELETE'
+    });
+
+    await loadDashboard();
+    setMainView('calendar');
+    syncSideDrawerOffset();
+    setActiveDrawer('catalog');
+    openServiceMenuModal();
+  };
+
+  const openServiceFormModal = ({ mode = 'add', service = null } = {}) => {
+    const serviceUiCopy = getServiceUiCopy();
+    const serviceLabelSingular = serviceUiCopy.singular || 'service';
+    const serviceLabelPlural = serviceUiCopy.plural || `${serviceLabelSingular}s`;
+    const serviceLabelDisplay = formatRoleLabelDisplay(serviceLabelSingular);
+    const saveActionLabel = serviceUiCopy.actionSave || `Save ${serviceLabelSingular}`;
+    const updateActionLabel = serviceUiCopy.actionUpdate || `Update ${serviceLabelSingular}`;
+    const addActionLabel = serviceUiCopy.actionAdd || `Add ${serviceLabelSingular}`;
+    const editActionLabel = serviceUiCopy.actionEdit || 'Edit';
+    const form = document.createElement('form');
+    form.className = 'calendar-tool-form';
+
+    const categoryOptions = [
+      ...new Set(
+        [
+          ...(Array.isArray(dashboardPayload?.client?.serviceTypes) ? dashboardPayload.client.serviceTypes : []),
+          ...getDashboardServices().map((item) => item.categoryName).filter(Boolean),
+          service?.categoryName ?? ''
+        ]
+          .map((value) => (typeof value === 'string' ? value.trim() : ''))
+          .filter(Boolean)
+      )
+    ];
+
+    const nameField = document.createElement('label');
+    nameField.className = 'calendar-tool-field';
+    const nameLabel = document.createElement('span');
+    nameLabel.textContent = serviceUiCopy.fieldName || `${serviceLabelDisplay} name`;
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.placeholder = `Enter ${serviceLabelSingular} name`;
+    nameInput.value = service?.name ?? '';
+    nameInput.required = true;
+    nameField.append(nameLabel, nameInput);
+
+    const categoryField = document.createElement('label');
+    categoryField.className = 'calendar-tool-field';
+    const categoryLabel = document.createElement('span');
+    categoryLabel.textContent = serviceUiCopy.fieldCategory || 'Category';
+    const categoryInput = document.createElement('input');
+    categoryInput.type = 'text';
+    categoryInput.setAttribute('list', 'service-category-options');
+    categoryInput.placeholder = `Enter ${(serviceUiCopy.fieldCategory || 'category').toLowerCase()}`;
+    categoryInput.value = service?.categoryName ?? categoryOptions[0] ?? '';
+    const categoryList = document.createElement('datalist');
+    categoryList.id = 'service-category-options';
+    for (const categoryOption of categoryOptions) {
+      const option = document.createElement('option');
+      option.value = categoryOption;
+      categoryList.append(option);
+    }
+    categoryField.append(categoryLabel, categoryInput, categoryList);
+
+    const durationField = document.createElement('label');
+    durationField.className = 'calendar-tool-field';
+    const durationLabel = document.createElement('span');
+    durationLabel.textContent = serviceUiCopy.fieldDuration || 'Duration in minutes';
+    const durationInput = document.createElement('input');
+    durationInput.type = 'number';
+    durationInput.min = '15';
+    durationInput.max = '480';
+    durationInput.step = '15';
+    durationInput.value = String(service?.durationMinutes ?? 30);
+    durationInput.required = true;
+    durationField.append(durationLabel, durationInput);
+
+    const priceField = document.createElement('label');
+    priceField.className = 'calendar-tool-field';
+    const priceLabel = document.createElement('span');
+    priceLabel.textContent = serviceUiCopy.fieldPrice || 'Price';
+    const priceInput = document.createElement('input');
+    priceInput.type = 'text';
+    priceInput.placeholder = formatCurrencyExampleLabel(1200);
+    priceInput.value = service?.priceLabel ?? formatCurrencyExampleLabel(1000);
+    priceInput.required = true;
+    priceField.append(priceLabel, priceInput);
+
+    const descriptionField = document.createElement('label');
+    descriptionField.className = 'calendar-tool-field';
+    const descriptionLabel = document.createElement('span');
+    descriptionLabel.textContent = serviceUiCopy.fieldDescription || 'Description';
+    const descriptionInput = document.createElement('input');
+    descriptionInput.type = 'text';
+    descriptionInput.placeholder = `Short ${serviceLabelSingular} description`;
+    descriptionInput.value = service?.description ?? '';
+    descriptionField.append(descriptionLabel, descriptionInput);
+
+    const submitButton = document.createElement('button');
+    submitButton.className = 'calendar-tool-action calendar-tool-submit';
+    submitButton.type = 'submit';
+    submitButton.textContent = mode === 'edit' ? updateActionLabel : saveActionLabel;
+
+    form.append(nameField, categoryField, durationField, priceField, descriptionField, submitButton);
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const durationMinutes = Number(durationInput.value);
+
+      if (!nameInput.value.trim() || !priceInput.value.trim() || !categoryInput.value.trim()) {
+        safeAlert(
+          serviceUiCopy.validationRequired ||
+            `Please fill ${serviceLabelSingular} name, ${(serviceUiCopy.fieldCategory || 'category').toLowerCase()}, and ${(serviceUiCopy.fieldPrice || 'price').toLowerCase()}.`
+        );
+        return;
+      }
+
+      if (!Number.isFinite(durationMinutes) || durationMinutes < 15) {
+        safeAlert(serviceUiCopy.validationDuration || 'Please enter a valid duration of at least 15 minutes.');
+        return;
+      }
+
+      submitButton.disabled = true;
+      submitButton.textContent = `${mode === 'edit' ? updateActionLabel : saveActionLabel}...`;
+
+      try {
+        if (mode === 'edit' && service?.id) {
+          await updateBusinessService(service.id, {
+            name: nameInput.value,
+            categoryName: categoryInput.value,
+            durationMinutes,
+            priceLabel: priceInput.value,
+            description: descriptionInput.value
+          });
+        } else {
+          await apiRequest(`/api/platform/clients/${clientId}/services`, {
+            method: 'POST',
+            body: JSON.stringify({
+              name: nameInput.value.trim(),
+              categoryName: categoryInput.value.trim(),
+              durationMinutes: Math.round(durationMinutes),
+              priceLabel: priceInput.value.trim(),
+              description: descriptionInput.value.trim()
+            })
+          });
+
+          await loadDashboard();
+          setMainView('calendar');
+          syncSideDrawerOffset();
+          setActiveDrawer('catalog');
+          openServiceMenuModal();
+        }
+      } catch (error) {
+        submitButton.disabled = false;
+        submitButton.textContent = mode === 'edit' ? updateActionLabel : saveActionLabel;
+        safeAlert(
+          error instanceof Error
+            ? error.message
+            : mode === 'edit'
+              ? serviceUiCopy.errorUpdate || `Unable to update ${serviceLabelSingular}`
+              : serviceUiCopy.errorAdd || `Unable to add ${serviceLabelSingular}`
+        );
+      }
+    });
+
+    openToolModal({
+      eyebrow: 'Catalog',
+      title: mode === 'edit' ? `${editActionLabel} ${service?.name || serviceLabelSingular}` : addActionLabel,
+      description:
+        mode === 'edit'
+          ? serviceUiCopy.formEditDescription ||
+            `Update the ${serviceLabelSingular} details used in bookings and pricing.`
+          : serviceUiCopy.formAddDescription ||
+            `Create a new ${serviceLabelSingular} and add it to your live ${serviceLabelPlural} menu.`,
+      actions: [form]
+    });
+
+    nameInput.focus();
+  };
+
+  const createServiceManagementCard = (service) => {
+    const serviceUiCopy = getServiceUiCopy();
+    const editActionLabel = serviceUiCopy.actionEdit || 'Edit';
+    const removeActionLabel = serviceUiCopy.actionRemove || 'Remove';
+    const serviceMenuTitle = serviceUiCopy.menuTitle || 'service menu';
+    const card = document.createElement('article');
+    card.className = 'calendar-notification-item calendar-service-card';
+
+    const heading = document.createElement('strong');
+    heading.textContent = service.name;
+
+    const copy = document.createElement('p');
+    copy.textContent = `${service.priceLabel} | ${service.durationMinutes} min | ${service.categoryName}${service.description ? ` | ${service.description}` : ''}`;
+
+    const actions = document.createElement('div');
+    actions.className = 'calendar-tool-inline-actions';
+
+    const editButton = createToolActionButton(editActionLabel, () => {
+      closeToolModal();
+      openServiceFormModal({ mode: 'edit', service });
+    });
+
+    const removeButton = createToolActionButton(removeActionLabel, async () => {
+      const shouldRemove = window.confirm(`Remove ${service.name} from ${serviceMenuTitle}?`);
+
+      if (!shouldRemove) {
+        return;
+      }
+
+      removeButton.disabled = true;
+      removeButton.textContent = `${removeActionLabel}...`;
+
+      try {
+        await removeBusinessService(service.id);
+      } catch (error) {
+        removeButton.disabled = false;
+        removeButton.textContent = removeActionLabel;
+        safeAlert(
+          error instanceof Error
+            ? error.message
+            : serviceUiCopy.errorRemove || `Unable to remove ${service.name}`
+        );
+      }
+    });
+    removeButton.classList.add('calendar-tool-action-danger');
+
+    actions.append(editButton, removeButton);
+    card.append(heading, copy, actions);
+    return card;
+  };
+
   const openTeamMembersModal = () => {
     const roleLabel = getBusinessRoleLabel();
+    const roleLabelPlural = getBusinessRoleLabelPlural();
     const teamMembers = getDashboardTeamMembers().filter((teamMember) => teamMember.isActive !== false);
     const actions =
       teamMembers.length > 0
         ? teamMembers.map((teamMember) => createTeamMemberCard(teamMember))
         : [
             createToolInfoCard(
-              `No ${roleLabel}s added`,
+              `No ${roleLabelPlural} added`,
               `Use Add ${roleLabel} to create your first team member.`
             )
           ];
@@ -5121,8 +6589,8 @@ const createTrendCard = (
 
     openToolModal({
       eyebrow: 'Team',
-      title: 'Team members',
-      description: `Manage the ${roleLabel}s available in your setup.`,
+      title: formatRoleLabelDisplay(roleLabelPlural),
+      description: `Manage the ${roleLabelPlural} available in your setup.`,
       actions
     });
   };
@@ -5132,41 +6600,53 @@ const createTrendCard = (
       return;
     }
 
+    const profileUiCopy = getProfileUiCopy();
     const form = document.createElement('form');
     form.className = 'calendar-tool-form';
 
     const businessField = document.createElement('label');
     businessField.className = 'calendar-tool-field';
     const businessLabel = document.createElement('span');
-    businessLabel.textContent = 'Salon name';
+    businessLabel.textContent = profileUiCopy.fieldBusinessNameLabel || 'Business name';
     const businessInput = document.createElement('input');
     businessInput.type = 'text';
     businessInput.name = 'businessName';
     businessInput.value = dashboardPayload?.client?.businessName ?? '';
-    businessInput.placeholder = 'Enter salon name';
+    businessInput.placeholder = profileUiCopy.fieldBusinessNamePlaceholder || 'Enter business name';
     businessInput.required = true;
     businessField.append(businessLabel, businessInput);
 
     const websiteField = document.createElement('label');
     websiteField.className = 'calendar-tool-field';
     const websiteLabel = document.createElement('span');
-    websiteLabel.textContent = 'Website';
+    websiteLabel.textContent = profileUiCopy.fieldWebsiteLabel || 'Website';
     const websiteInput = document.createElement('input');
     websiteInput.type = 'text';
     websiteInput.name = 'website';
     websiteInput.value = dashboardPayload?.client?.website ?? '';
-    websiteInput.placeholder = 'Enter website';
+    websiteInput.placeholder = profileUiCopy.fieldWebsitePlaceholder || 'Enter website';
     websiteField.append(websiteLabel, websiteInput);
+
+    const addressField = document.createElement('label');
+    addressField.className = 'calendar-tool-field';
+    const addressLabel = document.createElement('span');
+    addressLabel.textContent = profileUiCopy.fieldAddressLabel || 'Address';
+    const addressInput = document.createElement('textarea');
+    addressInput.name = 'venueAddress';
+    addressInput.rows = 3;
+    addressInput.value = dashboardPayload?.client?.venueAddress ?? '';
+    addressInput.placeholder = profileUiCopy.fieldAddressPlaceholder || 'Enter address';
+    addressField.append(addressLabel, addressInput);
 
     const imageField = document.createElement('label');
     imageField.className = 'calendar-tool-field';
     const imageLabel = document.createElement('span');
-    imageLabel.textContent = 'Profile image';
+    imageLabel.textContent = profileUiCopy.fieldImageLabel || 'Profile image';
     const imageInput = document.createElement('input');
     imageInput.type = 'text';
     imageInput.name = 'profileImageUrl';
     imageInput.value = dashboardPayload?.client?.profileImageUrl ?? '';
-    imageInput.placeholder = 'Paste image URL or upload from gallery';
+    imageInput.placeholder = profileUiCopy.fieldImagePlaceholder || 'Paste image URL or upload from gallery';
     imageField.append(imageLabel, imageInput);
 
     const imagePreview = document.createElement('div');
@@ -5183,12 +6663,12 @@ const createTrendCard = (
     const uploadButton = document.createElement('button');
     uploadButton.className = 'calendar-tool-action';
     uploadButton.type = 'button';
-    uploadButton.textContent = 'Choose from PC';
+    uploadButton.textContent = profileUiCopy.actionUploadImage || 'Choose from PC';
 
     const removeImageButton = document.createElement('button');
     removeImageButton.className = 'calendar-tool-action';
     removeImageButton.type = 'button';
-    removeImageButton.textContent = 'Remove image';
+    removeImageButton.textContent = profileUiCopy.actionRemoveImage || 'Remove image';
 
     imageActions.append(uploadButton, removeImageButton);
     imageField.append(imagePreview, imageActions, imagePickerInput);
@@ -5196,9 +6676,9 @@ const createTrendCard = (
     const submitButton = document.createElement('button');
     submitButton.className = 'calendar-tool-action calendar-tool-submit';
     submitButton.type = 'submit';
-    submitButton.textContent = 'Update profile';
+    submitButton.textContent = profileUiCopy.actionSave || 'Update profile';
 
-    form.append(businessField, websiteField, imageField, submitButton);
+    form.append(businessField, websiteField, addressField, imageField, submitButton);
 
     const syncProfilePreview = () => {
       renderCalendarAvatar(
@@ -5258,12 +6738,12 @@ const createTrendCard = (
       event.preventDefault();
 
       if (!businessInput.value.trim()) {
-        safeAlert('Please enter salon name.');
+        safeAlert(profileUiCopy.validationRequired || 'Please enter business name.');
         return;
       }
 
       submitButton.disabled = true;
-      submitButton.textContent = 'Saving...';
+      submitButton.textContent = `${profileUiCopy.actionSave || 'Update profile'}...`;
 
       try {
         await apiRequest(`/api/platform/clients/${clientId}/business-profile`, {
@@ -5271,6 +6751,7 @@ const createTrendCard = (
           body: JSON.stringify({
             businessName: businessInput.value.trim(),
             website: websiteInput.value.trim(),
+            venueAddress: addressInput.value.trim(),
             profileImageUrl: imageInput.value.trim()
           })
         });
@@ -5279,8 +6760,8 @@ const createTrendCard = (
         closeToolModal();
       } catch (error) {
         submitButton.disabled = false;
-        submitButton.textContent = 'Update profile';
-        safeAlert(error instanceof Error ? error.message : 'Unable to update profile');
+        submitButton.textContent = profileUiCopy.actionSave || 'Update profile';
+        safeAlert(error instanceof Error ? error.message : profileUiCopy.errorUpdate || 'Unable to update profile');
       }
     });
 
@@ -5288,8 +6769,10 @@ const createTrendCard = (
 
     openToolModal({
       eyebrow: 'Profile',
-      title: `${staffName.textContent || 'Owner'} profile`,
-      description: 'Update your salon name, profile image, and other business details here.',
+      title: `${staffName.textContent || 'Owner'} ${profileUiCopy.titleSuffix || 'profile'}`,
+      description:
+        profileUiCopy.description ||
+        'Update your business name, address, profile image, and other business details here.',
       actions: [form]
     });
 
@@ -5297,41 +6780,49 @@ const createTrendCard = (
   };
 
   const openServiceMenuModal = () => {
+    const serviceUiCopy = getServiceUiCopy();
+    const serviceLabelSingular = serviceUiCopy.singular || 'service';
+    const serviceLabelPlural = serviceUiCopy.plural || `${serviceLabelSingular}s`;
+    const coverageLabel = serviceUiCopy.coverageLabel || `${formatRoleLabelDisplay(serviceLabelSingular)} coverage`;
+    const addActionLabel = serviceUiCopy.actionAdd || `Add ${serviceLabelSingular}`;
+    const openBookingActionLabel = serviceUiCopy.actionOpenBooking || 'Open booking page';
+    const stayInCatalogActionLabel = serviceUiCopy.actionStayInCatalog || 'Stay in catalog';
     const insights = getCatalogInsights();
+    const activeServices = getDashboardServices().filter((service) => service.isActive !== false);
     const serviceCards =
-      insights.featuredServices.length > 0
-        ? insights.featuredServices.map((service) =>
+      activeServices.length > 0
+        ? activeServices.map((service) => createServiceManagementCard(service))
+        : [
             createToolInfoCard(
-              service.name,
-              `${service.priceLabel} | ${service.durationMinutes} min | ${service.categoryName}`
+              serviceUiCopy.emptyTitle || `No ${serviceLabelPlural} yet`,
+              serviceUiCopy.emptyDescription ||
+                `Add your first ${serviceLabelSingular} to start building the ${serviceLabelPlural} menu.`
             )
-          )
-        : [];
+          ];
 
     openToolModal({
       eyebrow: 'Catalog',
-      title: 'Service menu',
-      description: 'Review the currently configured services that drive booking availability and pricing.',
+      title: serviceUiCopy.menuTitle || `${formatRoleLabelDisplay(serviceLabelPlural)} menu`,
+      description:
+        serviceUiCopy.menuDescription ||
+        `Review, add, update, and remove the ${serviceLabelPlural} that drive booking availability and pricing.`,
       actions: [
         createToolInfoCard(
-          'Service coverage',
-          `${insights.activeServices} active service${insights.activeServices === 1 ? '' : 's'} across ${insights.categoryCount} categor${insights.categoryCount === 1 ? 'y' : 'ies'}.`
+          coverageLabel,
+          `${insights.activeServices} active ${serviceLabelSingular}${insights.activeServices === 1 ? '' : 's'} across ${insights.categoryCount} categor${insights.categoryCount === 1 ? 'y' : 'ies'}.`
         ),
-        createToolInfoCard(
-          'Featured services',
-          insights.featuredServices.length > 0
-            ? insights.featuredServices
-                .map((service) => `${service.name} (${service.priceLabel}, ${service.durationMinutes} min)`)
-                .join(' • ')
-            : 'Add services to start building the service menu.'
-        ),
-        createToolActionButton('Open booking page', () => {
+        ...serviceCards,
+        createToolActionButton(addActionLabel, () => {
+          closeToolModal();
+          openServiceFormModal({ mode: 'add' });
+        }),
+        createToolActionButton(openBookingActionLabel, () => {
           closeToolModal();
           if (publicBookingPath) {
             window.open(publicBookingPath, '_blank', 'noopener,noreferrer');
           }
         }),
-        createToolActionButton('Stay in catalog', () => {
+        createToolActionButton(stayInCatalogActionLabel, () => {
           closeToolModal();
           setMainView('calendar');
           syncSideDrawerOffset();
@@ -5341,30 +6832,93 @@ const createTrendCard = (
     });
   };
 
+  const createPackageManagementCard = (packagePlan) => {
+    const packageUiCopy = getPackageUiCopy();
+    const editActionLabel = packageUiCopy.actionEdit || 'Edit';
+    const removeActionLabel = packageUiCopy.actionRemove || 'Remove';
+    const packageMenuTitle = packageUiCopy.menuTitle || 'package plans';
+    const card = document.createElement('article');
+    card.className = 'calendar-notification-item calendar-service-card';
+
+    const heading = document.createElement('strong');
+    heading.textContent = packagePlan.name;
+
+    const copy = document.createElement('p');
+    copy.textContent = `${packagePlan.priceLabel} | ${packagePlan.totalUses} uses`;
+
+    const actions = document.createElement('div');
+    actions.className = 'calendar-tool-inline-actions';
+
+    const editButton = createToolActionButton(editActionLabel, () => {
+      closeToolModal();
+      openPackagePlanFormModal({ mode: 'edit', packagePlan });
+    });
+
+    const removeButton = createToolActionButton(removeActionLabel, async () => {
+      const shouldRemove = window.confirm(`Remove ${packagePlan.name} from ${packageMenuTitle}?`);
+
+      if (!shouldRemove) {
+        return;
+      }
+
+      removeButton.disabled = true;
+      removeButton.textContent = `${removeActionLabel}...`;
+
+      try {
+        await removePackagePlan(packagePlan.id);
+        openCatalogMembershipsModal();
+      } catch (error) {
+        removeButton.disabled = false;
+        removeButton.textContent = removeActionLabel;
+        safeAlert(
+          error instanceof Error
+            ? error.message
+            : packageUiCopy.errorRemove || `Unable to remove ${packagePlan.name}`
+        );
+      }
+    });
+    removeButton.classList.add('calendar-tool-action-danger');
+
+    actions.append(editButton, removeButton);
+    card.append(heading, copy, actions);
+    return card;
+  };
+
   const openCatalogMembershipsModal = () => {
+    const packageUiCopy = getPackageUiCopy();
+    const packageLabelSingular = packageUiCopy.singular || 'package';
+    const packageLabelPlural = packageUiCopy.plural || `${packageLabelSingular}s`;
+    const addActionLabel = packageUiCopy.actionAdd || `Add ${packageLabelSingular}`;
     const packagePlans = getDashboardPackagePlans().filter((packagePlan) => packagePlan.isActive !== false);
     const loyaltyProgram = getDashboardLoyaltyProgram();
+    const packageCards =
+      packagePlans.length > 0
+        ? packagePlans.map((packagePlan) => createPackageManagementCard(packagePlan))
+        : [
+            createToolInfoCard(
+              packageUiCopy.emptyTitle || `No ${packageLabelPlural} yet`,
+              packageUiCopy.emptyDescription ||
+                `Add your first ${packageLabelSingular} to start publishing prepaid plans.`
+            )
+          ];
 
     openToolModal({
       eyebrow: 'Catalog',
-      title: 'Package plans',
-      description: 'Create prepaid packages from your live service menu and pair them with loyalty rewards for repeat guests.',
+      title: packageUiCopy.menuTitle || `${formatRoleLabelDisplay(packageLabelPlural)} plans`,
+      description:
+        packageUiCopy.menuDescription ||
+        `Create prepaid ${packageLabelPlural} from your live service menu and pair them with loyalty rewards for repeat guests.`,
       actions: [
-        createToolInfoCard(
-          'Current plans',
-          packagePlans.length > 0
-            ? packagePlans.map((packagePlan) => `${packagePlan.name} (${packagePlan.totalUses} uses)`).join(' | ')
-            : 'No packages are published yet.'
-        ),
+        ...packageCards,
         createToolInfoCard(
           'Loyalty program',
           loyaltyProgram?.isEnabled
             ? `${loyaltyProgram.rewardValue}% reward after ${loyaltyProgram.triggerCompletedVisits} completed visits`
             : 'Loyalty is currently disabled.'
         ),
-        createToolActionButton('Create package', () => {
+        createToolActionButton(addActionLabel, () => {
           closeToolModal();
-          openCreatePackagePlanModal();
+          openPackagePlanFormModal({ mode: 'add' });
         }),
         createToolActionButton('Configure loyalty', () => {
           closeToolModal();
@@ -5378,31 +6932,527 @@ const createTrendCard = (
     });
   };
 
-  const openProductsModal = () => {
-    const insights = getCatalogInsights();
+  const refreshProductsView = async () => {
+    await loadDashboard();
+    setMainView('calendar');
+    syncSideDrawerOffset();
+    setActiveDrawer('catalog');
+  };
+
+  const createProductSalesRecordCard = (productSale) => {
+    const card = document.createElement('article');
+    card.className = 'calendar-team-card';
+
+    const heading = document.createElement('strong');
+    heading.textContent = productSale.productName;
+
+    const copy = document.createElement('p');
+    copy.textContent = [
+      `${productSale.quantity} unit${productSale.quantity === 1 ? '' : 's'}`,
+      productSale.totalPriceLabel || productSale.unitPriceLabel,
+      productSale.customerName,
+      formatDateForDisplay(productSale.soldAt)
+    ]
+      .filter(Boolean)
+      .join(' | ');
+
+    const detail = document.createElement('p');
+    detail.className = 'calendar-team-card-copy';
+    detail.textContent = [
+      productSale.unitPriceLabel ? `Unit: ${productSale.unitPriceLabel}` : '',
+      productSale.customerPhone,
+      productSale.customerEmail,
+      productSale.sku ? `SKU: ${productSale.sku}` : ''
+    ]
+      .filter(Boolean)
+      .join(' | ');
+
+    card.append(heading, copy, detail);
+    return card;
+  };
+
+  const openProductSalesRecordsModal = (selectedProductId = '') => {
+    const productUiCopy = getProductUiCopy();
+    const productLabelSingular = productUiCopy.singular || 'product';
+    const productLabelPlural = productUiCopy.plural || `${productLabelSingular}s`;
+    const viewRecordsActionLabel = productUiCopy.actionViewRecords || 'View records';
+    const openReportsActionLabel = productUiCopy.actionOpenReports || 'Open sales reports';
+    const productLookup = new Map(getDashboardProducts().map((product) => [product.id, product]));
+    const allProductSales = getDashboardProductSales();
+    const productSales = selectedProductId
+      ? allProductSales.filter((productSale) => productSale.productId === selectedProductId)
+      : allProductSales;
+    const selectedProduct = selectedProductId ? productLookup.get(selectedProductId) : null;
+    const titleTarget = selectedProduct?.name || formatRoleLabelDisplay(productLabelPlural);
+    const salesCards =
+      productSales.length > 0
+        ? productSales.map((productSale) => createProductSalesRecordCard(productSale))
+        : [
+            createToolInfoCard(
+              `No ${productLabelSingular} sales yet`,
+              `Sell a ${productLabelSingular} to start building your sales record.`
+            )
+          ];
+
+    openToolModal({
+      eyebrow: 'Sales',
+      title: selectedProduct ? `${titleTarget} records` : viewRecordsActionLabel,
+      description:
+        productUiCopy.salesDescription ||
+        `Review sold ${productLabelPlural}, quantities, and customer records in one place.`,
+      actions: [
+        ...salesCards,
+        createToolActionButton(productUiCopy.actionSell || `Sell ${productLabelSingular}`, () => {
+          closeToolModal();
+          openSellProductModal(selectedProduct ?? null);
+        }),
+        createToolActionButton(productUiCopy.menuTitle || formatRoleLabelDisplay(productLabelPlural), () => {
+          closeToolModal();
+          openProductsModal();
+        }),
+        createToolActionButton(openReportsActionLabel, () => {
+          closeToolModal();
+          activateReportsTab('Sales');
+        })
+      ]
+    });
+  };
+
+  const openProductFormModal = ({ mode = 'add', product = null } = {}) => {
+    const productUiCopy = getProductUiCopy();
+    const productLabelSingular = productUiCopy.singular || 'product';
+    const productLabelPlural = productUiCopy.plural || `${productLabelSingular}s`;
+    const productLabelDisplay = formatRoleLabelDisplay(productLabelSingular);
+    const saveActionLabel = productUiCopy.actionSave || `Save ${productLabelSingular}`;
+    const updateActionLabel = productUiCopy.actionUpdate || `Update ${productLabelSingular}`;
+    const addActionLabel = productUiCopy.actionAdd || `Add ${productLabelSingular}`;
+    const editActionLabel = productUiCopy.actionEdit || 'Edit';
+    const form = document.createElement('form');
+    form.className = 'calendar-tool-form';
+
+    const nameField = document.createElement('label');
+    nameField.className = 'calendar-tool-field';
+    const nameLabel = document.createElement('span');
+    nameLabel.textContent = productUiCopy.fieldName || `${productLabelDisplay} name`;
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.placeholder = `Enter ${productLabelSingular} name`;
+    nameInput.value = product?.name ?? '';
+    nameInput.required = true;
+    nameField.append(nameLabel, nameInput);
+
+    const categoryField = document.createElement('label');
+    categoryField.className = 'calendar-tool-field';
+    const categoryLabel = document.createElement('span');
+    categoryLabel.textContent = productUiCopy.fieldCategory || 'Category';
+    const categoryInput = document.createElement('input');
+    categoryInput.type = 'text';
+    categoryInput.placeholder = 'Retail';
+    categoryInput.value = product?.categoryName ?? '';
+    categoryField.append(categoryLabel, categoryInput);
+
+    const skuField = document.createElement('label');
+    skuField.className = 'calendar-tool-field';
+    const skuLabel = document.createElement('span');
+    skuLabel.textContent = productUiCopy.fieldSku || 'SKU';
+    const skuInput = document.createElement('input');
+    skuInput.type = 'text';
+    skuInput.placeholder = 'Optional SKU';
+    skuInput.value = product?.sku ?? '';
+    skuField.append(skuLabel, skuInput);
+
+    const priceField = document.createElement('label');
+    priceField.className = 'calendar-tool-field';
+    const priceLabel = document.createElement('span');
+    priceLabel.textContent = productUiCopy.fieldPrice || `${productLabelDisplay} price`;
+    const priceInput = document.createElement('input');
+    priceInput.type = 'text';
+    priceInput.placeholder = formatCurrencyExampleLabel(1800);
+    priceInput.value = product?.priceLabel ?? formatCurrencyExampleLabel(1000);
+    priceInput.required = true;
+    priceField.append(priceLabel, priceInput);
+
+    const stockField = document.createElement('label');
+    stockField.className = 'calendar-tool-field';
+    const stockLabel = document.createElement('span');
+    stockLabel.textContent = productUiCopy.fieldStock || 'Stock quantity';
+    const stockInput = document.createElement('input');
+    stockInput.type = 'number';
+    stockInput.min = '0';
+    stockInput.max = '100000';
+    stockInput.value = String(product?.stockQuantity ?? 0);
+    stockInput.required = true;
+    stockField.append(stockLabel, stockInput);
+
+    const descriptionField = document.createElement('label');
+    descriptionField.className = 'calendar-tool-field';
+    const descriptionLabel = document.createElement('span');
+    descriptionLabel.textContent = productUiCopy.fieldDescription || 'Description';
+    const descriptionInput = document.createElement('textarea');
+    descriptionInput.rows = 3;
+    descriptionInput.placeholder = `Add ${productLabelSingular} details`;
+    descriptionInput.value = product?.description ?? '';
+    descriptionField.append(descriptionLabel, descriptionInput);
+
+    const submitButton = document.createElement('button');
+    submitButton.className = 'calendar-tool-action calendar-tool-submit';
+    submitButton.type = 'submit';
+    submitButton.textContent = mode === 'edit' ? updateActionLabel : saveActionLabel;
+
+    form.append(
+      nameField,
+      categoryField,
+      skuField,
+      priceField,
+      stockField,
+      descriptionField,
+      submitButton
+    );
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      if (!nameInput.value.trim() || !priceInput.value.trim()) {
+        safeAlert(
+          productUiCopy.validationRequired ||
+            `Please enter a ${productLabelSingular} name and price.`
+        );
+        return;
+      }
+
+      const stockQuantity = Number(stockInput.value);
+
+      if (!Number.isFinite(stockQuantity) || stockQuantity < 0) {
+        safeAlert(productUiCopy.validationStock || 'Please enter a valid stock quantity.');
+        return;
+      }
+
+      submitButton.disabled = true;
+      submitButton.textContent = `${mode === 'edit' ? updateActionLabel : saveActionLabel}...`;
+
+      try {
+        if (mode === 'edit' && product?.id) {
+          await updateProduct(product.id, {
+            name: nameInput.value,
+            categoryName: categoryInput.value,
+            sku: skuInput.value,
+            priceLabel: priceInput.value,
+            stockQuantity,
+            description: descriptionInput.value
+          });
+        } else {
+          await createProduct({
+            name: nameInput.value,
+            categoryName: categoryInput.value,
+            sku: skuInput.value,
+            priceLabel: priceInput.value,
+            stockQuantity,
+            description: descriptionInput.value
+          });
+        }
+        closeToolModal();
+        openProductsModal();
+      } catch (error) {
+        submitButton.disabled = false;
+        submitButton.textContent = mode === 'edit' ? updateActionLabel : saveActionLabel;
+        safeAlert(
+          error instanceof Error
+            ? error.message
+            : mode === 'edit'
+              ? productUiCopy.errorUpdate || `Unable to update ${productLabelSingular}`
+              : productUiCopy.errorAdd || `Unable to add ${productLabelSingular}`
+        );
+      }
+    });
 
     openToolModal({
       eyebrow: 'Catalog',
-      title: 'Products',
-      description: 'Retail products are not configured yet, but the catalog now shows where they connect to service pricing and checkout.',
-      actions: [
-        createToolInfoCard(
-          'Average service price',
-          insights.activeServices > 0
-            ? `${formatCurrencyLabel(insights.averagePrice)} based on the active service menu.`
-            : 'Add services first to estimate product price positioning.'
-        ),
-        createToolActionButton('Open sales overview', () => {
-          closeToolModal();
-          openSalesOverviewModal();
-        }),
-        createToolActionButton('Open booking page', () => {
-          closeToolModal();
-          if (publicBookingPath) {
-            window.open(publicBookingPath, '_blank', 'noopener,noreferrer');
-          }
-        })
-      ]
+      title: mode === 'edit' ? `${editActionLabel} ${product?.name || productLabelSingular}` : addActionLabel,
+      description:
+        mode === 'edit'
+          ? productUiCopy.formEditDescription ||
+            `Update ${productLabelPlural} pricing, stock, and retail details.`
+          : productUiCopy.formAddDescription ||
+            `Create a new ${productLabelSingular} and add it to your live retail catalog.`,
+      actions: [form]
+    });
+  };
+
+  const openSellProductModal = (selectedProduct = null) => {
+    const productUiCopy = getProductUiCopy();
+    const productLabelSingular = productUiCopy.singular || 'product';
+    const sellActionLabel = productUiCopy.actionSell || `Sell ${productLabelSingular}`;
+    const products = getDashboardProducts().filter((product) => product.isActive !== false);
+
+    if (products.length === 0) {
+      safeAlert(
+        productUiCopy.emptyDescription || `Add your first ${productLabelSingular} before selling it.`
+      );
+      openProductsModal();
+      return;
+    }
+
+    const form = document.createElement('form');
+    form.className = 'calendar-tool-form';
+
+    const productField = document.createElement('label');
+    productField.className = 'calendar-tool-field';
+    const productLabel = document.createElement('span');
+    productLabel.textContent = formatRoleLabelDisplay(productLabelSingular);
+    const productSelect = document.createElement('select');
+    for (const product of products) {
+      const option = document.createElement('option');
+      option.value = product.id;
+      option.textContent = `${product.name} - ${product.priceLabel}`;
+      productSelect.append(option);
+    }
+    if (selectedProduct?.id) {
+      productSelect.value = selectedProduct.id;
+    }
+    productField.append(productLabel, productSelect);
+
+    const quantityField = document.createElement('label');
+    quantityField.className = 'calendar-tool-field';
+    const quantityLabel = document.createElement('span');
+    quantityLabel.textContent = productUiCopy.fieldQuantity || 'Quantity';
+    const quantityInput = document.createElement('input');
+    quantityInput.type = 'number';
+    quantityInput.min = '1';
+    quantityInput.max = '1000';
+    quantityInput.value = '1';
+    quantityInput.required = true;
+    quantityField.append(quantityLabel, quantityInput);
+
+    const nameField = document.createElement('label');
+    nameField.className = 'calendar-tool-field';
+    const nameLabel = document.createElement('span');
+    nameLabel.textContent = productUiCopy.fieldCustomerName || 'Customer name';
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.placeholder = 'Enter customer name';
+    nameInput.required = true;
+    nameField.append(nameLabel, nameInput);
+
+    const phoneField = document.createElement('label');
+    phoneField.className = 'calendar-tool-field';
+    const phoneLabel = document.createElement('span');
+    phoneLabel.textContent = productUiCopy.fieldCustomerPhone || 'Customer phone';
+    const phoneInput = document.createElement('input');
+    phoneInput.type = 'text';
+    phoneInput.placeholder = '+923001234567';
+    phoneInput.required = true;
+    phoneField.append(phoneLabel, phoneInput);
+
+    const emailField = document.createElement('label');
+    emailField.className = 'calendar-tool-field';
+    const emailLabel = document.createElement('span');
+    emailLabel.textContent = productUiCopy.fieldCustomerEmail || 'Customer email';
+    const emailInput = document.createElement('input');
+    emailInput.type = 'email';
+    emailInput.placeholder = 'name@example.com';
+    emailField.append(emailLabel, emailInput);
+
+    const submitButton = document.createElement('button');
+    submitButton.className = 'calendar-tool-action calendar-tool-submit';
+    submitButton.type = 'submit';
+    submitButton.textContent = sellActionLabel;
+
+    form.append(productField, quantityField, nameField, phoneField, emailField, submitButton);
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      submitButton.disabled = true;
+      submitButton.textContent = `${sellActionLabel}...`;
+
+      try {
+        await createProductSale({
+          productId: productSelect.value,
+          quantity: Number(quantityInput.value),
+          customerName: nameInput.value,
+          customerPhone: phoneInput.value,
+          customerEmail: emailInput.value
+        });
+        closeToolModal();
+        openProductSalesRecordsModal(productSelect.value);
+      } catch (error) {
+        submitButton.disabled = false;
+        submitButton.textContent = sellActionLabel;
+        safeAlert(
+          error instanceof Error ? error.message : productUiCopy.errorSell || `Unable to sell ${productLabelSingular}`
+        );
+      }
+    });
+
+    openToolModal({
+      eyebrow: 'Sales',
+      title: sellActionLabel,
+      description:
+        productUiCopy.salesDescription ||
+        `Record a ${productLabelSingular} sale, update stock, and save the customer sale record.`,
+      actions: [form]
+    });
+  };
+
+  const createProductManagementCard = (product) => {
+    const productUiCopy = getProductUiCopy();
+    const productSales = getDashboardProductSales().filter((productSale) => productSale.productId === product.id);
+    const soldUnits = productSales.reduce((sum, productSale) => sum + Number(productSale.quantity || 0), 0);
+    const editActionLabel = productUiCopy.actionEdit || 'Edit';
+    const removeActionLabel = productUiCopy.actionRemove || 'Remove';
+    const sellActionLabel = productUiCopy.actionSell || 'Sell';
+    const viewRecordsActionLabel = productUiCopy.actionViewRecords || 'View records';
+    const menuTitle = productUiCopy.menuTitle || 'products';
+    const card = document.createElement('article');
+    card.className = 'calendar-team-card';
+
+    const heading = document.createElement('strong');
+    heading.textContent = product.name;
+
+    const copy = document.createElement('p');
+    copy.textContent = [
+      product.categoryName,
+      product.priceLabel,
+      `${product.stockQuantity} in stock`,
+      soldUnits > 0 ? `${soldUnits} sold` : ''
+    ]
+      .filter(Boolean)
+      .join(' | ');
+
+    const detail = document.createElement('p');
+    detail.className = 'calendar-team-card-copy';
+    detail.textContent = [product.sku ? `SKU: ${product.sku}` : '', product.description]
+      .filter(Boolean)
+      .join(' | ');
+
+    const actions = document.createElement('div');
+    actions.className = 'calendar-tool-inline-actions';
+
+    const editButton = document.createElement('button');
+    editButton.className = 'calendar-tool-action';
+    editButton.type = 'button';
+    editButton.textContent = editActionLabel;
+    editButton.addEventListener('click', () => {
+      openProductFormModal({ mode: 'edit', product });
+    });
+
+    const sellButton = document.createElement('button');
+    sellButton.className = 'calendar-tool-action';
+    sellButton.type = 'button';
+    sellButton.textContent = sellActionLabel;
+    sellButton.addEventListener('click', () => {
+      openSellProductModal(product);
+    });
+
+    const recordsButton = document.createElement('button');
+    recordsButton.className = 'calendar-tool-action';
+    recordsButton.type = 'button';
+    recordsButton.textContent = viewRecordsActionLabel;
+    recordsButton.addEventListener('click', () => {
+      openProductSalesRecordsModal(product.id);
+    });
+
+    const removeButton = document.createElement('button');
+    removeButton.className = 'calendar-tool-action calendar-tool-action-danger';
+    removeButton.type = 'button';
+    removeButton.textContent = removeActionLabel;
+    removeButton.addEventListener('click', async () => {
+      const shouldRemove = window.confirm(`Remove ${product.name} from ${menuTitle}?`);
+
+      if (!shouldRemove) {
+        return;
+      }
+
+      removeButton.disabled = true;
+      removeButton.textContent = `${removeActionLabel}...`;
+
+      try {
+        await removeProduct(product.id);
+        closeToolModal();
+        openProductsModal();
+      } catch (error) {
+        removeButton.disabled = false;
+        removeButton.textContent = removeActionLabel;
+        safeAlert(
+          error instanceof Error
+            ? error.message
+            : productUiCopy.errorRemove || `Unable to remove ${product.name}`
+        );
+      }
+    });
+
+    actions.append(editButton, sellButton, recordsButton, removeButton);
+    card.append(heading, copy, detail, actions);
+    return card;
+  };
+
+  const openProductsModal = () => {
+    const productUiCopy = getProductUiCopy();
+    const productLabelSingular = productUiCopy.singular || 'product';
+    const productLabelPlural = productUiCopy.plural || `${productLabelSingular}s`;
+    const addActionLabel = productUiCopy.actionAdd || `Add ${productLabelSingular}`;
+    const sellActionLabel = productUiCopy.actionSell || `Sell ${productLabelSingular}`;
+    const viewRecordsActionLabel = productUiCopy.actionViewRecords || 'View records';
+    const openReportsActionLabel = productUiCopy.actionOpenReports || 'Open sales reports';
+    const commerce = getDashboardCommerce();
+    const products = getDashboardProducts().filter((product) => product.isActive !== false);
+    const insights = getCatalogInsights();
+    const actions =
+      products.length > 0
+        ? products.map((product) => createProductManagementCard(product))
+        : [
+            createToolInfoCard(
+              productUiCopy.emptyTitle || `No ${productLabelPlural} yet`,
+              productUiCopy.emptyDescription ||
+                `Add your first ${productLabelSingular} to start selling retail items.`
+            )
+          ];
+
+    actions.unshift(
+      createToolInfoCard(
+        productUiCopy.metricActive || `Active ${productLabelPlural}`,
+        String(commerce.activeProducts)
+      ),
+      createToolInfoCard(
+        productUiCopy.metricStock || 'Units in stock',
+        String(insights.totalProductStock)
+      ),
+      createToolInfoCard(
+        productUiCopy.metricSold || 'Units sold',
+        String(commerce.productUnitsSold)
+      ),
+      createToolInfoCard(
+        productUiCopy.metricLowStock || 'Low stock',
+        String(commerce.lowStockProducts)
+      )
+    );
+
+    actions.push(
+      createToolActionButton(addActionLabel, () => {
+        closeToolModal();
+        openProductFormModal({ mode: 'add' });
+      }),
+      createToolActionButton(sellActionLabel, () => {
+        closeToolModal();
+        openSellProductModal();
+      }),
+      createToolActionButton(viewRecordsActionLabel, () => {
+        closeToolModal();
+        openProductSalesRecordsModal();
+      }),
+      createToolActionButton(openReportsActionLabel, () => {
+        closeToolModal();
+        activateReportsTab('Sales');
+      })
+    );
+
+    openToolModal({
+      eyebrow: 'Catalog',
+      title: productUiCopy.menuTitle || formatRoleLabelDisplay(productLabelPlural),
+      description:
+        productUiCopy.menuDescription ||
+        `Manage retail ${productLabelPlural}, update pricing and stock, and record every sale.`,
+      actions
     });
   };
 
@@ -5862,14 +7912,16 @@ const createTrendCard = (
     appointmentDate,
     appointmentId,
     timeSelect,
-    preferredTime = ''
+    preferredTime = '',
+    teamMemberId = '',
+    serviceName = ''
   ) => {
     if (!(timeSelect instanceof HTMLSelectElement) || !clientId) {
       return;
     }
 
     const payload = await apiRequest(
-      `/api/public/book/${clientId}/slots?date=${encodeURIComponent(appointmentDate)}&excludeAppointmentId=${encodeURIComponent(appointmentId)}`
+      `/api/platform/clients/${clientId}/appointments/slots?date=${encodeURIComponent(appointmentDate)}&excludeAppointmentId=${encodeURIComponent(appointmentId)}${teamMemberId ? `&teamMemberId=${encodeURIComponent(teamMemberId)}` : ''}${serviceName ? `&serviceName=${encodeURIComponent(serviceName)}` : ''}`
     );
 
     timeSelect.replaceChildren();
@@ -6019,7 +8071,14 @@ const createTrendCard = (
     form.append(dateField, timeField, submitButton);
 
     const loadSlots = async (preferredTime = appointment.appointmentTime) => {
-      await loadEditableAppointmentSlots(dateInput.value, appointment.id, timeSelect, preferredTime);
+      await loadEditableAppointmentSlots(
+        dateInput.value,
+        appointment.id,
+        timeSelect,
+        preferredTime,
+        appointment.teamMemberId || '',
+        appointment.serviceName || ''
+      );
       submitButton.disabled = !timeSelect.value;
     };
 
@@ -7666,6 +9725,7 @@ const initPublicBooking = () => {
   const waitlistPanel = document.querySelector('#booking-waitlist-panel');
   const waitlistCopy = document.querySelector('#booking-waitlist-copy');
   const waitlistButton = document.querySelector('#booking-waitlist-button');
+  const summaryBusinessName = document.querySelector('#booking-summary-business-name');
   const summaryTitle = document.querySelector('#booking-summary-title');
   const summaryCopy = document.querySelector('#booking-summary-copy');
   const successPanel = document.querySelector('#booking-success');
@@ -7688,6 +9748,21 @@ const initPublicBooking = () => {
   let activeWaitlistOffer = null;
   let savedWaitlistSignature = '';
   let currentBusinessName = '';
+  let bookingHeadingFallback = '';
+
+  const syncBookingHero = () => {
+    const bookingHeading = currentBusinessName || bookingHeadingFallback;
+    businessName.textContent = bookingHeading;
+    summaryBusinessName.textContent = bookingHeading;
+    summaryBusinessName.classList.toggle('is-hidden', !bookingHeading);
+    businessCopy.textContent = bookingHeading
+      ? `Choose your service, pick a time, and book directly with ${bookingHeading}.`
+      : '';
+
+    if (bookingHeading) {
+      document.title = `${bookingHeading} | Book appointment`;
+    }
+  };
 
   if (
     !(bookingForm instanceof HTMLFormElement) ||
@@ -7711,6 +9786,7 @@ const initPublicBooking = () => {
     !(waitlistPanel instanceof HTMLDivElement) ||
     !(waitlistCopy instanceof HTMLParagraphElement) ||
     !(waitlistButton instanceof HTMLButtonElement) ||
+    !(summaryBusinessName instanceof HTMLParagraphElement) ||
     !(summaryTitle instanceof HTMLElement) ||
     !(summaryCopy instanceof HTMLParagraphElement) ||
     !(successPanel instanceof HTMLDivElement) ||
@@ -7763,8 +9839,8 @@ const initPublicBooking = () => {
     placeholder.value = '';
     placeholder.textContent =
       Array.isArray(teamMembers) && teamMembers.length > 0
-        ? 'Select a barber'
-        : 'Any available barber';
+        ? 'Any available team member'
+        : 'Any available team member';
     teamMemberSelect.append(placeholder);
 
     if (!Array.isArray(teamMembers) || teamMembers.length === 0) {
@@ -7788,7 +9864,7 @@ const initPublicBooking = () => {
       teamMemberSelect.append(option);
     }
 
-    teamMemberSelect.value = teamMembers[0]?.id ?? '';
+    teamMemberSelect.value = '';
   };
 
   const applyCustomerHistoryAutofill = (normalizedPhone, latestHistoryItem) => {
@@ -8051,7 +10127,7 @@ const initPublicBooking = () => {
 
     try {
       const payload = await apiRequest(
-        `/api/public/book/${businessId}/slots?date=${encodeURIComponent(dateInput.value)}${buildWaitlistClaimQuery()}`
+        `/api/public/book/${businessId}/slots?date=${encodeURIComponent(dateInput.value)}${serviceSelect.value ? `&serviceName=${encodeURIComponent(serviceSelect.value)}` : ''}${teamMemberSelect.value ? `&teamMemberId=${encodeURIComponent(teamMemberSelect.value)}` : ''}${buildWaitlistClaimQuery()}`
       );
 
       timeSelect.replaceChildren();
@@ -8079,6 +10155,16 @@ const initPublicBooking = () => {
     }
   };
 
+  loadPublicConfig()
+    .then((config) => {
+      bookingHeadingFallback =
+        config?.supportPlatformName?.trim() || config?.supportCompanyName?.trim() || '';
+      syncBookingHero();
+    })
+    .catch(() => {
+      bookingHeadingFallback = '';
+    });
+
   apiRequest(
     `/api/public/book/${businessId}${
       currentWaitlistClaim.waitlistEntryId && currentWaitlistClaim.waitlistOfferToken
@@ -8089,13 +10175,7 @@ const initPublicBooking = () => {
     .then(async (payload) => {
       currentBusinessName =
         typeof payload.businessName === 'string' ? payload.businessName.trim() : '';
-      businessName.textContent = currentBusinessName || 'Book your appointment';
-      businessCopy.textContent = currentBusinessName
-        ? `Choose your service, pick a time, and book directly with ${currentBusinessName}.`
-        : 'Choose your service, pick a time, and get confirmation by SMS.';
-      document.title = currentBusinessName
-        ? `${currentBusinessName} | Book appointment`
-        : 'QR schedule.com | Book appointment';
+      syncBookingHero();
       serviceTypes.textContent =
         payload.serviceTypes.length > 0 ? payload.serviceTypes.join(' | ') : 'Salon services';
       populateTeamMembers(payload.teamMembers);
@@ -8152,22 +10232,20 @@ const initPublicBooking = () => {
     );
   });
 
-  serviceSelect.addEventListener('change', () => {
-    renderWaitlistPanel(
-      [...timeSelect.options]
-        .map((option) => option.value)
-        .filter(Boolean)
-    );
-    updateBookingSummary();
+  serviceSelect.addEventListener('change', async () => {
+    try {
+      await populateSlots();
+    } catch (error) {
+      safeAlert(error instanceof Error ? error.message : 'Unable to load available slots');
+    }
   });
 
-  teamMemberSelect.addEventListener('change', () => {
-    renderWaitlistPanel(
-      [...timeSelect.options]
-        .map((option) => option.value)
-        .filter(Boolean)
-    );
-    updateBookingSummary();
+  teamMemberSelect.addEventListener('change', async () => {
+    try {
+      await populateSlots();
+    } catch (error) {
+      safeAlert(error instanceof Error ? error.message : 'Unable to load available slots');
+    }
   });
 
   timeSelect.addEventListener('change', () => {
@@ -8383,7 +10461,7 @@ const initManageBooking = () => {
     }
 
     const payload = await apiRequest(
-      `/api/public/book/${businessId}/slots?date=${encodeURIComponent(dateInput.value)}&excludeAppointmentId=${encodeURIComponent(appointmentId)}&accessToken=${encodeURIComponent(accessToken)}`
+      `/api/public/book/${businessId}/slots?date=${encodeURIComponent(dateInput.value)}&excludeAppointmentId=${encodeURIComponent(appointmentId)}&accessToken=${encodeURIComponent(accessToken)}${appointmentDetails?.serviceName ? `&serviceName=${encodeURIComponent(appointmentDetails.serviceName)}` : ''}${appointmentDetails?.teamMemberId ? `&teamMemberId=${encodeURIComponent(appointmentDetails.teamMemberId)}` : ''}`
     );
 
     timeSelect.replaceChildren();

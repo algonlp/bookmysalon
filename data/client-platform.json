@@ -603,6 +603,691 @@
       "onboardingCompleted": false,
       "createdAt": "2026-04-03T12:15:57.079Z",
       "updatedAt": "2026-04-03T12:15:57.079Z"
+    },
+    {
+      "id": "demo-luna-luxe",
+      "adminToken": "demo-admin-luna-luxe",
+      "email": "hello@lunaluxe.demo",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "Luna Luxe Salon",
+      "website": "www.lunaluxe.demo",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        },
+        {
+          "id": "beauty-salon-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "team-luna-1",
+          "name": "Mina",
+          "role": "Stylist",
+          "phone": "+923001110001",
+          "expertise": "Colour and blow-dry",
+          "isActive": true,
+          "createdAt": "2026-03-01T09:00:00.000Z",
+          "updatedAt": "2026-03-12T08:30:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Clifton Block 5, Schon Circle, Karachi, Sindh, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-03-01T09:00:00.000Z",
+      "updatedAt": "2026-03-12T08:30:00.000Z"
+    },
+    {
+      "id": "demo-urban-trim",
+      "adminToken": "demo-admin-urban-trim",
+      "email": "hello@urbantrim.demo",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "Urban Trim Studio",
+      "website": "www.urbantrim.demo",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Barber"
+      ],
+      "services": [
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        }
+      ],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "MM Alam Road, Gulberg III, Lahore, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-03-02T10:00:00.000Z",
+      "updatedAt": "2026-03-12T08:00:00.000Z"
+    },
+    {
+      "id": "demo-serene-glow",
+      "adminToken": "demo-admin-serene-glow",
+      "email": "hello@sereneglow.demo",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "Serene Glow Spa",
+      "website": "www.sereneglow.demo",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Massage",
+        "Spa & sauna"
+      ],
+      "services": [
+        {
+          "id": "massage-deep-tissue-massage",
+          "name": "Deep tissue massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "Rs 3,200",
+          "description": "Targeted pressure massage designed for muscle recovery.",
+          "isActive": true
+        },
+        {
+          "id": "massage-relaxation-massage",
+          "name": "Relaxation massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "Rs 2,900",
+          "description": "Full-body relaxation massage to reduce stress and tension.",
+          "isActive": true
+        },
+        {
+          "id": "spa-sauna-spa-session",
+          "name": "Spa session",
+          "durationMinutes": 60,
+          "categoryName": "Spa & sauna",
+          "priceLabel": "Rs 3,500",
+          "description": "Unwind with a restorative spa session in a calm setting.",
+          "isActive": true
+        }
+      ],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "team-serene-1",
+          "name": "Hira",
+          "role": "Therapist",
+          "phone": "+923001110002",
+          "expertise": "Deep tissue massage",
+          "isActive": true,
+          "createdAt": "2026-03-03T11:00:00.000Z",
+          "updatedAt": "2026-03-12T07:30:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Blue Area, Jinnah Avenue, Islamabad, Islamabad Capital Territory, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-03-03T11:00:00.000Z",
+      "updatedAt": "2026-03-12T07:30:00.000Z"
+    },
+    {
+      "id": "52aeebaf-a35c-463d-8854-8114beea59d9",
+      "adminToken": "4054f9f3-61f8-4646-9b00-88c810e30bdf",
+      "email": "maqsoodparacha1479@gmail.com",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "hammmad",
+      "website": "",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Barber"
+      ],
+      "services": [
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        }
+      ],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "",
+      "preferredLanguage": null,
+      "onboardingCompleted": false,
+      "createdAt": "2026-04-06T07:56:17.347Z",
+      "updatedAt": "2026-04-06T07:56:37.101Z"
+    },
+    {
+      "id": "493e799e-c30f-4b31-81ee-b34eb6f3910e",
+      "adminToken": "ba919f1a-a29d-4f4c-a675-0b196a95a515",
+      "email": "maqsoodparacha1479@gmail.com",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "paracha",
+      "website": "",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Barber"
+      ],
+      "services": [
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        }
+      ],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Kahkashan Hall, University Main Road, Faisalabad City Tehsil, Faisalabad District, Faisalabad Division, Punjab, 38900, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-04-06T08:14:22.668Z",
+      "updatedAt": "2026-04-06T08:15:24.721Z"
+    },
+    {
+      "id": "6e4e2ac2-220a-4c8a-8702-769719090e9b",
+      "adminToken": "98237a1f-e87d-4194-9472-eb9fa98dcac4",
+      "email": "maqsoodparacha1479@gmail.com",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "hammmad",
+      "website": "",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        }
+      ],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Kahkashan Hall, University Main Road, Faisalabad City Tehsil, Faisalabad District, Faisalabad Division, Punjab, 38900, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-04-06T09:16:50.233Z",
+      "updatedAt": "2026-04-06T09:17:26.103Z"
+    },
+    {
+      "id": "c2da10dd-b7ef-44d8-9ce1-a75a0ab82ebd",
+      "adminToken": "ddaa6649-105d-40ca-bcb2-b061d754ab3b",
+      "email": "maqsoodparacha1479@gmail.com",
+      "mobileNumber": "",
+      "provider": "email",
+      "businessName": "salon beauty",
+      "website": "",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Hair salon",
+        "Nails",
+        "Eyebrows & lashes",
+        "Beauty salon",
+        "Medspa",
+        "Barber",
+        "Massage",
+        "Spa & sauna",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        },
+        {
+          "id": "nails-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "nails-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 2,100",
+          "description": "Foot soak, nail care, exfoliation, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-lash-lift",
+          "name": "Lash lift",
+          "durationMinutes": 45,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 1,800",
+          "description": "Lift and curl natural lashes for a brighter eye look.",
+          "isActive": true
+        },
+        {
+          "id": "beauty-salon-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
+          "isActive": true
+        },
+        {
+          "id": "medspa-skin-consultation",
+          "name": "Skin consultation",
+          "durationMinutes": 45,
+          "categoryName": "Medspa",
+          "priceLabel": "Rs 2,400",
+          "description": "Professional consultation to recommend the right skin treatments.",
+          "isActive": true
+        },
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        },
+        {
+          "id": "massage-deep-tissue-massage",
+          "name": "Deep tissue massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "Rs 3,200",
+          "description": "Targeted pressure massage designed for muscle recovery.",
+          "isActive": true
+        },
+        {
+          "id": "massage-relaxation-massage",
+          "name": "Relaxation massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "Rs 2,900",
+          "description": "Full-body relaxation massage to reduce stress and tension.",
+          "isActive": true
+        },
+        {
+          "id": "spa-sauna-spa-session",
+          "name": "Spa session",
+          "durationMinutes": 60,
+          "categoryName": "Spa & sauna",
+          "priceLabel": "Rs 3,500",
+          "description": "Unwind with a restorative spa session in a calm setting.",
+          "isActive": true
+        },
+        {
+          "id": "waxing-salon-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Full arm waxing service for a smooth, polished result.",
+          "isActive": true
+        }
+      ],
+      "packagePlans": [
+        {
+          "id": "0210685a-9959-40c9-9386-dbd904634d34",
+          "name": "enoy",
+          "includedServiceIds": [
+            "barber-haircut"
+          ],
+          "totalUses": 5,
+          "priceLabel": "4500",
+          "isActive": true,
+          "createdAt": "2026-04-06T10:23:11.825Z",
+          "updatedAt": "2026-04-06T10:23:38.342Z"
+        }
+      ],
+      "loyaltyProgram": {
+        "id": "loyalty-program",
+        "isEnabled": true,
+        "triggerCompletedVisits": 5,
+        "rewardType": "discount_percent",
+        "rewardValue": 10,
+        "includedServiceIds": [],
+        "createdAt": "2026-04-06T10:23:58.296Z",
+        "updatedAt": "2026-04-06T10:23:58.296Z"
+      },
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [
+        {
+          "id": "phone:+923494548161",
+          "customerName": "maqsood",
+          "customerPhone": "+923494548161",
+          "customerEmail": "maqsoodparacha1479@gmail.com",
+          "totalVisits": 1,
+          "bookedVisits": 0,
+          "completedVisits": 1,
+          "cancelledVisits": 0,
+          "lastService": "Cut and style",
+          "lastAppointmentDate": "2026-04-06",
+          "lastAppointmentTime": "17:00",
+          "firstSeenAt": "2026-04-06T11:19:50.689Z",
+          "lastSeenAt": "2026-04-06T13:34:19.288Z",
+          "createdAt": "2026-04-06T11:19:50.689Z",
+          "updatedAt": "2026-04-06T13:34:19.288Z"
+        }
+      ],
+      "teamMembers": [
+        {
+          "id": "65593d62-4e86-481c-b8fe-64ecc4060ccc",
+          "name": "maqsood",
+          "role": "Barber",
+          "phone": "+92 349-4548161",
+          "expertise": "Manicure",
+          "openingTime": "09:00",
+          "closingTime": "18:00",
+          "offDays": [
+            "sunday"
+          ],
+          "isActive": true,
+          "createdAt": "2026-04-06T10:55:16.588Z",
+          "updatedAt": "2026-04-06T10:55:16.588Z"
+        }
+      ],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical",
+        "mobile"
+      ],
+      "venueAddress": "University of Agriculture, Faisalabad, University Main Road, Faisalabad City Tehsil, Faisalabad District, Faisalabad Division, Punjab, 38900, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-04-06T09:30:16.095Z",
+      "updatedAt": "2026-04-06T13:34:22.279Z",
+      "products": [
+        {
+          "id": "37a8f1e7-0109-47bc-ae7f-64fce8e46834",
+          "name": "oil",
+          "categoryName": "230",
+          "sku": "11",
+          "priceLabel": "Rs 500",
+          "stockQuantity": 10,
+          "description": "all ok",
+          "isActive": true,
+          "createdAt": "2026-04-06T11:24:48.871Z",
+          "updatedAt": "2026-04-06T11:24:48.871Z"
+        }
+      ],
+      "productSales": []
     }
   ]
 }

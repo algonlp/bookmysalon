@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Help and support</title>
+    <meta
+      name="description"
+      content="Help and support details for the QR Schedule platform."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="help-page">
+      <div class="help-shell">
+        <a class="help-back-link" href="/" aria-label="Go back to home">
+          <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+            <path d="M15 5l-7 7 7 7"></path>
+          </svg>
+          <span>Back to home</span>
+        </a>
+
+        <section class="help-hero">
+          <p class="help-eyebrow">Help and support</p>
+          <h1 id="help-company-heading">Company details</h1>
+          <p id="help-company-summary">
+            This page shows the company details configured for the platform.
+          </p>
+        </section>
+
+        <section class="help-grid" aria-label="Algonlp company information">
+          <article class="help-card">
+            <h2>Company profile</h2>
+            <div class="help-detail-list">
+              <div class="help-detail-row" id="help-company-row" hidden>
+                <span class="help-detail-label">Company</span>
+                <span class="help-detail-value" id="help-company-name"></span>
+              </div>
+              <div class="help-detail-row" id="help-platform-row" hidden>
+                <span class="help-detail-label">Platform</span>
+                <span class="help-detail-value" id="help-platform-name"></span>
+              </div>
+              <div class="help-detail-row" id="help-website-row" hidden>
+                <span class="help-detail-label">Website</span>
+                <a
+                  class="help-detail-value help-link-value"
+                  id="help-website-link"
+                  href="#"
+                  target="_blank"
+                  rel="noreferrer"
+                ></a>
+              </div>
+              <div class="help-detail-row" id="help-focus-row" hidden>
+                <span class="help-detail-label">Focus</span>
+                <span class="help-detail-value" id="help-focus-text"></span>
+              </div>
+            </div>
+          </article>
+
+          <article class="help-card">
+            <h2>Platform support</h2>
+            <p id="help-support-copy">
+              Use the main platform to continue with customer booking or business onboarding.
+            </p>
+            <p>
+              Update the support values through environment configuration so this page stays
+              aligned with your company details.
+            </p>
+
+            <div class="help-actions">
+              <a class="help-action" href="/">Customer booking</a>
+              <a class="help-action secondary" href="/for-businesses">Business setup</a>
+            </div>
+          </article>
+        </section>
+      </div>
+    </div>
+
+    <script src="/help.js"></script>
+  </body>
+</html>

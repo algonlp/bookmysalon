@@ -14,6 +14,7 @@ import type {
   BusinessProfileInput,
   BusinessSettingsRecord,
   ClientRecord,
+  CreateProductInput,
   CustomerProfileRecord,
   CreateBusinessServiceInput,
   CreateClientInput,
@@ -25,18 +26,25 @@ import type {
   LaunchLinksViewModel,
   LoyaltyProgramRecord,
   PackagePlanRecord,
+  ProductRecord,
+  ProductSaleRecord,
   PublicClientRecord,
   PublicSalonShowcaseItem,
   PreferredLanguage,
   ReportMetadataRecord,
   ServiceLocationInput,
+  SellProductInput,
   ServiceTypesInput,
   TeamMemberRecord,
   UpdateTeamMemberInput,
   UpdateBusinessSettingsInput,
+  UpdateBusinessServiceInput,
+  UpdateProductInput,
+  UpdatePackagePlanInput,
   UpdatePreferredLanguageInput,
   UpdateLoyaltyProgramInput,
-  VenueLocationInput
+  VenueLocationInput,
+  WeekdayId
 } from './clientPlatform.types';
 
 const DEFAULT_BUSINESS_SLOT_TIMES = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
@@ -54,6 +62,18 @@ const DEFAULT_BUSINESS_SETTINGS: BusinessSettingsRecord = {
   reportMetadata: DEFAULT_REPORT_METADATA
 };
 
+const WEEKDAY_IDS: WeekdayId[] = [
+  'sunday',
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday'
+];
+
+const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
 const buildFallbackEmail = (provider: CreateClientInput['provider']): string =>
   `${provider}-${randomUUID().slice(0, 8)}@platform.local`;
 
@@ -70,15 +90,46 @@ const normalizeCurrencyLocale = (value: unknown): string => {
     : DEFAULT_BUSINESS_SETTINGS.currencyLocale;
 };
 
+const parseMoneyLabel = (
+  priceLabel: string,
+  fallbackCurrencyCode = DEFAULT_BUSINESS_SETTINGS.currencyCode
+): { amountValue: number; currencyCode: string } => {
+  const trimmedLabel = typeof priceLabel === 'string' ? priceLabel.trim() : '';
+  const currencyMatch = trimmedLabel.match(/\b([A-Za-z]{3})\b/);
+  const normalizedValue = Number(trimmedLabel.replace(/[^\d.]/g, ''));
+
+  return {
+    amountValue: Number.isFinite(normalizedValue) ? normalizedValue : 0,
+    currencyCode: currencyMatch?.[1]?.toUpperCase() ?? fallbackCurrencyCode
+  };
+};
+
+const formatMoneyLabel = (
+  amountValue: number,
+  currencyCode: string,
+  currencyLocale: string
+): string => {
+  const normalizedAmountValue = Number.isFinite(amountValue) ? amountValue : 0;
+
+  try {
+    return new Intl.NumberFormat(currencyLocale || DEFAULT_BUSINESS_SETTINGS.currencyLocale, {
+      style: 'currency',
+      currency: currencyCode || DEFAULT_BUSINESS_SETTINGS.currencyCode,
+      maximumFractionDigits: normalizedAmountValue % 1 === 0 ? 0 : 2
+    }).format(normalizedAmountValue);
+  } catch (_error) {
+    return `${currencyCode || DEFAULT_BUSINESS_SETTINGS.currencyCode} ${normalizedAmountValue}`;
+  }
+};
+
 const normalizeSlotTimes = (value: unknown): string[] => {
-  const slotPattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
   const rawValues = Array.isArray(value) ? value : [];
   const uniqueSlots = new Set<string>();
 
   for (const slotValue of rawValues) {
     const normalizedValue = typeof slotValue === 'string' ? slotValue.trim() : '';
 
-    if (!slotPattern.test(normalizedValue)) {
+    if (!TIME_PATTERN.test(normalizedValue)) {
       continue;
     }
 
@@ -115,6 +166,57 @@ const normalizeBusinessSettings = (
       : DEFAULT_BUSINESS_SETTINGS.useServiceTemplates,
   reportMetadata: normalizeReportMetadata(value?.reportMetadata)
 });
+
+const parseTimeToMinutes = (value: string): number => {
+  const [hoursValue, minutesValue] = value.split(':');
+  const hours = Number(hoursValue);
+  const minutes = Number(minutesValue);
+  return hours * 60 + minutes;
+};
+
+const formatMinutesAsTime = (value: number): string => {
+  const normalizedValue = Math.max(0, Math.min(24 * 60 - 1, Math.round(value)));
+  const hours = Math.floor(normalizedValue / 60);
+  const minutes = normalizedValue % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+};
+
+const getDefaultTeamMemberTimeRange = (
+  businessSettings: BusinessSettingsRecord | null | undefined
+): { openingTime: string; closingTime: string } => {
+  const normalizedSettings = normalizeBusinessSettings(businessSettings);
+  const slotTimes = normalizedSettings.slotTimes;
+  const openingTime = slotTimes[0] ?? '09:00';
+  const lastSlot = slotTimes[slotTimes.length - 1] ?? '17:00';
+  const slotMinutes = slotTimes.map(parseTimeToMinutes);
+  const fallbackGapMinutes =
+    slotMinutes.length > 1
+      ? Math.max(
+          15,
+          slotMinutes
+            .slice(1)
+            .map((slotMinute, index) => slotMinute - slotMinutes[index])
+            .find((gapMinutes) => gapMinutes > 0) ?? 60
+        )
+      : 60;
+  const closingTime = formatMinutesAsTime(parseTimeToMinutes(lastSlot) + fallbackGapMinutes);
+  return { openingTime, closingTime };
+};
+
+const normalizeTeamMemberOffDays = (value: unknown): WeekdayId[] => {
+  const offDays = Array.isArray(value) ? value : [];
+  const uniqueOffDays = new Set<WeekdayId>();
+
+  for (const offDay of offDays) {
+    const normalizedOffDay = typeof offDay === 'string' ? offDay.trim().toLowerCase() : '';
+
+    if (WEEKDAY_IDS.includes(normalizedOffDay as WeekdayId)) {
+      uniqueOffDays.add(normalizedOffDay as WeekdayId);
+    }
+  }
+
+  return WEEKDAY_IDS.filter((weekdayId) => uniqueOffDays.has(weekdayId));
+};
 
 const getServiceTemplateOptions = (
   businessSettings: BusinessSettingsRecord | null | undefined
@@ -153,7 +255,8 @@ const getAvatarInitial = (label: string): string => label.trim().charAt(0).toLow
 
 const sanitizeTeamMember = (
   teamMember: Partial<TeamMemberRecord>,
-  fallbackIndex: number
+  fallbackIndex: number,
+  businessSettings: BusinessSettingsRecord | null | undefined
 ): TeamMemberRecord | undefined => {
   const name = typeof teamMember.name === 'string' ? teamMember.name.trim() : '';
 
@@ -162,6 +265,18 @@ const sanitizeTeamMember = (
   }
 
   const timestamp = new Date().toISOString();
+  const defaultTimeRange = getDefaultTeamMemberTimeRange(businessSettings);
+  const openingTime =
+    typeof teamMember.openingTime === 'string' && TIME_PATTERN.test(teamMember.openingTime.trim())
+      ? teamMember.openingTime.trim()
+      : defaultTimeRange.openingTime;
+  const closingTime =
+    typeof teamMember.closingTime === 'string' && TIME_PATTERN.test(teamMember.closingTime.trim())
+      ? teamMember.closingTime.trim()
+      : defaultTimeRange.closingTime;
+  const normalizedOpeningTimeMinutes = parseTimeToMinutes(openingTime);
+  const normalizedClosingTimeMinutes = parseTimeToMinutes(closingTime);
+  const hasValidTimeRange = normalizedClosingTimeMinutes > normalizedOpeningTimeMinutes;
 
   return {
     id:
@@ -176,6 +291,9 @@ const sanitizeTeamMember = (
     phone: typeof teamMember.phone === 'string' ? teamMember.phone.trim() : '',
     expertise:
       typeof teamMember.expertise === 'string' ? teamMember.expertise.trim() : '',
+    openingTime: hasValidTimeRange ? openingTime : defaultTimeRange.openingTime,
+    closingTime: hasValidTimeRange ? closingTime : defaultTimeRange.closingTime,
+    offDays: normalizeTeamMemberOffDays(teamMember.offDays),
     isActive: teamMember.isActive !== false,
     createdAt:
       typeof teamMember.createdAt === 'string' && teamMember.createdAt.trim().length > 0
@@ -188,9 +306,12 @@ const sanitizeTeamMember = (
   };
 };
 
-const normalizeTeamMembers = (teamMembers: TeamMemberRecord[] = []): TeamMemberRecord[] =>
+const normalizeTeamMembers = (
+  teamMembers: TeamMemberRecord[] = [],
+  businessSettings: BusinessSettingsRecord | null | undefined
+): TeamMemberRecord[] =>
   teamMembers
-    .map((teamMember, index) => sanitizeTeamMember(teamMember, index))
+    .map((teamMember, index) => sanitizeTeamMember(teamMember, index, businessSettings))
     .filter((teamMember): teamMember is TeamMemberRecord => !!teamMember);
 
 const sanitizePackagePlan = (
@@ -236,6 +357,104 @@ const normalizePackagePlans = (packagePlans: PackagePlanRecord[] = []): PackageP
   packagePlans
     .map((packagePlan, index) => sanitizePackagePlan(packagePlan, index))
     .filter((packagePlan): packagePlan is PackagePlanRecord => !!packagePlan);
+
+const sanitizeProduct = (
+  product: Partial<ProductRecord>,
+  fallbackIndex: number
+): ProductRecord | undefined => {
+  const name = typeof product.name === 'string' ? product.name.trim() : '';
+
+  if (!name) {
+    return undefined;
+  }
+
+  const timestamp = new Date().toISOString();
+  const stockQuantity = Number(product.stockQuantity);
+
+  return {
+    id:
+      typeof product.id === 'string' && product.id.trim().length > 0
+        ? product.id.trim()
+        : `product-${fallbackIndex + 1}`,
+    name,
+    categoryName:
+      typeof product.categoryName === 'string' && product.categoryName.trim().length > 0
+        ? product.categoryName.trim()
+        : 'Retail',
+    sku: typeof product.sku === 'string' ? product.sku.trim() : '',
+    priceLabel: typeof product.priceLabel === 'string' ? product.priceLabel.trim() : '',
+    stockQuantity: Number.isFinite(stockQuantity) && stockQuantity >= 0 ? Math.floor(stockQuantity) : 0,
+    description: typeof product.description === 'string' ? product.description.trim() : '',
+    isActive: product.isActive !== false,
+    createdAt:
+      typeof product.createdAt === 'string' && product.createdAt.trim().length > 0
+        ? product.createdAt
+        : timestamp,
+    updatedAt:
+      typeof product.updatedAt === 'string' && product.updatedAt.trim().length > 0
+        ? product.updatedAt
+        : timestamp
+  };
+};
+
+const normalizeProducts = (products: ProductRecord[] = []): ProductRecord[] =>
+  products
+    .map((product, index) => sanitizeProduct(product, index))
+    .filter((product): product is ProductRecord => !!product);
+
+const sanitizeProductSale = (
+  productSale: Partial<ProductSaleRecord>,
+  fallbackIndex: number
+): ProductSaleRecord | undefined => {
+  const productId = typeof productSale.productId === 'string' ? productSale.productId.trim() : '';
+  const productName = typeof productSale.productName === 'string' ? productSale.productName.trim() : '';
+  const customerName =
+    typeof productSale.customerName === 'string' ? productSale.customerName.trim() : '';
+  const quantity = Number(productSale.quantity);
+
+  if (!productId || !productName || !customerName) {
+    return undefined;
+  }
+
+  const timestamp = new Date().toISOString();
+
+  return {
+    id:
+      typeof productSale.id === 'string' && productSale.id.trim().length > 0
+        ? productSale.id.trim()
+        : `product-sale-${fallbackIndex + 1}`,
+    productId,
+    productName,
+    sku: typeof productSale.sku === 'string' ? productSale.sku.trim() : '',
+    quantity: Number.isFinite(quantity) && quantity > 0 ? Math.floor(quantity) : 1,
+    unitPriceLabel: typeof productSale.unitPriceLabel === 'string' ? productSale.unitPriceLabel.trim() : '',
+    totalPriceLabel:
+      typeof productSale.totalPriceLabel === 'string' ? productSale.totalPriceLabel.trim() : '',
+    customerName,
+    customerPhone:
+      typeof productSale.customerPhone === 'string' ? productSale.customerPhone.trim() : '',
+    customerEmail:
+      typeof productSale.customerEmail === 'string' ? productSale.customerEmail.trim() : '',
+    soldAt:
+      typeof productSale.soldAt === 'string' && productSale.soldAt.trim().length > 0
+        ? productSale.soldAt
+        : timestamp,
+    createdAt:
+      typeof productSale.createdAt === 'string' && productSale.createdAt.trim().length > 0
+        ? productSale.createdAt
+        : timestamp,
+    updatedAt:
+      typeof productSale.updatedAt === 'string' && productSale.updatedAt.trim().length > 0
+        ? productSale.updatedAt
+        : timestamp
+  };
+};
+
+const normalizeProductSales = (productSales: ProductSaleRecord[] = []): ProductSaleRecord[] =>
+  productSales
+    .map((productSale, index) => sanitizeProductSale(productSale, index))
+    .filter((productSale): productSale is ProductSaleRecord => !!productSale)
+    .sort((left, right) => right.soldAt.localeCompare(left.soldAt));
 
 const normalizeLoyaltyProgram = (
   loyaltyProgram: LoyaltyProgramRecord | null | undefined
@@ -450,6 +669,25 @@ const buildCustomerProfilesFromAppointments = (
   );
 };
 
+const buildProductCommerceView = (
+  client: Pick<ClientRecord, 'products' | 'productSales'>
+): Pick<
+  DashboardCommerceViewModel,
+  'activeProducts' | 'productsSold' | 'productUnitsSold' | 'lowStockProducts'
+> => {
+  const activeProducts = normalizeProducts(client.products ?? []).filter(
+    (product) => product.isActive !== false
+  );
+  const productSales = normalizeProductSales(client.productSales ?? []);
+
+  return {
+    activeProducts: activeProducts.length,
+    productsSold: productSales.length,
+    productUnitsSold: productSales.reduce((sum, productSale) => sum + productSale.quantity, 0),
+    lowStockProducts: activeProducts.filter((product) => product.stockQuantity <= 3).length
+  };
+};
+
 const toPublicClientRecord = (client: ClientRecord): PublicClientRecord => ({
   id: client.id,
   email: client.email,
@@ -464,11 +702,13 @@ const toPublicClientRecord = (client: ClientRecord): PublicClientRecord => ({
     client.services ?? [],
     getServiceTemplateOptions(client.businessSettings)
   ),
+  products: normalizeProducts(client.products ?? []),
+  productSales: normalizeProductSales(client.productSales ?? []),
   packagePlans: normalizePackagePlans(client.packagePlans ?? []),
   loyaltyProgram: normalizeLoyaltyProgram(client.loyaltyProgram),
   businessSettings: normalizeBusinessSettings(client.businessSettings),
   customerProfiles: normalizeCustomerProfiles(client.customerProfiles ?? []),
-  teamMembers: normalizeTeamMembers(client.teamMembers ?? []),
+  teamMembers: normalizeTeamMembers(client.teamMembers ?? [], client.businessSettings),
   accountType: client.accountType,
   serviceLocation: normalizeServiceLocations(client.serviceLocation),
   venueAddress: client.venueAddress,
@@ -495,6 +735,8 @@ const DEMO_SALONS: ClientRecord[] = [
       ['Hair salon', 'Beauty salon'],
       getServiceTemplateOptions(DEFAULT_BUSINESS_SETTINGS)
     ),
+    products: [],
+    productSales: [],
     packagePlans: [],
     loyaltyProgram: null,
     businessSettings: normalizeBusinessSettings(DEFAULT_BUSINESS_SETTINGS),
@@ -506,6 +748,9 @@ const DEMO_SALONS: ClientRecord[] = [
         role: 'Stylist',
         phone: '+923001110001',
         expertise: 'Colour and blow-dry',
+        openingTime: '09:00',
+        closingTime: '18:00',
+        offDays: [],
         isActive: true,
         createdAt: '2026-03-01T09:00:00.000Z',
         updatedAt: '2026-03-12T08:30:00.000Z'
@@ -530,6 +775,8 @@ const DEMO_SALONS: ClientRecord[] = [
     profileImageUrl: '',
     serviceTypes: ['Barber'],
     services: createSeededBusinessServices(['Barber'], getServiceTemplateOptions(DEFAULT_BUSINESS_SETTINGS)),
+    products: [],
+    productSales: [],
     packagePlans: [],
     loyaltyProgram: null,
     businessSettings: normalizeBusinessSettings(DEFAULT_BUSINESS_SETTINGS),
@@ -557,6 +804,8 @@ const DEMO_SALONS: ClientRecord[] = [
       ['Massage', 'Spa & sauna'],
       getServiceTemplateOptions(DEFAULT_BUSINESS_SETTINGS)
     ),
+    products: [],
+    productSales: [],
     packagePlans: [],
     loyaltyProgram: null,
     businessSettings: normalizeBusinessSettings(DEFAULT_BUSINESS_SETTINGS),
@@ -568,6 +817,9 @@ const DEMO_SALONS: ClientRecord[] = [
         role: 'Therapist',
         phone: '+923001110002',
         expertise: 'Deep tissue massage',
+        openingTime: '09:00',
+        closingTime: '18:00',
+        offDays: [],
         isActive: true,
         createdAt: '2026-03-03T11:00:00.000Z',
         updatedAt: '2026-03-12T07:30:00.000Z'
@@ -700,7 +952,7 @@ const buildStoredClientDrawerItems = (customerProfiles: CustomerProfileRecord[])
 };
 
 const buildTeamDrawerSections = (client: ClientRecord) => {
-  const activeTeamMembers = normalizeTeamMembers(client.teamMembers ?? []).filter(
+  const activeTeamMembers = normalizeTeamMembers(client.teamMembers ?? [], client.businessSettings).filter(
     (teamMember) => teamMember.isActive
   );
   const teamRoleLabel = client.serviceTypes.includes('Barber') ? 'barber' : 'team member';
@@ -795,7 +1047,13 @@ const buildDashboardViewModel = (
             items: [
               { label: 'Service menu' },
               { label: 'Packages' },
-              { label: 'Products' }
+              {
+                label: 'Products',
+                subtitle:
+                  commerce.activeProducts > 0
+                    ? `${commerce.activeProducts} active product${commerce.activeProducts === 1 ? '' : 's'}`
+                    : 'No products added yet'
+              }
             ]
           },
           {
@@ -882,10 +1140,12 @@ const hydrateClientRecord = (client: ClientRecord): ClientRecord => {
       client.services ?? [],
       getServiceTemplateOptions(businessSettings)
     ),
+    products: normalizeProducts(client.products ?? []),
+    productSales: normalizeProductSales(client.productSales ?? []),
     packagePlans: normalizePackagePlans(client.packagePlans ?? []),
     loyaltyProgram: normalizeLoyaltyProgram(client.loyaltyProgram),
     customerProfiles: normalizeCustomerProfiles(client.customerProfiles ?? []),
-    teamMembers: normalizeTeamMembers(client.teamMembers ?? []),
+    teamMembers: normalizeTeamMembers(client.teamMembers ?? [], businessSettings),
     preferredLanguage: normalizePreferredLanguage(client.preferredLanguage)
   };
 };
@@ -914,6 +1174,8 @@ export const clientPlatformService = {
       profileImageUrl: '',
       serviceTypes: [],
       services: [],
+      products: [],
+      productSales: [],
       packagePlans: [],
       loyaltyProgram: null,
       businessSettings: normalizeBusinessSettings(undefined),
@@ -973,6 +1235,7 @@ export const clientPlatformService = {
       businessName: input.businessName.trim(),
       website: input.website?.trim() ?? '',
       profileImageUrl: input.profileImageUrl?.trim() ?? '',
+      venueAddress: input.venueAddress?.trim() ?? client.venueAddress,
       updatedAt: new Date().toISOString()
     }));
   },
@@ -1073,11 +1336,15 @@ export const clientPlatformService = {
           role: input.role?.trim() || getDefaultTeamMemberRole(client),
           phone: input.phone,
           expertise: input.expertise,
+          openingTime: input.openingTime,
+          closingTime: input.closingTime,
+          offDays: input.offDays,
           isActive: true,
           createdAt: now,
           updatedAt: now
         },
-        client.teamMembers.length
+        client.teamMembers.length,
+        client.businessSettings
       );
 
       return {
@@ -1110,9 +1377,13 @@ export const clientPlatformService = {
           role: input.role?.trim() || existingTeamMember.role || getDefaultTeamMemberRole(client),
           phone: input.phone,
           expertise: input.expertise,
+          openingTime: input.openingTime,
+          closingTime: input.closingTime,
+          offDays: input.offDays,
           updatedAt: now
         },
-        client.teamMembers.findIndex((teamMember) => teamMember.id === teamMemberId)
+        client.teamMembers.findIndex((teamMember) => teamMember.id === teamMemberId),
+        client.businessSettings
       );
 
       if (!nextTeamMember) {
@@ -1178,6 +1449,221 @@ export const clientPlatformService = {
     }));
   },
 
+  updateService(
+    clientId: string,
+    serviceId: string,
+    input: UpdateBusinessServiceInput
+  ): Promise<ClientRecord> {
+    return updateClient(clientId, (client) => {
+      const existingService = client.services.find((service) => service.id === serviceId);
+
+      if (!existingService) {
+        throw new HttpError(404, 'Service not found');
+      }
+
+      return {
+        ...client,
+        services: normalizeBusinessServices(
+          client.serviceTypes,
+          client.services.map((service) =>
+            service.id === serviceId
+              ? {
+                  ...service,
+                  name: input.name.trim(),
+                  durationMinutes: input.durationMinutes,
+                  categoryName:
+                    input.categoryName?.trim() || existingService.categoryName || client.serviceTypes[0]?.trim() || 'General',
+                  priceLabel: input.priceLabel.trim(),
+                  description: input.description?.trim() ?? '',
+                  isActive: service.isActive !== false
+                }
+              : service
+          ),
+          getServiceTemplateOptions(client.businessSettings)
+        ),
+        updatedAt: new Date().toISOString()
+      };
+    });
+  },
+
+  removeService(clientId: string, serviceId: string): Promise<ClientRecord> {
+    return updateClient(clientId, (client) => {
+      const existingService = client.services.find((service) => service.id === serviceId);
+
+      if (!existingService) {
+        throw new HttpError(404, 'Service not found');
+      }
+
+      return {
+        ...client,
+        services: normalizeBusinessServices(
+          client.serviceTypes,
+          client.services.map((service) =>
+            service.id === serviceId
+              ? {
+                  ...service,
+                  isActive: false
+                }
+              : service
+          ),
+          getServiceTemplateOptions(client.businessSettings)
+        ),
+        updatedAt: new Date().toISOString()
+      };
+    });
+  },
+
+  createProduct(clientId: string, input: CreateProductInput): Promise<ClientRecord> {
+    return updateClient(clientId, (client) => {
+      const now = new Date().toISOString();
+
+      return {
+        ...client,
+        products: normalizeProducts([
+          ...(client.products ?? []),
+          {
+            id: randomUUID(),
+            name: input.name.trim(),
+            categoryName: input.categoryName?.trim() || client.serviceTypes[0]?.trim() || 'Retail',
+            sku: input.sku?.trim() ?? '',
+            priceLabel: input.priceLabel.trim(),
+            stockQuantity: Math.max(0, Math.floor(input.stockQuantity)),
+            description: input.description?.trim() ?? '',
+            isActive: true,
+            createdAt: now,
+            updatedAt: now
+          }
+        ]),
+        updatedAt: now
+      };
+    });
+  },
+
+  updateProduct(clientId: string, productId: string, input: UpdateProductInput): Promise<ClientRecord> {
+    return updateClient(clientId, (client) => {
+      const existingProduct = client.products.find((product) => product.id === productId);
+
+      if (!existingProduct) {
+        throw new HttpError(404, 'Product not found');
+      }
+
+      const now = new Date().toISOString();
+
+      return {
+        ...client,
+        products: normalizeProducts(
+          client.products.map((product) =>
+            product.id === productId
+              ? {
+                  ...product,
+                  name: input.name.trim(),
+                  categoryName:
+                    input.categoryName?.trim() || existingProduct.categoryName || client.serviceTypes[0]?.trim() || 'Retail',
+                  sku: input.sku?.trim() ?? '',
+                  priceLabel: input.priceLabel.trim(),
+                  stockQuantity: Math.max(0, Math.floor(input.stockQuantity)),
+                  description: input.description?.trim() ?? '',
+                  isActive: product.isActive !== false,
+                  updatedAt: now
+                }
+              : product
+          )
+        ),
+        updatedAt: now
+      };
+    });
+  },
+
+  removeProduct(clientId: string, productId: string): Promise<ClientRecord> {
+    return updateClient(clientId, (client) => {
+      const existingProduct = client.products.find((product) => product.id === productId);
+
+      if (!existingProduct) {
+        throw new HttpError(404, 'Product not found');
+      }
+
+      const now = new Date().toISOString();
+
+      return {
+        ...client,
+        products: normalizeProducts(
+          client.products.map((product) =>
+            product.id === productId
+              ? {
+                  ...product,
+                  isActive: false,
+                  updatedAt: now
+                }
+              : product
+          )
+        ),
+        updatedAt: now
+      };
+    });
+  },
+
+  sellProduct(clientId: string, input: SellProductInput): Promise<ClientRecord> {
+    return updateClient(clientId, (client) => {
+      const existingProduct = normalizeProducts(client.products ?? []).find(
+        (product) => product.id === input.productId
+      );
+
+      if (!existingProduct || existingProduct.isActive === false) {
+        throw new HttpError(404, 'Product not found');
+      }
+
+      const quantity = Math.max(1, Math.floor(input.quantity));
+
+      if (existingProduct.stockQuantity < quantity) {
+        throw new HttpError(409, 'Not enough stock available for this product');
+      }
+
+      const now = new Date().toISOString();
+      const businessSettings = normalizeBusinessSettings(client.businessSettings);
+      const unitMoney = parseMoneyLabel(existingProduct.priceLabel, businessSettings.currencyCode);
+      const totalAmountValue = unitMoney.amountValue * quantity;
+      const totalPriceLabel = formatMoneyLabel(
+        totalAmountValue,
+        unitMoney.currencyCode,
+        businessSettings.currencyLocale
+      );
+
+      return {
+        ...client,
+        products: normalizeProducts(
+          client.products.map((product) =>
+            product.id === existingProduct.id
+              ? {
+                  ...product,
+                  stockQuantity: Math.max(0, product.stockQuantity - quantity),
+                  updatedAt: now
+                }
+              : product
+          )
+        ),
+        productSales: normalizeProductSales([
+          ...(client.productSales ?? []),
+          {
+            id: randomUUID(),
+            productId: existingProduct.id,
+            productName: existingProduct.name,
+            sku: existingProduct.sku,
+            quantity,
+            unitPriceLabel: existingProduct.priceLabel,
+            totalPriceLabel,
+            customerName: input.customerName.trim(),
+            customerPhone: input.customerPhone.trim(),
+            customerEmail: input.customerEmail?.trim() ?? '',
+            soldAt: now,
+            createdAt: now,
+            updatedAt: now
+          }
+        ]),
+        updatedAt: now
+      };
+    });
+  },
+
   createPackagePlan(clientId: string, input: CreatePackagePlanInput): Promise<ClientRecord> {
     return updateClient(clientId, (client) => {
       const now = new Date().toISOString();
@@ -1198,6 +1684,66 @@ export const clientPlatformService = {
           }
         ]),
         updatedAt: now
+      };
+    });
+  },
+
+  updatePackagePlan(
+    clientId: string,
+    packagePlanId: string,
+    input: UpdatePackagePlanInput
+  ): Promise<ClientRecord> {
+    return updateClient(clientId, (client) => {
+      const existingPackagePlan = client.packagePlans.find((packagePlan) => packagePlan.id === packagePlanId);
+
+      if (!existingPackagePlan) {
+        throw new HttpError(404, 'Package plan not found');
+      }
+
+      return {
+        ...client,
+        packagePlans: normalizePackagePlans(
+          client.packagePlans.map((packagePlan) =>
+            packagePlan.id === packagePlanId
+              ? {
+                  ...packagePlan,
+                  name: input.name.trim(),
+                  includedServiceIds: input.includedServiceIds ?? [],
+                  totalUses: input.totalUses,
+                  priceLabel: input.priceLabel.trim(),
+                  isActive: packagePlan.isActive !== false,
+                  updatedAt: new Date().toISOString()
+                }
+              : packagePlan
+          )
+        ),
+        updatedAt: new Date().toISOString()
+      };
+    });
+  },
+
+  removePackagePlan(clientId: string, packagePlanId: string): Promise<ClientRecord> {
+    return updateClient(clientId, (client) => {
+      const existingPackagePlan = client.packagePlans.find((packagePlan) => packagePlan.id === packagePlanId);
+
+      if (!existingPackagePlan) {
+        throw new HttpError(404, 'Package plan not found');
+      }
+
+      return {
+        ...client,
+        packagePlans: normalizePackagePlans(
+          client.packagePlans.map((packagePlan) =>
+            packagePlan.id === packagePlanId
+              ? {
+                  ...packagePlan,
+                  isActive: false,
+                  updatedAt: new Date().toISOString()
+                }
+              : packagePlan
+          )
+        ),
+        updatedAt: new Date().toISOString()
       };
     });
   },
@@ -1284,7 +1830,10 @@ export const clientPlatformService = {
         appointments,
         appointmentsForBusiness,
         launchLinks,
-        commerce
+        {
+          ...commerce,
+          ...buildProductCommerceView(syncedClient)
+        }
       )
     };
   }

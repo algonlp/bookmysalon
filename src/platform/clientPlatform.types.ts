@@ -8,6 +8,15 @@ export type ServiceLocation = 'physical' | 'mobile' | 'virtual';
 
 export type PreferredLanguage = 'english' | 'urdu' | 'arabic';
 
+export type WeekdayId =
+  | 'sunday'
+  | 'monday'
+  | 'tuesday'
+  | 'wednesday'
+  | 'thursday'
+  | 'friday'
+  | 'saturday';
+
 export interface ReportMetadataRecord {
   pageTitle: string;
   pageSubtitle: string;
@@ -27,7 +36,39 @@ export interface TeamMemberRecord {
   role: string;
   phone: string;
   expertise: string;
+  openingTime: string;
+  closingTime: string;
+  offDays: WeekdayId[];
   isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductRecord {
+  id: string;
+  name: string;
+  categoryName: string;
+  sku: string;
+  priceLabel: string;
+  stockQuantity: number;
+  description: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductSaleRecord {
+  id: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  quantity: number;
+  unitPriceLabel: string;
+  totalPriceLabel: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  soldAt: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -83,6 +124,8 @@ export interface ClientRecord {
   profileImageUrl: string;
   serviceTypes: string[];
   services: BusinessService[];
+  products: ProductRecord[];
+  productSales: ProductSaleRecord[];
   packagePlans: PackagePlanRecord[];
   loyaltyProgram: LoyaltyProgramRecord | null;
   businessSettings: BusinessSettingsRecord;
@@ -107,6 +150,8 @@ export interface PublicClientRecord {
   profileImageUrl: string;
   serviceTypes: string[];
   services: BusinessService[];
+  products: ProductRecord[];
+  productSales: ProductSaleRecord[];
   packagePlans: PackagePlanRecord[];
   loyaltyProgram: LoyaltyProgramRecord | null;
   businessSettings: BusinessSettingsRecord;
@@ -131,6 +176,7 @@ export interface BusinessProfileInput {
   businessName: string;
   website?: string;
   profileImageUrl?: string;
+  venueAddress?: string;
 }
 
 export interface ServiceTypesInput {
@@ -166,6 +212,9 @@ export interface CreateTeamMemberInput {
   role?: string;
   phone?: string;
   expertise?: string;
+  openingTime?: string;
+  closingTime?: string;
+  offDays?: WeekdayId[];
 }
 
 export interface UpdateTeamMemberInput {
@@ -173,9 +222,38 @@ export interface UpdateTeamMemberInput {
   role?: string;
   phone?: string;
   expertise?: string;
+  openingTime?: string;
+  closingTime?: string;
+  offDays?: WeekdayId[];
 }
 
 export interface CreateBusinessServiceInput {
+  name: string;
+  categoryName?: string;
+  durationMinutes: number;
+  priceLabel: string;
+  description?: string;
+}
+
+export interface CreateProductInput {
+  name: string;
+  categoryName?: string;
+  sku?: string;
+  priceLabel: string;
+  stockQuantity: number;
+  description?: string;
+}
+
+export interface UpdateProductInput {
+  name: string;
+  categoryName?: string;
+  sku?: string;
+  priceLabel: string;
+  stockQuantity: number;
+  description?: string;
+}
+
+export interface UpdateBusinessServiceInput {
   name: string;
   categoryName?: string;
   durationMinutes: number;
@@ -188,6 +266,21 @@ export interface CreatePackagePlanInput {
   includedServiceIds?: string[];
   totalUses: number;
   priceLabel: string;
+}
+
+export interface UpdatePackagePlanInput {
+  name: string;
+  includedServiceIds?: string[];
+  totalUses: number;
+  priceLabel: string;
+}
+
+export interface SellProductInput {
+  productId: string;
+  quantity: number;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
 }
 
 export interface UpdateLoyaltyProgramInput {
@@ -288,6 +381,10 @@ export interface DashboardCommerceViewModel {
   activePackageBalances: number;
   availableLoyaltyRewards: number;
   loyaltyProgramEnabled: boolean;
+  activeProducts: number;
+  productsSold: number;
+  productUnitsSold: number;
+  lowStockProducts: number;
 }
 
 export interface PublicSalonShowcaseItem {

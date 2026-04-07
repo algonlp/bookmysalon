@@ -38,6 +38,7 @@ import {
 import { env } from '../config/env';
 
 const DEFAULT_SLOT_TIMES = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
+const WEEKDAY_IDS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 
 interface OpenSlotContext {
   businessId: string;
@@ -87,14 +88,28 @@ const getBusinessDisplayName = (
 
 const getActiveTeamMembersForBusiness = (
   business: Awaited<ReturnType<typeof getBusinessOrThrow>>
-): AppointmentTeamMemberOption[] =>
-  (business.teamMembers ?? [])
+): AppointmentTeamMemberOption[] => {
+  const slotTimes = getBusinessSlotTimes(business);
+  const openingTime = slotTimes[0] ?? '09:00';
+  const closingTime = addMinutesToTimeValue(slotTimes[slotTimes.length - 1] ?? '17:00', 60);
+
+  return (business.teamMembers ?? [])
     .filter((teamMember) => teamMember.isActive !== false)
     .map((teamMember) => ({
       id: teamMember.id,
       name: teamMember.name,
-      role: teamMember.role
+      role: teamMember.role,
+      openingTime:
+        typeof teamMember.openingTime === 'string' && /^\d{2}:\d{2}$/.test(teamMember.openingTime)
+          ? teamMember.openingTime
+          : openingTime,
+      closingTime:
+        typeof teamMember.closingTime === 'string' && /^\d{2}:\d{2}$/.test(teamMember.closingTime)
+          ? teamMember.closingTime
+          : closingTime,
+      offDays: Array.isArray(teamMember.offDays) ? teamMember.offDays : []
     }));
+};
 
 const getBusinessServiceTemplateOptions = (
   business: Awaited<ReturnType<typeof getBusinessOrThrow>>
@@ -117,6 +132,15 @@ const getBusinessSlotTimes = (business: Awaited<ReturnType<typeof getBusinessOrT
 
   return slotTimes.length > 0 ? slotTimes : DEFAULT_SLOT_TIMES;
 };
+
+function addMinutesToTimeValue(timeValue: string, minutesToAdd: number): string {
+  const [hoursValue, minutesValue] = timeValue.split(':');
+  const totalMinutes = Number(hoursValue) * 60 + Number(minutesValue) + minutesToAdd;
+  const normalizedMinutes = ((totalMinutes % (24 * 60)) + 24 * 60) % (24 * 60);
+  const hours = Math.floor(normalizedMinutes / 60);
+  const minutes = normalizedMinutes % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
 
 const getServiceCatalogForBusiness = async (businessId: string): Promise<AppointmentServiceOption[]> => {
   const business = await getBusinessOrThrow(businessId);
@@ -601,44 +625,352 @@ const isPastSlot = (appointmentDate: string, slot: string): boolean => {
   return slotStart.getTime() <= now.getTime();
 };
 
-const getAvailableSlots = async (
+const parseTimeToMinutes = (timeValue: string): number => {
+  const [hoursValue, minutesValue] = timeValue.split(':');
+  return Number(hoursValue) * 60 + Number(minutesValue);
+};
+
+const getDefaultSlotDurationMinutes = (slotTimes: string[]): number => {
+  for (let index = 1; index < slotTimes.length; index += 1) {
+    const currentMinutes = parseTimeToMinutes(slotTimes[index] ?? '');
+    const previousMinutes = parseTimeToMinutes(slotTimes[index - 1] ?? '');
+    const difference = currentMinutes - previousMinutes;
+
+    if (Number.isFinite(difference) && difference > 0) {
+      return difference;
+    }
+  }
+
+  return 60;
+};
+
+const normalizeDurationMinutes = (durationMinutes: number, fallbackDurationMinutes: number): number =>
+  Number.isFinite(durationMinutes) && durationMinutes > 0
+    ? Math.round(durationMinutes)
+    : fallbackDurationMinutes;
+
+interface TimeRangeBlock {
+  startMinutes: number;
+  endMinutes: number;
+}
+
+const hasTimeRangeOverlap = (
+  startTime: string,
+  durationMinutes: number,
+  blocks: TimeRangeBlock[]
+): boolean => {
+  const startMinutes = parseTimeToMinutes(startTime);
+  const endMinutes = startMinutes + durationMinutes;
+
+  return blocks.some(
+    (block) => startMinutes < block.endMinutes && endMinutes > block.startMinutes
+  );
+};
+
+const createTimeRangeBlock = (
+  startTime: string,
+  durationMinutes: number,
+  fallbackDurationMinutes: number
+): TimeRangeBlock => {
+  const startMinutes = parseTimeToMinutes(startTime);
+  const normalizedDurationMinutes = normalizeDurationMinutes(
+    durationMinutes,
+    fallbackDurationMinutes
+  );
+
+  return {
+    startMinutes,
+    endMinutes: startMinutes + normalizedDurationMinutes
+  };
+};
+
+const addTimeRangeBlockToMap = (
+  blockMap: Map<string, TimeRangeBlock[]>,
+  mapKey: string,
+  block: TimeRangeBlock
+): void => {
+  const blocks = blockMap.get(mapKey) ?? [];
+  blocks.push(block);
+  blockMap.set(mapKey, blocks);
+};
+
+const buildServiceDurationMaps = (
+  services: AppointmentServiceOption[]
+): {
+  durationsById: Map<string, number>;
+  durationsByName: Map<string, number>;
+} => ({
+  durationsById: new Map(
+    services
+      .filter((service) => typeof service.id === 'string' && service.id.trim().length > 0)
+      .map((service) => [service.id, service.durationMinutes])
+  ),
+  durationsByName: new Map(
+    services
+      .filter((service) => typeof service.name === 'string' && service.name.trim().length > 0)
+      .map((service) => [service.name, service.durationMinutes])
+  )
+});
+
+const getIsoDurationMinutes = (startAt: string, endAt: string): number => {
+  const startTime = new Date(startAt).getTime();
+  const endTime = new Date(endAt).getTime();
+  const durationMinutes = Math.round((endTime - startTime) / (60 * 1000));
+
+  return Number.isFinite(durationMinutes) && durationMinutes > 0 ? durationMinutes : 0;
+};
+
+const getServiceDurationMinutes = (
+  serviceId: string | undefined,
+  serviceName: string | undefined,
+  durationMaps: ReturnType<typeof buildServiceDurationMaps>
+): number =>
+  (serviceId ? durationMaps.durationsById.get(serviceId) : undefined) ??
+  (serviceName ? durationMaps.durationsByName.get(serviceName) : undefined) ??
+  0;
+
+const getAppointmentDurationMinutes = (
+  appointment: AppointmentRecord,
+  durationMaps: ReturnType<typeof buildServiceDurationMaps>,
+  fallbackDurationMinutes: number
+): number =>
+  normalizeDurationMinutes(
+    getIsoDurationMinutes(appointment.startAt, appointment.endAt) ||
+      getServiceDurationMinutes(appointment.serviceId, appointment.serviceName, durationMaps),
+    fallbackDurationMinutes
+  );
+
+const getWaitlistDurationMinutes = (
+  waitlistEntry: WaitlistRecord,
+  durationMaps: ReturnType<typeof buildServiceDurationMaps>,
+  fallbackDurationMinutes: number
+): number =>
+  normalizeDurationMinutes(
+    getServiceDurationMinutes(waitlistEntry.serviceId, waitlistEntry.serviceName, durationMaps),
+    fallbackDurationMinutes
+  );
+
+const getWeekdayIdForAppointmentDate = (appointmentDate: string): string =>
+  WEEKDAY_IDS[new Date(`${appointmentDate}T00:00:00`).getDay()] ?? 'sunday';
+
+const isTeamMemberWorkingTimeRange = (
+  teamMember: AppointmentTeamMemberOption,
+  appointmentDate: string,
+  slot: string,
+  durationMinutes: number
+): boolean => {
+  const weekdayId = getWeekdayIdForAppointmentDate(appointmentDate);
+  const offDays = Array.isArray(teamMember.offDays) ? teamMember.offDays : [];
+
+  if (offDays.includes(weekdayId)) {
+    return false;
+  }
+
+  const slotStartMinutes = parseTimeToMinutes(slot);
+  const slotEndMinutes = slotStartMinutes + durationMinutes;
+  const openingMinutes = parseTimeToMinutes(teamMember.openingTime);
+  const closingMinutes = parseTimeToMinutes(teamMember.closingTime);
+
+  return slotStartMinutes >= openingMinutes && slotEndMinutes <= closingMinutes;
+};
+
+const createSlotBlockSets = (
+  appointmentDate: string,
+  appointments: AppointmentRecord[],
+  waitlistEntries: WaitlistRecord[],
+  services: AppointmentServiceOption[],
+  fallbackDurationMinutes: number,
+  excludeAppointmentId = '',
+  waitlistClaim: WaitlistRecord | null = null
+): {
+  globalBookedRanges: TimeRangeBlock[];
+  bookedRangesByTeamMemberId: Map<string, TimeRangeBlock[]>;
+  globalReservedOfferRanges: TimeRangeBlock[];
+  reservedOfferRangesByTeamMemberId: Map<string, TimeRangeBlock[]>;
+} => {
+  const durationMaps = buildServiceDurationMaps(services);
+  const globalBookedRanges: TimeRangeBlock[] = [];
+  const bookedRangesByTeamMemberId = new Map<string, TimeRangeBlock[]>();
+  const globalReservedOfferRanges: TimeRangeBlock[] = [];
+  const reservedOfferRangesByTeamMemberId = new Map<string, TimeRangeBlock[]>();
+
+  for (const appointment of appointments) {
+    if (
+      appointment.appointmentDate !== appointmentDate ||
+      appointment.status !== 'booked' ||
+      appointment.id === excludeAppointmentId
+    ) {
+      continue;
+    }
+
+    const appointmentBlock = createTimeRangeBlock(
+      appointment.appointmentTime,
+      getAppointmentDurationMinutes(appointment, durationMaps, fallbackDurationMinutes),
+      fallbackDurationMinutes
+    );
+
+    if (appointment.teamMemberId) {
+      addTimeRangeBlockToMap(
+        bookedRangesByTeamMemberId,
+        appointment.teamMemberId,
+        appointmentBlock
+      );
+      continue;
+    }
+
+    globalBookedRanges.push(appointmentBlock);
+  }
+
+  for (const waitlistEntry of waitlistEntries) {
+    if (
+      waitlistEntry.status !== 'offered' ||
+      waitlistEntry.offeredAppointmentDate !== appointmentDate ||
+      !waitlistEntry.offeredAppointmentTime ||
+      (waitlistClaim && waitlistEntry.id === waitlistClaim.id)
+    ) {
+      continue;
+    }
+
+    const waitlistBlock = createTimeRangeBlock(
+      waitlistEntry.offeredAppointmentTime,
+      getWaitlistDurationMinutes(waitlistEntry, durationMaps, fallbackDurationMinutes),
+      fallbackDurationMinutes
+    );
+
+    if (waitlistEntry.teamMemberId) {
+      addTimeRangeBlockToMap(
+        reservedOfferRangesByTeamMemberId,
+        waitlistEntry.teamMemberId,
+        waitlistBlock
+      );
+      continue;
+    }
+
+    globalReservedOfferRanges.push(waitlistBlock);
+  }
+
+  return {
+    globalBookedRanges,
+    bookedRangesByTeamMemberId,
+    globalReservedOfferRanges,
+    reservedOfferRangesByTeamMemberId
+  };
+};
+
+const isSlotAvailableForTeamMember = (
+  slot: string,
+  durationMinutes: number,
+  teamMemberId: string,
+  slotBlocks: ReturnType<typeof createSlotBlockSets>
+): boolean =>
+  !hasTimeRangeOverlap(slot, durationMinutes, slotBlocks.globalBookedRanges) &&
+  !hasTimeRangeOverlap(slot, durationMinutes, slotBlocks.globalReservedOfferRanges) &&
+  !hasTimeRangeOverlap(
+    slot,
+    durationMinutes,
+    slotBlocks.bookedRangesByTeamMemberId.get(teamMemberId) ?? []
+  ) &&
+  !hasTimeRangeOverlap(
+    slot,
+    durationMinutes,
+    slotBlocks.reservedOfferRangesByTeamMemberId.get(teamMemberId) ?? []
+  );
+
+const findAvailableTeamMemberForSlot = (
+  slot: string,
+  appointmentDate: string,
+  durationMinutes: number,
+  teamMembers: AppointmentTeamMemberOption[],
+  slotBlocks: ReturnType<typeof createSlotBlockSets>
+): AppointmentTeamMemberOption | undefined =>
+  teamMembers.find(
+    (teamMember) =>
+      isTeamMemberWorkingTimeRange(teamMember, appointmentDate, slot, durationMinutes) &&
+      isSlotAvailableForTeamMember(slot, durationMinutes, teamMember.id, slotBlocks)
+  );
+
+const listAvailableSlotsForBooking = async (
   businessId: string,
   appointmentDate: string,
   excludeAppointmentId = '',
-  waitlistClaim: WaitlistRecord | null = null
+  waitlistClaim: WaitlistRecord | null = null,
+  teamMemberId = '',
+  serviceName = ''
 ): Promise<string[]> => {
   const business = await getBusinessOrThrow(businessId);
   const slotTimes = getBusinessSlotTimes(business);
+  const fallbackDurationMinutes = getDefaultSlotDurationMinutes(slotTimes);
+  const teamMembers = getActiveTeamMembersForBusiness(business);
+  const services = await getServiceCatalogForBusiness(businessId);
   const [appointments, waitlistEntries] = await Promise.all([
     normalizeBookedAppointments(businessId),
     listBusinessWaitlistEntries(businessId)
   ]);
-  const bookedTimes = new Set(
-    appointments
-      .filter(
-        (appointment) =>
-          appointment.appointmentDate === appointmentDate &&
-          appointment.status === 'booked' &&
-          appointment.id !== excludeAppointmentId
-      )
-      .map((appointment) => appointment.appointmentTime)
+  const selectedServiceDurationMinutes = normalizeDurationMinutes(
+    services.find((service) => service.name === serviceName)?.durationMinutes ??
+      services.find((service) => service.name === waitlistClaim?.serviceName)?.durationMinutes ??
+      0,
+    fallbackDurationMinutes
   );
-  const reservedOfferTimes = new Set(
-    waitlistEntries
-      .filter(
-        (waitlistEntry) =>
-          waitlistEntry.status === 'offered' &&
-          waitlistEntry.offeredAppointmentDate === appointmentDate &&
-          waitlistEntry.offeredAppointmentTime &&
-          (!waitlistClaim || waitlistEntry.id !== waitlistClaim.id)
-      )
-      .map((waitlistEntry) => waitlistEntry.offeredAppointmentTime as string)
+  const slotBlocks = createSlotBlockSets(
+    appointmentDate,
+    appointments,
+    waitlistEntries,
+    services,
+    fallbackDurationMinutes,
+    excludeAppointmentId,
+    waitlistClaim
   );
+
+  if (teamMemberId) {
+    const selectedTeamMember = teamMembers.find((teamMember) => teamMember.id === teamMemberId);
+
+    if (!selectedTeamMember) {
+      return [];
+    }
+
+    return slotTimes.filter(
+      (slot) =>
+        !isPastSlot(appointmentDate, slot) &&
+        isTeamMemberWorkingTimeRange(
+          selectedTeamMember,
+          appointmentDate,
+          slot,
+          selectedServiceDurationMinutes
+        ) &&
+        isSlotAvailableForTeamMember(
+          slot,
+          selectedServiceDurationMinutes,
+          teamMemberId,
+          slotBlocks
+        )
+    );
+  }
+
+  if (teamMembers.length > 0) {
+    return slotTimes.filter(
+      (slot) =>
+        !isPastSlot(appointmentDate, slot) &&
+        Boolean(
+          findAvailableTeamMemberForSlot(
+            slot,
+            appointmentDate,
+            selectedServiceDurationMinutes,
+            teamMembers,
+            slotBlocks
+          )
+        )
+    );
+  }
 
   return slotTimes.filter(
     (slot) =>
-      !bookedTimes.has(slot) &&
-      !reservedOfferTimes.has(slot) &&
+      !hasTimeRangeOverlap(slot, selectedServiceDurationMinutes, slotBlocks.globalBookedRanges) &&
+      !hasTimeRangeOverlap(
+        slot,
+        selectedServiceDurationMinutes,
+        slotBlocks.globalReservedOfferRanges
+      ) &&
       !isPastSlot(appointmentDate, slot)
   );
 };
@@ -1035,7 +1367,9 @@ export const appointmentService = {
     excludeAppointmentId = '',
     waitlistEntryId = '',
     waitlistOfferToken = '',
-    appointmentAccessToken = ''
+    appointmentAccessToken = '',
+    teamMemberId = '',
+    serviceName = ''
   ): Promise<{ slots: string[] }> {
     await getBusinessOrThrow(businessId);
     const activeWaitlistClaim = await getActiveWaitlistClaim(
@@ -1053,11 +1387,34 @@ export const appointmentService = {
     }
 
     return {
-      slots: await getAvailableSlots(
+      slots: await listAvailableSlotsForBooking(
         businessId,
         appointmentDate,
         excludeAppointmentId,
-        activeWaitlistClaim
+        activeWaitlistClaim,
+        teamMemberId,
+        serviceName
+      )
+    };
+  },
+
+  async getPlatformAvailableSlots(
+    businessId: string,
+    appointmentDate: string,
+    excludeAppointmentId = '',
+    teamMemberId = '',
+    serviceName = ''
+  ): Promise<{ slots: string[] }> {
+    await getBusinessOrThrow(businessId);
+
+    return {
+      slots: await listAvailableSlotsForBooking(
+        businessId,
+        appointmentDate,
+        excludeAppointmentId,
+        null,
+        teamMemberId,
+        serviceName
       )
     };
   },
@@ -1080,7 +1437,14 @@ export const appointmentService = {
       appointment: toPublicManagedAppointment(appointment),
       slots:
         appointment.status === 'booked'
-          ? await getAvailableSlots(businessId, appointment.appointmentDate, appointment.id)
+          ? await listAvailableSlotsForBooking(
+              businessId,
+              appointment.appointmentDate,
+              appointment.id,
+              null,
+              appointment.teamMemberId ?? '',
+              appointment.serviceName
+            )
           : []
     };
   },
@@ -1097,7 +1461,7 @@ export const appointmentService = {
     const selectedService = services.find((service) => service.name === input.serviceName);
     const selectedTeamMember = input.teamMemberId
       ? teamMembers.find((teamMember) => teamMember.id === input.teamMemberId)
-      : teamMembers[0];
+      : undefined;
 
     if (!selectedService) {
       throw new HttpError(400, 'Selected service is not available');
@@ -1115,7 +1479,13 @@ export const appointmentService = {
       throw new HttpError(409, 'Preferred time must be in the future');
     }
 
-    const availableSlots = await getAvailableSlots(businessId, input.appointmentDate);
+    const availableSlots = await listAvailableSlotsForBooking(
+      businessId,
+      input.appointmentDate,
+      '',
+      null,
+      selectedTeamMember?.id ?? ''
+    );
 
     if (input.preferredTime && availableSlots.includes(input.preferredTime)) {
       throw new HttpError(409, 'That time is already available to book right now');
@@ -1230,7 +1600,7 @@ export const appointmentService = {
     const selectedService = services.find((service) => service.name === input.serviceName);
     const selectedTeamMember = input.teamMemberId
       ? teamMembers.find((teamMember) => teamMember.id === input.teamMemberId)
-      : teamMembers[0];
+      : undefined;
     const activeWaitlistClaim = await getActiveWaitlistClaim(
       businessId,
       input.waitlistEntryId?.trim() ?? '',
@@ -1245,11 +1615,13 @@ export const appointmentService = {
       throw new HttpError(400, 'Selected barber is not available');
     }
 
-    const availableSlots = await getAvailableSlots(
+    const availableSlots = await listAvailableSlotsForBooking(
       businessId,
       input.appointmentDate,
       '',
-      activeWaitlistClaim
+      activeWaitlistClaim,
+      selectedTeamMember?.id ?? '',
+      selectedService.name
     );
 
     if (!availableSlots.includes(input.appointmentTime)) {
@@ -1279,13 +1651,6 @@ export const appointmentService = {
         activeWaitlistClaim.offeredAppointmentTime !== input.appointmentTime
       ) {
         throw new HttpError(409, 'This waitlist offer only applies to the reserved slot');
-      }
-
-      if (
-        activeWaitlistClaim.teamMemberId &&
-        activeWaitlistClaim.teamMemberId !== selectedTeamMember?.id
-      ) {
-        throw new HttpError(409, 'This waitlist offer is reserved for a different team member');
       }
 
       if (activeWaitlistClaim.customerKey !== customerKey) {
@@ -1360,6 +1725,39 @@ export const appointmentService = {
       };
     }
 
+    const slotBlocks = createSlotBlockSets(
+      input.appointmentDate,
+      await normalizeBookedAppointments(businessId),
+      await listBusinessWaitlistEntries(businessId),
+      services,
+      getDefaultSlotDurationMinutes(getBusinessSlotTimes(business)),
+      '',
+      activeWaitlistClaim
+    );
+    const assignedTeamMember =
+      selectedTeamMember ||
+      (activeWaitlistClaim?.teamMemberId
+        ? teamMembers.find((teamMember) => teamMember.id === activeWaitlistClaim.teamMemberId)
+        : undefined) ||
+      findAvailableTeamMemberForSlot(
+        input.appointmentTime,
+        input.appointmentDate,
+        selectedService.durationMinutes,
+        teamMembers,
+        slotBlocks
+      );
+
+    if (teamMembers.length > 0 && !assignedTeamMember) {
+      throw new HttpError(409, 'Selected appointment time is no longer available');
+    }
+
+    if (
+      activeWaitlistClaim?.teamMemberId &&
+      activeWaitlistClaim.teamMemberId !== assignedTeamMember?.id
+    ) {
+      throw new HttpError(409, 'This waitlist offer is reserved for a different team member');
+    }
+
     const appointment: AppointmentRecord = {
       id: randomUUID(),
       businessId,
@@ -1368,8 +1766,8 @@ export const appointmentService = {
       serviceId: selectedService.id,
       categoryName: selectedService.categoryName,
       serviceName: selectedService.name,
-      teamMemberId: selectedTeamMember?.id,
-      teamMemberName: selectedTeamMember?.name,
+      teamMemberId: assignedTeamMember?.id,
+      teamMemberName: assignedTeamMember?.name,
       customerName: input.customerName.trim(),
       customerPhone,
       customerEmail,
@@ -1462,7 +1860,14 @@ export const appointmentService = {
       throw new HttpError(409, 'Only booked appointments can be rescheduled');
     }
 
-    const availableSlots = await getAvailableSlots(businessId, input.appointmentDate, appointment.id);
+    const availableSlots = await listAvailableSlotsForBooking(
+      businessId,
+      input.appointmentDate,
+      appointment.id,
+      null,
+      appointment.teamMemberId ?? '',
+      appointment.serviceName
+    );
 
     if (!availableSlots.includes(input.appointmentTime)) {
       throw new HttpError(409, 'Selected appointment time is no longer available');
@@ -1849,7 +2254,11 @@ export const appointmentService = {
       availableLoyaltyRewards: loyaltyRewards.filter(
         (loyaltyReward) => loyaltyReward.status === 'available'
       ).length,
-      loyaltyProgramEnabled: business.loyaltyProgram?.isEnabled === true
+      loyaltyProgramEnabled: business.loyaltyProgram?.isEnabled === true,
+      activeProducts: 0,
+      productsSold: 0,
+      productUnitsSold: 0,
+      lowStockProducts: 0
     };
   },
 

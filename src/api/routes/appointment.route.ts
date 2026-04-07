@@ -59,6 +59,11 @@ appointmentRouter.get(
   asyncHandler(appointmentController.listAppointments)
 );
 appointmentRouter.get(
+  '/platform/clients/:clientId/appointments/slots',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(appointmentController.getPlatformAvailableSlots)
+);
+appointmentRouter.get(
   '/platform/clients/:clientId/payments',
   asyncHandler(requirePlatformAdminAccess),
   asyncHandler(appointmentController.listPayments)

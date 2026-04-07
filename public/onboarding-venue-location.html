@@ -67,10 +67,33 @@
                   <textarea
                     id="venue-address-search"
                     name="venue-address"
-                    placeholder="Example: Shop 12, Main Boulevard, Gulberg III, Lahore, Punjab, Pakistan"
+                    placeholder="Example: Shop number, street, area, city, province, country"
                     autocomplete="off"
                   ></textarea>
                 </label>
+
+                <div class="venue-location-actions">
+                  <button
+                    class="venue-current-location-button"
+                    id="venue-current-location"
+                    type="button"
+                  >
+                    Use current location
+                  </button>
+                  <p class="venue-location-status" id="venue-location-status" aria-live="polite">
+                    Allow location access to detect your current venue and edit it if needed.
+                  </p>
+                </div>
+
+                <div class="venue-search-results-panel">
+                  <div class="venue-search-results-copy">
+                    <strong id="venue-search-results-title">Location suggestions</strong>
+                    <span id="venue-search-results-status">
+                      Start typing to search for matching locations.
+                    </span>
+                  </div>
+                  <div class="venue-search-results is-hidden" id="venue-search-results"></div>
+                </div>
 
                 <div class="venue-address-guidance">
                   <strong>Tips for a clear address</strong>

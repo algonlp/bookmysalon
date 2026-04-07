@@ -48,7 +48,7 @@ app.use((_req, res, next) => {
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
 
   if (shouldEnforceHttps) {
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
@@ -76,6 +76,10 @@ app.get('/for-businesses', (_req, res) => {
 
 app.get('/pricing', (_req, res) => {
   res.sendFile(resolve(publicDir, 'pricing.html'));
+});
+
+app.get('/help', (_req, res) => {
+  res.sendFile(resolve(publicDir, 'help.html'));
 });
 
 app.get('/signup', (_req, res) => {

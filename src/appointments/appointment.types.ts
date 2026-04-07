@@ -72,6 +72,9 @@ export interface AppointmentTeamMemberOption {
   id: string;
   name: string;
   role: string;
+  openingTime: string;
+  closingTime: string;
+  offDays: string[];
 }
 
 export interface PublicBookingHistoryItem {

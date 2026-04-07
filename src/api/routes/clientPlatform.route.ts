@@ -70,10 +70,45 @@ clientPlatformRouter.post(
   asyncHandler(requirePlatformAdminAccess),
   asyncHandler(clientPlatformController.addService)
 );
+clientPlatformRouter.patch(
+  '/platform/clients/:clientId/services/:serviceId',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.updateService)
+);
+clientPlatformRouter.delete(
+  '/platform/clients/:clientId/services/:serviceId',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.removeService)
+);
+clientPlatformRouter.post(
+  '/platform/clients/:clientId/products',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.createProduct)
+);
+clientPlatformRouter.patch(
+  '/platform/clients/:clientId/products/:productId',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.updateProduct)
+);
+clientPlatformRouter.delete(
+  '/platform/clients/:clientId/products/:productId',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.removeProduct)
+);
 clientPlatformRouter.post(
   '/platform/clients/:clientId/packages',
   asyncHandler(requirePlatformAdminAccess),
   asyncHandler(clientPlatformController.createPackagePlan)
+);
+clientPlatformRouter.patch(
+  '/platform/clients/:clientId/packages/:packagePlanId',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.updatePackagePlan)
+);
+clientPlatformRouter.delete(
+  '/platform/clients/:clientId/packages/:packagePlanId',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.removePackagePlan)
 );
 clientPlatformRouter.put(
   '/platform/clients/:clientId/loyalty-program',
@@ -84,6 +119,11 @@ clientPlatformRouter.post(
   '/platform/clients/:clientId/package-sales',
   asyncHandler(requirePlatformAdminAccess),
   asyncHandler(clientPlatformController.sellPackage)
+);
+clientPlatformRouter.post(
+  '/platform/clients/:clientId/product-sales',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.sellProduct)
 );
 clientPlatformRouter.post(
   '/platform/clients/:clientId/complete',

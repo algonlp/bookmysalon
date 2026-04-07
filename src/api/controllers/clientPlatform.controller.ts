@@ -41,6 +41,7 @@ const createClientSchema = z.object({
 const businessProfileSchema = z.object({
   businessName: z.string().trim().min(1, 'Business name is required'),
   website: z.string().trim().optional(),
+  venueAddress: z.string().trim().optional(),
   profileImageUrl: z
     .string()
     .trim()
@@ -84,19 +85,59 @@ const preferredLanguageSchema = z.object({
   preferredLanguage: z.enum(['english', 'urdu', 'arabic'])
 });
 
+const weekdayEnum = z.enum([
+  'sunday',
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday'
+]);
+
+const teamMemberTimeSchema = z
+  .string()
+  .trim()
+  .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'Valid time is required')
+  .optional();
+
 const createTeamMemberSchema = z.object({
   name: z.string().trim().min(1, 'Team member name is required'),
   role: z.string().trim().min(1, 'Role is required').optional(),
   phone: z.string().trim().optional(),
-  expertise: z.string().trim().optional()
-});
+  expertise: z.string().trim().optional(),
+  openingTime: teamMemberTimeSchema,
+  closingTime: teamMemberTimeSchema,
+  offDays: z.array(weekdayEnum).optional().default([])
+}).refine(
+  (value) =>
+    !value.openingTime ||
+    !value.closingTime ||
+    value.openingTime.localeCompare(value.closingTime) < 0,
+  {
+    message: 'Closing time must be later than opening time',
+    path: ['closingTime']
+  }
+);
 
 const updateTeamMemberSchema = z.object({
   name: z.string().trim().min(1, 'Team member name is required'),
   role: z.string().trim().min(1, 'Role is required').optional(),
   phone: z.string().trim().optional(),
-  expertise: z.string().trim().optional()
-});
+  expertise: z.string().trim().optional(),
+  openingTime: teamMemberTimeSchema,
+  closingTime: teamMemberTimeSchema,
+  offDays: z.array(weekdayEnum).optional().default([])
+}).refine(
+  (value) =>
+    !value.openingTime ||
+    !value.closingTime ||
+    value.openingTime.localeCompare(value.closingTime) < 0,
+  {
+    message: 'Closing time must be later than opening time',
+    path: ['closingTime']
+  }
+);
 
 const createBusinessServiceSchema = z.object({
   name: z.string().trim().min(1, 'Service name is required'),
@@ -106,12 +147,27 @@ const createBusinessServiceSchema = z.object({
   description: z.string().trim().optional()
 });
 
+const updateBusinessServiceSchema = createBusinessServiceSchema;
+
+const createProductSchema = z.object({
+  name: z.string().trim().min(1, 'Product name is required'),
+  categoryName: z.string().trim().optional(),
+  sku: z.string().trim().optional(),
+  priceLabel: z.string().trim().min(1, 'Product price is required'),
+  stockQuantity: z.number().int().min(0).max(100000),
+  description: z.string().trim().optional()
+});
+
+const updateProductSchema = createProductSchema;
+
 const createPackagePlanSchema = z.object({
   name: z.string().trim().min(1, 'Package name is required'),
   includedServiceIds: z.array(z.string().trim().min(1)).optional().default([]),
   totalUses: z.number().int().min(1).max(100),
   priceLabel: z.string().trim().min(1, 'Package price is required')
 });
+
+const updatePackagePlanSchema = createPackagePlanSchema;
 
 const updateLoyaltyProgramSchema = z.object({
   isEnabled: z.boolean(),
@@ -122,6 +178,14 @@ const updateLoyaltyProgramSchema = z.object({
 
 const sellPackageSchema = z.object({
   packagePlanId: z.string().trim().min(1, 'Package plan is required'),
+  customerName: z.string().trim().min(2, 'Customer name is required'),
+  customerPhone: z.string().trim().min(7, 'Customer phone is required'),
+  customerEmail: z.string().trim().email().optional().or(z.literal(''))
+});
+
+const sellProductSchema = z.object({
+  productId: z.string().trim().min(1, 'Product is required'),
+  quantity: z.number().int().min(1).max(1000),
   customerName: z.string().trim().min(2, 'Customer name is required'),
   customerPhone: z.string().trim().min(7, 'Customer phone is required'),
   customerEmail: z.string().trim().email().optional().or(z.literal(''))
@@ -141,6 +205,30 @@ const getTeamMemberId = (req: Request): string => {
   }
 
   return req.params.teamMemberId;
+};
+
+const getServiceId = (req: Request): string => {
+  if (!req.params.serviceId) {
+    throw new HttpError(400, 'Service id is required');
+  }
+
+  return req.params.serviceId;
+};
+
+const getProductId = (req: Request): string => {
+  if (!req.params.productId) {
+    throw new HttpError(400, 'Product id is required');
+  }
+
+  return req.params.productId;
+};
+
+const getPackagePlanId = (req: Request): string => {
+  if (!req.params.packagePlanId) {
+    throw new HttpError(400, 'Package plan id is required');
+  }
+
+  return req.params.packagePlanId;
 };
 
 export const clientPlatformController = {
@@ -287,6 +375,57 @@ export const clientPlatformController = {
     });
   },
 
+  async updateService(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const client = await clientPlatformService.updateService(
+      getClientId(req),
+      getServiceId(req),
+      updateBusinessServiceSchema.parse(req.body)
+    );
+
+    res.status(200).json({
+      client: serializeClientForResponse(client)
+    });
+  },
+
+  async removeService(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const client = await clientPlatformService.removeService(getClientId(req), getServiceId(req));
+
+    res.status(200).json({
+      client: serializeClientForResponse(client)
+    });
+  },
+
+  async createProduct(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const client = await clientPlatformService.createProduct(
+      getClientId(req),
+      createProductSchema.parse(req.body)
+    );
+
+    res.status(201).json({
+      client: serializeClientForResponse(client)
+    });
+  },
+
+  async updateProduct(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const client = await clientPlatformService.updateProduct(
+      getClientId(req),
+      getProductId(req),
+      updateProductSchema.parse(req.body)
+    );
+
+    res.status(200).json({
+      client: serializeClientForResponse(client)
+    });
+  },
+
+  async removeProduct(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const client = await clientPlatformService.removeProduct(getClientId(req), getProductId(req));
+
+    res.status(200).json({
+      client: serializeClientForResponse(client)
+    });
+  },
+
   async createPackagePlan(req: Request, res: Response, _next: NextFunction): Promise<void> {
     const client = await clientPlatformService.createPackagePlan(
       getClientId(req),
@@ -294,6 +433,29 @@ export const clientPlatformController = {
     );
 
     res.status(201).json({
+      client: serializeClientForResponse(client)
+    });
+  },
+
+  async updatePackagePlan(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const client = await clientPlatformService.updatePackagePlan(
+      getClientId(req),
+      getPackagePlanId(req),
+      updatePackagePlanSchema.parse(req.body)
+    );
+
+    res.status(200).json({
+      client: serializeClientForResponse(client)
+    });
+  },
+
+  async removePackagePlan(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const client = await clientPlatformService.removePackagePlan(
+      getClientId(req),
+      getPackagePlanId(req)
+    );
+
+    res.status(200).json({
       client: serializeClientForResponse(client)
     });
   },
@@ -316,6 +478,17 @@ export const clientPlatformController = {
         sellPackageSchema.parse(req.body)
       )
     );
+  },
+
+  async sellProduct(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const client = await clientPlatformService.sellProduct(
+      getClientId(req),
+      sellProductSchema.parse(req.body)
+    );
+
+    res.status(201).json({
+      client: serializeClientForResponse(client)
+    });
   },
 
   async completeOnboarding(req: Request, res: Response, _next: NextFunction): Promise<void> {
