@@ -9,7 +9,7 @@ import { requirePlatformAdminPageAccess } from './api/middlewares/requirePlatfor
 
 export const app = express();
 
-const publicDir = resolve(__dirname, '../public');
+const publicDir = resolve(process.cwd(), 'public');
 const shouldEnforceHttps = env.APP_ENV === 'prod' && env.PUBLIC_BASE_URL?.startsWith('https://');
 
 const isSecureRequest = (req: express.Request): boolean =>
@@ -136,3 +136,5 @@ app.get('/book/:clientId/manage/:appointmentId', (_req, res) => {
 
 app.use(notFoundHandler);
 app.use(errorHandler);
+
+export default app;

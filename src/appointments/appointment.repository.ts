@@ -15,9 +15,14 @@ const isTestEnvironment = (): boolean =>
   process.env.NODE_ENV === 'test' ||
   process.env.VITEST === 'true';
 
+const isVercelRuntime = (): boolean =>
+  process.env.VERCEL === '1' || Boolean(process.env.VERCEL_ENV);
+
 const createStore = (): AppointmentStore => {
   const useMemory =
-    isTestEnvironment() || process.env.CLIENT_PLATFORM_STORAGE === 'memory';
+    isTestEnvironment() ||
+    isVercelRuntime() ||
+    process.env.CLIENT_PLATFORM_STORAGE === 'memory';
 
   return useMemory ? new AppointmentMemoryStore() : new AppointmentFileStore();
 };

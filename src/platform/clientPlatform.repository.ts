@@ -8,8 +8,11 @@ const isTestEnvironment = (): boolean =>
   process.env.NODE_ENV === 'test' ||
   process.env.VITEST === 'true';
 
+const isVercelRuntime = (): boolean =>
+  process.env.VERCEL === '1' || Boolean(process.env.VERCEL_ENV);
+
 const getConfiguredStoreType = (): 'file' | 'memory' => {
-  if (isTestEnvironment()) {
+  if (isTestEnvironment() || isVercelRuntime()) {
     return 'memory';
   }
 
