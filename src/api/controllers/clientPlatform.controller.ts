@@ -6,6 +6,11 @@ import {
   clientPlatformService,
   serializeClientForResponse
 } from '../../platform/clientPlatform.service';
+import { serviceLocationValues } from '../../platform/serviceLocation.constants';
+import {
+  buildPlatformClientPagePath,
+  platformClientPagePaths
+} from '../../platform/clientPlatform.paths';
 import { appointmentService } from '../../appointments/appointment.service';
 import { getRequestOrigin, setAdminSessionCookie } from '../../shared/http';
 
@@ -32,6 +37,17 @@ const createClientSchema = z.object({
   provider: z.enum(['email', 'facebook', 'google', 'apple']).default('email')
 }).refine(
   (value) => value.provider !== 'email' || Boolean(value.email || value.mobileNumber),
+  {
+    message: 'Email or mobile number is required',
+    path: ['email']
+  }
+);
+
+const loginClientSchema = z.object({
+  email: z.string().trim().email().optional(),
+  mobileNumber: z.string().trim().min(7, 'Mobile number is required').optional()
+}).refine(
+  (value) => Boolean(value.email || value.mobileNumber),
   {
     message: 'Email or mobile number is required',
     path: ['email']
@@ -74,7 +90,7 @@ const accountTypeSchema = z.object({
 });
 
 const serviceLocationSchema = z.object({
-  serviceLocation: z.array(z.enum(['physical', 'mobile', 'virtual'])).min(1)
+  serviceLocation: z.array(z.enum(serviceLocationValues)).min(1)
 });
 
 const venueLocationSchema = z.object({
@@ -238,7 +254,17 @@ export const clientPlatformController = {
     res.status(201).json({
       client: serializeClientForResponse(client),
       ...(shouldExposeAdminTokenForTests() ? { adminToken: client.adminToken } : {}),
-      nextStep: `/onboarding/business-name?clientId=${client.id}`
+      nextStep: buildPlatformClientPagePath(platformClientPagePaths.onboarding.businessName, client.id)
+    });
+  },
+
+  async loginClient(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const payload = await clientPlatformService.loginClient(loginClientSchema.parse(req.body));
+    setAdminSessionCookie(res, payload.client.adminToken);
+    res.status(200).json({
+      client: serializeClientForResponse(payload.client),
+      ...(shouldExposeAdminTokenForTests() ? { adminToken: payload.client.adminToken } : {}),
+      nextStep: payload.nextStep
     });
   },
 
@@ -256,7 +282,7 @@ export const clientPlatformController = {
 
     res.status(200).json({
       client: serializeClientForResponse(client),
-      nextStep: `/onboarding/service-types?clientId=${client.id}`
+      nextStep: buildPlatformClientPagePath(platformClientPagePaths.onboarding.serviceTypes, client.id)
     });
   },
 
@@ -268,7 +294,7 @@ export const clientPlatformController = {
 
     res.status(200).json({
       client: serializeClientForResponse(client),
-      nextStep: `/onboarding/account-type?clientId=${client.id}`
+      nextStep: buildPlatformClientPagePath(platformClientPagePaths.onboarding.accountType, client.id)
     });
   },
 
@@ -291,7 +317,7 @@ export const clientPlatformController = {
 
     res.status(200).json({
       client: serializeClientForResponse(client),
-      nextStep: `/onboarding/service-location?clientId=${client.id}`
+      nextStep: buildPlatformClientPagePath(platformClientPagePaths.onboarding.serviceLocation, client.id)
     });
   },
 
@@ -303,7 +329,7 @@ export const clientPlatformController = {
 
     res.status(200).json({
       client: serializeClientForResponse(client),
-      nextStep: `/onboarding/venue-location?clientId=${client.id}`
+      nextStep: buildPlatformClientPagePath(platformClientPagePaths.onboarding.venueLocation, client.id)
     });
   },
 
@@ -326,7 +352,7 @@ export const clientPlatformController = {
 
     res.status(200).json({
       client: serializeClientForResponse(client),
-      nextStep: `/onboarding/complete?clientId=${client.id}`
+      nextStep: buildPlatformClientPagePath(platformClientPagePaths.onboarding.complete, client.id)
     });
   },
 
@@ -495,7 +521,7 @@ export const clientPlatformController = {
     const client = await clientPlatformService.completeOnboarding(getClientId(req));
     res.status(200).json({
       client: serializeClientForResponse(client),
-      nextStep: `/onboarding/complete?clientId=${client.id}`
+      nextStep: buildPlatformClientPagePath(platformClientPagePaths.onboarding.complete, client.id)
     });
   },
 

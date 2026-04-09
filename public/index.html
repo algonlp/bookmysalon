@@ -88,7 +88,12 @@
             <span class="hero-trust-pill">QR-powered check-ins</span>
           </div>
 
-          <form class="search-bar" id="search-panel">
+          <form
+            class="search-bar"
+            id="search-panel"
+            data-salons-endpoint="/api/public/salons"
+            data-location-reverse-endpoint="/api/public/locations/reverse"
+          >
             <label class="search-item">
               <span class="search-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" focusable="false">
@@ -100,18 +105,31 @@
                 id="service-query"
                 name="service"
                 type="text"
+                list="search-service-options"
+                autocomplete="off"
                 placeholder="All treatments and venues"
               />
             </label>
 
             <label class="search-item">
-              <span class="search-icon" aria-hidden="true">
+              <button
+                class="search-icon-button"
+                id="city-location-trigger"
+                type="button"
+                aria-label="Use current location"
+              >
                 <svg viewBox="0 0 24 24" focusable="false">
                   <path d="M12 21s6-5.3 6-11a6 6 0 10-12 0c0 5.7 6 11 6 11z"></path>
                   <circle cx="12" cy="10" r="2.5"></circle>
                 </svg>
-              </span>
-              <input id="city-query" name="city" type="text" placeholder="Current location" />
+              </button>
+              <input
+                id="city-query"
+                name="city"
+                type="text"
+                autocomplete="address-level2"
+                placeholder="Current location"
+              />
             </label>
 
             <label class="search-item">
@@ -121,10 +139,11 @@
                   <path d="M8 3v4M16 3v4M4 10h16"></path>
                 </svg>
               </span>
-              <input id="time-query" name="time" type="text" placeholder="Any time" />
+              <input id="time-query" name="time" type="date" aria-label="Choose date" />
             </label>
 
             <button class="search-button" type="submit">Search</button>
+            <datalist id="search-service-options"></datalist>
           </form>
 
           <p class="booking-count"><strong>450,904</strong> appointments booked today</p>

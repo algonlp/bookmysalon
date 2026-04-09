@@ -67,7 +67,7 @@ app.get('/', (_req, res) => {
 });
 
 app.get('/login', (_req, res) => {
-  res.sendFile(resolve(publicDir, 'login.html'));
+  res.sendFile(resolve(publicDir, 'signup.html'));
 });
 
 app.get('/for-businesses', (_req, res) => {

@@ -17,6 +17,7 @@ import type {
   PaymentSnapshot,
   PackagePurchaseRecord,
   PublicBookingHistoryItem,
+  PublicBookingPage,
   PublicBenefitOption,
   PublicManagedAppointment,
   PublicWaitlistOffer,
@@ -35,6 +36,13 @@ import {
   normalizeBusinessServices,
   toAppointmentServiceOptions
 } from '../platform/businessServices';
+import {
+  defaultBookingAddressRequiredMessage,
+  defaultServiceLocation,
+  getDefaultBookingServiceLocation,
+  type ServiceLocation,
+  serviceLocationRequiresAddress
+} from '../platform/serviceLocation.constants';
 import { env } from '../config/env';
 
 const DEFAULT_SLOT_TIMES = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
@@ -85,6 +93,13 @@ const getBusinessDisplayName = (
 
   return emailLabel || business.id;
 };
+
+const getAvailableBookingServiceLocations = (
+  business: Awaited<ReturnType<typeof getBusinessOrThrow>>
+): ServiceLocation[] =>
+  Array.isArray(business.serviceLocation) && business.serviceLocation.length > 0
+    ? business.serviceLocation
+    : [defaultServiceLocation];
 
 const getActiveTeamMembersForBusiness = (
   business: Awaited<ReturnType<typeof getBusinessOrThrow>>
@@ -1261,7 +1276,11 @@ const sendAppointmentConfirmationNotification = async (
 ): Promise<NotificationDispatchResult[]> => {
   const manageLink = buildAppointmentManagementLink(appointment, origin);
   const statusLabel = mode === 'rescheduled' ? 'has been rescheduled' : 'is confirmed';
-  const customerMessage = `Your appointment at ${appointment.businessName} ${statusLabel} for ${formatSmsDate(appointment.appointmentDate, appointment.appointmentTime)}. Service: ${appointment.serviceName}. Ref: ${appointment.id.slice(0, 8)}. Manage booking: ${manageLink}`;
+  const customerMessage =
+    `Your appointment at ${appointment.businessName} ${statusLabel} for ` +
+    `${formatSmsDate(appointment.appointmentDate, appointment.appointmentTime)}. ` +
+    `Service: ${appointment.serviceName}. Ref: ${appointment.id.slice(0, 8)}. ` +
+    `Open your live booking link for the countdown and updates: ${manageLink}`;
 
   return Promise.all([
     twilioSmsService.sendSms(appointment.customerPhone, customerMessage, 'customer')
@@ -1287,7 +1306,7 @@ const sendRunningLateNotification = async (
   const customerMessage =
     `Update from ${appointment.businessName}: your ${appointment.serviceName} appointment scheduled for ` +
     `${formatSmsDate(appointment.appointmentDate, appointment.appointmentTime)} is delayed.` +
-    `${delayCopy}${noteCopy} If you need to adjust the booking, use ${manageLink}`;
+    `${delayCopy}${noteCopy} Open your live booking link for the countdown or to adjust the booking: ${manageLink}`;
 
   return Promise.all([
     twilioSmsService.sendSms(appointment.customerPhone, customerMessage, 'customer')
@@ -1309,17 +1328,7 @@ export const appointmentService = {
       : `${bookingUrl}?source=${encodeURIComponent(source)}`;
   },
 
-  async getPublicBookingPage(businessId: string): Promise<{
-    businessId: string;
-    businessName: string;
-    serviceTypes: string[];
-    services: AppointmentServiceOption[];
-    teamMembers: AppointmentTeamMemberOption[];
-    bookingLink: string;
-    reviews: ReviewRecord[];
-    reviewSummary: ReviewSummary;
-    waitlistOffer: PublicWaitlistOffer | null;
-  }> {
+  async getPublicBookingPage(businessId: string): Promise<PublicBookingPage> {
     return this.getPublicBookingPageWithWaitlistClaim(businessId);
   },
 
@@ -1327,17 +1336,7 @@ export const appointmentService = {
     businessId: string,
     waitlistEntryId = '',
     waitlistOfferToken = ''
-  ): Promise<{
-    businessId: string;
-    businessName: string;
-    serviceTypes: string[];
-    services: AppointmentServiceOption[];
-    teamMembers: AppointmentTeamMemberOption[];
-    bookingLink: string;
-    reviews: ReviewRecord[];
-    reviewSummary: ReviewSummary;
-    waitlistOffer: PublicWaitlistOffer | null;
-  }> {
+  ): Promise<PublicBookingPage> {
     const business = await getBusinessOrThrow(businessId);
     const services = await getServiceCatalogForBusiness(businessId);
     const reviews = await listBusinessReviews(businessId);
@@ -1352,6 +1351,7 @@ export const appointmentService = {
       businessId: business.id,
       businessName: getBusinessDisplayName(business),
       serviceTypes: business.serviceTypes,
+      serviceLocations: getAvailableBookingServiceLocations(business),
       services,
       teamMembers,
       bookingLink: `/book/${business.id}`,
@@ -1597,10 +1597,15 @@ export const appointmentService = {
     const business = await getBusinessOrThrow(businessId);
     const services = await getServiceCatalogForBusiness(businessId);
     const teamMembers = getActiveTeamMembersForBusiness(business);
+    const availableServiceLocations = getAvailableBookingServiceLocations(business);
     const selectedService = services.find((service) => service.name === input.serviceName);
     const selectedTeamMember = input.teamMemberId
       ? teamMembers.find((teamMember) => teamMember.id === input.teamMemberId)
       : undefined;
+    const selectedServiceLocation =
+      input.serviceLocation && availableServiceLocations.includes(input.serviceLocation)
+        ? input.serviceLocation
+        : getDefaultBookingServiceLocation(availableServiceLocations);
     const activeWaitlistClaim = await getActiveWaitlistClaim(
       businessId,
       input.waitlistEntryId?.trim() ?? '',
@@ -1609,6 +1614,17 @@ export const appointmentService = {
 
     if (!selectedService) {
       throw new HttpError(400, 'Selected service is not available');
+    }
+
+    if (!availableServiceLocations.includes(selectedServiceLocation)) {
+      throw new HttpError(400, 'Selected service location is not available');
+    }
+
+    if (
+      serviceLocationRequiresAddress(selectedServiceLocation) &&
+      !input.customerAddress?.trim()
+    ) {
+      throw new HttpError(400, defaultBookingAddressRequiredMessage);
     }
 
     if (input.teamMemberId && !selectedTeamMember) {
@@ -1771,6 +1787,11 @@ export const appointmentService = {
       customerName: input.customerName.trim(),
       customerPhone,
       customerEmail,
+      serviceLocation: selectedServiceLocation,
+      customerAddress:
+        serviceLocationRequiresAddress(selectedServiceLocation)
+          ? input.customerAddress?.trim() ?? ''
+          : '',
       appointmentDate: input.appointmentDate,
       appointmentTime: input.appointmentTime,
       servicePriceLabel: selectedService.priceLabel,

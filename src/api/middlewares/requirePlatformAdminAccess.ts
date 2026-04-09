@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import { env } from '../../config/env';
+import { platformClientPagePaths } from '../../platform/clientPlatform.paths';
 import { clientPlatformRepository } from '../../platform/clientPlatform.repository';
 import { clearAdminSessionCookie, getCookieValue } from '../../shared/http';
 
@@ -59,7 +60,7 @@ export const requirePlatformAdminPageAccess = async (
 
   if (!clientId || !adminToken) {
     clearAdminSessionCookie(res);
-    res.redirect('/signup');
+    res.redirect(platformClientPagePaths.signup);
     return;
   }
 
@@ -67,7 +68,7 @@ export const requirePlatformAdminPageAccess = async (
 
   if (!isTokenValid) {
     clearAdminSessionCookie(res);
-    res.redirect('/signup');
+    res.redirect(platformClientPagePaths.signup);
     return;
   }
 

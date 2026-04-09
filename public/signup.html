@@ -32,10 +32,16 @@
             <h1>Fresha for professionals</h1>
             <p>Create an account or log in to manage your business.</p>
 
-            <form class="pro-signup-form" id="pro-signup-form" action="/onboarding/business-name">
+            <form
+              class="pro-signup-form"
+              id="pro-signup-form"
+              action="/onboarding/business-name"
+              data-create-endpoint="/api/platform/clients"
+              data-login-endpoint="/api/platform/clients/login"
+            >
               <div class="pro-signup-form-intro">
                 <strong>Start your professional workspace</strong>
-                <span>Use your email or mobile number to create an account, then continue setup for your salon or studio.</span>
+                <span>Enter your email or mobile number. Existing accounts go to the dashboard, and new accounts continue the setup steps for your salon or studio.</span>
               </div>
 
               <label class="signup-input-wrap">

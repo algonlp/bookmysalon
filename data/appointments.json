@@ -306,6 +306,29 @@
       "source": "direct",
       "createdAt": "2026-04-06T11:19:50.689Z",
       "updatedAt": "2026-04-06T13:34:19.288Z"
+    },
+    {
+      "id": "7738b663-2a67-4e68-b8a9-402ff9f22e6d",
+      "businessId": "eb13a47f-97d1-43d5-8543-b136e3e3435a",
+      "businessName": "paracha",
+      "publicAccessToken": "9007389a-16b3-4a9c-a91c-acbcfd5031bd",
+      "serviceId": "hair-salon-cut-and-style",
+      "categoryName": "Hair salon",
+      "serviceName": "Cut and style",
+      "customerName": "maqsood",
+      "customerPhone": "+92349454816",
+      "customerEmail": "maqsoodparacha1479@gmail.com",
+      "appointmentDate": "2026-04-08",
+      "appointmentTime": "14:00",
+      "servicePriceLabel": "Rs 2,200",
+      "serviceAmountValue": 2200,
+      "currencyCode": "",
+      "startAt": "2026-04-08T09:00:00.000Z",
+      "endAt": "2026-04-08T10:00:00.000Z",
+      "status": "booked",
+      "source": "direct",
+      "createdAt": "2026-04-08T08:00:55.599Z",
+      "updatedAt": "2026-04-08T08:00:55.599Z"
     }
   ],
   "paymentRecords": [

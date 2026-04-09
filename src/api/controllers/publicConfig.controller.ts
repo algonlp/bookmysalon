@@ -1,7 +1,18 @@
 import type { Request, Response } from 'express';
 import { env } from '../../config/env';
+import {
+  addressRequiredServiceLocation,
+  defaultServiceLocation,
+  serviceLocationValues
+} from '../../platform/serviceLocation.constants';
 
 export const publicConfigController = (_req: Request, res: Response): void => {
+  const bookingLocationLabels = {
+    [serviceLocationValues[0]]: env.PUBLIC_BOOKING_LOCATION_OPTION_PHYSICAL?.trim() ?? '',
+    [serviceLocationValues[1]]: env.PUBLIC_BOOKING_LOCATION_OPTION_MOBILE?.trim() ?? '',
+    [serviceLocationValues[2]]: env.PUBLIC_BOOKING_LOCATION_OPTION_VIRTUAL?.trim() ?? ''
+  };
+
   res.status(200).json({
     supportCompanyName: env.PUBLIC_SUPPORT_COMPANY_NAME?.trim() ?? '',
     supportPlatformName: env.PUBLIC_SUPPORT_PLATFORM_NAME?.trim() ?? '',
@@ -119,6 +130,23 @@ export const publicConfigController = (_req: Request, res: Response): void => {
     teamMemberFieldClosingTimeLabel: env.PUBLIC_TEAM_MEMBER_FIELD_CLOSING_TIME_LABEL?.trim() ?? '',
     teamMemberFieldOffDaysLabel: env.PUBLIC_TEAM_MEMBER_FIELD_OFF_DAYS_LABEL?.trim() ?? '',
     teamMemberFieldOffDaysEmpty: env.PUBLIC_TEAM_MEMBER_FIELD_OFF_DAYS_EMPTY?.trim() ?? '',
+    bookingLocationLabel: env.PUBLIC_BOOKING_LOCATION_LABEL?.trim() ?? '',
+    bookingLocationLabels,
+    bookingDefaultLocationValue: defaultServiceLocation,
+    bookingAddressLocationValue: addressRequiredServiceLocation,
+    bookingLocationOptionPhysical: env.PUBLIC_BOOKING_LOCATION_OPTION_PHYSICAL?.trim() ?? '',
+    bookingLocationOptionMobile: env.PUBLIC_BOOKING_LOCATION_OPTION_MOBILE?.trim() ?? '',
+    bookingLocationOptionVirtual: env.PUBLIC_BOOKING_LOCATION_OPTION_VIRTUAL?.trim() ?? '',
+    bookingAddressLabel: env.PUBLIC_BOOKING_ADDRESS_LABEL?.trim() ?? '',
+    bookingAddressPlaceholder: env.PUBLIC_BOOKING_ADDRESS_PLACEHOLDER?.trim() ?? '',
+    bookingAddressHelp: env.PUBLIC_BOOKING_ADDRESS_HELP?.trim() ?? '',
+    bookingAddressRequired: env.PUBLIC_BOOKING_ADDRESS_REQUIRED?.trim() ?? '',
+    bookingPhoneLabel: env.PUBLIC_BOOKING_PHONE_LABEL?.trim() ?? '',
+    bookingPhoneHelp: env.PUBLIC_BOOKING_PHONE_HELP?.trim() ?? '',
+    bookingPhoneCountryCodeLabel: env.PUBLIC_BOOKING_PHONE_COUNTRY_CODE_LABEL?.trim() ?? '',
+    bookingPhoneCountryCode: env.PUBLIC_BOOKING_PHONE_COUNTRY_CODE?.trim() ?? '',
+    bookingPhoneNumberPlaceholder: env.PUBLIC_BOOKING_PHONE_NUMBER_PLACEHOLDER?.trim() ?? '',
+    homeSearchResultsLimit: env.PUBLIC_HOME_SEARCH_RESULTS_LIMIT,
     locationSearchCountryCode: env.PUBLIC_LOCATION_SEARCH_COUNTRY_CODE?.trim().toLowerCase() ?? '',
     locationSearchCountryLabel: env.PUBLIC_LOCATION_SEARCH_COUNTRY_LABEL?.trim() ?? ''
   });

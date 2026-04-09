@@ -1,3 +1,5 @@
+import type { ServiceLocation } from '../platform/serviceLocation.constants';
+
 export type AppointmentStatus = 'booked' | 'cancelled' | 'completed';
 
 export type AppointmentSource =
@@ -42,6 +44,8 @@ export interface AppointmentRecord {
   customerName: string;
   customerPhone: string;
   customerEmail: string;
+  serviceLocation: ServiceLocation;
+  customerAddress: string;
   appointmentDate: string;
   appointmentTime: string;
   servicePriceLabel?: string;
@@ -108,6 +112,8 @@ export interface ReviewSummary {
 export interface CreateAppointmentInput {
   serviceName: string;
   teamMemberId?: string;
+  serviceLocation?: ServiceLocation;
+  customerAddress?: string;
   appointmentDate: string;
   appointmentTime: string;
   customerName: string;
@@ -118,6 +124,19 @@ export interface CreateAppointmentInput {
   loyaltyRewardId?: string;
   waitlistEntryId?: string;
   waitlistOfferToken?: string;
+}
+
+export interface PublicBookingPage {
+  businessId: string;
+  businessName: string;
+  serviceTypes: string[];
+  serviceLocations: ServiceLocation[];
+  services: AppointmentServiceOption[];
+  teamMembers: AppointmentTeamMemberOption[];
+  bookingLink: string;
+  reviews: ReviewRecord[];
+  reviewSummary: ReviewSummary;
+  waitlistOffer: PublicWaitlistOffer | null;
 }
 
 export interface PublicManagedAppointment {

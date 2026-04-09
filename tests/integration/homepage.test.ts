@@ -1,5 +1,6 @@
 import request from 'supertest';
 import { app } from '../../src/app';
+import { resetClientPlatformRepositoryForTests } from '../../src/platform/clientPlatform.repository';
 
 const createAdminSession = async (): Promise<{ clientId: string; adminCookie: string[] }> => {
   const response = await request(app).post('/api/platform/clients').send({
@@ -14,6 +15,10 @@ const createAdminSession = async (): Promise<{ clientId: string; adminCookie: st
 };
 
 describe('GET /', () => {
+  beforeEach(async () => {
+    await resetClientPlatformRepositoryForTests();
+  });
+
   it('serves the single landing page', async () => {
     const response = await request(app).get('/');
 
@@ -25,6 +30,10 @@ describe('GET /', () => {
     expect(response.text).toContain('List your business');
     expect(response.text).toContain('href="/login"');
     expect(response.text).toContain('href="/for-businesses"');
+    expect(response.text).toContain('list="search-service-options"');
+    expect(response.text).toContain('id="city-location-trigger"');
+    expect(response.text).toContain('id="time-query" name="time" type="date"');
+    expect(response.text).toContain('<datalist id="search-service-options"></datalist>');
     expect(response.text).toContain('Showing all salons ready for booking.');
     expect(response.text).toContain('For customers');
     expect(response.text).toContain('For businesses');
@@ -35,9 +44,10 @@ describe('GET /', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
-    expect(response.text).toContain('Sign up/log in');
-    expect(response.text).toContain('Fresha for customers');
+    expect(response.text).toContain('Create an account or log in to manage your business.');
     expect(response.text).toContain('Fresha for professionals');
+    expect(response.text).toContain('Enter your email address');
+    expect(response.text).toContain('Enter your mobile number');
   });
 
   it('serves the business landing page', async () => {
@@ -85,6 +95,9 @@ describe('GET /', () => {
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
     expect(response.text).toContain('Manage booking');
+    expect(response.text).toContain('Live appointment timer');
+    expect(response.text).toContain('id="manage-booking-countdown-heading"');
+    expect(response.text).toContain('id="manage-booking-countdown-days"');
     expect(response.text).toContain('Reschedule appointment');
     expect(response.text).toContain('Cancel appointment');
   });
@@ -254,6 +267,10 @@ describe('GET /', () => {
     expect(response.text).toContain('Book your appointment');
     expect(response.text).toContain('Confirm appointment');
     expect(response.text).toContain('Phone number');
+    expect(response.text).toContain('id="booking-customer-phone-country-code"');
+    expect(response.text).toContain('id="booking-service-location-field"');
+    expect(response.text).toContain('id="booking-customer-address-field"');
+    expect(response.text).not.toContain('placeholder="+92 300 1234567"');
   });
 
   it('does not expose removed client preview routes', async () => {

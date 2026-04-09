@@ -1,5 +1,13 @@
 import { z } from 'zod';
 import dotenv from 'dotenv';
+import {
+  defaultBookingAddressHelp,
+  defaultBookingAddressLabel,
+  defaultBookingAddressPlaceholder,
+  defaultBookingAddressRequiredMessage,
+  defaultBookingLocationLabel,
+  defaultBookingLocationLabels
+} from '../platform/serviceLocation.constants';
 
 dotenv.config();
 
@@ -179,6 +187,22 @@ const envSchema = z.object({
   PUBLIC_TEAM_MEMBER_FIELD_CLOSING_TIME_LABEL: z.string().optional(),
   PUBLIC_TEAM_MEMBER_FIELD_OFF_DAYS_LABEL: z.string().optional(),
   PUBLIC_TEAM_MEMBER_FIELD_OFF_DAYS_EMPTY: z.string().optional(),
+  PUBLIC_BOOKING_LOCATION_LABEL: z.string().default(defaultBookingLocationLabel),
+  PUBLIC_BOOKING_LOCATION_OPTION_PHYSICAL: z.string().default(defaultBookingLocationLabels.physical),
+  PUBLIC_BOOKING_LOCATION_OPTION_MOBILE: z.string().default(defaultBookingLocationLabels.mobile),
+  PUBLIC_BOOKING_LOCATION_OPTION_VIRTUAL: z.string().default(defaultBookingLocationLabels.virtual),
+  PUBLIC_BOOKING_ADDRESS_LABEL: z.string().default(defaultBookingAddressLabel),
+  PUBLIC_BOOKING_ADDRESS_PLACEHOLDER: z.string().default(defaultBookingAddressPlaceholder),
+  PUBLIC_BOOKING_ADDRESS_HELP: z.string().default(defaultBookingAddressHelp),
+  PUBLIC_BOOKING_ADDRESS_REQUIRED: z.string().default(defaultBookingAddressRequiredMessage),
+  PUBLIC_BOOKING_PHONE_LABEL: z.string().default('Phone number'),
+  PUBLIC_BOOKING_PHONE_HELP: z.string().default(
+    'You and the salon will receive SMS updates on this number.'
+  ),
+  PUBLIC_BOOKING_PHONE_COUNTRY_CODE_LABEL: z.string().default('Country code'),
+  PUBLIC_BOOKING_PHONE_COUNTRY_CODE: z.string().default('+92'),
+  PUBLIC_BOOKING_PHONE_NUMBER_PLACEHOLDER: z.string().default('300 1234567'),
+  PUBLIC_HOME_SEARCH_RESULTS_LIMIT: z.coerce.number().int().min(1).max(20).default(3),
   PUBLIC_LOCATION_SEARCH_COUNTRY_CODE: z.string().trim().min(2).max(3).optional(),
   PUBLIC_LOCATION_SEARCH_COUNTRY_LABEL: z.string().trim().min(1).optional(),
   LOCATION_SEARCH_PROVIDER_BASE_URL: z.string().url().optional(),
@@ -311,6 +335,20 @@ const resolvedEnv = {
   PUBLIC_TEAM_MEMBER_FIELD_CLOSING_TIME_LABEL: process.env.PUBLIC_TEAM_MEMBER_FIELD_CLOSING_TIME_LABEL?.trim(),
   PUBLIC_TEAM_MEMBER_FIELD_OFF_DAYS_LABEL: process.env.PUBLIC_TEAM_MEMBER_FIELD_OFF_DAYS_LABEL?.trim(),
   PUBLIC_TEAM_MEMBER_FIELD_OFF_DAYS_EMPTY: process.env.PUBLIC_TEAM_MEMBER_FIELD_OFF_DAYS_EMPTY?.trim(),
+  PUBLIC_BOOKING_LOCATION_LABEL: process.env.PUBLIC_BOOKING_LOCATION_LABEL?.trim(),
+  PUBLIC_BOOKING_LOCATION_OPTION_PHYSICAL: process.env.PUBLIC_BOOKING_LOCATION_OPTION_PHYSICAL?.trim(),
+  PUBLIC_BOOKING_LOCATION_OPTION_MOBILE: process.env.PUBLIC_BOOKING_LOCATION_OPTION_MOBILE?.trim(),
+  PUBLIC_BOOKING_LOCATION_OPTION_VIRTUAL: process.env.PUBLIC_BOOKING_LOCATION_OPTION_VIRTUAL?.trim(),
+  PUBLIC_BOOKING_ADDRESS_LABEL: process.env.PUBLIC_BOOKING_ADDRESS_LABEL?.trim(),
+  PUBLIC_BOOKING_ADDRESS_PLACEHOLDER: process.env.PUBLIC_BOOKING_ADDRESS_PLACEHOLDER?.trim(),
+  PUBLIC_BOOKING_ADDRESS_HELP: process.env.PUBLIC_BOOKING_ADDRESS_HELP?.trim(),
+  PUBLIC_BOOKING_ADDRESS_REQUIRED: process.env.PUBLIC_BOOKING_ADDRESS_REQUIRED?.trim(),
+  PUBLIC_BOOKING_PHONE_LABEL: process.env.PUBLIC_BOOKING_PHONE_LABEL?.trim(),
+  PUBLIC_BOOKING_PHONE_HELP: process.env.PUBLIC_BOOKING_PHONE_HELP?.trim(),
+  PUBLIC_BOOKING_PHONE_COUNTRY_CODE_LABEL: process.env.PUBLIC_BOOKING_PHONE_COUNTRY_CODE_LABEL?.trim(),
+  PUBLIC_BOOKING_PHONE_COUNTRY_CODE: process.env.PUBLIC_BOOKING_PHONE_COUNTRY_CODE?.trim(),
+  PUBLIC_BOOKING_PHONE_NUMBER_PLACEHOLDER: process.env.PUBLIC_BOOKING_PHONE_NUMBER_PLACEHOLDER?.trim(),
+  PUBLIC_HOME_SEARCH_RESULTS_LIMIT: process.env.PUBLIC_HOME_SEARCH_RESULTS_LIMIT,
   PUBLIC_LOCATION_SEARCH_COUNTRY_CODE: process.env.PUBLIC_LOCATION_SEARCH_COUNTRY_CODE?.trim().toLowerCase(),
   PUBLIC_LOCATION_SEARCH_COUNTRY_LABEL: process.env.PUBLIC_LOCATION_SEARCH_COUNTRY_LABEL?.trim(),
   LOCATION_SEARCH_PROVIDER_BASE_URL: normalizeBaseUrl(process.env.LOCATION_SEARCH_PROVIDER_BASE_URL),

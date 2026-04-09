@@ -43,6 +43,78 @@ describe('Client platform API', () => {
     expect(authorizedApiResponse.status).toBe(200);
   });
 
+  it('logs in an existing account by email and sends completed businesses to the dashboard', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'login-owner@example.com',
+      provider: 'email'
+    });
+
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    const completeResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/complete`)
+      .set('x-admin-token', adminToken);
+
+    expect(completeResponse.status).toBe(200);
+
+    const loginResponse = await request(app).post('/api/platform/clients/login').send({
+      email: 'login-owner@example.com'
+    });
+
+    expect(loginResponse.status).toBe(200);
+    expect(loginResponse.body.client.id).toBe(clientId);
+    expect(loginResponse.body.nextStep).toBe(`/calendar?clientId=${clientId}`);
+    expect(loginResponse.headers['set-cookie']).toEqual(
+      expect.arrayContaining([expect.stringContaining('Path=/')])
+    );
+  });
+
+  it('logs in an existing incomplete account and resumes the next onboarding step', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'resume-owner@example.com',
+      provider: 'email'
+    });
+
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    const businessProfileResponse = await request(app)
+      .patch(`/api/platform/clients/${clientId}/business-profile`)
+      .set('x-admin-token', adminToken)
+      .send({
+        businessName: 'Resume Studio',
+        website: 'www.resumestudio.com'
+      });
+
+    expect(businessProfileResponse.status).toBe(200);
+
+    const loginResponse = await request(app).post('/api/platform/clients/login').send({
+      email: 'resume-owner@example.com'
+    });
+
+    expect(loginResponse.status).toBe(200);
+    expect(loginResponse.body.client.id).toBe(clientId);
+    expect(loginResponse.body.nextStep).toBe(`/onboarding/service-types?clientId=${clientId}`);
+  });
+
+  it('rejects creating a duplicate account for an existing email', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'duplicate-owner@example.com',
+      provider: 'email'
+    });
+
+    expect(createResponse.status).toBe(201);
+
+    const duplicateResponse = await request(app).post('/api/platform/clients').send({
+      email: 'duplicate-owner@example.com',
+      provider: 'email'
+    });
+
+    expect(duplicateResponse.status).toBe(409);
+    expect(duplicateResponse.body.error).toBe('Account already exists. Please log in.');
+  });
+
   it('creates a client, saves onboarding data, and serves a dashboard payload', async () => {
     const createResponse = await request(app).post('/api/platform/clients').send({
       email: 'owner@example.com',
@@ -911,6 +983,13 @@ describe('Client platform API', () => {
         serviceTypes: ['Barber', 'Hair salon']
       });
 
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-location`)
+      .set('x-admin-token', adminToken)
+      .send({
+        serviceLocation: ['physical', 'mobile']
+      });
+
     const addBarberResponse = await request(app)
       .post(`/api/platform/clients/${clientId}/team-members`)
       .set('x-admin-token', adminToken)
@@ -928,6 +1007,7 @@ describe('Client platform API', () => {
 
     expect(bookingPageResponse.status).toBe(200);
     expect(bookingPageResponse.body.businessName).toBe('Trim House');
+    expect(bookingPageResponse.body.serviceLocations).toEqual(['physical', 'mobile']);
     expect(bookingPageResponse.body.services).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -977,6 +1057,8 @@ describe('Client platform API', () => {
       .send({
         serviceName: 'Haircut',
         teamMemberId: addBarberResponse.body.client.teamMembers[0].id,
+        serviceLocation: 'mobile',
+        customerAddress: 'House 14, Street 9, DHA Phase 6, Lahore',
         appointmentDate: bookingDateValue,
         appointmentTime: '09:00',
         customerName: 'Ali Khan',
@@ -987,9 +1069,19 @@ describe('Client platform API', () => {
     expect(bookingResponse.status).toBe(201);
     expect(bookingResponse.body.appointment.customerName).toBe('Ali Khan');
     expect(bookingResponse.body.appointment.teamMemberName).toBe('Asad');
+    expect(bookingResponse.body.appointment.serviceLocation).toBe('mobile');
+    expect(bookingResponse.body.appointment.customerAddress).toBe(
+      'House 14, Street 9, DHA Phase 6, Lahore'
+    );
     expect(bookingResponse.body.notifications).toEqual([
       expect.objectContaining({ recipient: 'customer', status: 'skipped' })
     ]);
+    expect(bookingResponse.body.manageLink).toContain(
+      `/book/${clientId}/manage/${bookingResponse.body.appointment.id}`
+    );
+    expect(bookingResponse.body.manageLink).toContain(
+      `accessToken=${encodeURIComponent(bookingResponse.body.publicAccessToken)}`
+    );
 
     const appointmentId = bookingResponse.body.appointment.id as string;
     const publicAccessToken = bookingResponse.body.publicAccessToken as string;

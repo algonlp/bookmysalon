@@ -6,6 +6,7 @@ import { requirePlatformAdminAccess } from '../middlewares/requirePlatformAdminA
 export const clientPlatformRouter = Router();
 
 clientPlatformRouter.post('/platform/clients', asyncHandler(clientPlatformController.createClient));
+clientPlatformRouter.post('/platform/clients/login', asyncHandler(clientPlatformController.loginClient));
 clientPlatformRouter.get(
   '/public/salons',
   asyncHandler(clientPlatformController.listPublicSalons)

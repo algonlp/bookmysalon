@@ -224,6 +224,65 @@ const formatCurrencyExampleLabel = (amount) => {
 const normalizePhoneForLookup = (phoneValue) =>
   typeof phoneValue === 'string' ? phoneValue.replace(/[^\d]/g, '').trim() : '';
 
+const normalizePhoneCountryCode = (phoneValue) => {
+  if (typeof phoneValue !== 'string') {
+    return '';
+  }
+
+  const normalizedValue = phoneValue.trim().replace(/\s+/g, '');
+
+  if (!normalizedValue) {
+    return '';
+  }
+
+  const digitsOnlyValue = normalizedValue.replace(/[^\d+]/g, '');
+
+  if (!digitsOnlyValue) {
+    return '';
+  }
+
+  return digitsOnlyValue.startsWith('+') ? digitsOnlyValue : `+${digitsOnlyValue.replace(/^\+/, '')}`;
+};
+
+const splitPhoneNumberParts = (phoneValue, defaultCountryCode = '') => {
+  const normalizedPhoneValue =
+    typeof phoneValue === 'string' ? phoneValue.trim().replace(/\s+/g, ' ') : '';
+  const normalizedDefaultCountryCode = normalizePhoneCountryCode(defaultCountryCode);
+
+  if (!normalizedPhoneValue) {
+    return {
+      countryCode: normalizedDefaultCountryCode,
+      number: ''
+    };
+  }
+
+  const compactPhoneValue = normalizedPhoneValue.replace(/\s+/g, '');
+
+  if (
+    normalizedDefaultCountryCode &&
+    compactPhoneValue.startsWith(normalizedDefaultCountryCode)
+  ) {
+    return {
+      countryCode: normalizedDefaultCountryCode,
+      number: compactPhoneValue.slice(normalizedDefaultCountryCode.length)
+    };
+  }
+
+  const phoneMatch = compactPhoneValue.match(/^(\+\d{1,4})(\d.*)?$/);
+
+  if (phoneMatch) {
+    return {
+      countryCode: phoneMatch[1],
+      number: phoneMatch[2] ?? ''
+    };
+  }
+
+  return {
+    countryCode: normalizedDefaultCountryCode,
+    number: normalizedPhoneValue
+  };
+};
+
 const serviceInput = document.querySelector('#service-query');
 const cityInput = document.querySelector('#city-query');
 const timeInput = document.querySelector('#time-query');
@@ -382,7 +441,9 @@ const apiRequest = async (path, options = {}) => {
   }
 
   if (!response.ok) {
-    throw new Error(payload?.error ?? 'Request failed');
+    const error = new Error(payload?.error ?? 'Request failed');
+    error.statusCode = response.status;
+    throw error;
   }
 
   return payload;
@@ -1267,6 +1328,14 @@ const formatMoneyValue = (amountValue, currencyCode = '') => {
 const normalizeSearchValue = (value) =>
   typeof value === 'string' ? value.trim().toLowerCase().replace(/\s+/g, ' ') : '';
 
+const getSalonServiceSearchValues = (salon) =>
+  [
+    ...(Array.isArray(salon.serviceTypes) ? salon.serviceTypes : []),
+    ...(Array.isArray(salon.services) ? salon.services.map((service) => service.name) : [])
+  ]
+    .filter((value) => typeof value === 'string' && value.trim())
+    .map((value) => value.trim());
+
 const matchesSalonServiceQuery = (salon, serviceQuery) => {
   const normalizedQuery = normalizeSearchValue(serviceQuery);
 
@@ -1287,6 +1356,38 @@ const matchesSalonServiceQuery = (salon, serviceQuery) => {
   );
 
   return searchText.includes(normalizedQuery);
+};
+
+const getSalonServiceScore = (salon, serviceQuery) => {
+  const normalizedQuery = normalizeSearchValue(serviceQuery);
+
+  if (!normalizedQuery) {
+    return 0;
+  }
+
+  const searchValues = [
+    salon.businessName,
+    ...getSalonServiceSearchValues(salon)
+  ].map((value) => normalizeSearchValue(value));
+
+  if (searchValues.some((value) => value === normalizedQuery)) {
+    return 120;
+  }
+
+  if (searchValues.some((value) => value.startsWith(normalizedQuery))) {
+    return 92;
+  }
+
+  if (searchValues.some((value) => value.includes(normalizedQuery))) {
+    return 68;
+  }
+
+  const queryParts = normalizedQuery.split(' ').filter(Boolean);
+  const matchedParts = queryParts.filter((part) =>
+    searchValues.some((value) => value.includes(part))
+  ).length;
+
+  return matchedParts > 0 ? matchedParts * 16 : -1;
 };
 
 const getSalonLocationScore = (salon, locationQuery) => {
@@ -1466,29 +1567,65 @@ const initHomeSalonSearch = () => {
   const showcaseEmpty = document.querySelector('#public-salon-showcase-empty');
   const showcaseTitle = document.querySelector('#public-salon-showcase-title');
   const showcaseStatus = document.querySelector('#public-salon-showcase-status');
+  const serviceOptions = document.querySelector('#search-service-options');
+  const locationTrigger = document.querySelector('#city-location-trigger');
 
   if (
     !(showcaseList instanceof HTMLDivElement) ||
     !(showcaseEmpty instanceof HTMLElement) ||
     !(showcaseTitle instanceof HTMLElement) ||
-    !(showcaseStatus instanceof HTMLElement)
+    !(showcaseStatus instanceof HTMLElement) ||
+    !(searchPanel instanceof HTMLFormElement)
   ) {
     return;
   }
 
+  const salonsEndpoint = searchPanel.dataset.salonsEndpoint?.trim() || '/api/public/salons';
+  const locationReverseEndpoint =
+    searchPanel.dataset.locationReverseEndpoint?.trim() || '/api/public/locations/reverse';
   const defaultTitle = showcaseTitle.textContent ?? 'Newly launched salons ready for booking';
   const defaultStatus = showcaseStatus.textContent ?? 'Showing all salons ready for booking.';
   let allSalons = [];
+  let resultsLimit = 3;
+  let hasRequestedCurrentLocation = false;
+
+  const populateServiceOptions = (salons) => {
+    if (!(serviceOptions instanceof HTMLDataListElement)) {
+      return;
+    }
+
+    const optionValues = new Set();
+
+    for (const salon of salons) {
+      for (const value of getSalonServiceSearchValues(salon)) {
+        optionValues.add(value);
+      }
+    }
+
+    const optionElements = [...optionValues]
+      .sort((left, right) => left.localeCompare(right))
+      .map((value) => {
+        const option = document.createElement('option');
+        option.value = value;
+        return option;
+      });
+
+    serviceOptions.replaceChildren(...optionElements);
+  };
 
   const renderShowcase = (salons, filters = {}) => {
     const rawLocation = cityInput instanceof HTMLInputElement ? cityInput.value.trim() : '';
     const rawService = serviceInput instanceof HTMLInputElement ? serviceInput.value.trim() : '';
     const locationQuery = filters.locationQuery ?? rawLocation;
     const serviceQuery = filters.serviceQuery ?? rawService;
+    const isLimited = Boolean(filters.isLimited);
+    const limitedCount = Number(filters.limitedCount) || salons.length;
 
     showcaseList.replaceChildren();
 
-    if (locationQuery) {
+    if (locationQuery && serviceQuery) {
+      showcaseTitle.textContent = `${serviceQuery} near ${locationQuery}`;
+    } else if (locationQuery) {
       showcaseTitle.textContent = `Salons near ${locationQuery}`;
     } else if (serviceQuery) {
       showcaseTitle.textContent = `Salons matching ${serviceQuery}`;
@@ -1512,43 +1649,114 @@ const initHomeSalonSearch = () => {
     }
 
     showcaseEmpty.classList.add('is-hidden');
-    showcaseStatus.textContent = locationQuery
-      ? `Showing ${salons.length} salon${salons.length === 1 ? '' : 's'} near ${locationQuery}.`
-      : serviceQuery
-        ? `Showing ${salons.length} salon${salons.length === 1 ? '' : 's'} for ${serviceQuery}.`
-        : defaultStatus;
+    showcaseStatus.textContent = isLimited
+      ? locationQuery && serviceQuery
+        ? `Showing the ${limitedCount} best salon match${limitedCount === 1 ? '' : 'es'} for ${serviceQuery} near ${locationQuery}.`
+        : locationQuery
+          ? `Showing the ${limitedCount} closest salon${limitedCount === 1 ? '' : 's'} near ${locationQuery}.`
+          : `Showing the ${limitedCount} best salon match${limitedCount === 1 ? '' : 'es'} for ${serviceQuery}.`
+      : locationQuery
+        ? `Showing ${salons.length} salon${salons.length === 1 ? '' : 's'} near ${locationQuery}.`
+        : serviceQuery
+          ? `Showing ${salons.length} salon${salons.length === 1 ? '' : 's'} for ${serviceQuery}.`
+          : defaultStatus;
 
     for (const salon of salons) {
       showcaseList.append(createSalonShowcaseCard(salon));
     }
   };
 
+  const detectCurrentLocation = () => {
+    if (
+      !(cityInput instanceof HTMLInputElement) ||
+      !navigator.geolocation ||
+      cityInput.value.trim() ||
+      hasRequestedCurrentLocation
+    ) {
+      return;
+    }
+
+    hasRequestedCurrentLocation = true;
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        if (!(cityInput instanceof HTMLInputElement) || cityInput.value.trim()) {
+          return;
+        }
+
+        try {
+          const params = new URLSearchParams({
+            latitude: String(position.coords.latitude),
+            longitude: String(position.coords.longitude)
+          });
+          const payload = await apiRequest(`${locationReverseEndpoint}?${params.toString()}`);
+          const detectedLocation =
+            payload?.location?.primaryLabel?.trim() ??
+            payload?.location?.label?.split(',')[0]?.trim() ??
+            '';
+
+          if (!detectedLocation) {
+            return;
+          }
+
+          cityInput.value = detectedLocation;
+          applyShowcaseFilters();
+        } catch (_error) {
+          hasRequestedCurrentLocation = false;
+        }
+      },
+      () => {
+        hasRequestedCurrentLocation = false;
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 300000
+      }
+    );
+  };
+
   const applyShowcaseFilters = ({ scrollIntoView = false } = {}) => {
     const locationQuery = cityInput instanceof HTMLInputElement ? cityInput.value.trim() : '';
     const serviceQuery = serviceInput instanceof HTMLInputElement ? serviceInput.value.trim() : '';
+    const shouldLimitResults = Boolean(locationQuery || serviceQuery);
 
-    let salons = [...allSalons];
+    let salons = [...allSalons]
+      .map((salon) => {
+        const locationScore = locationQuery ? getSalonLocationScore(salon, locationQuery) : 0;
+        const serviceScore = serviceQuery ? getSalonServiceScore(salon, serviceQuery) : 0;
 
-    if (serviceQuery) {
+        return {
+          salon,
+          locationScore,
+          serviceScore,
+          combinedScore: locationScore * 3 + serviceScore * 2
+        };
+      })
+      .filter((entry) => (!locationQuery || entry.locationScore >= 0) && (!serviceQuery || entry.serviceScore >= 0))
+      .sort(
+        (left, right) =>
+          right.combinedScore - left.combinedScore ||
+          right.locationScore - left.locationScore ||
+          right.serviceScore - left.serviceScore ||
+          left.salon.businessName.localeCompare(right.salon.businessName)
+      )
+      .map((entry) => entry.salon);
+
+    if (!locationQuery && serviceQuery) {
       salons = salons.filter((salon) => matchesSalonServiceQuery(salon, serviceQuery));
     }
 
-    if (locationQuery) {
-      salons = salons
-        .map((salon) => ({
-          salon,
-          score: getSalonLocationScore(salon, locationQuery)
-        }))
-        .filter((entry) => entry.score >= 0)
-        .sort(
-          (left, right) =>
-            right.score - left.score ||
-            left.salon.businessName.localeCompare(right.salon.businessName)
-        )
-        .map((entry) => entry.salon);
+    if (shouldLimitResults) {
+      salons = salons.slice(0, resultsLimit);
     }
 
-    renderShowcase(salons, { locationQuery, serviceQuery });
+    renderShowcase(salons, {
+      locationQuery,
+      serviceQuery,
+      isLimited: shouldLimitResults,
+      limitedCount: Math.min(resultsLimit, salons.length)
+    });
 
     if (scrollIntoView) {
       const showcaseSection = document.querySelector('.public-salon-showcase');
@@ -1556,16 +1764,28 @@ const initHomeSalonSearch = () => {
     }
   };
 
-  if (searchPanel instanceof HTMLFormElement) {
-    searchPanel.addEventListener('submit', (event) => {
-      event.preventDefault();
-      applyShowcaseFilters({ scrollIntoView: true });
+  searchPanel.addEventListener('submit', (event) => {
+    event.preventDefault();
+    applyShowcaseFilters({ scrollIntoView: true });
+  });
+
+  if (cityInput instanceof HTMLInputElement) {
+    cityInput.addEventListener('focus', () => {
+      detectCurrentLocation();
+    });
+
+    cityInput.addEventListener('click', () => {
+      detectCurrentLocation();
+    });
+
+    cityInput.addEventListener('input', () => {
+      applyShowcaseFilters();
     });
   }
 
-  if (cityInput instanceof HTMLInputElement) {
-    cityInput.addEventListener('input', () => {
-      applyShowcaseFilters();
+  if (locationTrigger instanceof HTMLButtonElement) {
+    locationTrigger.addEventListener('click', () => {
+      detectCurrentLocation();
     });
   }
 
@@ -1575,11 +1795,30 @@ const initHomeSalonSearch = () => {
     });
   }
 
-  apiRequest('/api/public/salons')
-    .then((payload) => {
+  if (timeInput instanceof HTMLInputElement) {
+    const openDatePicker = () => {
+      if (typeof timeInput.showPicker === 'function') {
+        timeInput.showPicker();
+      }
+    };
+
+    timeInput.addEventListener('focus', openDatePicker);
+    timeInput.addEventListener('click', openDatePicker);
+  }
+
+  Promise.all([loadPublicConfig().catch(() => ({})), apiRequest(salonsEndpoint)])
+    .then(([config, payload]) => {
+      const configuredResultsLimit = Number(config?.homeSearchResultsLimit);
+
+      if (Number.isFinite(configuredResultsLimit) && configuredResultsLimit > 0) {
+        resultsLimit = Math.floor(configuredResultsLimit);
+      }
+
       allSalons = Array.isArray(payload.salons) ? payload.salons : [];
+      populateServiceOptions(allSalons);
       renderShowcase(allSalons);
       applyShowcaseFilters();
+      detectCurrentLocation();
     })
     .catch(() => {
       showcaseEmpty.classList.remove('is-hidden');
@@ -1705,21 +1944,56 @@ const initSignup = () => {
     return;
   }
 
-  const createClient = async (provider, email = '', mobileNumber = '') => {
-    try {
-      const payload = await apiRequest('/api/platform/clients', {
-        method: 'POST',
-        body: JSON.stringify({
-          provider,
-          email: email.trim() || undefined,
-          mobileNumber: mobileNumber.trim() || undefined
-        })
-      });
+  const createEndpoint = signupForm.dataset.createEndpoint?.trim();
+  const loginEndpoint = signupForm.dataset.loginEndpoint?.trim();
 
-      setAdminSession(payload.client.id);
-      window.location.assign(payload.nextStep || buildPathWithClientId('/onboarding/business-name', payload.client.id));
+  if (!createEndpoint || !loginEndpoint) {
+    safeAlert('Signup configuration is missing.');
+    return;
+  }
+
+  const createClient = async (provider, email = '', mobileNumber = '') => {
+    const payload = await apiRequest(createEndpoint, {
+      method: 'POST',
+      body: JSON.stringify({
+        provider,
+        email: email.trim() || undefined,
+        mobileNumber: mobileNumber.trim() || undefined
+      })
+    });
+
+    setAdminSession(payload.client.id);
+    window.location.assign(payload.nextStep);
+  };
+
+  const loginClient = async (email = '', mobileNumber = '') => {
+    const payload = await apiRequest(loginEndpoint, {
+      method: 'POST',
+      body: JSON.stringify({
+        email: email.trim() || undefined,
+        mobileNumber: mobileNumber.trim() || undefined
+      })
+    });
+
+    setAdminSession(payload.client.id);
+    window.location.assign(payload.nextStep);
+  };
+
+  const continueWithEmailOrMobile = async (email = '', mobileNumber = '') => {
+    try {
+      await loginClient(email, mobileNumber);
     } catch (error) {
-      safeAlert(error instanceof Error ? error.message : 'Unable to create dashboard');
+      if (error instanceof Error && error.statusCode === 404) {
+        try {
+          await createClient('email', email, mobileNumber);
+          return;
+        } catch (createError) {
+          safeAlert(createError instanceof Error ? createError.message : 'Unable to continue');
+          return;
+        }
+      }
+
+      safeAlert(error instanceof Error ? error.message : 'Unable to continue');
     }
   };
 
@@ -1734,7 +2008,7 @@ const initSignup = () => {
       return;
     }
 
-    await createClient('email', emailValue, mobileValue);
+    await continueWithEmailOrMobile(emailValue, mobileValue);
   });
 
   for (const button of providerButtons) {
@@ -1743,7 +2017,11 @@ const initSignup = () => {
     }
 
     button.addEventListener('click', async () => {
-      await createClient(button.dataset.authProvider ?? 'email');
+      try {
+        await createClient(button.dataset.authProvider ?? 'email');
+      } catch (error) {
+        safeAlert(error instanceof Error ? error.message : 'Unable to continue');
+      }
     });
   }
 };
@@ -9714,7 +9992,10 @@ const initPublicBooking = () => {
   const dateInput = document.querySelector('#booking-date-input');
   const timeSelect = document.querySelector('#booking-time-select');
   const customerNameInput = document.querySelector('#booking-customer-name');
+  const customerPhoneLabel = document.querySelector('#booking-customer-phone-label');
+  const customerPhoneCountryCodeInput = document.querySelector('#booking-customer-phone-country-code');
   const customerPhoneInput = document.querySelector('#booking-customer-phone');
+  const customerPhoneHelp = document.querySelector('#booking-customer-phone-help');
   const customerEmailInput = document.querySelector('#booking-customer-email');
   const phoneHistoryPanel = document.querySelector('#booking-phone-history');
   const phoneHistoryList = document.querySelector('#booking-phone-history-list');
@@ -9722,6 +10003,13 @@ const initPublicBooking = () => {
   const benefitsList = document.querySelector('#booking-benefits-list');
   const benefitField = document.querySelector('#booking-benefit-field');
   const benefitSelect = document.querySelector('#booking-benefit-select');
+  const serviceLocationField = document.querySelector('#booking-service-location-field');
+  const serviceLocationLabel = document.querySelector('#booking-service-location-label');
+  const serviceLocationSelect = document.querySelector('#booking-service-location-select');
+  const customerAddressField = document.querySelector('#booking-customer-address-field');
+  const customerAddressLabel = document.querySelector('#booking-customer-address-label');
+  const customerAddressInput = document.querySelector('#booking-customer-address');
+  const customerAddressHelp = document.querySelector('#booking-customer-address-help');
   const waitlistPanel = document.querySelector('#booking-waitlist-panel');
   const waitlistCopy = document.querySelector('#booking-waitlist-copy');
   const waitlistButton = document.querySelector('#booking-waitlist-button');
@@ -9739,6 +10027,7 @@ const initPublicBooking = () => {
   const servicesByName = new Map();
   const teamMembersById = new Map();
   const benefitOptionsByValue = new Map();
+  const bookingLocationLabelsByValue = new Map();
   let latestAppointmentReference = '';
   let phoneHistoryRequestCounter = 0;
   let benefitsRequestCounter = 0;
@@ -9749,6 +10038,22 @@ const initPublicBooking = () => {
   let savedWaitlistSignature = '';
   let currentBusinessName = '';
   let bookingHeadingFallback = '';
+  let availableBookingLocations = [];
+  let bookingUiCopy = {
+    locationLabel: '',
+    locationLabels: {},
+    defaultLocationValue: '',
+    addressLocationValue: '',
+    addressLabel: '',
+    addressPlaceholder: '',
+    addressHelp: '',
+    addressRequired: '',
+    phoneLabel: '',
+    phoneHelp: '',
+    phoneCountryCodeLabel: '',
+    phoneCountryCode: '',
+    phoneNumberPlaceholder: ''
+  };
 
   const syncBookingHero = () => {
     const bookingHeading = currentBusinessName || bookingHeadingFallback;
@@ -9764,6 +10069,140 @@ const initPublicBooking = () => {
     }
   };
 
+  const syncBookingUiCopy = (config = {}) => {
+    const locationLabels =
+      typeof config.bookingLocationLabels === 'object' && config.bookingLocationLabels !== null
+        ? Object.entries(config.bookingLocationLabels).reduce((labels, [value, label]) => {
+            if (typeof value === 'string' && typeof label === 'string' && value.trim() && label.trim()) {
+              labels[value.trim()] = label.trim();
+            }
+
+            return labels;
+          }, {})
+        : {};
+
+    bookingUiCopy = {
+      locationLabel: typeof config.bookingLocationLabel === 'string' ? config.bookingLocationLabel.trim() : '',
+      locationLabels,
+      defaultLocationValue:
+        typeof config.bookingDefaultLocationValue === 'string'
+          ? config.bookingDefaultLocationValue.trim()
+          : '',
+      addressLocationValue:
+        typeof config.bookingAddressLocationValue === 'string'
+          ? config.bookingAddressLocationValue.trim()
+          : '',
+      addressLabel: typeof config.bookingAddressLabel === 'string' ? config.bookingAddressLabel.trim() : '',
+      addressPlaceholder:
+        typeof config.bookingAddressPlaceholder === 'string'
+          ? config.bookingAddressPlaceholder.trim()
+          : '',
+      addressHelp: typeof config.bookingAddressHelp === 'string' ? config.bookingAddressHelp.trim() : '',
+      addressRequired:
+        typeof config.bookingAddressRequired === 'string'
+          ? config.bookingAddressRequired.trim()
+          : '',
+      phoneLabel: typeof config.bookingPhoneLabel === 'string' ? config.bookingPhoneLabel.trim() : '',
+      phoneHelp: typeof config.bookingPhoneHelp === 'string' ? config.bookingPhoneHelp.trim() : '',
+      phoneCountryCodeLabel:
+        typeof config.bookingPhoneCountryCodeLabel === 'string'
+          ? config.bookingPhoneCountryCodeLabel.trim()
+          : '',
+      phoneCountryCode:
+        typeof config.bookingPhoneCountryCode === 'string'
+          ? normalizePhoneCountryCode(config.bookingPhoneCountryCode)
+          : '',
+      phoneNumberPlaceholder:
+        typeof config.bookingPhoneNumberPlaceholder === 'string'
+          ? config.bookingPhoneNumberPlaceholder.trim()
+          : ''
+    };
+
+    serviceLocationLabel.textContent = bookingUiCopy.locationLabel;
+    customerAddressLabel.textContent = bookingUiCopy.addressLabel;
+    customerAddressInput.placeholder = bookingUiCopy.addressPlaceholder;
+    customerAddressHelp.textContent = bookingUiCopy.addressHelp;
+    customerPhoneLabel.textContent = bookingUiCopy.phoneLabel;
+    customerPhoneCountryCodeInput.setAttribute(
+      'aria-label',
+      bookingUiCopy.phoneCountryCodeLabel || bookingUiCopy.phoneLabel
+    );
+    customerPhoneCountryCodeInput.placeholder = bookingUiCopy.phoneCountryCode;
+    if (!customerPhoneCountryCodeInput.value.trim()) {
+      customerPhoneCountryCodeInput.value = bookingUiCopy.phoneCountryCode;
+    }
+    customerPhoneInput.placeholder = bookingUiCopy.phoneNumberPlaceholder;
+    customerPhoneHelp.textContent = bookingUiCopy.phoneHelp;
+  };
+
+  const getBookingCustomerPhoneValue = () => {
+    const countryCodeValue = normalizePhoneCountryCode(customerPhoneCountryCodeInput.value);
+    const phoneNumberValue = customerPhoneInput.value.trim();
+
+    if (!phoneNumberValue) {
+      return '';
+    }
+
+    if (phoneNumberValue.startsWith('+')) {
+      return phoneNumberValue.replace(/\s+/g, '');
+    }
+
+    const normalizedPhoneNumber = phoneNumberValue.replace(/\s+/g, '');
+    return `${countryCodeValue}${normalizedPhoneNumber}`.trim();
+  };
+
+  const setBookingCustomerPhoneValue = (phoneValue) => {
+    const phoneParts = splitPhoneNumberParts(phoneValue, bookingUiCopy.phoneCountryCode);
+    customerPhoneCountryCodeInput.value = phoneParts.countryCode;
+    customerPhoneInput.value = phoneParts.number;
+  };
+
+  const getSelectedBookingLocation = () =>
+    serviceLocationSelect.value || availableBookingLocations[0] || '';
+
+  const getSelectedBookingLocationLabel = () =>
+    bookingLocationLabelsByValue.get(getSelectedBookingLocation()) ?? '';
+
+  const syncCustomerAddressVisibility = () => {
+    const selectedBookingLocation = getSelectedBookingLocation();
+    const shouldShowAddress =
+      bookingUiCopy.addressLocationValue &&
+      selectedBookingLocation === bookingUiCopy.addressLocationValue;
+
+    customerAddressField.classList.toggle('is-hidden', !shouldShowAddress);
+    customerAddressInput.required = shouldShowAddress;
+
+    if (!shouldShowAddress) {
+      customerAddressInput.value = '';
+    }
+  };
+
+  const populateBookingLocations = (serviceLocations = []) => {
+    availableBookingLocations = Array.isArray(serviceLocations)
+      ? serviceLocations.filter((value) => typeof value === 'string' && value.trim())
+      : [];
+    bookingLocationLabelsByValue.clear();
+    serviceLocationSelect.replaceChildren();
+
+    for (const serviceLocation of availableBookingLocations) {
+      const option = document.createElement('option');
+      option.value = serviceLocation;
+      const optionLabel = bookingUiCopy.locationLabels[serviceLocation] || serviceLocation;
+
+      option.textContent = optionLabel;
+      bookingLocationLabelsByValue.set(serviceLocation, optionLabel);
+      serviceLocationSelect.append(option);
+    }
+
+    const defaultBookingLocation = availableBookingLocations.includes(bookingUiCopy.defaultLocationValue)
+      ? bookingUiCopy.defaultLocationValue
+      : availableBookingLocations[0] ?? '';
+
+    serviceLocationSelect.value = defaultBookingLocation;
+    serviceLocationField.classList.toggle('is-hidden', availableBookingLocations.length <= 1);
+    syncCustomerAddressVisibility();
+  };
+
   if (
     !(bookingForm instanceof HTMLFormElement) ||
     !(businessName instanceof HTMLElement) ||
@@ -9775,7 +10214,10 @@ const initPublicBooking = () => {
     !(dateInput instanceof HTMLInputElement) ||
     !(timeSelect instanceof HTMLSelectElement) ||
     !(customerNameInput instanceof HTMLInputElement) ||
+    !(customerPhoneLabel instanceof HTMLElement) ||
+    !(customerPhoneCountryCodeInput instanceof HTMLInputElement) ||
     !(customerPhoneInput instanceof HTMLInputElement) ||
+    !(customerPhoneHelp instanceof HTMLElement) ||
     !(customerEmailInput instanceof HTMLInputElement) ||
     !(phoneHistoryPanel instanceof HTMLDivElement) ||
     !(phoneHistoryList instanceof HTMLDivElement) ||
@@ -9783,6 +10225,13 @@ const initPublicBooking = () => {
     !(benefitsList instanceof HTMLDivElement) ||
     !(benefitField instanceof HTMLElement) ||
     !(benefitSelect instanceof HTMLSelectElement) ||
+    !(serviceLocationField instanceof HTMLElement) ||
+    !(serviceLocationLabel instanceof HTMLElement) ||
+    !(serviceLocationSelect instanceof HTMLSelectElement) ||
+    !(customerAddressField instanceof HTMLElement) ||
+    !(customerAddressLabel instanceof HTMLElement) ||
+    !(customerAddressInput instanceof HTMLTextAreaElement) ||
+    !(customerAddressHelp instanceof HTMLElement) ||
     !(waitlistPanel instanceof HTMLDivElement) ||
     !(waitlistCopy instanceof HTMLParagraphElement) ||
     !(waitlistButton instanceof HTMLButtonElement) ||
@@ -9828,7 +10277,7 @@ const initPublicBooking = () => {
       teamMemberSelect.value,
       dateInput.value,
       timeSelect.value,
-      normalizePhoneForLookup(customerPhoneInput.value)
+      normalizePhoneForLookup(getBookingCustomerPhoneValue())
     ].join('::');
 
   const populateTeamMembers = (teamMembers) => {
@@ -10027,6 +10476,17 @@ const initPublicBooking = () => {
     const teamMemberLabel = selectedTeamMember?.name || '';
     const salonLabel = currentBusinessName;
     const formattedDateTime = formatDateTimeForDisplay(dateInput.value, timeSelect.value);
+    const selectedBookingLocation = getSelectedBookingLocation();
+    const selectedBookingLocationLabel = getSelectedBookingLocationLabel();
+    const customerAddressValue = customerAddressInput.value.trim();
+    const bookingLocationSummary =
+      bookingUiCopy.addressLocationValue &&
+      selectedBookingLocation === bookingUiCopy.addressLocationValue &&
+      customerAddressValue
+        ? `${selectedBookingLocationLabel}: ${customerAddressValue}. `
+        : selectedBookingLocationLabel
+          ? `${selectedBookingLocationLabel}. `
+          : '';
 
     if (!serviceLabel && !formattedDateTime) {
       summaryTitle.textContent = 'Choose a service to begin';
@@ -10042,7 +10502,7 @@ const initPublicBooking = () => {
         summaryTitle.textContent = `${serviceLabel} at ${salonLabel}${summaryPriceLabel ? ` • ${summaryPriceLabel}` : ''}`.trim();
       }
       summaryCopy.textContent = selectedService
-        ? `${selectedService.durationMinutes} min service${teamMemberLabel ? ` with ${teamMemberLabel}` : ''}${salonLabel ? ` at ${salonLabel}` : ''}.${selectedBenefit ? ` Benefit selected: ${selectedBenefit.title}.` : ''} Now choose the best day and time for your appointment.`
+        ? `${selectedService.durationMinutes} min service${teamMemberLabel ? ` with ${teamMemberLabel}` : ''}${salonLabel ? ` at ${salonLabel}` : ''}. ${bookingLocationSummary}${selectedBenefit ? `Benefit selected: ${selectedBenefit.title}. ` : ''}Now choose the best day and time for your appointment.`
         : 'Now choose the best day and time for your appointment.';
       return;
     }
@@ -10055,7 +10515,7 @@ const initPublicBooking = () => {
       summaryTitle.textContent = `${serviceLabel} at ${salonLabel}${selectedService?.priceLabel ? ` • ${selectedService.priceLabel}` : ''}`.trim();
     }
     summaryCopy.textContent = formattedDateTime
-      ? `${selectedService?.durationMinutes ? `${selectedService.durationMinutes} min service${teamMemberLabel ? ` with ${teamMemberLabel}` : ''}${salonLabel ? ` at ${salonLabel}` : ''}. ` : ''}${selectedBenefit ? `${selectedBenefit.title} will be applied. ` : ''}Your booking is planned for ${formattedDateTime}.`
+      ? `${selectedService?.durationMinutes ? `${selectedService.durationMinutes} min service${teamMemberLabel ? ` with ${teamMemberLabel}` : ''}${salonLabel ? ` at ${salonLabel}` : ''}. ` : ''}${bookingLocationSummary}${selectedBenefit ? `${selectedBenefit.title} will be applied. ` : ''}Your booking is planned for ${formattedDateTime}.`
       : 'Choose the best available time for your appointment.';
   };
 
@@ -10096,7 +10556,7 @@ const initPublicBooking = () => {
     waitlistPanel.classList.remove('is-hidden');
     waitlistButton.classList.remove('is-hidden');
     waitlistButton.disabled =
-      !customerNameInput.value.trim() || !normalizePhoneForLookup(customerPhoneInput.value);
+      !customerNameInput.value.trim() || !normalizePhoneForLookup(getBookingCustomerPhoneValue());
     waitlistButton.textContent = 'Join waitlist';
     waitlistCopy.textContent =
       `No live slots are available for ${selectedService.name} on ${formatDateForDisplay(dateInput.value)}.` +
@@ -10157,6 +10617,11 @@ const initPublicBooking = () => {
 
   loadPublicConfig()
     .then((config) => {
+      syncBookingUiCopy(config ?? {});
+      if (availableBookingLocations.length > 0) {
+        populateBookingLocations(availableBookingLocations);
+        updateBookingSummary();
+      }
       bookingHeadingFallback =
         config?.supportPlatformName?.trim() || config?.supportCompanyName?.trim() || '';
       syncBookingHero();
@@ -10178,6 +10643,7 @@ const initPublicBooking = () => {
       syncBookingHero();
       serviceTypes.textContent =
         payload.serviceTypes.length > 0 ? payload.serviceTypes.join(' | ') : 'Salon services';
+      populateBookingLocations(payload.serviceLocations);
       populateTeamMembers(payload.teamMembers);
 
       for (const service of payload.services) {
@@ -10211,25 +10677,32 @@ const initPublicBooking = () => {
 
       updateBookingSummary();
       setReviewRating(0);
-      await renderPhoneHistory(customerPhoneInput.value);
-      await renderBenefits(customerPhoneInput.value);
+      await renderPhoneHistory(getBookingCustomerPhoneValue());
+      await renderBenefits(getBookingCustomerPhoneValue());
     })
     .catch((error) => {
       safeAlert(error instanceof Error ? error.message : 'Unable to load booking page');
     });
 
-  dateInput.addEventListener('change', async () => {
-    await populateSlots();
-  });
-
-  customerPhoneInput.addEventListener('input', () => {
-    void renderPhoneHistory(customerPhoneInput.value);
-    void renderBenefits(customerPhoneInput.value);
+  const refreshBookingPhoneDetails = () => {
+    const bookingPhoneValue = getBookingCustomerPhoneValue();
+    void renderPhoneHistory(bookingPhoneValue);
+    void renderBenefits(bookingPhoneValue);
     renderWaitlistPanel(
       [...timeSelect.options]
         .map((option) => option.value)
         .filter(Boolean)
     );
+  };
+
+  dateInput.addEventListener('change', async () => {
+    await populateSlots();
+  });
+
+  customerPhoneCountryCodeInput.addEventListener('input', refreshBookingPhoneDetails);
+
+  customerPhoneInput.addEventListener('input', () => {
+    refreshBookingPhoneDetails();
   });
 
   serviceSelect.addEventListener('change', async () => {
@@ -10246,6 +10719,15 @@ const initPublicBooking = () => {
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to load available slots');
     }
+  });
+
+  serviceLocationSelect.addEventListener('change', () => {
+    syncCustomerAddressVisibility();
+    updateBookingSummary();
+  });
+
+  customerAddressInput.addEventListener('input', () => {
+    updateBookingSummary();
   });
 
   timeSelect.addEventListener('change', () => {
@@ -10279,7 +10761,7 @@ const initPublicBooking = () => {
           appointmentDate: dateInput.value,
           preferredTime: timeSelect.value,
           customerName: customerNameInput.value.trim(),
-          customerPhone: customerPhoneInput.value.trim(),
+          customerPhone: getBookingCustomerPhoneValue(),
           customerEmail: customerEmailInput.value.trim(),
           source: currentBookingSource
         })
@@ -10306,16 +10788,32 @@ const initPublicBooking = () => {
     event.preventDefault();
 
     try {
+      const selectedBookingLocation = getSelectedBookingLocation();
+      const customerAddressValue = customerAddressInput.value.trim();
+      const customerPhoneValue = getBookingCustomerPhoneValue();
+
+      if (
+        bookingUiCopy.addressLocationValue &&
+        selectedBookingLocation === bookingUiCopy.addressLocationValue &&
+        !customerAddressValue
+      ) {
+        safeAlert(bookingUiCopy.addressRequired);
+        customerAddressInput.focus();
+        return;
+      }
+
       const selectedBenefit = getSelectedBenefit();
       const payload = await apiRequest(`/api/public/book/${businessId}/appointments`, {
         method: 'POST',
         body: JSON.stringify({
           serviceName: serviceSelect.value,
           teamMemberId: teamMemberSelect.value,
+          serviceLocation: selectedBookingLocation,
+          customerAddress: customerAddressValue,
           appointmentDate: dateInput.value,
           appointmentTime: timeSelect.value,
           customerName: customerNameInput.value.trim(),
-          customerPhone: customerPhoneInput.value.trim(),
+          customerPhone: customerPhoneValue,
           customerEmail: customerEmailInput.value.trim(),
           source: currentBookingSource,
           packagePurchaseId: selectedBenefit?.type === 'package' ? selectedBenefit.id : '',
@@ -10328,20 +10826,24 @@ const initPublicBooking = () => {
       successPanel.classList.remove('is-hidden');
       latestAppointmentReference = payload.appointment.id;
       reviewReferenceInput.value = latestAppointmentReference;
-      successCopy.textContent = `Booked ${payload.appointment.serviceName}${payload.appointment.teamMemberName ? ` with ${payload.appointment.teamMemberName}` : ''} for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}.${payload.appointment.packageName ? ` Package used: ${payload.appointment.packageName}.` : ''}${payload.appointment.loyaltyRewardLabel ? ` Reward used: ${payload.appointment.loyaltyRewardLabel}.` : ''} Reference: ${payload.appointment.id.slice(0, 8)}. Source: ${formatBookingSourceLabel(payload.appointment.source)}. SMS status: ${payload.notifications.map((entry) => `${entry.recipient} ${entry.status}`).join(', ')}.`;
+      successCopy.textContent = `Booked ${payload.appointment.serviceName}${payload.appointment.teamMemberName ? ` with ${payload.appointment.teamMemberName}` : ''} for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}.${payload.appointment.serviceLocation ? ` Service location: ${getSelectedBookingLocationLabel()}${payload.appointment.customerAddress ? ` (${payload.appointment.customerAddress})` : ''}.` : ''}${payload.appointment.packageName ? ` Package used: ${payload.appointment.packageName}.` : ''}${payload.appointment.loyaltyRewardLabel ? ` Reward used: ${payload.appointment.loyaltyRewardLabel}.` : ''} Reference: ${payload.appointment.id.slice(0, 8)}. Source: ${formatBookingSourceLabel(payload.appointment.source)}. SMS status: ${payload.notifications.map((entry) => `${entry.recipient} ${entry.status}`).join(', ')}.`;
       const bookedPhone = payload.appointment.customerPhone;
       activeWaitlistOffer = null;
       savedWaitlistSignature = '';
       bookingForm.reset();
       dateInput.value = today.toISOString().slice(0, 10);
-      customerPhoneInput.value = bookedPhone;
+      setBookingCustomerPhoneValue(bookedPhone);
+      serviceLocationSelect.value = availableBookingLocations.includes(bookingUiCopy.defaultLocationValue)
+        ? bookingUiCopy.defaultLocationValue
+        : availableBookingLocations[0] ?? '';
+      syncCustomerAddressVisibility();
       if (!teamMemberSelect.disabled && teamMemberSelect.options.length > 1) {
         teamMemberSelect.value = teamMemberSelect.options[1].value;
       }
       await populateSlots();
       updateBookingSummary();
-      await renderPhoneHistory(customerPhoneInput.value);
-      await renderBenefits(customerPhoneInput.value);
+      await renderPhoneHistory(getBookingCustomerPhoneValue());
+      await renderBenefits(getBookingCustomerPhoneValue());
       successPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to create appointment');
@@ -10379,7 +10881,7 @@ const initPublicBooking = () => {
         method: 'POST',
         body: JSON.stringify({
           appointmentId: reviewReferenceInput.value.trim(),
-          customerPhone: customerPhoneInput.value.trim(),
+          customerPhone: getBookingCustomerPhoneValue(),
           rating
         })
       });
@@ -10401,6 +10903,13 @@ const initManageBooking = () => {
   const copy = document.querySelector('#manage-booking-copy');
   const summaryTitle = document.querySelector('#manage-booking-summary-title');
   const summaryCopy = document.querySelector('#manage-booking-summary-copy');
+  const countdownLabel = document.querySelector('#manage-booking-countdown-label');
+  const countdownHeading = document.querySelector('#manage-booking-countdown-heading');
+  const countdownCopy = document.querySelector('#manage-booking-countdown-copy');
+  const countdownDays = document.querySelector('#manage-booking-countdown-days');
+  const countdownHours = document.querySelector('#manage-booking-countdown-hours');
+  const countdownMinutes = document.querySelector('#manage-booking-countdown-minutes');
+  const countdownSeconds = document.querySelector('#manage-booking-countdown-seconds');
   const status = document.querySelector('#manage-booking-status');
   const form = document.querySelector('#manage-booking-form');
   const dateInput = document.querySelector('#manage-booking-date');
@@ -10414,6 +10923,13 @@ const initManageBooking = () => {
     !(copy instanceof HTMLParagraphElement) ||
     !(summaryTitle instanceof HTMLElement) ||
     !(summaryCopy instanceof HTMLParagraphElement) ||
+    !(countdownLabel instanceof HTMLElement) ||
+    !(countdownHeading instanceof HTMLElement) ||
+    !(countdownCopy instanceof HTMLParagraphElement) ||
+    !(countdownDays instanceof HTMLElement) ||
+    !(countdownHours instanceof HTMLElement) ||
+    !(countdownMinutes instanceof HTMLElement) ||
+    !(countdownSeconds instanceof HTMLElement) ||
     !(status instanceof HTMLDivElement) ||
     !(form instanceof HTMLFormElement) ||
     !(dateInput instanceof HTMLInputElement) ||
@@ -10435,6 +10951,7 @@ const initManageBooking = () => {
   const today = new Date().toISOString().slice(0, 10);
   const requestedAction = new URLSearchParams(window.location.search).get('action');
   let appointmentDetails = null;
+  let countdownIntervalId = null;
 
   dateInput.min = today;
 
@@ -10449,9 +10966,97 @@ const initManageBooking = () => {
     cancelButton.disabled = disabled;
   };
 
+  const setCountdownValues = (days, hours, minutes, seconds) => {
+    countdownDays.textContent = String(days).padStart(2, '0');
+    countdownHours.textContent = String(hours).padStart(2, '0');
+    countdownMinutes.textContent = String(minutes).padStart(2, '0');
+    countdownSeconds.textContent = String(seconds).padStart(2, '0');
+  };
+
+  const stopCountdown = () => {
+    if (countdownIntervalId) {
+      window.clearInterval(countdownIntervalId);
+      countdownIntervalId = null;
+    }
+  };
+
+  const syncCountdown = () => {
+    if (!appointmentDetails) {
+      countdownLabel.textContent = 'Live appointment timer';
+      countdownHeading.textContent = 'Loading countdown...';
+      countdownCopy.textContent =
+        'Open this link anytime to see how long is left before your appointment starts.';
+      setCountdownValues(0, 0, 0, 0);
+      return;
+    }
+
+    const appointmentStart = new Date(
+      `${appointmentDetails.appointmentDate}T${appointmentDetails.appointmentTime}:00`
+    );
+
+    if (Number.isNaN(appointmentStart.getTime())) {
+      countdownLabel.textContent = 'Live appointment timer';
+      countdownHeading.textContent = 'Countdown unavailable';
+      countdownCopy.textContent =
+        'We could not calculate the appointment timer for this booking.';
+      setCountdownValues(0, 0, 0, 0);
+      return;
+    }
+
+    if (appointmentDetails.status === 'cancelled') {
+      countdownLabel.textContent = 'Booking status';
+      countdownHeading.textContent = 'This appointment was cancelled';
+      countdownCopy.textContent =
+        'The timer stops here because this booking is no longer active.';
+      setCountdownValues(0, 0, 0, 0);
+      return;
+    }
+
+    if (appointmentDetails.status === 'completed') {
+      countdownLabel.textContent = 'Booking status';
+      countdownHeading.textContent = 'This appointment is completed';
+      countdownCopy.textContent =
+        'Your visit has already been marked as finished by the business.';
+      setCountdownValues(0, 0, 0, 0);
+      return;
+    }
+
+    const diffMs = appointmentStart.getTime() - Date.now();
+
+    if (diffMs <= 0) {
+      countdownLabel.textContent = 'Appointment status';
+      countdownHeading.textContent = 'It is time for your appointment';
+      countdownCopy.textContent =
+        'Your scheduled start time has arrived. If plans changed, you can still manage the booking below.';
+      setCountdownValues(0, 0, 0, 0);
+      return;
+    }
+
+    const totalSeconds = Math.floor(diffMs / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    countdownLabel.textContent = 'Live appointment timer';
+    countdownHeading.textContent = `Starts in ${days > 0 ? `${days}d ` : ''}${hours}h ${minutes}m`;
+    countdownCopy.textContent =
+      `Counting down to ${formatDateTimeForDisplay(appointmentDetails.appointmentDate, appointmentDetails.appointmentTime)}.` +
+      `${appointmentDetails.teamMemberName ? ` Appointment with ${appointmentDetails.teamMemberName}.` : ''}`;
+    setCountdownValues(days, hours, minutes, seconds);
+  };
+
+  const startCountdown = () => {
+    stopCountdown();
+    syncCountdown();
+    countdownIntervalId = window.setInterval(syncCountdown, 1000);
+  };
+
   if (!accessToken) {
     setStatus('This booking link is no longer valid. Open the latest manage link you received.', 'warning');
     setFormDisabled(true);
+    stopCountdown();
+    syncCountdown();
     return;
   }
 
@@ -10495,6 +11100,7 @@ const initManageBooking = () => {
     summaryTitle.textContent = `${payload.appointment.serviceName}${payload.appointment.teamMemberName ? ` with ${payload.appointment.teamMemberName}` : ''}`;
     summaryCopy.textContent = `Currently planned for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}. Reference: ${payload.appointment.id.slice(0, 8)}.`;
     dateInput.value = payload.appointment.appointmentDate;
+    startCountdown();
     await loadSlots(payload.appointment.appointmentTime);
 
     if (payload.appointment.status !== 'booked') {
@@ -10545,6 +11151,7 @@ const initManageBooking = () => {
       successPanel.classList.remove('is-hidden');
       successCopy.textContent = `Your appointment has been moved to ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}. SMS status: ${Array.isArray(payload.notifications) ? payload.notifications.map((entry) => `${entry.recipient} ${entry.status}`).join(', ') : 'updated'}.`;
       setStatus('Appointment rescheduled successfully.', 'success');
+      startCountdown();
       await loadSlots(payload.appointment.appointmentTime);
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to reschedule appointment');
@@ -10571,6 +11178,7 @@ const initManageBooking = () => {
       successCopy.textContent = 'Your appointment has been cancelled.';
       setStatus('Appointment cancelled.', 'warning');
       summaryCopy.textContent = `This appointment was cancelled. Reference: ${payload.appointment.id.slice(0, 8)}.`;
+      syncCountdown();
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to cancel appointment');
     }

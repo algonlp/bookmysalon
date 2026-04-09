@@ -51,14 +51,25 @@
 
           <form class="booking-form" id="public-booking-form">
             <label class="booking-field">
-              <span>Phone number</span>
-              <input
-                id="booking-customer-phone"
-                type="tel"
-                placeholder="+92 300 1234567"
-                required
-              />
-              <small>You and the salon will receive SMS updates on this number.</small>
+              <span id="booking-customer-phone-label">Phone number</span>
+              <div class="booking-phone-inputs">
+                <input
+                  id="booking-customer-phone-country-code"
+                  type="tel"
+                  inputmode="tel"
+                  autocomplete="tel-country-code"
+                />
+                <input
+                  id="booking-customer-phone"
+                  type="tel"
+                  inputmode="tel"
+                  autocomplete="tel-national"
+                  required
+                />
+              </div>
+              <small id="booking-customer-phone-help">
+                You and the salon will receive SMS updates on this number.
+              </small>
             </label>
 
             <div class="booking-history-panel is-hidden" id="booking-phone-history">
@@ -117,6 +128,20 @@
               <span>Full name</span>
               <input id="booking-customer-name" type="text" placeholder="Customer name" required />
               <small>This helps the salon identify your booking.</small>
+            </label>
+
+            <label class="booking-field is-hidden" id="booking-service-location-field">
+              <span id="booking-service-location-label"></span>
+              <select id="booking-service-location-select"></select>
+            </label>
+
+            <label class="booking-field is-hidden" id="booking-customer-address-field">
+              <span id="booking-customer-address-label"></span>
+              <textarea
+                id="booking-customer-address"
+                rows="3"
+              ></textarea>
+              <small id="booking-customer-address-help"></small>
             </label>
 
             <div class="booking-field-row">

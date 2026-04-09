@@ -1,10 +1,11 @@
 import type { AppointmentSource, BusinessService } from '../appointments/appointment.types';
+import type { ServiceLocation } from './serviceLocation.constants';
+
+export type { ServiceLocation } from './serviceLocation.constants';
 
 export type AuthProvider = 'email' | 'facebook' | 'google' | 'apple';
 
 export type AccountType = 'independent' | 'team';
-
-export type ServiceLocation = 'physical' | 'mobile' | 'virtual';
 
 export type PreferredLanguage = 'english' | 'urdu' | 'arabic';
 

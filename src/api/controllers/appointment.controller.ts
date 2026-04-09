@@ -4,6 +4,11 @@ import QRCode from 'qrcode';
 import { HttpError } from '../../shared/errors/httpError';
 import { appointmentService } from '../../appointments/appointment.service';
 import { getRequestOrigin } from '../../shared/http';
+import {
+  defaultBookingAddressRequiredMessage,
+  serviceLocationRequiresAddress,
+  serviceLocationValues
+} from '../../platform/serviceLocation.constants';
 
 const bookingDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Valid booking date is required');
 const bookingHistoryPhoneSchema = z.string().trim().min(7, 'Customer phone is required');
@@ -15,10 +20,13 @@ const optionalWaitlistEntryIdSchema = z.string().uuid('Valid waitlist entry id i
 const optionalWaitlistOfferTokenSchema = z.string().uuid('Valid waitlist offer token is required').optional();
 const optionalTeamMemberIdSchema = z.string().trim().optional().or(z.literal(''));
 const optionalServiceNameSchema = z.string().trim().optional().or(z.literal(''));
+const optionalServiceLocationSchema = z.enum(serviceLocationValues).optional();
 
 const createAppointmentSchema = z.object({
   serviceName: z.string().trim().min(1, 'Service is required'),
   teamMemberId: z.string().trim().optional().or(z.literal('')),
+  serviceLocation: optionalServiceLocationSchema,
+  customerAddress: z.string().trim().optional().or(z.literal('')),
   appointmentDate: bookingDateSchema,
   appointmentTime: z
     .string()
@@ -34,6 +42,14 @@ const createAppointmentSchema = z.object({
   loyaltyRewardId: z.string().trim().optional().or(z.literal('')),
   waitlistEntryId: z.string().uuid().optional().or(z.literal('')),
   waitlistOfferToken: z.string().uuid().optional().or(z.literal(''))
+}).superRefine((value, context) => {
+  if (value.serviceLocation && serviceLocationRequiresAddress(value.serviceLocation) && !value.customerAddress?.trim()) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: defaultBookingAddressRequiredMessage,
+      path: ['customerAddress']
+    });
+  }
 });
 
 const createWaitlistSchema = z.object({

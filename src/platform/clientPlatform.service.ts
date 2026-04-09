@@ -3,6 +3,15 @@ import { env } from '../config/env';
 import { HttpError } from '../shared/errors/httpError';
 import { clientPlatformRepository } from './clientPlatform.repository';
 import { appointmentService } from '../appointments/appointment.service';
+import {
+  buildPlatformClientPagePath,
+  platformClientAuthMessages,
+  platformClientPagePaths
+} from './clientPlatform.paths';
+import {
+  defaultServiceLocation,
+  normalizeServiceLocations
+} from './serviceLocation.constants';
 import type { AppointmentRecord } from '../appointments/appointment.types';
 import {
   createSeededBusinessServices,
@@ -76,6 +85,64 @@ const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 const buildFallbackEmail = (provider: CreateClientInput['provider']): string =>
   `${provider}-${randomUUID().slice(0, 8)}@platform.local`;
+
+const normalizeClientEmail = (value: string | undefined): string =>
+  typeof value === 'string' ? value.trim().toLowerCase() : '';
+
+const normalizeClientMobileNumber = (value: string | undefined): string =>
+  typeof value === 'string' ? value.trim() : '';
+
+const getNextClientStep = (client: ClientRecord): string => {
+  const hydratedClient = hydrateClientRecord(client);
+
+  if (hydratedClient.onboardingCompleted) {
+    return buildPlatformClientPagePath(platformClientPagePaths.calendar, hydratedClient.id);
+  }
+
+  if (!hydratedClient.businessName.trim()) {
+    return buildPlatformClientPagePath(
+      platformClientPagePaths.onboarding.businessName,
+      hydratedClient.id
+    );
+  }
+
+  if (hydratedClient.serviceTypes.length === 0) {
+    return buildPlatformClientPagePath(
+      platformClientPagePaths.onboarding.serviceTypes,
+      hydratedClient.id
+    );
+  }
+
+  if (!hydratedClient.accountType) {
+    return buildPlatformClientPagePath(
+      platformClientPagePaths.onboarding.accountType,
+      hydratedClient.id
+    );
+  }
+
+  if (hydratedClient.serviceLocation.length === 0) {
+    return buildPlatformClientPagePath(
+      platformClientPagePaths.onboarding.serviceLocation,
+      hydratedClient.id
+    );
+  }
+
+  if (!hydratedClient.venueAddress.trim()) {
+    return buildPlatformClientPagePath(
+      platformClientPagePaths.onboarding.venueLocation,
+      hydratedClient.id
+    );
+  }
+
+  if (!hydratedClient.preferredLanguage) {
+    return buildPlatformClientPagePath(
+      platformClientPagePaths.onboarding.launchLinks,
+      hydratedClient.id
+    );
+  }
+
+  return buildPlatformClientPagePath(platformClientPagePaths.onboarding.complete, hydratedClient.id);
+};
 
 const normalizeCurrencyCode = (value: unknown): string => {
   const normalizedValue =
@@ -496,16 +563,6 @@ const normalizeLoyaltyProgram = (
   };
 };
 
-const normalizeServiceLocations = (value: unknown): Array<'physical' | 'mobile' | 'virtual'> => {
-  const allowedValues = new Set(['physical', 'mobile', 'virtual']);
-  const rawValues = Array.isArray(value) ? value : typeof value === 'string' ? [value] : [];
-
-  return rawValues.filter(
-    (item): item is 'physical' | 'mobile' | 'virtual' =>
-      typeof item === 'string' && allowedValues.has(item)
-  );
-};
-
 const normalizePreferredLanguage = (value: unknown): PreferredLanguage | null => {
   return value === 'english' || value === 'urdu' || value === 'arabic' ? value : null;
 };
@@ -757,7 +814,7 @@ const DEMO_SALONS: ClientRecord[] = [
       }
     ],
     accountType: 'team',
-    serviceLocation: ['physical'],
+    serviceLocation: [defaultServiceLocation],
     venueAddress: 'Clifton Block 5, Schon Circle, Karachi, Sindh, Pakistan',
     preferredLanguage: 'english',
     onboardingCompleted: true,
@@ -783,7 +840,7 @@ const DEMO_SALONS: ClientRecord[] = [
     customerProfiles: [],
     teamMembers: [],
     accountType: 'independent',
-    serviceLocation: ['physical'],
+    serviceLocation: [defaultServiceLocation],
     venueAddress: 'MM Alam Road, Gulberg III, Lahore, Punjab, Pakistan',
     preferredLanguage: 'english',
     onboardingCompleted: true,
@@ -826,7 +883,7 @@ const DEMO_SALONS: ClientRecord[] = [
       }
     ],
     accountType: 'team',
-    serviceLocation: ['physical'],
+    serviceLocation: [defaultServiceLocation],
     venueAddress: 'Blue Area, Jinnah Avenue, Islamabad, Islamabad Capital Territory, Pakistan',
     preferredLanguage: 'english',
     onboardingCompleted: true,
@@ -1159,15 +1216,59 @@ const updateClient = async (
   return updatedClient;
 };
 
+const findClientByLoginInput = async (
+  input: Pick<CreateClientInput, 'email' | 'mobileNumber'>
+): Promise<ClientRecord | null> => {
+  const normalizedEmail = normalizeClientEmail(input.email);
+  const normalizedMobileNumber = normalizeClientMobileNumber(input.mobileNumber);
+
+  if (!normalizedEmail && !normalizedMobileNumber) {
+    return null;
+  }
+
+  const clients = (await clientPlatformRepository.listClients()).map(hydrateClientRecord);
+
+  if (normalizedEmail) {
+    const emailMatch = clients.find((client) => client.email === normalizedEmail);
+
+    if (emailMatch) {
+      return emailMatch;
+    }
+  }
+
+  if (normalizedMobileNumber) {
+    const mobileMatch = clients.find((client) => client.mobileNumber === normalizedMobileNumber);
+
+    if (mobileMatch) {
+      return mobileMatch;
+    }
+  }
+
+  return null;
+};
+
 export const clientPlatformService = {
   async createClient(input: CreateClientInput): Promise<ClientRecord> {
     const now = new Date().toISOString();
+    const normalizedEmail = normalizeClientEmail(input.email);
+    const normalizedMobileNumber = normalizeClientMobileNumber(input.mobileNumber);
+
+    if (normalizedEmail || normalizedMobileNumber) {
+      const existingClient = await findClientByLoginInput({
+        email: normalizedEmail,
+        mobileNumber: normalizedMobileNumber
+      });
+
+      if (existingClient) {
+        throw new HttpError(409, platformClientAuthMessages.accountExists);
+      }
+    }
 
     const client: ClientRecord = {
       id: randomUUID(),
       adminToken: randomUUID(),
-      email: input.email?.trim().toLowerCase() || buildFallbackEmail(input.provider),
-      mobileNumber: input.mobileNumber?.trim() ?? '',
+      email: normalizedEmail || buildFallbackEmail(input.provider),
+      mobileNumber: normalizedMobileNumber,
       provider: input.provider,
       businessName: '',
       website: '',
@@ -1192,6 +1293,21 @@ export const clientPlatformService = {
 
     await clientPlatformRepository.saveClient(client);
     return client;
+  },
+
+  async loginClient(
+    input: Pick<CreateClientInput, 'email' | 'mobileNumber'>
+  ): Promise<{ client: ClientRecord; nextStep: string }> {
+    const client = await findClientByLoginInput(input);
+
+    if (!client) {
+      throw new HttpError(404, platformClientAuthMessages.accountNotFound);
+    }
+
+    return {
+      client,
+      nextStep: getNextClientStep(client)
+    };
   },
 
   getClient(clientId: string): Promise<ClientRecord> {
