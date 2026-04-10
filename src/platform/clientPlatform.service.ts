@@ -92,6 +92,8 @@ const normalizeClientEmail = (value: string | undefined): string =>
 const normalizeClientMobileNumber = (value: string | undefined): string =>
   typeof value === 'string' ? value.trim() : '';
 
+const isInsecureAdminLoginAllowed = (): boolean => env.APP_ENV !== 'prod';
+
 const getNextIncompleteOnboardingPath = (
   client: ClientRecord
 ): string | null => {
@@ -1293,6 +1295,11 @@ export const clientPlatformService = {
   async loginClient(
     input: Pick<CreateClientInput, 'email' | 'mobileNumber'>
   ): Promise<{ client: ClientRecord; nextStep: string }> {
+    // Temporary testing-only login flow. Production must use a stronger auth mechanism.
+    if (!isInsecureAdminLoginAllowed()) {
+      throw new HttpError(403, 'Admin login by email or mobile is disabled in production');
+    }
+
     const client = await findClientByLoginInput(input);
 
     if (!client) {
