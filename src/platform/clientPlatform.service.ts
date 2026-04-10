@@ -92,53 +92,48 @@ const normalizeClientEmail = (value: string | undefined): string =>
 const normalizeClientMobileNumber = (value: string | undefined): string =>
   typeof value === 'string' ? value.trim() : '';
 
-const getNextClientStep = (client: ClientRecord): string => {
+const getNextIncompleteOnboardingPath = (
+  client: ClientRecord
+): string | null => {
   const hydratedClient = hydrateClientRecord(client);
 
-  if (hydratedClient.onboardingCompleted) {
-    return buildPlatformClientPagePath(platformClientPagePaths.calendar, hydratedClient.id);
-  }
-
   if (!hydratedClient.businessName.trim()) {
-    return buildPlatformClientPagePath(
-      platformClientPagePaths.onboarding.businessName,
-      hydratedClient.id
-    );
+    return platformClientPagePaths.onboarding.businessName;
   }
 
   if (hydratedClient.serviceTypes.length === 0) {
-    return buildPlatformClientPagePath(
-      platformClientPagePaths.onboarding.serviceTypes,
-      hydratedClient.id
-    );
+    return platformClientPagePaths.onboarding.serviceTypes;
   }
 
   if (!hydratedClient.accountType) {
-    return buildPlatformClientPagePath(
-      platformClientPagePaths.onboarding.accountType,
-      hydratedClient.id
-    );
+    return platformClientPagePaths.onboarding.accountType;
   }
 
   if (hydratedClient.serviceLocation.length === 0) {
-    return buildPlatformClientPagePath(
-      platformClientPagePaths.onboarding.serviceLocation,
-      hydratedClient.id
-    );
+    return platformClientPagePaths.onboarding.serviceLocation;
   }
 
   if (!hydratedClient.venueAddress.trim()) {
-    return buildPlatformClientPagePath(
-      platformClientPagePaths.onboarding.venueLocation,
-      hydratedClient.id
-    );
+    return platformClientPagePaths.onboarding.venueLocation;
   }
 
   if (!hydratedClient.preferredLanguage) {
-    return buildPlatformClientPagePath(
-      platformClientPagePaths.onboarding.launchLinks,
-      hydratedClient.id
-    );
+    return platformClientPagePaths.onboarding.launchLinks;
+  }
+
+  return null;
+};
+
+const getNextClientStep = (client: ClientRecord): string => {
+  const hydratedClient = hydrateClientRecord(client);
+  const incompleteOnboardingPath = getNextIncompleteOnboardingPath(hydratedClient);
+
+  if (incompleteOnboardingPath) {
+    return buildPlatformClientPagePath(incompleteOnboardingPath, hydratedClient.id);
+  }
+
+  if (hydratedClient.onboardingCompleted) {
+    return buildPlatformClientPagePath(platformClientPagePaths.calendar, hydratedClient.id);
   }
 
   return buildPlatformClientPagePath(platformClientPagePaths.onboarding.complete, hydratedClient.id);
@@ -1889,11 +1884,19 @@ export const clientPlatformService = {
   },
 
   completeOnboarding(clientId: string): Promise<ClientRecord> {
-    return updateClient(clientId, (client) => ({
-      ...client,
-      onboardingCompleted: true,
-      updatedAt: new Date().toISOString()
-    }));
+    return updateClient(clientId, (client) => {
+      const incompleteOnboardingPath = getNextIncompleteOnboardingPath(client);
+
+      if (incompleteOnboardingPath) {
+        throw new HttpError(409, 'Complete the required onboarding steps before finishing setup');
+      }
+
+      return {
+        ...client,
+        onboardingCompleted: true,
+        updatedAt: new Date().toISOString()
+      };
+    });
   },
 
   async getLaunchLinks(clientId: string, origin: string): Promise<LaunchLinksViewModel> {

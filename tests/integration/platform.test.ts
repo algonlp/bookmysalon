@@ -52,6 +52,49 @@ describe('Client platform API', () => {
     const clientId = createResponse.body.client.id as string;
     const adminToken = createResponse.body.adminToken as string;
 
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/business-profile`)
+      .set('x-admin-token', adminToken)
+      .send({
+        businessName: 'Login Owner Studio',
+        website: 'login-owner.example'
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-types`)
+      .set('x-admin-token', adminToken)
+      .send({
+        serviceTypes: ['Barber']
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/account-type`)
+      .set('x-admin-token', adminToken)
+      .send({
+        accountType: 'independent'
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-location`)
+      .set('x-admin-token', adminToken)
+      .send({
+        serviceLocation: ['physical']
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/venue-location`)
+      .set('x-admin-token', adminToken)
+      .send({
+        venueAddress: 'MM Alam Road, Gulberg III, Lahore, Punjab, Pakistan'
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/preferred-language`)
+      .set('x-admin-token', adminToken)
+      .send({
+        preferredLanguage: 'english'
+      });
+
     const completeResponse = await request(app)
       .post(`/api/platform/clients/${clientId}/complete`)
       .set('x-admin-token', adminToken);
@@ -356,6 +399,12 @@ describe('Client platform API', () => {
   });
 
   it('updates business settings and uses them for slots, reports, and service templates', async () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const appointmentDate = `${tomorrow.getFullYear()}-${String(
+      tomorrow.getMonth() + 1
+    ).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+
     const createResponse = await request(app).post('/api/platform/clients').send({
       email: 'settings@example.com',
       provider: 'email'
@@ -415,11 +464,59 @@ describe('Client platform API', () => {
     );
 
     const slotsResponse = await request(app).get(
-      `/api/public/book/${clientId}/slots?date=2026-04-10`
+      `/api/public/book/${clientId}/slots?date=${appointmentDate}`
     );
 
     expect(slotsResponse.status).toBe(200);
     expect(slotsResponse.body.slots).toEqual(['08:30', '09:30']);
+  });
+
+  it('rejects completing onboarding before required setup is saved', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'incomplete-complete@example.com',
+      provider: 'email'
+    });
+
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    const completeResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/complete`)
+      .set('x-admin-token', adminToken);
+
+    expect(completeResponse.status).toBe(409);
+    expect(completeResponse.body.error).toBe(
+      'Complete the required onboarding steps before finishing setup'
+    );
+
+    const loginResponse = await request(app).post('/api/platform/clients/login').send({
+      email: 'incomplete-complete@example.com'
+    });
+
+    expect(loginResponse.status).toBe(200);
+    expect(loginResponse.body.nextStep).toBe(`/onboarding/business-name?clientId=${clientId}`);
+  });
+
+  it('builds launch links from the configured app origin instead of the request host header', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'origin-links@example.com',
+      provider: 'email'
+    });
+
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    const launchLinksResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}/launch-links`)
+      .set('Host', 'attacker.example')
+      .set('x-admin-token', adminToken);
+
+    expect(launchLinksResponse.status).toBe(200);
+    expect(new URL(launchLinksResponse.body.launchLinks.dashboardLink).hostname).toBe('localhost');
+    expect(new URL(launchLinksResponse.body.launchLinks.dashboardLink).port).toBe('8000');
+    expect(new URL(launchLinksResponse.body.launchLinks.bookingPageLink).hostname).not.toBe(
+      'attacker.example'
+    );
   });
 
   it('creates a client with a mobile number for professional signup', async () => {
@@ -988,6 +1085,27 @@ describe('Client platform API', () => {
       .set('x-admin-token', adminToken)
       .send({
         serviceLocation: ['physical', 'mobile']
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/account-type`)
+      .set('x-admin-token', adminToken)
+      .send({
+        accountType: 'team'
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/venue-location`)
+      .set('x-admin-token', adminToken)
+      .send({
+        venueAddress: 'MM Alam Road, Gulberg III, Lahore, Punjab, Pakistan'
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/preferred-language`)
+      .set('x-admin-token', adminToken)
+      .send({
+        preferredLanguage: 'english'
       });
 
     const addBarberResponse = await request(app)

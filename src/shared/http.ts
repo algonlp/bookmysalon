@@ -2,14 +2,14 @@ import type { CookieOptions, Request, Response } from 'express';
 import { env } from '../config/env';
 
 const secureCookies = env.APP_ENV === 'prod';
+const defaultPublicOrigin = `http://localhost:${env.PORT}`;
 
 export const getRequestOrigin = (req: Request): string => {
   if (env.PUBLIC_BASE_URL) {
     return env.PUBLIC_BASE_URL;
   }
 
-  const host = req.get('host') ?? `localhost:${env.PORT}`;
-  return `${req.protocol}://${host}`;
+  return req.secure ? defaultPublicOrigin.replace('http://', 'https://') : defaultPublicOrigin;
 };
 
 export const getCookieValue = (req: Request, cookieName: string): string | undefined => {
