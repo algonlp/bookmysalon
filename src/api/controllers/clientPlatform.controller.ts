@@ -11,6 +11,7 @@ import {
   buildPlatformClientPagePath,
   platformClientPagePaths
 } from '../../platform/clientPlatform.paths';
+import { preferredLanguageValues } from '../../platform/clientPlatform.types';
 import { appointmentService } from '../../appointments/appointment.service';
 import { getRequestOrigin, setAdminSessionCookie } from '../../shared/http';
 
@@ -98,7 +99,7 @@ const venueLocationSchema = z.object({
 });
 
 const preferredLanguageSchema = z.object({
-  preferredLanguage: z.enum(['english', 'urdu', 'arabic'])
+  preferredLanguage: z.enum(preferredLanguageValues)
 });
 
 const weekdayEnum = z.enum([

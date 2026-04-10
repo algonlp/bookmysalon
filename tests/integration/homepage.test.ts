@@ -230,9 +230,27 @@ describe('GET /', () => {
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
     expect(response.text).toContain('Select your default language');
-    expect(response.text).toContain('English');
-    expect(response.text).toContain('Urdu');
-    expect(response.text).toContain('Arabic');
+    expect(response.text).toContain('id="preferred-language-grid"');
+  });
+
+  it('exposes preferred languages through public config', async () => {
+    const response = await request(app).get('/api/public-config');
+
+    expect(response.status).toBe(200);
+    expect(response.body.preferredLanguages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ value: 'english', label: 'English' }),
+        expect.objectContaining({ value: 'urdu', label: 'Urdu' }),
+        expect.objectContaining({ value: 'arabic', label: 'Arabic' }),
+        expect.objectContaining({ value: 'hindi', label: 'Hindi' }),
+        expect.objectContaining({ value: 'spanish', label: 'Spanish' }),
+        expect.objectContaining({ value: 'french', label: 'French' }),
+        expect.objectContaining({ value: 'german', label: 'German' }),
+        expect.objectContaining({ value: 'turkish', label: 'Turkish' }),
+        expect.objectContaining({ value: 'portuguese', label: 'Portuguese' }),
+        expect.objectContaining({ value: 'chinese', label: 'Chinese' })
+      ])
+    );
   });
 
   it('serves the calendar dashboard page', async () => {

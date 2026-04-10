@@ -166,7 +166,7 @@
                 aria-haspopup="menu"
                 aria-controls="calendar-add-menu"
               >
-                <span>Add</span>
+                <span id="calendar-add-button-label">Add</span>
                 <span class="calendar-add-chevron" aria-hidden="true">
                   <svg viewBox="0 0 24 24" focusable="false"><path d="M7 14l5-5 5 5"></path></svg>
                 </span>
@@ -344,8 +344,8 @@
 
             <div class="calendar-appointments-header">
               <div>
-                <h2>Online bookings</h2>
-                <p>Appointments booked through your public salon links, social links, and QR code.</p>
+                <h2 id="calendar-online-bookings-title">Online bookings</h2>
+                <p id="calendar-online-bookings-description">Appointments booked through your public salon links, social links, and QR code.</p>
               </div>
               <a
                 class="calendar-booking-link"
@@ -360,19 +360,19 @@
 
             <div class="calendar-overview" aria-label="Booking overview">
               <article class="calendar-overview-card">
-                <span>Selected day</span>
+                <span id="calendar-overview-selected-day-label">Selected day</span>
                 <strong id="calendar-overview-day-count">0</strong>
-                <small>appointments on this date</small>
+                <small id="calendar-overview-selected-day-meta">appointments on this date</small>
               </article>
               <article class="calendar-overview-card">
-                <span>Coming appointment</span>
+                <span id="calendar-overview-coming-appointment-label">Coming appointment</span>
                 <strong id="calendar-overview-booked-count">0</strong>
-                <small>currently active appointments</small>
+                <small id="calendar-overview-coming-appointment-meta">currently active appointments</small>
               </article>
               <article class="calendar-overview-card">
-                <span>Next client</span>
+                <span id="calendar-overview-next-client-label">Next client</span>
                 <strong id="calendar-overview-next-client">No bookings yet</strong>
-                <small>upcoming on the selected day</small>
+                <small id="calendar-overview-next-client-meta">upcoming on the selected day</small>
               </article>
             </div>
 
@@ -389,7 +389,7 @@
           <div class="calendar-qr-dialog" role="dialog" aria-modal="true" aria-labelledby="calendar-qr-title">
             <div class="calendar-qr-header">
               <div>
-                <p class="calendar-qr-eyebrow">Share booking QR</p>
+                <p class="calendar-qr-eyebrow" id="calendar-qr-eyebrow">Share booking QR</p>
                 <h2 id="calendar-qr-title">Scan to book</h2>
               </div>
               <button class="calendar-qr-close" id="calendar-qr-close" type="button" aria-label="Close QR code">
@@ -400,7 +400,7 @@
             <div class="calendar-qr-body">
               <img id="calendar-qr-image" alt="Booking QR code" />
               <div class="calendar-qr-copy">
-                <p>Place this QR code on your salon door so clients can scan and book instantly.</p>
+                <p id="calendar-qr-description">Place this QR code on your salon door so clients can scan and book instantly.</p>
                 <a class="calendar-booking-link" id="calendar-qr-link" href="#" target="_blank" rel="noreferrer">
                   Open booking page
                 </a>

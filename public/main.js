@@ -2,6 +2,81 @@ const CLIENT_STORAGE_KEY = 'qr-platform-client-id';
 const NOTIFICATION_READ_STORAGE_KEY = 'qr-platform-read-notifications';
 const REPORTS_WORKSPACE_STORAGE_KEY = 'qr-platform-reports-workspace';
 const DASHBOARD_NOTIFICATION_REFRESH_INTERVAL_MS = 30000;
+const DEFAULT_DASHBOARD_UI_COPY = {
+  locale: 'en-GB',
+  bookingSourceLabels: {
+    qr: 'QR',
+    direct: 'Direct',
+    instagram: 'Instagram',
+    facebook: 'Facebook',
+    applemaps: 'Apple Maps'
+  },
+  appointmentStatusLabels: {
+    booked: 'BOOKED',
+    completed: 'COMPLETED',
+    cancelled: 'CANCELLED'
+  },
+  bookedAppointmentActionLabels: {
+    edit: 'Edit',
+    runningLate: 'Running late',
+    complete: 'Complete',
+    cancel: 'Cancel'
+  },
+  calendar: {
+    today: 'Today',
+    day: 'Day',
+    agenda: 'Agenda',
+    add: 'Add',
+    addMenuAria: 'Add menu',
+    bookAppointment: 'Book appointment',
+    showQrCode: 'Show QR code',
+    groupAppointment: 'Group appointment',
+    blockedTime: 'Blocked time',
+    sale: 'Sale',
+    quickPayment: 'Quick payment',
+    onlineBookingsTitle: 'Online bookings',
+    onlineBookingsDescription:
+      'Appointments booked through your public salon links, social links, and QR code.',
+    bookingLinkLabel: 'Open booking page',
+    filterAll: 'All',
+    filterBooked: 'Booked',
+    filterQr: 'QR source',
+    overviewSelectedDayLabel: 'Selected day',
+    overviewSelectedDayMeta: 'appointments on this date',
+    overviewComingAppointmentLabel: 'Coming appointment',
+    overviewComingAppointmentMeta: 'currently active appointments',
+    overviewNextClientLabel: 'Next client',
+    overviewNextClientMeta: 'upcoming on the selected day',
+    overviewNextClientEmpty: 'No bookings yet',
+    appointmentsEmptyTitle: 'No bookings yet',
+    appointmentsEmptyDescription:
+      'Share your booking page, social links, or QR code to start collecting appointments.',
+    qrEyebrow: 'Share booking QR',
+    qrTitle: 'Scan to book',
+    qrDescription:
+      'Place this QR code on your salon door so clients can scan and book instantly.',
+    qrPrint: 'Print QR code'
+  },
+  reports: {
+    allFolders: 'All folders',
+    rangeToday: 'Today',
+    range7Days: '7 days',
+    range30Days: '30 days',
+    range90Days: '90 days',
+    lastDaysTemplate: 'Last {days} days',
+    exportCsv: 'Export CSV',
+    print: 'Print',
+    newCustomReport: 'New custom report',
+    revenue: 'Revenue',
+    appointments: 'Appointments',
+    completed: 'Completed',
+    clients: 'Clients',
+    bookedInRangeTemplate: '{count} booked in range',
+    completionFlowTemplate: '{label} completion flow',
+    repeatClientsTeamTemplate: '{repeat} repeat • {team} team'
+  }
+};
+let currentDashboardUiCopy = DEFAULT_DASHBOARD_UI_COPY;
 const DEFAULT_CALENDAR_TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
 const DEFAULT_BUSINESS_SETTINGS = {
   currencyCode: 'PKR',
@@ -14,32 +89,11 @@ const DEFAULT_BUSINESS_SETTINGS = {
   }
 };
 let currentBusinessSettings = DEFAULT_BUSINESS_SETTINGS;
-const BOOKING_SOURCE_LABELS = {
-  qr: 'QR',
-  direct: 'Direct',
-  instagram: 'Instagram',
-  facebook: 'Facebook',
-  applemaps: 'Apple Maps'
-};
-const APPOINTMENT_STATUS_META = {
-  booked: {
-    badgeClass: 'is-booked',
-    label: 'BOOKED'
-  },
-  completed: {
-    badgeClass: 'is-completed',
-    label: 'COMPLETED'
-  },
-  cancelled: {
-    badgeClass: 'is-cancelled',
-    label: 'CANCELLED'
-  }
-};
 const BOOKED_APPOINTMENT_ACTIONS = [
-  { key: 'edit', label: 'Edit', handlerKey: 'onEdit' },
-  { key: 'runningLate', label: 'Running late', handlerKey: 'onRunningLate' },
-  { key: 'complete', label: 'Complete', handlerKey: 'onComplete' },
-  { key: 'cancel', label: 'Cancel', handlerKey: 'onCancel', danger: true }
+  { key: 'edit', labelKey: 'edit', fallbackLabel: 'Edit', handlerKey: 'onEdit' },
+  { key: 'runningLate', labelKey: 'runningLate', fallbackLabel: 'Running late', handlerKey: 'onRunningLate' },
+  { key: 'complete', labelKey: 'complete', fallbackLabel: 'Complete', handlerKey: 'onComplete' },
+  { key: 'cancel', labelKey: 'cancel', fallbackLabel: 'Cancel', handlerKey: 'onCancel', danger: true }
 ];
 const PAYMENT_METHOD_OPTIONS = [
   { value: 'cash', label: 'Cash' },
@@ -61,6 +115,17 @@ const TEAM_MEMBER_WEEKDAY_IDS = [
   'saturday'
 ];
 
+const getDashboardUiCopy = () => currentDashboardUiCopy;
+
+const setDashboardUiCopy = (value) => {
+  if (value && typeof value === 'object') {
+    currentDashboardUiCopy = value;
+    return;
+  }
+
+  currentDashboardUiCopy = DEFAULT_DASHBOARD_UI_COPY;
+};
+
 const normalizeBookingSource = (sourceValue) => {
   if (typeof sourceValue !== 'string') {
     return 'direct';
@@ -74,7 +139,8 @@ const normalizeBookingSource = (sourceValue) => {
 };
 
 const formatBookingSourceLabel = (sourceValue) =>
-  BOOKING_SOURCE_LABELS[normalizeBookingSource(sourceValue)] ?? BOOKING_SOURCE_LABELS.direct;
+  getDashboardUiCopy().bookingSourceLabels?.[normalizeBookingSource(sourceValue)] ??
+  DEFAULT_DASHBOARD_UI_COPY.bookingSourceLabels.direct;
 
 const buildTrackedBookingPath = (clientId, sourceValue) => {
   const normalizedSource = normalizeBookingSource(sourceValue);
@@ -94,10 +160,13 @@ const formatTimeForDisplay = (timeValue) => {
 
   const hour = Number(match[1]);
   const minutes = match[2];
-  const meridiem = hour >= 12 ? 'pm' : 'am';
-  const normalizedHour = hour % 12 || 12;
+  const locale = getDashboardUiCopy().locale || 'en-GB';
+  const date = new Date(`2026-01-01T${String(hour).padStart(2, '0')}:${minutes}:00`);
 
-  return `${normalizedHour}:${minutes} ${meridiem}`;
+  return new Intl.DateTimeFormat(locale, {
+    hour: 'numeric',
+    minute: '2-digit'
+  }).format(date);
 };
 
 const formatDateForDisplay = (dateValue) => {
@@ -111,7 +180,7 @@ const formatDateForDisplay = (dateValue) => {
     return dateValue;
   }
 
-  return new Intl.DateTimeFormat('en-GB', {
+  return new Intl.DateTimeFormat(getDashboardUiCopy().locale || 'en-GB', {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -158,7 +227,29 @@ const addMinutesToTimeValue = (timeValue, minutesToAdd) => {
 };
 
 const getAppointmentStatusMeta = (statusValue) =>
-  APPOINTMENT_STATUS_META[statusValue] ?? APPOINTMENT_STATUS_META.booked;
+  ({
+    booked: {
+      badgeClass: 'is-booked',
+      label:
+        getDashboardUiCopy().appointmentStatusLabels?.booked ??
+        DEFAULT_DASHBOARD_UI_COPY.appointmentStatusLabels.booked
+    },
+    completed: {
+      badgeClass: 'is-completed',
+      label:
+        getDashboardUiCopy().appointmentStatusLabels?.completed ??
+        DEFAULT_DASHBOARD_UI_COPY.appointmentStatusLabels.completed
+    },
+    cancelled: {
+      badgeClass: 'is-cancelled',
+      label:
+        getDashboardUiCopy().appointmentStatusLabels?.cancelled ??
+        DEFAULT_DASHBOARD_UI_COPY.appointmentStatusLabels.cancelled
+    }
+  }[statusValue] ?? {
+    badgeClass: 'is-booked',
+    label: getDashboardUiCopy().appointmentStatusLabels?.booked ?? DEFAULT_DASHBOARD_UI_COPY.appointmentStatusLabels.booked
+  });
 
 const getAppointmentServiceSummary = (appointment) =>
   appointment.teamMemberName
@@ -466,6 +557,17 @@ const loadPublicConfig = async () => {
   }
 
   return publicConfigRequest;
+};
+
+const interpolateLabel = (template, values = {}) => {
+  if (typeof template !== 'string' || !template) {
+    return '';
+  }
+
+  return Object.entries(values).reduce(
+    (result, [key, value]) => result.replaceAll(`{${key}}`, String(value ?? '')),
+    template
+  );
 };
 
 const formatAddressSingleLine = (address) =>
@@ -852,7 +954,8 @@ const renderReportsView = (reportsView, elements) => {
           ? 'calendar-reports-folder-item is-active'
           : 'calendar-reports-folder-item';
       allFolderButton.dataset.folderId = '';
-      allFolderButton.textContent = 'All folders';
+      allFolderButton.textContent =
+        getDashboardUiCopy().reports?.allFolders ?? DEFAULT_DASHBOARD_UI_COPY.reports.allFolders;
       folderList.append(allFolderButton);
 
       for (const folder of reportsView.folders) {
@@ -883,14 +986,19 @@ const renderDashboardAppointments = (
   container.replaceChildren();
 
   if (!Array.isArray(appointments) || appointments.length === 0) {
+    const dashboardUiCopy = getDashboardUiCopy();
     const emptyState = document.createElement('article');
     emptyState.className = 'calendar-appointment-empty';
 
     const title = document.createElement('strong');
-    title.textContent = 'No bookings yet';
+    title.textContent =
+      dashboardUiCopy.calendar?.appointmentsEmptyTitle ??
+      DEFAULT_DASHBOARD_UI_COPY.calendar.appointmentsEmptyTitle;
 
     const copy = document.createElement('p');
-    copy.textContent = 'Share your booking page, social links, or QR code to start collecting appointments.';
+    copy.textContent =
+      dashboardUiCopy.calendar?.appointmentsEmptyDescription ??
+      DEFAULT_DASHBOARD_UI_COPY.calendar.appointmentsEmptyDescription;
 
     emptyState.append(title, copy);
     container.append(emptyState);
@@ -953,9 +1061,13 @@ const renderDashboardAppointments = (
           continue;
         }
 
-        const actionButton = createToolActionButton(actionConfig.label, () => {
+        const actionButton = createToolActionButton(
+          getDashboardUiCopy().bookedAppointmentActionLabels?.[actionConfig.labelKey] ??
+            actionConfig.fallbackLabel,
+          () => {
           actionHandler(appointment);
-        });
+          }
+        );
 
         if (actionConfig.danger) {
           actionButton.classList.add('calendar-tool-action-danger');
@@ -2771,6 +2883,7 @@ const initCalendar = () => {
   const dateInput = document.querySelector('#calendar-date-input');
   const nowBadge = document.querySelector('#calendar-now-badge');
   const addButton = document.querySelector('#calendar-add-button');
+  const addButtonLabel = document.querySelector('#calendar-add-button-label');
   const addMenu = document.querySelector('#calendar-add-menu');
   const addMenuItems = document.querySelectorAll('.calendar-add-item');
   const todayAction = document.querySelector('#calendar-today-action');
@@ -2832,9 +2945,17 @@ const initCalendar = () => {
   const reportsTabs = document.querySelector('#calendar-reports-tabs');
   const reportsCards = document.querySelector('#calendar-reports-cards');
   const bookingLink = document.querySelector('#calendar-booking-link');
+  const onlineBookingsTitle = document.querySelector('#calendar-online-bookings-title');
+  const onlineBookingsDescription = document.querySelector('#calendar-online-bookings-description');
   const overviewDayCount = document.querySelector('#calendar-overview-day-count');
   const overviewBookedCount = document.querySelector('#calendar-overview-booked-count');
   const overviewNextClient = document.querySelector('#calendar-overview-next-client');
+  const overviewSelectedDayLabel = document.querySelector('#calendar-overview-selected-day-label');
+  const overviewSelectedDayMeta = document.querySelector('#calendar-overview-selected-day-meta');
+  const overviewComingAppointmentLabel = document.querySelector('#calendar-overview-coming-appointment-label');
+  const overviewComingAppointmentMeta = document.querySelector('#calendar-overview-coming-appointment-meta');
+  const overviewNextClientLabel = document.querySelector('#calendar-overview-next-client-label');
+  const overviewNextClientMeta = document.querySelector('#calendar-overview-next-client-meta');
   const filterBar = document.querySelector('#calendar-filter-bar');
   const filterAll = document.querySelector('#calendar-filter-all');
   const filterBooked = document.querySelector('#calendar-filter-booked');
@@ -2848,6 +2969,9 @@ const initCalendar = () => {
   const qrImage = document.querySelector('#calendar-qr-image');
   const qrLink = document.querySelector('#calendar-qr-link');
   const qrPrint = document.querySelector('#calendar-qr-print');
+  const qrEyebrow = document.querySelector('#calendar-qr-eyebrow');
+  const qrTitle = document.querySelector('#calendar-qr-title');
+  const qrDescription = document.querySelector('#calendar-qr-description');
   const toolModal = document.querySelector('#calendar-tool-modal');
   const toolDialog = document.querySelector('.calendar-tool-dialog');
   const toolClose = document.querySelector('#calendar-tool-close');
@@ -3627,11 +3751,14 @@ const initCalendar = () => {
   };
 
   const getReportsRangeLabel = () => {
+    const reportsCopy = getDashboardUiCopy().reports ?? DEFAULT_DASHBOARD_UI_COPY.reports;
     if (reportsDateRange === 'today') {
-      return 'Today';
+      return reportsCopy.rangeToday;
     }
 
-    return `Last ${getReportRangeDays()} days`;
+    return interpolateLabel(reportsCopy.lastDaysTemplate, {
+      days: getReportRangeDays()
+    });
   };
 
   const getAppointmentReportDateValue = (appointment) => {
@@ -4595,11 +4722,12 @@ const createTrendCard = (
   const renderReportsControls = () => {
     if (reportsRange instanceof HTMLElement) {
       reportsRange.replaceChildren();
+      const reportsCopy = getDashboardUiCopy().reports ?? DEFAULT_DASHBOARD_UI_COPY.reports;
       const rangeOptions = [
-        ['today', 'Today'],
-        ['7d', '7 days'],
-        ['30d', '30 days'],
-        ['90d', '90 days']
+        ['today', reportsCopy.rangeToday],
+        ['7d', reportsCopy.range7Days],
+        ['30d', reportsCopy.range30Days],
+        ['90d', reportsCopy.range90Days]
       ];
 
       for (const [value, label] of rangeOptions) {
@@ -4621,13 +4749,15 @@ const createTrendCard = (
       const exportButton = document.createElement('button');
       exportButton.type = 'button';
       exportButton.className = 'calendar-reports-workspace-action';
-      exportButton.textContent = 'Export CSV';
+      exportButton.textContent =
+        getDashboardUiCopy().reports?.exportCsv ?? DEFAULT_DASHBOARD_UI_COPY.reports.exportCsv;
       exportButton.addEventListener('click', exportVisibleReportsCsv);
 
       const printButton = document.createElement('button');
       printButton.type = 'button';
       printButton.className = 'calendar-reports-workspace-action';
-      printButton.textContent = 'Print';
+      printButton.textContent =
+        getDashboardUiCopy().reports?.print ?? DEFAULT_DASHBOARD_UI_COPY.reports.print;
       printButton.addEventListener('click', () => {
         window.print();
       });
@@ -4635,7 +4765,9 @@ const createTrendCard = (
       const customButton = document.createElement('button');
       customButton.type = 'button';
       customButton.className = 'calendar-reports-workspace-action is-primary';
-      customButton.textContent = 'New custom report';
+      customButton.textContent =
+        getDashboardUiCopy().reports?.newCustomReport ??
+        DEFAULT_DASHBOARD_UI_COPY.reports.newCustomReport;
       customButton.addEventListener('click', openCreateCustomReportModal);
 
       reportsActionsBar.append(exportButton, printButton, customButton);
@@ -4662,33 +4794,41 @@ const createTrendCard = (
       rangeAppointments.filter((appointment) => appointment.status === 'completed'),
       'count'
     );
+    const reportsCopy = getDashboardUiCopy().reports ?? DEFAULT_DASHBOARD_UI_COPY.reports;
 
     reportsSummary.replaceChildren(
       createTrendCard(
-        'Revenue',
+        reportsCopy.revenue,
         formatCurrencyLabel(salesInsights.totalRevenue),
         getReportsRangeLabel(),
         revenueTrend,
         'blue'
       ),
       createTrendCard(
-        'Appointments',
+        reportsCopy.appointments,
         String(rangeAppointments.length),
-        `${bookedAppointments.length} booked in range`,
+        interpolateLabel(reportsCopy.bookedInRangeTemplate, {
+          count: bookedAppointments.length
+        }),
         bookingTrend,
         'plum'
       ),
       createTrendCard(
-        'Completed',
+        reportsCopy.completed,
         String(rangeAppointments.filter((appointment) => appointment.status === 'completed').length),
-        `${getReportsRangeLabel()} completion flow`,
+        interpolateLabel(reportsCopy.completionFlowTemplate, {
+          label: getReportsRangeLabel()
+        }),
         completedTrend,
         'green'
       ),
       createTrendCard(
-        'Clients',
+        reportsCopy.clients,
         String(clientInsights.totalClients),
-        `${clientInsights.repeatClients} repeat • ${teamMembers.length} team`,
+        interpolateLabel(reportsCopy.repeatClientsTeamTemplate, {
+          repeat: clientInsights.repeatClients,
+          team: teamMembers.length
+        }),
         repeatTrend,
         'gold',
         {
@@ -4912,6 +5052,11 @@ const createTrendCard = (
       return;
     }
 
+    if ((getDashboardUiCopy().locale || '').startsWith('zh')) {
+      renderDrawer(salesDrawer, salesTitle, salesContent);
+      return;
+    }
+
     const insights = getSalesInsights();
     const enhancedDrawer = {
       ...salesDrawer,
@@ -4993,6 +5138,11 @@ const createTrendCard = (
       return;
     }
 
+    if ((getDashboardUiCopy().locale || '').startsWith('zh')) {
+      renderDrawer(catalogDrawer, catalogTitle, catalogContent);
+      return;
+    }
+
     const insights = getCatalogInsights();
     const enhancedDrawer = {
       ...catalogDrawer,
@@ -5065,6 +5215,11 @@ const createTrendCard = (
     const clientsDrawer = dashboardPayload?.dashboard?.sideDrawers?.clients;
 
     if (!clientsDrawer) {
+      return;
+    }
+
+    if ((getDashboardUiCopy().locale || '').startsWith('zh')) {
+      renderDrawer(clientsDrawer, clientsTitle, clientsContent);
       return;
     }
 
@@ -8500,7 +8655,8 @@ const createTrendCard = (
       return;
     }
 
-    viewToggle.textContent = currentView === 'day' ? 'Day' : 'Agenda';
+    const calendarCopy = getDashboardUiCopy().calendar ?? DEFAULT_DASHBOARD_UI_COPY.calendar;
+    viewToggle.textContent = currentView === 'day' ? calendarCopy.day : calendarCopy.agenda;
     calendarBoard.classList.toggle('calendar-board-agenda', currentView === 'agenda');
   };
 
@@ -8635,9 +8791,10 @@ const createTrendCard = (
     }
 
     if (overviewNextClient instanceof HTMLElement) {
+      const calendarCopy = getDashboardUiCopy().calendar ?? DEFAULT_DASHBOARD_UI_COPY.calendar;
       overviewNextClient.textContent = nextAppointment
         ? `${nextAppointment.customerName} - ${formatTimeForDisplay(nextAppointment.appointmentTime)}`
-        : 'No bookings yet';
+        : calendarCopy.overviewNextClientEmpty;
     }
   };
 
@@ -9806,19 +9963,119 @@ const createTrendCard = (
 
     dashboardPayload = payload;
     paymentsPayload = paymentPayload;
+    setDashboardUiCopy(payload.dashboard.uiCopy);
     currentBusinessSettings = getDashboardBusinessSettings();
     reportsWorkspace = getReportsWorkspaceState(clientId);
     publicBookingPath = launchLinks.bookingPageLink;
     qrBookingPath = launchLinks.qrBookingPageLink;
     qrCodeImagePath = launchLinks.qrCodeImageLink;
 
+    const calendarCopy = getDashboardUiCopy().calendar ?? DEFAULT_DASHBOARD_UI_COPY.calendar;
+
     if (bookingLink instanceof HTMLAnchorElement) {
       bookingLink.href = publicBookingPath;
-      bookingLink.textContent = 'Open booking page';
+      bookingLink.textContent = calendarCopy.bookingLinkLabel;
     }
 
     if (qrLink instanceof HTMLAnchorElement) {
       qrLink.href = qrBookingPath;
+      qrLink.textContent = calendarCopy.bookingLinkLabel;
+    }
+
+    if (todayAction instanceof HTMLButtonElement) {
+      todayAction.textContent = calendarCopy.today;
+    }
+
+    if (addButtonLabel instanceof HTMLElement) {
+      addButtonLabel.textContent = calendarCopy.add;
+    }
+
+    if (addMenu instanceof HTMLElement) {
+      addMenu.setAttribute('aria-label', calendarCopy.addMenuAria);
+    }
+
+    if (bookAppointmentAction instanceof HTMLButtonElement) {
+      bookAppointmentAction.lastElementChild.textContent = calendarCopy.bookAppointment;
+    }
+
+    if (showQrAction instanceof HTMLButtonElement) {
+      showQrAction.lastElementChild.textContent = calendarCopy.showQrCode;
+    }
+
+    if (groupAppointmentAction instanceof HTMLButtonElement) {
+      groupAppointmentAction.lastElementChild.textContent = calendarCopy.groupAppointment;
+    }
+
+    if (blockedTimeAction instanceof HTMLButtonElement) {
+      blockedTimeAction.lastElementChild.textContent = calendarCopy.blockedTime;
+    }
+
+    if (saleAction instanceof HTMLButtonElement) {
+      saleAction.lastElementChild.textContent = calendarCopy.sale;
+    }
+
+    if (quickPaymentAction instanceof HTMLButtonElement) {
+      quickPaymentAction.lastElementChild.textContent = calendarCopy.quickPayment;
+    }
+
+    if (onlineBookingsTitle instanceof HTMLElement) {
+      onlineBookingsTitle.textContent = calendarCopy.onlineBookingsTitle;
+    }
+
+    if (onlineBookingsDescription instanceof HTMLElement) {
+      onlineBookingsDescription.textContent = calendarCopy.onlineBookingsDescription;
+    }
+
+    if (overviewSelectedDayLabel instanceof HTMLElement) {
+      overviewSelectedDayLabel.textContent = calendarCopy.overviewSelectedDayLabel;
+    }
+
+    if (overviewSelectedDayMeta instanceof HTMLElement) {
+      overviewSelectedDayMeta.textContent = calendarCopy.overviewSelectedDayMeta;
+    }
+
+    if (overviewComingAppointmentLabel instanceof HTMLElement) {
+      overviewComingAppointmentLabel.textContent = calendarCopy.overviewComingAppointmentLabel;
+    }
+
+    if (overviewComingAppointmentMeta instanceof HTMLElement) {
+      overviewComingAppointmentMeta.textContent = calendarCopy.overviewComingAppointmentMeta;
+    }
+
+    if (overviewNextClientLabel instanceof HTMLElement) {
+      overviewNextClientLabel.textContent = calendarCopy.overviewNextClientLabel;
+    }
+
+    if (overviewNextClientMeta instanceof HTMLElement) {
+      overviewNextClientMeta.textContent = calendarCopy.overviewNextClientMeta;
+    }
+
+    if (filterAll instanceof HTMLButtonElement) {
+      filterAll.textContent = calendarCopy.filterAll;
+    }
+
+    if (filterBooked instanceof HTMLButtonElement) {
+      filterBooked.textContent = calendarCopy.filterBooked;
+    }
+
+    if (filterQr instanceof HTMLButtonElement) {
+      filterQr.textContent = calendarCopy.filterQr;
+    }
+
+    if (qrEyebrow instanceof HTMLElement) {
+      qrEyebrow.textContent = calendarCopy.qrEyebrow;
+    }
+
+    if (qrTitle instanceof HTMLElement) {
+      qrTitle.textContent = calendarCopy.qrTitle;
+    }
+
+    if (qrDescription instanceof HTMLElement) {
+      qrDescription.textContent = calendarCopy.qrDescription;
+    }
+
+    if (qrPrint instanceof HTMLButtonElement) {
+      qrPrint.textContent = calendarCopy.qrPrint;
     }
 
     brand.textContent = payload.dashboard.businessName;
@@ -11230,9 +11487,9 @@ const initOnboardingComplete = () => {
 
 const initPreferredLanguage = () => {
   const continueButton = document.querySelector('#preferred-language-continue');
-  const cards = document.querySelectorAll('[data-preferred-language]');
+  const grid = document.querySelector('#preferred-language-grid');
 
-  if (!(continueButton instanceof HTMLAnchorElement) || cards.length === 0) {
+  if (!(continueButton instanceof HTMLAnchorElement) || !(grid instanceof HTMLElement)) {
     return;
   }
 
@@ -11242,6 +11499,34 @@ const initPreferredLanguage = () => {
   }
 
   let selectedPreferredLanguage = '';
+  let cards = [];
+
+  const buildPreferredLanguageCard = (languageOption) => {
+    const card = document.createElement('button');
+    card.className = 'account-type-card';
+    card.type = 'button';
+    card.dataset.preferredLanguage = languageOption.value;
+    card.innerHTML = `
+      <span class="account-type-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+          <path d="M4 12h16"></path>
+          <path d="M12 4a12 12 0 000 16"></path>
+          <path d="M12 4a12 12 0 010 16"></path>
+        </svg>
+      </span>
+      <span>${escapeHtml(languageOption.label)}</span>
+    `;
+
+    card.addEventListener('click', () => {
+      const preferredLanguage = card.dataset.preferredLanguage;
+
+      if (preferredLanguage) {
+        setSelectedCard(preferredLanguage);
+      }
+    });
+
+    return card;
+  };
 
   const updateContinue = () => {
     if (!selectedPreferredLanguage) {
@@ -11258,30 +11543,14 @@ const initPreferredLanguage = () => {
     selectedPreferredLanguage = preferredLanguage;
 
     for (const card of cards) {
-      if (card instanceof HTMLButtonElement) {
-        card.classList.toggle(
-          'is-selected',
-          card.dataset.preferredLanguage === preferredLanguage
-        );
-      }
+      card.classList.toggle(
+        'is-selected',
+        card.dataset.preferredLanguage === preferredLanguage
+      );
     }
 
     updateContinue();
   };
-
-  for (const card of cards) {
-    if (!(card instanceof HTMLButtonElement)) {
-      continue;
-    }
-
-    card.addEventListener('click', () => {
-      const preferredLanguage = card.dataset.preferredLanguage;
-
-      if (preferredLanguage) {
-        setSelectedCard(preferredLanguage);
-      }
-    });
-  }
 
   continueButton.addEventListener('click', async (event) => {
     event.preventDefault();
@@ -11307,8 +11576,32 @@ const initPreferredLanguage = () => {
     }
   });
 
-  apiRequest(`/api/platform/clients/${clientId}`)
-    .then((payload) => {
+  Promise.all([
+    loadPublicConfig(),
+    apiRequest(`/api/platform/clients/${clientId}`)
+  ])
+    .then(([config, payload]) => {
+      const preferredLanguages = Array.isArray(config?.preferredLanguages)
+        ? config.preferredLanguages.filter(
+            (languageOption) =>
+              typeof languageOption?.value === 'string' &&
+              languageOption.value.trim() &&
+              typeof languageOption?.label === 'string' &&
+              languageOption.label.trim()
+          )
+        : [];
+
+      if (preferredLanguages.length === 0) {
+        throw new Error('No preferred languages are configured');
+      }
+
+      grid.replaceChildren(
+        ...preferredLanguages.map((languageOption) => buildPreferredLanguageCard(languageOption))
+      );
+      cards = Array.from(grid.querySelectorAll('[data-preferred-language]')).filter(
+        (card) => card instanceof HTMLButtonElement
+      );
+
       if (payload.client.preferredLanguage) {
         setSelectedCard(payload.client.preferredLanguage);
       } else {

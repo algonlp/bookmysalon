@@ -274,11 +274,11 @@ describe('Client platform API', () => {
       .patch(`/api/platform/clients/${clientId}/preferred-language`)
       .set('x-admin-token', adminToken)
       .send({
-        preferredLanguage: 'urdu'
+        preferredLanguage: 'spanish'
       });
 
     expect(preferredLanguageResponse.status).toBe(200);
-    expect(preferredLanguageResponse.body.client.preferredLanguage).toBe('urdu');
+    expect(preferredLanguageResponse.body.client.preferredLanguage).toBe('spanish');
 
     const completeResponse = await request(app)
       .post(`/api/platform/clients/${clientId}/complete`)
@@ -294,7 +294,7 @@ describe('Client platform API', () => {
     expect(clientResponse.status).toBe(200);
     expect(clientResponse.body.client.website).toBe('www.maqsoodstudio.com');
     expect(clientResponse.body.client.profileImageUrl).toBe(uploadedProfileImage);
-    expect(clientResponse.body.client.preferredLanguage).toBe('urdu');
+    expect(clientResponse.body.client.preferredLanguage).toBe('spanish');
 
     const dashboardResponse = await request(app).get(
       `/api/platform/clients/${clientId}/dashboard`
@@ -396,6 +396,42 @@ describe('Client platform API', () => {
     expect(new URL(launchLinksPayload.qrCodeImageLink).pathname).toBe(
       new URL(dashboardLaunchLinks.qrCodeImageLink).pathname
     );
+  });
+
+  it('localizes dashboard copy when the preferred language is chinese', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'zh-owner@example.com',
+      provider: 'email'
+    });
+
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/business-profile`)
+      .set('x-admin-token', adminToken)
+      .send({
+        businessName: 'Shanghai Salon'
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/preferred-language`)
+      .set('x-admin-token', adminToken)
+      .send({
+        preferredLanguage: 'chinese'
+      });
+
+    const dashboardResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}/dashboard`)
+      .set('x-admin-token', adminToken);
+
+    expect(dashboardResponse.status).toBe(200);
+    expect(dashboardResponse.body.dashboard.setupButtonLabel).toBe('继续设置');
+    expect(dashboardResponse.body.dashboard.sideDrawers.sales.title).toBe('销售');
+    expect(dashboardResponse.body.dashboard.reportsView.sidebarTitle).toBe('报表');
+    expect(dashboardResponse.body.dashboard.uiCopy.locale).toBe('zh-CN');
+    expect(dashboardResponse.body.dashboard.uiCopy.calendar.today).toBe('今天');
+    expect(dashboardResponse.body.dashboard.uiCopy.calendar.bookAppointment).toBe('预约服务');
   });
 
   it('updates business settings and uses them for slots, reports, and service templates', async () => {

@@ -12,6 +12,7 @@ import {
   defaultServiceLocation,
   normalizeServiceLocations
 } from './serviceLocation.constants';
+import { preferredLanguageValues } from './clientPlatform.types';
 import type { AppointmentRecord } from '../appointments/appointment.types';
 import {
   createSeededBusinessServices,
@@ -31,6 +32,7 @@ import type {
   CreateTeamMemberInput,
   DashboardAppointmentViewModel,
   DashboardCommerceViewModel,
+  DashboardUiCopy,
   DashboardViewModel,
   LaunchLinksViewModel,
   LoyaltyProgramRecord,
@@ -82,6 +84,162 @@ const WEEKDAY_IDS: WeekdayId[] = [
 ];
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+const DASHBOARD_UI_COPY_BY_LANGUAGE: Record<'english' | 'chinese', DashboardUiCopy> = {
+  english: {
+    locale: 'en-GB',
+    bookingSourceLabels: {
+      qr: 'QR',
+      direct: 'Direct',
+      instagram: 'Instagram',
+      facebook: 'Facebook',
+      applemaps: 'Apple Maps'
+    },
+    appointmentStatusLabels: {
+      booked: 'BOOKED',
+      completed: 'COMPLETED',
+      cancelled: 'CANCELLED'
+    },
+    bookedAppointmentActionLabels: {
+      edit: 'Edit',
+      runningLate: 'Running late',
+      complete: 'Complete',
+      cancel: 'Cancel'
+    },
+    calendar: {
+      today: 'Today',
+      day: 'Day',
+      agenda: 'Agenda',
+      add: 'Add',
+      addMenuAria: 'Add menu',
+      bookAppointment: 'Book appointment',
+      showQrCode: 'Show QR code',
+      groupAppointment: 'Group appointment',
+      blockedTime: 'Blocked time',
+      sale: 'Sale',
+      quickPayment: 'Quick payment',
+      onlineBookingsTitle: 'Online bookings',
+      onlineBookingsDescription:
+        'Appointments booked through your public salon links, social links, and QR code.',
+      bookingLinkLabel: 'Open booking page',
+      filterAll: 'All',
+      filterBooked: 'Booked',
+      filterQr: 'QR source',
+      overviewSelectedDayLabel: 'Selected day',
+      overviewSelectedDayMeta: 'appointments on this date',
+      overviewComingAppointmentLabel: 'Coming appointment',
+      overviewComingAppointmentMeta: 'currently active appointments',
+      overviewNextClientLabel: 'Next client',
+      overviewNextClientMeta: 'upcoming on the selected day',
+      overviewNextClientEmpty: 'No bookings yet',
+      appointmentsEmptyTitle: 'No bookings yet',
+      appointmentsEmptyDescription:
+        'Share your booking page, social links, or QR code to start collecting appointments.',
+      qrEyebrow: 'Share booking QR',
+      qrTitle: 'Scan to book',
+      qrDescription:
+        'Place this QR code on your salon door so clients can scan and book instantly.',
+      qrPrint: 'Print QR code'
+    },
+    reports: {
+      allFolders: 'All folders',
+      rangeToday: 'Today',
+      range7Days: '7 days',
+      range30Days: '30 days',
+      range90Days: '90 days',
+      lastDaysTemplate: 'Last {days} days',
+      exportCsv: 'Export CSV',
+      print: 'Print',
+      newCustomReport: 'New custom report',
+      revenue: 'Revenue',
+      appointments: 'Appointments',
+      completed: 'Completed',
+      clients: 'Clients',
+      bookedInRangeTemplate: '{count} booked in range',
+      completionFlowTemplate: '{label} completion flow',
+      repeatClientsTeamTemplate: '{repeat} repeat • {team} team'
+    }
+  },
+  chinese: {
+    locale: 'zh-CN',
+    bookingSourceLabels: {
+      qr: '二维码',
+      direct: '直接',
+      instagram: 'Instagram',
+      facebook: 'Facebook',
+      applemaps: 'Apple 地图'
+    },
+    appointmentStatusLabels: {
+      booked: '已预约',
+      completed: '已完成',
+      cancelled: '已取消'
+    },
+    bookedAppointmentActionLabels: {
+      edit: '编辑',
+      runningLate: '延迟通知',
+      complete: '完成',
+      cancel: '取消'
+    },
+    calendar: {
+      today: '今天',
+      day: '日视图',
+      agenda: '列表视图',
+      add: '新增',
+      addMenuAria: '新增菜单',
+      bookAppointment: '预约服务',
+      showQrCode: '显示二维码',
+      groupAppointment: '团体预约',
+      blockedTime: '封锁时间',
+      sale: '销售',
+      quickPayment: '快速收款',
+      onlineBookingsTitle: '在线预约',
+      onlineBookingsDescription: '这里显示通过公开预约页、社交链接和二维码产生的预约。',
+      bookingLinkLabel: '打开预约页面',
+      filterAll: '全部',
+      filterBooked: '已预约',
+      filterQr: '二维码来源',
+      overviewSelectedDayLabel: '所选日期',
+      overviewSelectedDayMeta: '该日期的预约数量',
+      overviewComingAppointmentLabel: '即将开始',
+      overviewComingAppointmentMeta: '当前有效预约',
+      overviewNextClientLabel: '下一位客户',
+      overviewNextClientMeta: '所选日期内的下一个预约',
+      overviewNextClientEmpty: '暂无预约',
+      appointmentsEmptyTitle: '暂无预约',
+      appointmentsEmptyDescription: '分享你的预约页面、社交链接或二维码来开始接收预约。',
+      qrEyebrow: '分享预约二维码',
+      qrTitle: '扫码预约',
+      qrDescription: '把这个二维码放在店门口，客户扫码后就能立即预约。',
+      qrPrint: '打印二维码'
+    },
+    reports: {
+      allFolders: '全部文件夹',
+      rangeToday: '今天',
+      range7Days: '7天',
+      range30Days: '30天',
+      range90Days: '90天',
+      lastDaysTemplate: '最近 {days} 天',
+      exportCsv: '导出 CSV',
+      print: '打印',
+      newCustomReport: '新建自定义报表',
+      revenue: '收入',
+      appointments: '预约',
+      completed: '已完成',
+      clients: '客户',
+      bookedInRangeTemplate: '区间内已预约 {count} 个',
+      completionFlowTemplate: '{label} 完成趋势',
+      repeatClientsTeamTemplate: '回头客 {repeat} • 团队 {team}'
+    }
+  }
+};
+
+const getDashboardLocaleKey = (
+  preferredLanguage: PreferredLanguage | null | undefined
+): 'english' | 'chinese' => (preferredLanguage === 'chinese' ? 'chinese' : 'english');
+
+const getDashboardUiCopyForLanguage = (
+  preferredLanguage: PreferredLanguage | null | undefined
+): DashboardUiCopy => DASHBOARD_UI_COPY_BY_LANGUAGE[getDashboardLocaleKey(preferredLanguage)];
 
 const buildFallbackEmail = (provider: CreateClientInput['provider']): string =>
   `${provider}-${randomUUID().slice(0, 8)}@platform.local`;
@@ -561,7 +719,9 @@ const normalizeLoyaltyProgram = (
 };
 
 const normalizePreferredLanguage = (value: unknown): PreferredLanguage | null => {
-  return value === 'english' || value === 'urdu' || value === 'arabic' ? value : null;
+  return typeof value === 'string' && preferredLanguageValues.includes(value as PreferredLanguage)
+    ? (value as PreferredLanguage)
+    : null;
 };
 
 const buildCustomerProfileId = (appointment: AppointmentRecord): string => {
@@ -904,8 +1064,11 @@ const ensureDemoSalons = async (): Promise<void> => {
   );
 };
 
-const formatDashboardDate = (date: Date): string =>
-  new Intl.DateTimeFormat('en-GB', {
+const formatDashboardDate = (
+  date: Date,
+  preferredLanguage: PreferredLanguage | null | undefined
+): string =>
+  new Intl.DateTimeFormat(getDashboardUiCopyForLanguage(preferredLanguage).locale, {
     weekday: 'short',
     day: 'numeric',
     month: 'short'
@@ -913,8 +1076,11 @@ const formatDashboardDate = (date: Date): string =>
     .format(date)
     .replace(',', '');
 
-const formatDashboardTime = (date: Date): string =>
-  new Intl.DateTimeFormat('en-GB', {
+const formatDashboardTime = (
+  date: Date,
+  preferredLanguage: PreferredLanguage | null | undefined
+): string =>
+  new Intl.DateTimeFormat(getDashboardUiCopyForLanguage(preferredLanguage).locale, {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false
@@ -985,14 +1151,20 @@ const buildClientDrawerItems = (appointments: AppointmentRecord[]) => {
   }));
 };
 
-const buildStoredClientDrawerItems = (customerProfiles: CustomerProfileRecord[]) => {
+const buildStoredClientDrawerItems = (
+  customerProfiles: CustomerProfileRecord[],
+  preferredLanguage: PreferredLanguage | null
+) => {
   const recentClients = normalizeCustomerProfiles(customerProfiles).slice(0, 6);
+  const isChinese = getDashboardLocaleKey(preferredLanguage) === 'chinese';
 
   if (recentClients.length === 0) {
     return [
       {
-        label: 'No clients yet',
-        subtitle: 'Customers from bookings and completed visits will appear here.'
+        label: isChinese ? '暂无客户' : 'No clients yet',
+        subtitle: isChinese
+          ? '预约产生的客户和已完成服务记录会显示在这里。'
+          : 'Customers from bookings and completed visits will appear here.'
       }
     ];
   }
@@ -1009,22 +1181,37 @@ const buildTeamDrawerSections = (client: ClientRecord) => {
   const activeTeamMembers = normalizeTeamMembers(client.teamMembers ?? [], client.businessSettings).filter(
     (teamMember) => teamMember.isActive
   );
-  const teamRoleLabel = client.serviceTypes.includes('Barber') ? 'barber' : 'team member';
+  const isChinese = getDashboardLocaleKey(client.preferredLanguage) === 'chinese';
+  const teamRoleLabel = client.serviceTypes.includes('Barber')
+    ? isChinese
+      ? '理发师'
+      : 'barber'
+    : isChinese
+      ? '团队成员'
+      : 'team member';
 
   return [
     {
       items: [
         {
-          label: 'Team members',
-          subtitle: `${activeTeamMembers.length} active ${teamRoleLabel}${activeTeamMembers.length === 1 ? '' : 's'}`
+          label: isChinese ? '团队成员' : 'Team members',
+          subtitle: isChinese
+            ? `${activeTeamMembers.length} 位在岗${teamRoleLabel}`
+            : `${activeTeamMembers.length} active ${teamRoleLabel}${activeTeamMembers.length === 1 ? '' : 's'}`
         },
-        { label: 'Scheduled shifts' },
-        { label: 'Timesheets', meta: { type: 'dot' as const } },
-        { label: 'Pay runs', meta: { type: 'dot' as const } }
+        { label: isChinese ? '排班' : 'Scheduled shifts' },
+        { label: isChinese ? '工时表' : 'Timesheets', meta: { type: 'dot' as const } },
+        { label: isChinese ? '薪资发放' : 'Pay runs', meta: { type: 'dot' as const } }
       ]
     },
     {
-      title: activeTeamMembers.length > 0 ? 'Current team' : 'Team setup',
+      title: activeTeamMembers.length > 0
+        ? isChinese
+          ? '当前团队'
+          : 'Current team'
+        : isChinese
+          ? '团队设置'
+          : 'Team setup',
       items:
         activeTeamMembers.length > 0
           ? activeTeamMembers.map((teamMember) => ({
@@ -1033,8 +1220,10 @@ const buildTeamDrawerSections = (client: ClientRecord) => {
             }))
           : [
               {
-                label: 'No team members yet',
-                subtitle: `Add your first ${teamRoleLabel} from the team panel.`
+                label: isChinese ? '还没有团队成员' : 'No team members yet',
+                subtitle: isChinese
+                  ? `请在团队面板中添加第一位${teamRoleLabel}。`
+                  : `Add your first ${teamRoleLabel} from the team panel.`
               }
             ]
     }
@@ -1048,123 +1237,151 @@ const buildDashboardViewModel = (
   launchLinks: LaunchLinksViewModel,
   commerce: DashboardCommerceViewModel
 ): DashboardViewModel => {
+  const uiCopy = getDashboardUiCopyForLanguage(client.preferredLanguage);
+  const isChinese = getDashboardLocaleKey(client.preferredLanguage) === 'chinese';
   const businessName = client.businessName || 'fresha';
-  const ownerName = client.businessName || formatOwnerName(client.email) || 'Owner';
+  const ownerName = client.businessName || formatOwnerName(client.email) || (isChinese ? '店主' : 'Owner');
   const businessSettings = normalizeBusinessSettings(client.businessSettings);
   const now = new Date();
+  const reportPageTitle =
+    businessSettings.reportMetadata.pageTitle === DEFAULT_REPORT_METADATA.pageTitle
+      ? isChinese
+        ? '报表与分析'
+        : businessSettings.reportMetadata.pageTitle
+      : businessSettings.reportMetadata.pageTitle;
+  const reportPageSubtitle =
+    businessSettings.reportMetadata.pageSubtitle === DEFAULT_REPORT_METADATA.pageSubtitle
+      ? isChinese
+        ? '在一个工作区中查看你的全部业务报表。'
+        : businessSettings.reportMetadata.pageSubtitle
+      : businessSettings.reportMetadata.pageSubtitle;
 
   return {
     businessName,
     ownerName,
     avatarInitial: getAvatarInitial(ownerName),
     profileImageUrl: client.profileImageUrl ?? '',
-    setupButtonLabel: client.onboardingCompleted ? 'Setup complete' : 'Continue setup',
+    setupButtonLabel: client.onboardingCompleted
+      ? isChinese
+        ? '设置完成'
+        : 'Setup complete'
+      : isChinese
+        ? '继续设置'
+        : 'Continue setup',
     setupButtonPath: '/guides/legendary-learner',
     bookingLink: `/book/${client.id}`,
     launchLinks,
     commerce,
-    currentDateLabel: formatDashboardDate(now),
-    currentTimeLabel: formatDashboardTime(now),
+    currentDateLabel: formatDashboardDate(now, client.preferredLanguage),
+    currentTimeLabel: formatDashboardTime(now, client.preferredLanguage),
     appointments,
+    uiCopy,
     sideDrawers: {
       sales: {
-        title: 'Sales',
+        title: isChinese ? '销售' : 'Sales',
         sections: [
           {
             items: [
-              { label: 'Daily sales summary' },
-              { label: 'Appointments' },
-              { label: 'Sales' },
-              { label: 'Payments' },
-              { label: 'Gift cards sold' },
-              { label: 'Packages sold' }
+              { label: isChinese ? '今日销售摘要' : 'Daily sales summary' },
+              { label: isChinese ? '预约' : 'Appointments' },
+              { label: isChinese ? '销售' : 'Sales' },
+              { label: isChinese ? '收款' : 'Payments' },
+              { label: isChinese ? '礼品卡销售' : 'Gift cards sold' },
+              { label: isChinese ? '套餐销售' : 'Packages sold' }
             ]
           }
         ]
       },
       clients: {
-        title: 'Clients',
+        title: isChinese ? '客户' : 'Clients',
         sections: [
           {
-            items: [{ label: 'Clients list' }, { label: 'Client loyalty' }]
+            items: [
+              { label: isChinese ? '客户列表' : 'Clients list' },
+              { label: isChinese ? '客户忠诚度' : 'Client loyalty' }
+            ]
           },
           {
-            title: 'Clients',
-            items: buildStoredClientDrawerItems(client.customerProfiles ?? [])
+            title: isChinese ? '客户' : 'Clients',
+            items: buildStoredClientDrawerItems(client.customerProfiles ?? [], client.preferredLanguage)
           }
         ]
       },
       catalog: {
-        title: 'Catalog',
+        title: isChinese ? '目录' : 'Catalog',
         sections: [
           {
             items: [
-              { label: 'Service menu' },
-              { label: 'Packages' },
+              { label: isChinese ? '服务菜单' : 'Service menu' },
+              { label: isChinese ? '套餐' : 'Packages' },
               {
-                label: 'Products',
+                label: isChinese ? '产品' : 'Products',
                 subtitle:
                   commerce.activeProducts > 0
-                    ? `${commerce.activeProducts} active product${commerce.activeProducts === 1 ? '' : 's'}`
-                    : 'No products added yet'
+                    ? isChinese
+                      ? `${commerce.activeProducts} 个在售产品`
+                      : `${commerce.activeProducts} active product${commerce.activeProducts === 1 ? '' : 's'}`
+                    : isChinese
+                      ? '还没有添加产品'
+                      : 'No products added yet'
               }
             ]
           },
           {
-            title: 'Inventory',
+            title: isChinese ? '库存' : 'Inventory',
             items: [
-              { label: 'Stocktakes' },
-              { label: 'Stock orders' },
-              { label: 'Suppliers' }
+              { label: isChinese ? '盘点' : 'Stocktakes' },
+              { label: isChinese ? '采购订单' : 'Stock orders' },
+              { label: isChinese ? '供应商' : 'Suppliers' }
             ]
           }
         ]
       },
       team: {
-        title: 'Team',
+        title: isChinese ? '团队' : 'Team',
         sections: buildTeamDrawerSections(client)
       }
     },
     reportsView: {
-      sidebarTitle: 'Reports',
+      sidebarTitle: isChinese ? '报表' : 'Reports',
       menu: [
-        { label: 'All reports', active: true, meta: { type: 'count', value: '0' } },
-        { label: 'Favourites', meta: { type: 'count', value: '0' } },
-        { label: 'Dashboards', meta: { type: 'count', value: '0' } },
-        { label: 'Standard', meta: { type: 'count', value: '0' } },
-        { label: 'Premium', meta: { type: 'count', value: '0' } },
-        { label: 'Custom', meta: { type: 'count', value: '0' } },
-        { label: 'Targets', meta: { type: 'count', value: '0' } }
+        { label: isChinese ? '全部报表' : 'All reports', active: true, meta: { type: 'count', value: '0' } },
+        { label: isChinese ? '收藏' : 'Favourites', meta: { type: 'count', value: '0' } },
+        { label: isChinese ? '仪表板' : 'Dashboards', meta: { type: 'count', value: '0' } },
+        { label: isChinese ? '标准' : 'Standard', meta: { type: 'count', value: '0' } },
+        { label: isChinese ? '高级' : 'Premium', meta: { type: 'count', value: '0' } },
+        { label: isChinese ? '自定义' : 'Custom', meta: { type: 'count', value: '0' } },
+        { label: isChinese ? '目标' : 'Targets', meta: { type: 'count', value: '0' } }
       ],
-      folderTitle: 'Folders',
-      folderActionLabel: 'Add folder',
-      connectorLabel: 'Data connector',
-      pageTitle: businessSettings.reportMetadata.pageTitle,
-      pageSubtitle: businessSettings.reportMetadata.pageSubtitle,
+      folderTitle: isChinese ? '文件夹' : 'Folders',
+      folderActionLabel: isChinese ? '添加文件夹' : 'Add folder',
+      connectorLabel: isChinese ? '数据连接器' : 'Data connector',
+      pageTitle: reportPageTitle,
+      pageSubtitle: reportPageSubtitle,
       totalLabel: '0',
-      searchPlaceholder: 'Search by report name or description',
-      filters: ['Created by', 'Category'],
+      searchPlaceholder: isChinese ? '按报表名称或描述搜索' : 'Search by report name or description',
+      filters: isChinese ? ['创建者', '分类'] : ['Created by', 'Category'],
       tabs: [
-        { label: 'All reports', active: true },
-        { label: 'Sales' },
-        { label: 'Finance' },
-        { label: 'Appointments' },
-        { label: 'Team' },
-        { label: 'Clients' },
-        { label: 'Inventory' }
+        { label: isChinese ? '全部报表' : 'All reports', active: true },
+        { label: isChinese ? '销售' : 'Sales' },
+        { label: isChinese ? '财务' : 'Finance' },
+        { label: isChinese ? '预约' : 'Appointments' },
+        { label: isChinese ? '团队' : 'Team' },
+        { label: isChinese ? '客户' : 'Clients' },
+        { label: isChinese ? '库存' : 'Inventory' }
       ],
       cards: [
         {
-          title: 'Performance dashboard',
-          description: 'Dashboard of your business performance.'
+          title: isChinese ? '经营表现仪表板' : 'Performance dashboard',
+          description: isChinese ? '查看你的业务表现总览。' : 'Dashboard of your business performance.'
         },
         {
-          title: 'Online presence dashboard',
-          description: 'Online sales and online client performance.'
+          title: isChinese ? '线上表现仪表板' : 'Online presence dashboard',
+          description: isChinese ? '查看线上销售和线上客户表现。' : 'Online sales and online client performance.'
         },
         {
-          title: 'Loyalty dashboard',
-          description: 'Dashboard of your loyalty program performance.'
+          title: isChinese ? '会员忠诚度仪表板' : 'Loyalty dashboard',
+          description: isChinese ? '查看忠诚度计划的表现。' : 'Dashboard of your loyalty program performance.'
         }
       ]
     }

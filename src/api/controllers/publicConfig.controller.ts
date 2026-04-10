@@ -5,6 +5,7 @@ import {
   defaultServiceLocation,
   serviceLocationValues
 } from '../../platform/serviceLocation.constants';
+import { preferredLanguageOptions } from '../../platform/clientPlatform.types';
 
 export const publicConfigController = (_req: Request, res: Response): void => {
   const bookingLocationLabels = {
@@ -18,6 +19,7 @@ export const publicConfigController = (_req: Request, res: Response): void => {
     supportPlatformName: env.PUBLIC_SUPPORT_PLATFORM_NAME?.trim() ?? '',
     supportWebsiteUrl: env.PUBLIC_SUPPORT_WEBSITE_URL?.trim() ?? env.PUBLIC_BASE_URL ?? '',
     supportFocusText: env.PUBLIC_SUPPORT_FOCUS_TEXT?.trim() ?? '',
+    preferredLanguages: preferredLanguageOptions,
     serviceLabelSingular: env.PUBLIC_SERVICE_LABEL_SINGULAR?.trim() ?? '',
     serviceLabelPlural: env.PUBLIC_SERVICE_LABEL_PLURAL?.trim() ?? '',
     serviceMenuTitle: env.PUBLIC_SERVICE_MENU_TITLE?.trim() ?? '',

@@ -2271,6 +2271,27 @@ textarea:focus-visible {
   margin-top: 42px;
 }
 
+.onboarding-language-page .onboarding-main {
+  width: min(980px, 100%);
+}
+
+.onboarding-language-page .onboarding-copy {
+  max-width: 680px;
+}
+
+.onboarding-language-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  max-width: 100%;
+}
+
+.onboarding-language-grid .account-type-card {
+  min-height: 108px;
+}
+
+.onboarding-language-grid .account-type-card span:last-child {
+  font-size: 0.94rem;
+}
+
 .account-type-card {
   position: relative;
   display: grid;
@@ -7205,9 +7226,16 @@ button.calendar-reports-summary-card {
   .schedule-grid,
   .pricing-grid,
   .service-type-grid,
-  .account-type-grid,
   .venue-location-layout {
     grid-template-columns: 1fr;
+  }
+
+  .account-type-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .onboarding-language-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .calendar-appointments-header {
@@ -7241,6 +7269,10 @@ button.calendar-reports-summary-card {
   .calendar-client-directory-metrics,
   .calendar-client-directory-results {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .onboarding-language-grid {
+    grid-template-columns: 1fr;
   }
 
   .calendar-client-directory-card-row {

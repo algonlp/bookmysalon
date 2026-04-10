@@ -7,7 +7,25 @@ export type AuthProvider = 'email' | 'facebook' | 'google' | 'apple';
 
 export type AccountType = 'independent' | 'team';
 
-export type PreferredLanguage = 'english' | 'urdu' | 'arabic';
+export const preferredLanguageOptions = [
+  { value: 'english', label: 'English' },
+  { value: 'urdu', label: 'Urdu' },
+  { value: 'arabic', label: 'Arabic' },
+  { value: 'hindi', label: 'Hindi' },
+  { value: 'spanish', label: 'Spanish' },
+  { value: 'french', label: 'French' },
+  { value: 'german', label: 'German' },
+  { value: 'turkish', label: 'Turkish' },
+  { value: 'portuguese', label: 'Portuguese' },
+  { value: 'chinese', label: 'Chinese' }
+] as const;
+
+export type PreferredLanguage = (typeof preferredLanguageOptions)[number]['value'];
+
+export const preferredLanguageValues = preferredLanguageOptions.map((option) => option.value) as [
+  PreferredLanguage,
+  ...PreferredLanguage[]
+];
 
 export type WeekdayId =
   | 'sunday'
@@ -318,6 +336,78 @@ export interface DashboardReportCard {
   description: string;
 }
 
+export interface DashboardUiCopy {
+  locale: string;
+  bookingSourceLabels: {
+    qr: string;
+    direct: string;
+    instagram: string;
+    facebook: string;
+    applemaps: string;
+  };
+  appointmentStatusLabels: {
+    booked: string;
+    completed: string;
+    cancelled: string;
+  };
+  bookedAppointmentActionLabels: {
+    edit: string;
+    runningLate: string;
+    complete: string;
+    cancel: string;
+  };
+  calendar: {
+    today: string;
+    day: string;
+    agenda: string;
+    add: string;
+    addMenuAria: string;
+    bookAppointment: string;
+    showQrCode: string;
+    groupAppointment: string;
+    blockedTime: string;
+    sale: string;
+    quickPayment: string;
+    onlineBookingsTitle: string;
+    onlineBookingsDescription: string;
+    bookingLinkLabel: string;
+    filterAll: string;
+    filterBooked: string;
+    filterQr: string;
+    overviewSelectedDayLabel: string;
+    overviewSelectedDayMeta: string;
+    overviewComingAppointmentLabel: string;
+    overviewComingAppointmentMeta: string;
+    overviewNextClientLabel: string;
+    overviewNextClientMeta: string;
+    overviewNextClientEmpty: string;
+    appointmentsEmptyTitle: string;
+    appointmentsEmptyDescription: string;
+    qrEyebrow: string;
+    qrTitle: string;
+    qrDescription: string;
+    qrPrint: string;
+  };
+  reports: {
+    allFolders: string;
+    rangeToday: string;
+    range7Days: string;
+    range30Days: string;
+    range90Days: string;
+    lastDaysTemplate: string;
+    exportCsv: string;
+    print: string;
+    newCustomReport: string;
+    revenue: string;
+    appointments: string;
+    completed: string;
+    clients: string;
+    bookedInRangeTemplate: string;
+    completionFlowTemplate: string;
+    repeatClientsTeamTemplate: string;
+  };
+}
+
 export interface DashboardReportsView {
   sidebarTitle: string;
   menu: DashboardListItem[];
@@ -367,6 +457,7 @@ export interface DashboardViewModel {
   currentDateLabel: string;
   currentTimeLabel: string;
   appointments: DashboardAppointmentViewModel[];
+  uiCopy: DashboardUiCopy;
   sideDrawers: {
     sales: DashboardDrawer;
     clients: DashboardDrawer;
