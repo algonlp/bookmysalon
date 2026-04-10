@@ -2044,44 +2044,44 @@ textarea:focus-visible {
 }
 
 .onboarding-service-types-page .onboarding-main-wide {
-  width: min(900px, 100%);
+  width: min(740px, 100%);
 }
 
 .onboarding-service-types-page .onboarding-eyebrow {
-  margin-bottom: 10px;
-  font-size: 0.82rem;
+  margin-bottom: 14px;
+  font-size: 0.92rem;
 }
 
-.service-type-copy {
-  max-width: 560px;
+.onboarding-service-types-page .service-type-copy {
+  max-width: 620px;
 }
 
-.service-type-copy h1 {
-  font-size: clamp(2.15rem, 3.8vw, 3.15rem);
-  line-height: 1.08;
+.onboarding-service-types-page .service-type-copy h1 {
+  font-size: clamp(2.6rem, 5vw, 4rem);
+  line-height: 1.04;
 }
 
 .onboarding-service-types-page .onboarding-description {
-  max-width: 520px;
-  font-size: 0.98rem;
+  max-width: 620px;
+  font-size: 1.03rem;
 }
 
 .onboarding-service-types-page .service-type-section {
-  margin-top: 34px;
+  margin-top: 42px;
 }
 
 .service-type-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .service-type-bulk-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
+  min-height: 40px;
   padding: 0 16px;
   border: 1px solid rgba(89, 79, 226, 0.16);
   border-radius: 999px;
@@ -2122,7 +2122,7 @@ textarea:focus-visible {
   min-height: 28px;
   margin-bottom: 14px;
   color: #1b2533;
-  font-size: 0.93rem;
+  font-size: 0.91rem;
   font-weight: 700;
 }
 
@@ -2134,16 +2134,16 @@ textarea:focus-visible {
 .service-type-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 
 .service-type-card {
   position: relative;
   display: grid;
   justify-items: start;
-  gap: 14px;
-  min-height: 96px;
-  padding: 18px 16px;
+  gap: 12px;
+  min-height: 88px;
+  padding: 16px 15px;
   border: 1px solid rgba(17, 17, 17, 0.1);
   border-radius: 22px;
   background: linear-gradient(180deg, rgba(255, 252, 248, 0.94), rgba(255, 248, 242, 0.84));
@@ -2201,8 +2201,8 @@ textarea:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border: 1px solid rgba(108, 76, 245, 0.14);
   border-radius: 16px;
   background:
@@ -2217,8 +2217,8 @@ textarea:focus-visible {
 }
 
 .service-type-icon svg {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   fill: none;
   stroke: #5547d8;
   stroke-width: 1.85;
@@ -2248,19 +2248,19 @@ textarea:focus-visible {
 }
 
 .service-type-card span:last-child {
-  font-size: 0.94rem;
+  font-size: 0.9rem;
   font-weight: 700;
   line-height: 1.4;
 }
 
 .onboarding-service-types-page .onboarding-footer-wide {
-  width: min(900px, 100%);
+  width: min(740px, 100%);
 }
 
 .onboarding-service-types-page .onboarding-continue {
-  min-width: 120px;
-  min-height: 44px;
-  font-size: 0.9rem;
+  min-width: 132px;
+  min-height: 48px;
+  font-size: 0.95rem;
 }
 
 .account-type-grid {
