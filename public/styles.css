@@ -2043,6 +2043,33 @@ textarea:focus-visible {
   margin-top: 42px;
 }
 
+.onboarding-service-types-page .onboarding-main-wide {
+  width: min(900px, 100%);
+}
+
+.onboarding-service-types-page .onboarding-eyebrow {
+  margin-bottom: 10px;
+  font-size: 0.82rem;
+}
+
+.service-type-copy {
+  max-width: 560px;
+}
+
+.service-type-copy h1 {
+  font-size: clamp(2.15rem, 3.8vw, 3.15rem);
+  line-height: 1.08;
+}
+
+.onboarding-service-types-page .onboarding-description {
+  max-width: 520px;
+  font-size: 0.98rem;
+}
+
+.onboarding-service-types-page .service-type-section {
+  margin-top: 34px;
+}
+
 .service-type-actions {
   display: flex;
   flex-wrap: wrap;
@@ -2054,13 +2081,14 @@ textarea:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 46px;
-  padding: 0 18px;
+  min-height: 42px;
+  padding: 0 16px;
   border: 1px solid rgba(89, 79, 226, 0.16);
   border-radius: 999px;
   background: rgba(89, 79, 226, 0.09);
   color: #473dca;
   font: inherit;
+  font-size: 0.92rem;
   font-weight: 800;
   transition:
     transform 180ms ease,
@@ -2092,9 +2120,9 @@ textarea:focus-visible {
 
 .selected-summary {
   min-height: 28px;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
   color: #1b2533;
-  font-size: 0.98rem;
+  font-size: 0.93rem;
   font-weight: 700;
 }
 
@@ -2106,16 +2134,16 @@ textarea:focus-visible {
 .service-type-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 14px;
 }
 
 .service-type-card {
   position: relative;
   display: grid;
   justify-items: start;
-  gap: 18px;
-  min-height: 114px;
-  padding: 22px 18px;
+  gap: 14px;
+  min-height: 96px;
+  padding: 18px 16px;
   border: 1px solid rgba(17, 17, 17, 0.1);
   border-radius: 22px;
   background: linear-gradient(180deg, rgba(255, 252, 248, 0.94), rgba(255, 248, 242, 0.84));
@@ -2173,10 +2201,10 @@ textarea:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   border: 1px solid rgba(108, 76, 245, 0.14);
-  border-radius: 18px;
+  border-radius: 16px;
   background:
     radial-gradient(circle at top left, rgba(255, 255, 255, 0.82), transparent 38%),
     linear-gradient(180deg, rgba(108, 76, 245, 0.1), rgba(108, 76, 245, 0.04));
@@ -2189,8 +2217,8 @@ textarea:focus-visible {
 }
 
 .service-type-icon svg {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   fill: none;
   stroke: #5547d8;
   stroke-width: 1.85;
@@ -2220,9 +2248,19 @@ textarea:focus-visible {
 }
 
 .service-type-card span:last-child {
-  font-size: 0.98rem;
+  font-size: 0.94rem;
   font-weight: 700;
   line-height: 1.4;
+}
+
+.onboarding-service-types-page .onboarding-footer-wide {
+  width: min(900px, 100%);
+}
+
+.onboarding-service-types-page .onboarding-continue {
+  min-width: 120px;
+  min-height: 44px;
+  font-size: 0.9rem;
 }
 
 .account-type-grid {
@@ -7440,6 +7478,10 @@ button.calendar-reports-summary-card {
 
   .onboarding-copy h1 {
     font-size: clamp(2.2rem, 11vw, 3.3rem);
+  }
+
+  .service-type-copy h1 {
+    font-size: clamp(1.9rem, 9vw, 2.6rem);
   }
 
   .business-copy h1 {
