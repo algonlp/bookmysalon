@@ -360,6 +360,8 @@ export interface DashboardUiCopy {
     today: string;
     day: string;
     agenda: string;
+    dateTimeConnector?: string;
+    bookingSourceTemplate?: string;
     add: string;
     addMenuAria: string;
     bookAppointment: string;

@@ -304,24 +304,24 @@ describe('Client platform API', () => {
     expect(dashboardResponse.body.dashboard.businessName).toBe('Maqsood Studio');
     expect(dashboardResponse.body.dashboard.ownerName).toBe('Maqsood Studio');
     expect(dashboardResponse.body.dashboard.profileImageUrl).toBe(uploadedProfileImage);
-    expect(dashboardResponse.body.dashboard.setupButtonLabel).toBe('Setup complete');
+    expect(dashboardResponse.body.dashboard.setupButtonLabel).toBe('Configuracion completa');
     expect(dashboardResponse.body.dashboard.setupButtonPath).toBe('/guides/legendary-learner');
-    expect(dashboardResponse.body.dashboard.currentDateLabel).toMatch(/^[A-Z][a-z]{2} \d{1,2} [A-Z][a-z]{2}$/);
+    expect(dashboardResponse.body.dashboard.currentDateLabel).toMatch(/^\S+ \d{1,2} \S+$/);
     expect(dashboardResponse.body.dashboard.currentTimeLabel).toMatch(/^\d{2}:\d{2}$/);
-    expect(dashboardResponse.body.dashboard.sideDrawers.sales.title).toBe('Sales');
+    expect(dashboardResponse.body.dashboard.sideDrawers.sales.title).toBe('Ventas');
     expect(dashboardResponse.body.dashboard.sideDrawers.sales.sections[0].items).toEqual(
-      expect.arrayContaining([expect.objectContaining({ label: 'Daily sales summary' })])
+      expect.arrayContaining([expect.objectContaining({ label: 'Resumen diario de ventas' })])
     );
-    expect(dashboardResponse.body.dashboard.sideDrawers.clients.title).toBe('Clients');
+    expect(dashboardResponse.body.dashboard.sideDrawers.clients.title).toBe('Clientes');
     expect(dashboardResponse.body.dashboard.sideDrawers.catalog.sections[1].title).toBe(
-      'Inventory'
+      'Inventario'
     );
     expect(dashboardResponse.body.dashboard.sideDrawers.team.sections[0].items).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ label: 'Timesheets', meta: { type: 'dot' } }),
+        expect.objectContaining({ label: 'Hojas de horas', meta: { type: 'dot' } }),
         expect.objectContaining({
-          label: 'Team members',
-          subtitle: expect.stringContaining('1 active barber')
+          label: 'Miembros del equipo',
+          subtitle: expect.stringContaining('1 barbero')
         })
       ])
     );
@@ -334,14 +334,14 @@ describe('Client platform API', () => {
       ])
     );
     expect(dashboardResponse.body.dashboard.reportsView.pageTitle).toBe(
-      'Reporting and analytics'
+      'Informes y analitica'
     );
     expect(dashboardResponse.body.dashboard.reportsView.menu[0]).toEqual(
-      expect.objectContaining({ label: 'All reports', active: true })
+      expect.objectContaining({ label: 'Todos los informes', active: true })
     );
     expect(dashboardResponse.body.dashboard.reportsView.cards).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ title: 'Performance dashboard' })
+        expect.objectContaining({ title: 'Panel de rendimiento' })
       ])
     );
 

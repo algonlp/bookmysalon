@@ -26,6 +26,8 @@ const DEFAULT_DASHBOARD_UI_COPY = {
     today: 'Today',
     day: 'Day',
     agenda: 'Agenda',
+    dateTimeConnector: 'at',
+    bookingSourceTemplate: '{source} booking',
     add: 'Add',
     addMenuAria: 'Add menu',
     bookAppointment: 'Book appointment',
@@ -114,6 +116,7 @@ const TEAM_MEMBER_WEEKDAY_IDS = [
   'friday',
   'saturday'
 ];
+const BOOKING_SOURCE_VALUES = ['qr', 'direct', 'instagram', 'facebook', 'applemaps'];
 
 const getDashboardUiCopy = () => currentDashboardUiCopy;
 
@@ -133,7 +136,7 @@ const normalizeBookingSource = (sourceValue) => {
 
   const normalizedValue = sourceValue.trim().toLowerCase();
 
-  return Object.prototype.hasOwnProperty.call(BOOKING_SOURCE_LABELS, normalizedValue)
+  return BOOKING_SOURCE_VALUES.includes(normalizedValue)
     ? normalizedValue
     : 'direct';
 };
@@ -193,7 +196,11 @@ const formatDateTimeForDisplay = (dateValue, timeValue) => {
   const formattedTime = formatTimeForDisplay(timeValue);
 
   if (formattedDate && formattedTime) {
-    return `${formattedDate} at ${formattedTime}`;
+    const connector =
+      getDashboardUiCopy().calendar?.dateTimeConnector ??
+      DEFAULT_DASHBOARD_UI_COPY.calendar.dateTimeConnector;
+
+    return connector ? `${formattedDate} ${connector} ${formattedTime}` : `${formattedDate} ${formattedTime}`;
   }
 
   return formattedDate || formattedTime;
@@ -1039,7 +1046,11 @@ const renderDashboardAppointments = (
 
     const source = document.createElement('span');
     source.className = 'calendar-appointment-source';
-    source.textContent = `${formatBookingSourceLabel(appointment.source)} booking`;
+    source.textContent = interpolateLabel(
+      getDashboardUiCopy().calendar?.bookingSourceTemplate ??
+        DEFAULT_DASHBOARD_UI_COPY.calendar.bookingSourceTemplate,
+      { source: formatBookingSourceLabel(appointment.source) }
+    );
 
     footer.append(meta, source);
 

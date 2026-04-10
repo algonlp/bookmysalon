@@ -12,6 +12,12 @@ import {
   defaultServiceLocation,
   normalizeServiceLocations
 } from './serviceLocation.constants';
+import {
+  getDashboardContentForLanguage,
+  getDashboardLocaleKey,
+  getDashboardUiCopyForLanguage,
+  interpolateDashboardLabel
+} from './dashboardLocalization';
 import { preferredLanguageValues } from './clientPlatform.types';
 import type { AppointmentRecord } from '../appointments/appointment.types';
 import {
@@ -85,7 +91,7 @@ const WEEKDAY_IDS: WeekdayId[] = [
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
-const DASHBOARD_UI_COPY_BY_LANGUAGE: Record<'english' | 'chinese', DashboardUiCopy> = {
+const DASHBOARD_UI_COPY_BY_LANGUAGE: Record<PreferredLanguage, DashboardUiCopy> = {
   english: {
     locale: 'en-GB',
     bookingSourceLabels: {
@@ -110,6 +116,8 @@ const DASHBOARD_UI_COPY_BY_LANGUAGE: Record<'english' | 'chinese', DashboardUiCo
       today: 'Today',
       day: 'Day',
       agenda: 'Agenda',
+      dateTimeConnector: 'at',
+      bookingSourceTemplate: '{source} booking',
       add: 'Add',
       addMenuAria: 'Add menu',
       bookAppointment: 'Book appointment',
@@ -157,89 +165,651 @@ const DASHBOARD_UI_COPY_BY_LANGUAGE: Record<'english' | 'chinese', DashboardUiCo
       clients: 'Clients',
       bookedInRangeTemplate: '{count} booked in range',
       completionFlowTemplate: '{label} completion flow',
-      repeatClientsTeamTemplate: '{repeat} repeat • {team} team'
+      repeatClientsTeamTemplate: '{repeat} repeat â€¢ {team} team'
     }
   },
   chinese: {
     locale: 'zh-CN',
     bookingSourceLabels: {
-      qr: '二维码',
-      direct: '直接',
+      qr: '\u4e8c\u7ef4\u7801',
+      direct: '\u76f4\u63a5',
       instagram: 'Instagram',
       facebook: 'Facebook',
-      applemaps: 'Apple 地图'
+      applemaps: 'Apple \u5730\u56fe'
     },
     appointmentStatusLabels: {
-      booked: '已预约',
-      completed: '已完成',
-      cancelled: '已取消'
+      booked: '\u5df2\u9884\u7ea6',
+      completed: '\u5df2\u5b8c\u6210',
+      cancelled: '\u5df2\u53d6\u6d88'
     },
     bookedAppointmentActionLabels: {
-      edit: '编辑',
-      runningLate: '延迟通知',
-      complete: '完成',
-      cancel: '取消'
+      edit: '\u7f16\u8f91',
+      runningLate: '\u5ef6\u8fdf\u901a\u77e5',
+      complete: '\u5b8c\u6210',
+      cancel: '\u53d6\u6d88'
     },
     calendar: {
-      today: '今天',
-      day: '日视图',
-      agenda: '列表视图',
-      add: '新增',
-      addMenuAria: '新增菜单',
-      bookAppointment: '预约服务',
-      showQrCode: '显示二维码',
-      groupAppointment: '团体预约',
-      blockedTime: '封锁时间',
-      sale: '销售',
-      quickPayment: '快速收款',
-      onlineBookingsTitle: '在线预约',
-      onlineBookingsDescription: '这里显示通过公开预约页、社交链接和二维码产生的预约。',
-      bookingLinkLabel: '打开预约页面',
-      filterAll: '全部',
-      filterBooked: '已预约',
-      filterQr: '二维码来源',
-      overviewSelectedDayLabel: '所选日期',
-      overviewSelectedDayMeta: '该日期的预约数量',
-      overviewComingAppointmentLabel: '即将开始',
-      overviewComingAppointmentMeta: '当前有效预约',
-      overviewNextClientLabel: '下一位客户',
-      overviewNextClientMeta: '所选日期内的下一个预约',
-      overviewNextClientEmpty: '暂无预约',
-      appointmentsEmptyTitle: '暂无预约',
-      appointmentsEmptyDescription: '分享你的预约页面、社交链接或二维码来开始接收预约。',
-      qrEyebrow: '分享预约二维码',
-      qrTitle: '扫码预约',
-      qrDescription: '把这个二维码放在店门口，客户扫码后就能立即预约。',
-      qrPrint: '打印二维码'
+      today: '\u4eca\u5929',
+      day: '\u65e5\u89c6\u56fe',
+      agenda: '\u5217\u8868\u89c6\u56fe',
+      dateTimeConnector: '',
+      bookingSourceTemplate: '{source}\u9884\u7ea6',
+      add: '\u65b0\u589e',
+      addMenuAria: '\u65b0\u589e\u83dc\u5355',
+      bookAppointment: '\u9884\u7ea6\u670d\u52a1',
+      showQrCode: '\u663e\u793a\u4e8c\u7ef4\u7801',
+      groupAppointment: '\u56e2\u4f53\u9884\u7ea6',
+      blockedTime: '\u5c01\u9501\u65f6\u95f4',
+      sale: '\u9500\u552e',
+      quickPayment: '\u5feb\u901f\u6536\u6b3e',
+      onlineBookingsTitle: '\u5728\u7ebf\u9884\u7ea6',
+      onlineBookingsDescription: '\u8fd9\u91cc\u663e\u793a\u901a\u8fc7\u516c\u5f00\u9884\u7ea6\u9875\u3001\u793e\u4ea4\u94fe\u63a5\u548c\u4e8c\u7ef4\u7801\u4ea7\u751f\u7684\u9884\u7ea6\u3002',
+      bookingLinkLabel: '\u6253\u5f00\u9884\u7ea6\u9875\u9762',
+      filterAll: '\u5168\u90e8',
+      filterBooked: '\u5df2\u9884\u7ea6',
+      filterQr: '\u4e8c\u7ef4\u7801\u6765\u6e90',
+      overviewSelectedDayLabel: '\u6240\u9009\u65e5\u671f',
+      overviewSelectedDayMeta: '\u8be5\u65e5\u671f\u7684\u9884\u7ea6\u6570\u91cf',
+      overviewComingAppointmentLabel: '\u5373\u5c06\u5f00\u59cb',
+      overviewComingAppointmentMeta: '\u5f53\u524d\u6709\u6548\u9884\u7ea6',
+      overviewNextClientLabel: '\u4e0b\u4e00\u4f4d\u5ba2\u6237',
+      overviewNextClientMeta: '\u6240\u9009\u65e5\u671f\u5185\u7684\u4e0b\u4e00\u4e2a\u9884\u7ea6',
+      overviewNextClientEmpty: '\u6682\u65e0\u9884\u7ea6',
+      appointmentsEmptyTitle: '\u6682\u65e0\u9884\u7ea6',
+      appointmentsEmptyDescription: '\u5206\u4eab\u4f60\u7684\u9884\u7ea6\u9875\u9762\u3001\u793e\u4ea4\u94fe\u63a5\u6216\u4e8c\u7ef4\u7801\u6765\u5f00\u59cb\u63a5\u6536\u9884\u7ea6\u3002',
+      qrEyebrow: '\u5206\u4eab\u9884\u7ea6\u4e8c\u7ef4\u7801',
+      qrTitle: '\u626b\u7801\u9884\u7ea6',
+      qrDescription: '\u628a\u8fd9\u4e2a\u4e8c\u7ef4\u7801\u653e\u5728\u5e97\u95e8\u53e3\uff0c\u5ba2\u6237\u626b\u7801\u540e\u5c31\u80fd\u7acb\u5373\u9884\u7ea6\u3002',
+      qrPrint: '\u6253\u5370\u4e8c\u7ef4\u7801'
     },
     reports: {
-      allFolders: '全部文件夹',
-      rangeToday: '今天',
-      range7Days: '7天',
-      range30Days: '30天',
-      range90Days: '90天',
-      lastDaysTemplate: '最近 {days} 天',
-      exportCsv: '导出 CSV',
-      print: '打印',
-      newCustomReport: '新建自定义报表',
-      revenue: '收入',
-      appointments: '预约',
-      completed: '已完成',
-      clients: '客户',
-      bookedInRangeTemplate: '区间内已预约 {count} 个',
-      completionFlowTemplate: '{label} 完成趋势',
-      repeatClientsTeamTemplate: '回头客 {repeat} • 团队 {team}'
+      allFolders: '\u5168\u90e8\u6587\u4ef6\u5939',
+      rangeToday: '\u4eca\u5929',
+      range7Days: '7\u5929',
+      range30Days: '30\u5929',
+      range90Days: '90\u5929',
+      lastDaysTemplate: '\u6700\u8fd1 {days} \u5929',
+      exportCsv: '\u5bfc\u51fa CSV',
+      print: '\u6253\u5370',
+      newCustomReport: '\u65b0\u5efa\u81ea\u5b9a\u4e49\u62a5\u8868',
+      revenue: '\u6536\u5165',
+      appointments: '\u9884\u7ea6',
+      completed: '\u5df2\u5b8c\u6210',
+      clients: '\u5ba2\u6237',
+      bookedInRangeTemplate: '\u533a\u95f4\u5185\u5df2\u9884\u7ea6 {count} \u4e2a',
+      completionFlowTemplate: '{label} \u5b8c\u6210\u8d8b\u52bf',
+      repeatClientsTeamTemplate: '\u56de\u5934\u5ba2 {repeat} \u2022 \u56e2\u961f {team}'
+    }
+  },
+  urdu: {
+    locale: 'ur-PK',
+    bookingSourceLabels: {
+      qr: 'QR',
+      direct: '\u0633\u06cc\u062f\u06be\u0627',
+      instagram: 'Instagram',
+      facebook: 'Facebook',
+      applemaps: '\u0627\u06cc\u067e\u0644 \u0645\u06cc\u067e\u0633'
+    },
+    appointmentStatusLabels: {
+      booked: '\u0628\u06a9',
+      completed: '\u0645\u06a9\u0645\u0644',
+      cancelled: '\u0645\u0646\u0633\u0648\u062e'
+    },
+    bookedAppointmentActionLabels: {
+      edit: '\u062a\u0631\u0645\u06cc\u0645',
+      runningLate: '\u062a\u0627\u062e\u06cc\u0631',
+      complete: '\u0645\u06a9\u0645\u0644',
+      cancel: '\u0645\u0646\u0633\u0648\u062e'
+    },
+    calendar: {
+      today: '\u0622\u062c',
+      day: '\u062f\u0646',
+      agenda: '\u0641\u06c1\u0631\u0633\u062a',
+      add: '\u0634\u0627\u0645\u0644 \u06a9\u0631\u06cc\u06ba',
+      addMenuAria: '\u0645\u06cc\u0646\u0648',
+      bookAppointment: '\u0627\u067e\u0627\u0626\u0646\u0679 \u0645\u0646\u0679',
+      showQrCode: 'QR \u06a9\u0648\u0688',
+      groupAppointment: '\u06af\u0631\u0648\u067e \u0627\u067e\u0627\u0626\u0646\u0679 \u0645\u0646\u0679',
+      blockedTime: '\u0628\u0644\u0627\u06a9 \u0648\u0642\u062a',
+      sale: '\u0633\u06cc\u0644',
+      quickPayment: '\u0641\u0648\u0631\u06cc \u0627\u062f\u0627\u0626\u06cc\u06af\u06cc',
+      onlineBookingsTitle: '\u0622\u0646 \u0644\u0627\u0626\u0646 \u0628\u06a9\u0646\u06af\u0632',
+      onlineBookingsDescription: '\u067e\u0628\u0644\u06a9 \u0644\u0646\u06a9\u0632 \u0627\u0648\u0631 QR \u06a9\u0648\u0688 \u0633\u06d2 \u0622\u0646\u06d2 \u0648\u0627\u0644\u06cc \u0628\u06a9\u0646\u06af\u0632 \u06cc\u06c1\u0627\u06ba \u062f\u06a9\u06be\u0627\u0626\u06cc \u062c\u0627\u062a\u06cc \u06c1\u06cc\u06ba\u06d4',
+      bookingLinkLabel: '\u0628\u06a9\u0646\u06af \u067e\u06cc\u062c',
+      filterAll: '\u0633\u0628',
+      filterBooked: '\u0628\u06a9',
+      filterQr: 'QR',
+      overviewSelectedDayLabel: '\u0645\u0646\u062a\u062e\u0628 \u062f\u0646',
+      overviewSelectedDayMeta: '\u0627\u0633 \u062f\u0646 \u06a9\u06cc \u0628\u06a9\u0646\u06af\u0632',
+      overviewComingAppointmentLabel: '\u0622\u0646\u06d2 \u0648\u0627\u0644\u06cc \u0627\u067e\u0627\u0626\u0646\u0679 \u0645\u0646\u0679',
+      overviewComingAppointmentMeta: '\u0641\u0639\u0627\u0644 \u0628\u06a9\u0646\u06af\u0632',
+      overviewNextClientLabel: '\u0627\u06af\u0644\u0627 \u06a9\u0644\u0627\u0626\u0646\u0679',
+      overviewNextClientMeta: '\u0627\u06af\u0644\u06cc \u0628\u06a9\u0646\u06af',
+      overviewNextClientEmpty: '\u0627\u0628\u06be\u06cc \u06a9\u0648\u0626\u06cc \u0628\u06a9\u0646\u06af \u0646\u06c1\u06cc\u06ba',
+      appointmentsEmptyTitle: '\u0627\u0628\u06be\u06cc \u06a9\u0648\u0626\u06cc \u0628\u06a9\u0646\u06af \u0646\u06c1\u06cc\u06ba',
+      appointmentsEmptyDescription: '\u0628\u06a9\u0646\u06af \u067e\u06cc\u062c \u06cc\u0627 QR \u06a9\u0648\u0688 \u0634\u06cc\u0626\u0631 \u06a9\u0631\u06cc\u06ba \u062a\u0627\u06a9\u06c1 \u0628\u06a9\u0646\u06af \u0634\u0631\u0648\u0639 \u06c1\u0648\u06d4',
+      qrEyebrow: 'QR',
+      qrTitle: '\u0627\u0633\u06a9\u06cc\u0646 \u06a9\u0631\u06cc\u06ba',
+      qrDescription: 'QR \u06a9\u0648\u0688 \u062f\u0631\u0648\u0627\u0632\u06d2 \u067e\u0631 \u0631\u06a9\u06be\u06cc\u06ba \u062a\u0627\u06a9\u06c1 \u06a9\u0644\u0627\u0626\u0646\u0679 \u0641\u0648\u0631\u0627\u064b \u0628\u06a9 \u06a9\u0631 \u0633\u06a9\u06cc\u06ba\u06d4',
+      qrPrint: '\u067e\u0631\u0646\u0679'
+    },
+    reports: {
+      allFolders: '\u062a\u0645\u0627\u0645 \u0641\u0648\u0644\u0688\u0631\u0632',
+      rangeToday: '\u0622\u062c',
+      range7Days: '7 \u062f\u0646',
+      range30Days: '30 \u062f\u0646',
+      range90Days: '90 \u062f\u0646',
+      lastDaysTemplate: '\u067e\u0686\u06be\u0644\u06d2 {days} \u062f\u0646',
+      exportCsv: 'CSV',
+      print: '\u067e\u0631\u0646\u0679',
+      newCustomReport: '\u0646\u06cc\u0627 \u0631\u067e\u0648\u0631\u0679',
+      revenue: '\u0622\u0645\u062f\u0646',
+      appointments: '\u0627\u067e\u0627\u0626\u0646\u0679 \u0645\u0646\u0679\u0632',
+      completed: '\u0645\u06a9\u0645\u0644',
+      clients: '\u06a9\u0644\u0627\u0626\u0646\u0679\u0632',
+      bookedInRangeTemplate: '{count} \u0628\u06a9',
+      completionFlowTemplate: '{label} \u0641\u0644\u0648',
+      repeatClientsTeamTemplate: '{repeat} \u062f\u0648\u0628\u0627\u0631\u06c1 â€¢ {team} \u0679\u06cc\u0645'
+    }
+  },
+  arabic: {
+    locale: 'ar-SA',
+    bookingSourceLabels: {
+      qr: 'QR',
+      direct: '\u0645\u0628\u0627\u0634\u0631',
+      instagram: 'Instagram',
+      facebook: 'Facebook',
+      applemaps: '\u062e\u0631\u0627\u0626\u0637 Apple'
+    },
+    appointmentStatusLabels: {
+      booked: '\u0645\u062d\u062c\u0648\u0632',
+      completed: '\u0645\u0643\u062a\u0645\u0644',
+      cancelled: '\u0645\u0644\u063a\u0649'
+    },
+    bookedAppointmentActionLabels: {
+      edit: '\u062a\u0639\u062f\u064a\u0644',
+      runningLate: '\u062a\u0623\u062e\u064a\u0631',
+      complete: '\u0625\u0643\u0645\u0627\u0644',
+      cancel: '\u0625\u0644\u063a\u0627\u0621'
+    },
+    calendar: {
+      today: '\u0627\u0644\u064a\u0648\u0645',
+      day: '\u0627\u0644\u064a\u0648\u0645',
+      agenda: '\u0627\u0644\u062c\u062f\u0648\u0644',
+      add: '\u0625\u0636\u0627\u0641\u0629',
+      addMenuAria: '\u0642\u0627\u0626\u0645\u0629',
+      bookAppointment: '\u062d\u062c\u0632 \u0645\u0648\u0639\u062f',
+      showQrCode: 'QR',
+      groupAppointment: '\u0645\u0648\u0639\u062f \u062c\u0645\u0627\u0639\u064a',
+      blockedTime: '\u0648\u0642\u062a \u0645\u062d\u062c\u0648\u0632',
+      sale: '\u0628\u064a\u0639',
+      quickPayment: '\u062f\u0641\u0639 \u0633\u0631\u064a\u0639',
+      onlineBookingsTitle: '\u0627\u0644\u062d\u062c\u0648\u0632\u0627\u062a \u0639\u0628\u0631 \u0627\u0644\u0625\u0646\u062a\u0631\u0646\u062a',
+      onlineBookingsDescription: '\u0627\u0644\u062d\u062c\u0648\u0632\u0627\u062a \u0645\u0646 \u0627\u0644\u0631\u0648\u0627\u0628\u0637 \u0627\u0644\u0639\u0627\u0645\u0629 \u0648\u0627\u0644\u0631\u0648\u0627\u0628\u0637 \u0627\u0644\u0627\u062c\u062a\u0645\u0627\u0639\u064a\u0629 \u0648 QR \u062a\u0638\u0647\u0631 \u0647\u0646\u0627.',
+      bookingLinkLabel: '\u0635\u0641\u062d\u0629 \u0627\u0644\u062d\u062c\u0632',
+      filterAll: '\u0627\u0644\u0643\u0644',
+      filterBooked: '\u0645\u062d\u062c\u0648\u0632',
+      filterQr: 'QR',
+      overviewSelectedDayLabel: '\u0627\u0644\u064a\u0648\u0645 \u0627\u0644\u0645\u062d\u062f\u062f',
+      overviewSelectedDayMeta: '\u062d\u062c\u0648\u0632\u0627\u062a \u0647\u0630\u0627 \u0627\u0644\u064a\u0648\u0645',
+      overviewComingAppointmentLabel: '\u0627\u0644\u0645\u0648\u0639\u062f \u0627\u0644\u0642\u0627\u062f\u0645',
+      overviewComingAppointmentMeta: '\u0627\u0644\u062d\u062c\u0648\u0632\u0627\u062a \u0627\u0644\u0641\u0639\u0627\u0644\u0629',
+      overviewNextClientLabel: '\u0627\u0644\u0639\u0645\u064a\u0644 \u0627\u0644\u062a\u0627\u0644\u064a',
+      overviewNextClientMeta: '\u0627\u0644\u062d\u062c\u0632 \u0627\u0644\u062a\u0627\u0644\u064a',
+      overviewNextClientEmpty: '\u0644\u0627 \u062a\u0648\u062c\u062f \u062d\u062c\u0648\u0632\u0627\u062a',
+      appointmentsEmptyTitle: '\u0644\u0627 \u062a\u0648\u062c\u062f \u062d\u062c\u0648\u0632\u0627\u062a',
+      appointmentsEmptyDescription: '\u0634\u0627\u0631\u0643 \u0635\u0641\u062d\u0629 \u0627\u0644\u062d\u062c\u0632 \u0623\u0648 QR \u0644\u0628\u062f\u0621 \u0627\u0644\u062d\u062c\u0648\u0632\u0627\u062a.',
+      qrEyebrow: 'QR',
+      qrTitle: '\u0627\u0645\u0633\u062d \u0644\u0644\u062d\u062c\u0632',
+      qrDescription: '\u0636\u0639 QR \u0639\u0644\u0649 \u0628\u0627\u0628 \u0627\u0644\u0635\u0627\u0644\u0648\u0646 \u0644\u064a\u062d\u062c\u0632 \u0627\u0644\u0639\u0645\u0644\u0627\u0621 \u0641\u0648\u0631\u0627.',
+      qrPrint: '\u0637\u0628\u0627\u0639\u0629'
+    },
+    reports: {
+      allFolders: '\u062c\u0645\u064a\u0639 \u0627\u0644\u0645\u062c\u0644\u062f\u0627\u062a',
+      rangeToday: '\u0627\u0644\u064a\u0648\u0645',
+      range7Days: '7 \u0623\u064a\u0627\u0645',
+      range30Days: '30 \u064a\u0648\u0645',
+      range90Days: '90 \u064a\u0648\u0645',
+      lastDaysTemplate: '\u0622\u062e\u0631 {days} \u064a\u0648\u0645',
+      exportCsv: 'CSV',
+      print: '\u0637\u0628\u0627\u0639\u0629',
+      newCustomReport: '\u062a\u0642\u0631\u064a\u0631 \u062c\u062f\u064a\u062f',
+      revenue: '\u0627\u0644\u0625\u064a\u0631\u0627\u062f\u0627\u062a',
+      appointments: '\u0627\u0644\u0645\u0648\u0627\u0639\u064a\u062f',
+      completed: '\u0645\u0643\u062a\u0645\u0644',
+      clients: '\u0627\u0644\u0639\u0645\u0644\u0627\u0621',
+      bookedInRangeTemplate: '{count} \u062d\u062c\u0632',
+      completionFlowTemplate: '{label} \u0627\u0643\u062a\u0645\u0627\u0644',
+      repeatClientsTeamTemplate: '{repeat} \u0639\u0645\u0644\u0627\u0621 â€¢ {team} \u0641\u0631\u064a\u0642'
+    }
+  },
+  hindi: {
+    locale: 'hi-IN',
+    bookingSourceLabels: {
+      qr: 'QR',
+      direct: 'à¤¸à¥€à¤§à¤¾',
+      instagram: 'Instagram',
+      facebook: 'Facebook',
+      applemaps: 'Apple Maps'
+    },
+    appointmentStatusLabels: {
+      booked: 'à¤¬à¥à¤•à¥à¤¡',
+      completed: 'à¤ªà¥‚à¤°à¥à¤£',
+      cancelled: 'à¤°à¤¦à¥à¤¦'
+    },
+    bookedAppointmentActionLabels: {
+      edit: 'à¤¸à¤‚à¤ªà¤¾à¤¦à¤¿à¤¤',
+      runningLate: 'à¤¦à¥‡à¤°à¥€',
+      complete: 'à¤ªà¥‚à¤°à¤¾',
+      cancel: 'à¤°à¤¦à¥à¤¦'
+    },
+    calendar: {
+      today: 'à¤†à¤œ',
+      day: 'à¤¦à¤¿à¤¨',
+      agenda: 'à¤¸à¥‚à¤šà¥€',
+      add: 'à¤œà¥‹à¤¡à¤¼à¥‡à¤‚',
+      addMenuAria: 'à¤®à¥‡à¤¨à¥‚',
+      bookAppointment: 'à¤…à¤ªà¥‰à¤‡à¤‚à¤Ÿà¤®à¥‡à¤‚à¤Ÿ',
+      showQrCode: 'QR à¤•à¥‹à¤¡',
+      groupAppointment: 'à¤¸à¤®à¥‚à¤¹ à¤…à¤ªà¥‰à¤‡à¤‚à¤Ÿà¤®à¥‡à¤‚à¤Ÿ',
+      blockedTime: 'à¤¬à¥à¤²à¥‰à¤• à¤¸à¤®à¤¯',
+      sale: 'à¤¬à¤¿à¤•à¥à¤°à¥€',
+      quickPayment: 'à¤¤à¥à¤µà¤°à¤¿à¤¤ à¤­à¥à¤—à¤¤à¤¾à¤¨',
+      onlineBookingsTitle: 'à¤‘à¤¨à¤²à¤¾à¤‡à¤¨ à¤¬à¥à¤•à¤¿à¤‚à¤—',
+      onlineBookingsDescription: 'à¤ªà¤¬à¥à¤²à¤¿à¤• à¤²à¤¿à¤‚à¤•, à¤¸à¥‹à¤¶à¤² à¤²à¤¿à¤‚à¤• à¤”à¤° QR à¤¸à¥‡ à¤†à¤¨à¥‡ à¤µà¤¾à¤²à¥€ à¤¬à¥à¤•à¤¿à¤‚à¤— à¤¯à¤¹à¤¾à¤ à¤¦à¤¿à¤–à¤¤à¥€ à¤¹à¥ˆà¤‚à¥¤',
+      bookingLinkLabel: 'à¤¬à¥à¤•à¤¿à¤‚à¤— à¤ªà¥‡à¤œ',
+      filterAll: 'à¤¸à¤­à¥€',
+      filterBooked: 'à¤¬à¥à¤•à¥à¤¡',
+      filterQr: 'QR',
+      overviewSelectedDayLabel: 'à¤šà¥à¤¨à¤¾ à¤¦à¤¿à¤¨',
+      overviewSelectedDayMeta: 'à¤‡à¤¸ à¤¦à¤¿à¤¨ à¤•à¥€ à¤¬à¥à¤•à¤¿à¤‚à¤—',
+      overviewComingAppointmentLabel: 'à¤…à¤—à¤²à¥€ à¤…à¤ªà¥‰à¤‡à¤‚à¤Ÿà¤®à¥‡à¤‚à¤Ÿ',
+      overviewComingAppointmentMeta: 'à¤¸à¤•à¥à¤°à¤¿à¤¯ à¤¬à¥à¤•à¤¿à¤‚à¤—',
+      overviewNextClientLabel: 'à¤…à¤—à¤²à¤¾ à¤—à¥à¤°à¤¾à¤¹à¤•',
+      overviewNextClientMeta: 'à¤…à¤—à¤²à¥€ à¤¬à¥à¤•à¤¿à¤‚à¤—',
+      overviewNextClientEmpty: 'à¤…à¤­à¥€ à¤•à¥‹à¤ˆ à¤¬à¥à¤•à¤¿à¤‚à¤— à¤¨à¤¹à¥€à¤‚',
+      appointmentsEmptyTitle: 'à¤…à¤­à¥€ à¤•à¥‹à¤ˆ à¤¬à¥à¤•à¤¿à¤‚à¤— à¤¨à¤¹à¥€à¤‚',
+      appointmentsEmptyDescription: 'à¤¬à¥à¤•à¤¿à¤‚à¤— à¤ªà¥‡à¤œ à¤¯à¤¾ QR à¤¸à¤¾à¤à¤¾ à¤•à¤°à¥‡à¤‚ à¤¤à¤¾à¤•à¤¿ à¤¬à¥à¤•à¤¿à¤‚à¤— à¤®à¤¿à¤²à¤¨à¤¾ à¤¶à¥à¤°à¥‚ à¤¹à¥‹à¥¤',
+      qrEyebrow: 'QR à¤¸à¤¾à¤à¤¾ à¤•à¤°à¥‡à¤‚',
+      qrTitle: 'à¤¸à¥à¤•à¥ˆà¤¨ à¤•à¤°à¥‡à¤‚',
+      qrDescription: 'QR à¤•à¥‹à¤¡ à¤¦à¤°à¤µà¤¾à¤œà¥‡ à¤ªà¤° à¤°à¤–à¥‡à¤‚ à¤¤à¤¾à¤•à¤¿ à¤—à¥à¤°à¤¾à¤¹à¤• à¤¤à¥à¤°à¤‚à¤¤ à¤¬à¥à¤• à¤•à¤° à¤¸à¤•à¥‡à¤‚à¥¤',
+      qrPrint: 'à¤ªà¥à¤°à¤¿à¤‚à¤Ÿ'
+    },
+    reports: {
+      allFolders: 'à¤¸à¤­à¥€ à¤«à¤¼à¥‹à¤²à¥à¤¡à¤°',
+      rangeToday: 'à¤†à¤œ',
+      range7Days: '7 à¤¦à¤¿à¤¨',
+      range30Days: '30 à¤¦à¤¿à¤¨',
+      range90Days: '90 à¤¦à¤¿à¤¨',
+      lastDaysTemplate: 'à¤ªà¤¿à¤›à¤²à¥‡ {days} à¤¦à¤¿à¤¨',
+      exportCsv: 'CSV',
+      print: 'à¤ªà¥à¤°à¤¿à¤‚à¤Ÿ',
+      newCustomReport: 'à¤¨à¤ˆ à¤°à¤¿à¤ªà¥‹à¤°à¥à¤Ÿ',
+      revenue: 'à¤†à¤¯',
+      appointments: 'à¤…à¤ªà¥‰à¤‡à¤‚à¤Ÿà¤®à¥‡à¤‚à¤Ÿ',
+      completed: 'à¤ªà¥‚à¤°à¥à¤£',
+      clients: 'à¤—à¥à¤°à¤¾à¤¹à¤•',
+      bookedInRangeTemplate: '{count} à¤¬à¥à¤•à¤¿à¤‚à¤—',
+      completionFlowTemplate: '{label} à¤ªà¥à¤°à¤µà¤¾à¤¹',
+      repeatClientsTeamTemplate: '{repeat} à¤¦à¥‹à¤¬à¤¾à¤°à¤¾ â€¢ {team} à¤Ÿà¥€à¤®'
+    }
+  },
+  spanish: {
+    locale: 'es-ES',
+    bookingSourceLabels: {
+      qr: 'QR',
+      direct: 'Directo',
+      instagram: 'Instagram',
+      facebook: 'Facebook',
+      applemaps: 'Apple Maps'
+    },
+    appointmentStatusLabels: {
+      booked: 'RESERVADO',
+      completed: 'COMPLETADO',
+      cancelled: 'CANCELADO'
+    },
+    bookedAppointmentActionLabels: {
+      edit: 'Editar',
+      runningLate: 'Retraso',
+      complete: 'Completar',
+      cancel: 'Cancelar'
+    },
+    calendar: {
+      today: 'Hoy',
+      day: 'Dia',
+      agenda: 'Agenda',
+      add: 'Agregar',
+      addMenuAria: 'Menu',
+      bookAppointment: 'Reservar cita',
+      showQrCode: 'Mostrar QR',
+      groupAppointment: 'Cita grupal',
+      blockedTime: 'Tiempo bloqueado',
+      sale: 'Venta',
+      quickPayment: 'Pago rapido',
+      onlineBookingsTitle: 'Reservas online',
+      onlineBookingsDescription: 'Las reservas desde tu pagina publica, enlaces sociales y QR aparecen aqui.',
+      bookingLinkLabel: 'Abrir reservas',
+      filterAll: 'Todo',
+      filterBooked: 'Reservado',
+      filterQr: 'QR',
+      overviewSelectedDayLabel: 'Dia seleccionado',
+      overviewSelectedDayMeta: 'citas en esta fecha',
+      overviewComingAppointmentLabel: 'Proxima cita',
+      overviewComingAppointmentMeta: 'citas activas',
+      overviewNextClientLabel: 'Proximo cliente',
+      overviewNextClientMeta: 'siguiente cita',
+      overviewNextClientEmpty: 'Aun no hay reservas',
+      appointmentsEmptyTitle: 'Aun no hay reservas',
+      appointmentsEmptyDescription: 'Comparte tu pagina de reservas o QR para empezar a recibir reservas.',
+      qrEyebrow: 'Compartir QR',
+      qrTitle: 'Escanea para reservar',
+      qrDescription: 'Coloca este QR en la puerta del salon para que los clientes reserven al instante.',
+      qrPrint: 'Imprimir QR'
+    },
+    reports: {
+      allFolders: 'Todas las carpetas',
+      rangeToday: 'Hoy',
+      range7Days: '7 dias',
+      range30Days: '30 dias',
+      range90Days: '90 dias',
+      lastDaysTemplate: 'Ultimos {days} dias',
+      exportCsv: 'Exportar CSV',
+      print: 'Imprimir',
+      newCustomReport: 'Nuevo reporte',
+      revenue: 'Ingresos',
+      appointments: 'Citas',
+      completed: 'Completadas',
+      clients: 'Clientes',
+      bookedInRangeTemplate: '{count} reservas',
+      completionFlowTemplate: 'Flujo {label}',
+      repeatClientsTeamTemplate: '{repeat} recurrentes â€¢ {team} equipo'
+    }
+  },
+  french: {
+    locale: 'fr-FR',
+    bookingSourceLabels: {
+      qr: 'QR',
+      direct: 'Direct',
+      instagram: 'Instagram',
+      facebook: 'Facebook',
+      applemaps: 'Plans Apple'
+    },
+    appointmentStatusLabels: {
+      booked: 'RESERVE',
+      completed: 'TERMINE',
+      cancelled: 'ANNULE'
+    },
+    bookedAppointmentActionLabels: {
+      edit: 'Modifier',
+      runningLate: 'Retard',
+      complete: 'Terminer',
+      cancel: 'Annuler'
+    },
+    calendar: {
+      today: "Aujourd'hui",
+      day: 'Jour',
+      agenda: 'Agenda',
+      add: 'Ajouter',
+      addMenuAria: 'Menu',
+      bookAppointment: 'Prendre rendez-vous',
+      showQrCode: 'Afficher QR',
+      groupAppointment: 'Rendez-vous groupe',
+      blockedTime: 'Temps bloque',
+      sale: 'Vente',
+      quickPayment: 'Paiement rapide',
+      onlineBookingsTitle: 'Reservations en ligne',
+      onlineBookingsDescription: 'Les reservations depuis votre page publique, vos liens sociaux et le QR apparaissent ici.',
+      bookingLinkLabel: 'Ouvrir reservations',
+      filterAll: 'Tout',
+      filterBooked: 'Reserve',
+      filterQr: 'QR',
+      overviewSelectedDayLabel: 'Jour selectionne',
+      overviewSelectedDayMeta: 'rendez-vous a cette date',
+      overviewComingAppointmentLabel: 'Prochain rendez-vous',
+      overviewComingAppointmentMeta: 'rendez-vous actifs',
+      overviewNextClientLabel: 'Prochain client',
+      overviewNextClientMeta: 'prochain rendez-vous',
+      overviewNextClientEmpty: 'Aucune reservation',
+      appointmentsEmptyTitle: 'Aucune reservation',
+      appointmentsEmptyDescription: 'Partagez votre page de reservation ou votre QR pour commencer a recevoir des reservations.',
+      qrEyebrow: 'Partager QR',
+      qrTitle: 'Scannez pour reserver',
+      qrDescription: 'Placez ce QR sur la porte du salon pour que les clients reservent instantanement.',
+      qrPrint: 'Imprimer QR'
+    },
+    reports: {
+      allFolders: 'Tous les dossiers',
+      rangeToday: "Aujourd'hui",
+      range7Days: '7 jours',
+      range30Days: '30 jours',
+      range90Days: '90 jours',
+      lastDaysTemplate: 'Derniers {days} jours',
+      exportCsv: 'Exporter CSV',
+      print: 'Imprimer',
+      newCustomReport: 'Nouveau rapport',
+      revenue: 'Revenus',
+      appointments: 'Rendez-vous',
+      completed: 'Termines',
+      clients: 'Clients',
+      bookedInRangeTemplate: '{count} reservations',
+      completionFlowTemplate: 'Flux {label}',
+      repeatClientsTeamTemplate: '{repeat} recurrents â€¢ {team} equipe'
+    }
+  },
+  german: {
+    locale: 'de-DE',
+    bookingSourceLabels: {
+      qr: 'QR',
+      direct: 'Direkt',
+      instagram: 'Instagram',
+      facebook: 'Facebook',
+      applemaps: 'Apple Karten'
+    },
+    appointmentStatusLabels: {
+      booked: 'GEBUCHT',
+      completed: 'ABGESCHLOSSEN',
+      cancelled: 'STORNIERT'
+    },
+    bookedAppointmentActionLabels: {
+      edit: 'Bearbeiten',
+      runningLate: 'Verspaetung',
+      complete: 'Abschliessen',
+      cancel: 'Stornieren'
+    },
+    calendar: {
+      today: 'Heute',
+      day: 'Tag',
+      agenda: 'Agenda',
+      add: 'Hinzufuegen',
+      addMenuAria: 'Menue',
+      bookAppointment: 'Termin buchen',
+      showQrCode: 'QR-Code anzeigen',
+      groupAppointment: 'Gruppentermin',
+      blockedTime: 'Blockierte Zeit',
+      sale: 'Verkauf',
+      quickPayment: 'Schnellzahlung',
+      onlineBookingsTitle: 'Online-Buchungen',
+      onlineBookingsDescription: 'Buchungen von Ihrer oeffentlichen Seite, Social-Links und QR erscheinen hier.',
+      bookingLinkLabel: 'Buchungsseite oeffnen',
+      filterAll: 'Alle',
+      filterBooked: 'Gebucht',
+      filterQr: 'QR',
+      overviewSelectedDayLabel: 'Ausgewaehlter Tag',
+      overviewSelectedDayMeta: 'Termine an diesem Datum',
+      overviewComingAppointmentLabel: 'Naechster Termin',
+      overviewComingAppointmentMeta: 'aktive Buchungen',
+      overviewNextClientLabel: 'Naechster Kunde',
+      overviewNextClientMeta: 'naechster Termin',
+      overviewNextClientEmpty: 'Noch keine Buchungen',
+      appointmentsEmptyTitle: 'Noch keine Buchungen',
+      appointmentsEmptyDescription: 'Teilen Sie Ihre Buchungsseite oder den QR-Code, um Buchungen zu erhalten.',
+      qrEyebrow: 'QR teilen',
+      qrTitle: 'Scannen zum Buchen',
+      qrDescription: 'Platzieren Sie diesen QR-Code an der Salontuer fuer sofortige Buchungen.',
+      qrPrint: 'QR drucken'
+    },
+    reports: {
+      allFolders: 'Alle Ordner',
+      rangeToday: 'Heute',
+      range7Days: '7 Tage',
+      range30Days: '30 Tage',
+      range90Days: '90 Tage',
+      lastDaysTemplate: 'Letzte {days} Tage',
+      exportCsv: 'CSV exportieren',
+      print: 'Drucken',
+      newCustomReport: 'Neuer Bericht',
+      revenue: 'Umsatz',
+      appointments: 'Termine',
+      completed: 'Abgeschlossen',
+      clients: 'Kunden',
+      bookedInRangeTemplate: '{count} Buchungen',
+      completionFlowTemplate: '{label} Ablauf',
+      repeatClientsTeamTemplate: '{repeat} wiederkehrend â€¢ {team} Team'
+    }
+  },
+  turkish: {
+    locale: 'tr-TR',
+    bookingSourceLabels: {
+      qr: 'QR',
+      direct: 'Dogrudan',
+      instagram: 'Instagram',
+      facebook: 'Facebook',
+      applemaps: 'Apple Maps'
+    },
+    appointmentStatusLabels: {
+      booked: 'REZERVE',
+      completed: 'TAMAMLANDI',
+      cancelled: 'IPTAL'
+    },
+    bookedAppointmentActionLabels: {
+      edit: 'Duzenle',
+      runningLate: 'Gecikme',
+      complete: 'Tamamla',
+      cancel: 'Iptal'
+    },
+    calendar: {
+      today: 'Bugun',
+      day: 'Gun',
+      agenda: 'Ajanda',
+      add: 'Ekle',
+      addMenuAria: 'Menu',
+      bookAppointment: 'Randevu olustur',
+      showQrCode: 'QR goster',
+      groupAppointment: 'Grup randevusu',
+      blockedTime: 'Bloke zaman',
+      sale: 'Satis',
+      quickPayment: 'Hizli odeme',
+      onlineBookingsTitle: 'Online rezervasyonlar',
+      onlineBookingsDescription: 'Acik sayfa, sosyal baglantilar ve QR kodundan gelen rezervasyonlar burada gorunur.',
+      bookingLinkLabel: 'Rezervasyon sayfasi',
+      filterAll: 'Tum',
+      filterBooked: 'Rezerve',
+      filterQr: 'QR',
+      overviewSelectedDayLabel: 'Secilen gun',
+      overviewSelectedDayMeta: 'bu tarihteki randevular',
+      overviewComingAppointmentLabel: 'Yaklasan randevu',
+      overviewComingAppointmentMeta: 'aktif rezervasyonlar',
+      overviewNextClientLabel: 'Siradaki musteri',
+      overviewNextClientMeta: 'siradaki rezervasyon',
+      overviewNextClientEmpty: 'Henuz rezervasyon yok',
+      appointmentsEmptyTitle: 'Henuz rezervasyon yok',
+      appointmentsEmptyDescription: 'Rezervasyon sayfanizi veya QR kodunu paylasarak rezervasyon almaya baslayin.',
+      qrEyebrow: 'QR paylas',
+      qrTitle: 'Tara ve ayirt',
+      qrDescription: 'Bu QR kodunu salon kapisina koyun; musteriler hemen rezervasyon yapabilsin.',
+      qrPrint: 'Yazdir'
+    },
+    reports: {
+      allFolders: 'Tum klasorler',
+      rangeToday: 'Bugun',
+      range7Days: '7 gun',
+      range30Days: '30 gun',
+      range90Days: '90 gun',
+      lastDaysTemplate: 'Son {days} gun',
+      exportCsv: 'CSV disa aktar',
+      print: 'Yazdir',
+      newCustomReport: 'Yeni rapor',
+      revenue: 'Gelir',
+      appointments: 'Randevular',
+      completed: 'Tamamlanan',
+      clients: 'Musteriler',
+      bookedInRangeTemplate: '{count} rezervasyon',
+      completionFlowTemplate: '{label} akis',
+      repeatClientsTeamTemplate: '{repeat} geri gelen â€¢ {team} ekip'
+    }
+  },
+  portuguese: {
+    locale: 'pt-PT',
+    bookingSourceLabels: {
+      qr: 'QR',
+      direct: 'Direto',
+      instagram: 'Instagram',
+      facebook: 'Facebook',
+      applemaps: 'Apple Maps'
+    },
+    appointmentStatusLabels: {
+      booked: 'RESERVADO',
+      completed: 'CONCLUIDO',
+      cancelled: 'CANCELADO'
+    },
+    bookedAppointmentActionLabels: {
+      edit: 'Editar',
+      runningLate: 'Atraso',
+      complete: 'Concluir',
+      cancel: 'Cancelar'
+    },
+    calendar: {
+      today: 'Hoje',
+      day: 'Dia',
+      agenda: 'Agenda',
+      add: 'Adicionar',
+      addMenuAria: 'Menu',
+      bookAppointment: 'Marcar horario',
+      showQrCode: 'Mostrar QR',
+      groupAppointment: 'Marcacao em grupo',
+      blockedTime: 'Tempo bloqueado',
+      sale: 'Venda',
+      quickPayment: 'Pagamento rapido',
+      onlineBookingsTitle: 'Reservas online',
+      onlineBookingsDescription: 'As reservas da pagina publica, links sociais e QR aparecem aqui.',
+      bookingLinkLabel: 'Abrir reservas',
+      filterAll: 'Todos',
+      filterBooked: 'Reservado',
+      filterQr: 'QR',
+      overviewSelectedDayLabel: 'Dia selecionado',
+      overviewSelectedDayMeta: 'marcacoes nesta data',
+      overviewComingAppointmentLabel: 'Proxima marcacao',
+      overviewComingAppointmentMeta: 'marcacoes ativas',
+      overviewNextClientLabel: 'Proximo cliente',
+      overviewNextClientMeta: 'proxima marcacao',
+      overviewNextClientEmpty: 'Ainda nao ha reservas',
+      appointmentsEmptyTitle: 'Ainda nao ha reservas',
+      appointmentsEmptyDescription: 'Partilhe a sua pagina de reservas ou QR para comecar a receber reservas.',
+      qrEyebrow: 'Partilhar QR',
+      qrTitle: 'Digitalize para reservar',
+      qrDescription: 'Coloque este QR na porta do salao para reservas imediatas.',
+      qrPrint: 'Imprimir QR'
+    },
+    reports: {
+      allFolders: 'Todas as pastas',
+      rangeToday: 'Hoje',
+      range7Days: '7 dias',
+      range30Days: '30 dias',
+      range90Days: '90 dias',
+      lastDaysTemplate: 'Ultimos {days} dias',
+      exportCsv: 'Exportar CSV',
+      print: 'Imprimir',
+      newCustomReport: 'Novo relatorio',
+      revenue: 'Receita',
+      appointments: 'Marcacoes',
+      completed: 'Concluidas',
+      clients: 'Clientes',
+      bookedInRangeTemplate: '{count} reservas',
+      completionFlowTemplate: 'Fluxo {label}',
+      repeatClientsTeamTemplate: '{repeat} recorrentes â€¢ {team} equipa'
     }
   }
 };
-
-const getDashboardLocaleKey = (
-  preferredLanguage: PreferredLanguage | null | undefined
-): 'english' | 'chinese' => (preferredLanguage === 'chinese' ? 'chinese' : 'english');
-
-const getDashboardUiCopyForLanguage = (
-  preferredLanguage: PreferredLanguage | null | undefined
-): DashboardUiCopy => DASHBOARD_UI_COPY_BY_LANGUAGE[getDashboardLocaleKey(preferredLanguage)];
 
 const buildFallbackEmail = (provider: CreateClientInput['provider']): string =>
   `${provider}-${randomUUID().slice(0, 8)}@platform.local`;
@@ -1068,7 +1638,7 @@ const formatDashboardDate = (
   date: Date,
   preferredLanguage: PreferredLanguage | null | undefined
 ): string =>
-  new Intl.DateTimeFormat(getDashboardUiCopyForLanguage(preferredLanguage).locale, {
+  new Intl.DateTimeFormat(getDashboardUiCopyForLanguage(preferredLanguage, DASHBOARD_UI_COPY_BY_LANGUAGE).locale, {
     weekday: 'short',
     day: 'numeric',
     month: 'short'
@@ -1080,7 +1650,7 @@ const formatDashboardTime = (
   date: Date,
   preferredLanguage: PreferredLanguage | null | undefined
 ): string =>
-  new Intl.DateTimeFormat(getDashboardUiCopyForLanguage(preferredLanguage).locale, {
+  new Intl.DateTimeFormat(getDashboardUiCopyForLanguage(preferredLanguage, DASHBOARD_UI_COPY_BY_LANGUAGE).locale, {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false
@@ -1147,7 +1717,7 @@ const buildClientDrawerItems = (appointments: AppointmentRecord[]) => {
 
   return recentClients.map((appointment) => ({
     label: appointment.customerName,
-    subtitle: `${appointment.customerPhone}${appointment.customerEmail ? ` • ${appointment.customerEmail}` : ''} • ${appointment.serviceName}`
+    subtitle: `${appointment.customerPhone}${appointment.customerEmail ? ` â€¢ ${appointment.customerEmail}` : ''} â€¢ ${appointment.serviceName}`
   }));
 };
 
@@ -1156,15 +1726,13 @@ const buildStoredClientDrawerItems = (
   preferredLanguage: PreferredLanguage | null
 ) => {
   const recentClients = normalizeCustomerProfiles(customerProfiles).slice(0, 6);
-  const isChinese = getDashboardLocaleKey(preferredLanguage) === 'chinese';
+  const dashboardContent = getDashboardContentForLanguage(preferredLanguage);
 
   if (recentClients.length === 0) {
     return [
       {
-        label: isChinese ? '暂无客户' : 'No clients yet',
-        subtitle: isChinese
-          ? '预约产生的客户和已完成服务记录会显示在这里。'
-          : 'Customers from bookings and completed visits will appear here.'
+        label: dashboardContent.noClientsYet,
+        subtitle: dashboardContent.noClientsSubtitle
       }
     ];
   }
@@ -1172,8 +1740,10 @@ const buildStoredClientDrawerItems = (
   return recentClients.map((customerProfile) => ({
     label: customerProfile.customerName,
     subtitle:
-      `${customerProfile.customerPhone}${customerProfile.customerEmail ? ` â€¢ ${customerProfile.customerEmail}` : ''} â€¢ ` +
-      `${customerProfile.totalVisits} visit${customerProfile.totalVisits === 1 ? '' : 's'}`
+      `${customerProfile.customerPhone}${customerProfile.customerEmail ? ` - ${customerProfile.customerEmail}` : ''} - ` +
+      interpolateDashboardLabel(dashboardContent.visitCountTemplate, {
+        count: customerProfile.totalVisits
+      })
   }));
 };
 
@@ -1181,49 +1751,43 @@ const buildTeamDrawerSections = (client: ClientRecord) => {
   const activeTeamMembers = normalizeTeamMembers(client.teamMembers ?? [], client.businessSettings).filter(
     (teamMember) => teamMember.isActive
   );
-  const isChinese = getDashboardLocaleKey(client.preferredLanguage) === 'chinese';
+  const localeKey = getDashboardLocaleKey(client.preferredLanguage);
+  const dashboardContent = getDashboardContentForLanguage(client.preferredLanguage);
   const teamRoleLabel = client.serviceTypes.includes('Barber')
-    ? isChinese
-      ? '理发师'
-      : 'barber'
-    : isChinese
-      ? '团队成员'
-      : 'team member';
+    ? dashboardContent.barberRole
+    : dashboardContent.teamMemberRole;
+  const activeTeamRoleLabel =
+    localeKey === 'english' && activeTeamMembers.length !== 1 ? `${teamRoleLabel}s` : teamRoleLabel;
 
   return [
     {
       items: [
         {
-          label: isChinese ? '团队成员' : 'Team members',
-          subtitle: isChinese
-            ? `${activeTeamMembers.length} 位在岗${teamRoleLabel}`
-            : `${activeTeamMembers.length} active ${teamRoleLabel}${activeTeamMembers.length === 1 ? '' : 's'}`
+          label: dashboardContent.teamMembers,
+          subtitle: interpolateDashboardLabel(dashboardContent.activeTeamMembersTemplate, {
+            count: activeTeamMembers.length,
+            role: activeTeamRoleLabel
+          })
         },
-        { label: isChinese ? '排班' : 'Scheduled shifts' },
-        { label: isChinese ? '工时表' : 'Timesheets', meta: { type: 'dot' as const } },
-        { label: isChinese ? '薪资发放' : 'Pay runs', meta: { type: 'dot' as const } }
+        { label: dashboardContent.scheduledShifts },
+        { label: dashboardContent.timesheets, meta: { type: 'dot' as const } },
+        { label: dashboardContent.payRuns, meta: { type: 'dot' as const } }
       ]
     },
     {
-      title: activeTeamMembers.length > 0
-        ? isChinese
-          ? '当前团队'
-          : 'Current team'
-        : isChinese
-          ? '团队设置'
-          : 'Team setup',
+      title: activeTeamMembers.length > 0 ? dashboardContent.currentTeam : dashboardContent.teamSetup,
       items:
         activeTeamMembers.length > 0
           ? activeTeamMembers.map((teamMember) => ({
               label: teamMember.name,
-              subtitle: `${teamMember.expertise || teamMember.role}${teamMember.phone ? ` • ${teamMember.phone}` : ''}`
+              subtitle: `${teamMember.expertise || teamMember.role}${teamMember.phone ? ` - ${teamMember.phone}` : ''}`
             }))
           : [
               {
-                label: isChinese ? '还没有团队成员' : 'No team members yet',
-                subtitle: isChinese
-                  ? `请在团队面板中添加第一位${teamRoleLabel}。`
-                  : `Add your first ${teamRoleLabel} from the team panel.`
+                label: dashboardContent.noTeamMembers,
+                subtitle: interpolateDashboardLabel(dashboardContent.addFirstTeamMemberTemplate, {
+                  role: teamRoleLabel
+                })
               }
             ]
     }
@@ -1237,23 +1801,19 @@ const buildDashboardViewModel = (
   launchLinks: LaunchLinksViewModel,
   commerce: DashboardCommerceViewModel
 ): DashboardViewModel => {
-  const uiCopy = getDashboardUiCopyForLanguage(client.preferredLanguage);
-  const isChinese = getDashboardLocaleKey(client.preferredLanguage) === 'chinese';
+  const uiCopy = getDashboardUiCopyForLanguage(client.preferredLanguage, DASHBOARD_UI_COPY_BY_LANGUAGE);
+  const dashboardContent = getDashboardContentForLanguage(client.preferredLanguage);
   const businessName = client.businessName || 'fresha';
-  const ownerName = client.businessName || formatOwnerName(client.email) || (isChinese ? '店主' : 'Owner');
+  const ownerName = client.businessName || formatOwnerName(client.email) || dashboardContent.ownerFallback;
   const businessSettings = normalizeBusinessSettings(client.businessSettings);
   const now = new Date();
   const reportPageTitle =
     businessSettings.reportMetadata.pageTitle === DEFAULT_REPORT_METADATA.pageTitle
-      ? isChinese
-        ? '报表与分析'
-        : businessSettings.reportMetadata.pageTitle
+      ? dashboardContent.reportPageTitle
       : businessSettings.reportMetadata.pageTitle;
   const reportPageSubtitle =
     businessSettings.reportMetadata.pageSubtitle === DEFAULT_REPORT_METADATA.pageSubtitle
-      ? isChinese
-        ? '在一个工作区中查看你的全部业务报表。'
-        : businessSettings.reportMetadata.pageSubtitle
+      ? dashboardContent.reportPageSubtitle
       : businessSettings.reportMetadata.pageSubtitle;
 
   return {
@@ -1262,12 +1822,8 @@ const buildDashboardViewModel = (
     avatarInitial: getAvatarInitial(ownerName),
     profileImageUrl: client.profileImageUrl ?? '',
     setupButtonLabel: client.onboardingCompleted
-      ? isChinese
-        ? '设置完成'
-        : 'Setup complete'
-      : isChinese
-        ? '继续设置'
-        : 'Continue setup',
+      ? dashboardContent.setupComplete
+      : dashboardContent.continueSetup,
     setupButtonPath: '/guides/legendary-learner',
     bookingLink: `/book/${client.id}`,
     launchLinks,
@@ -1278,110 +1834,108 @@ const buildDashboardViewModel = (
     uiCopy,
     sideDrawers: {
       sales: {
-        title: isChinese ? '销售' : 'Sales',
+        title: dashboardContent.salesTitle,
         sections: [
           {
             items: [
-              { label: isChinese ? '今日销售摘要' : 'Daily sales summary' },
-              { label: isChinese ? '预约' : 'Appointments' },
-              { label: isChinese ? '销售' : 'Sales' },
-              { label: isChinese ? '收款' : 'Payments' },
-              { label: isChinese ? '礼品卡销售' : 'Gift cards sold' },
-              { label: isChinese ? '套餐销售' : 'Packages sold' }
+              { label: dashboardContent.dailySalesSummary },
+              { label: dashboardContent.appointments },
+              { label: dashboardContent.sales },
+              { label: dashboardContent.payments },
+              { label: dashboardContent.giftCardsSold },
+              { label: dashboardContent.packagesSold }
             ]
           }
         ]
       },
       clients: {
-        title: isChinese ? '客户' : 'Clients',
+        title: dashboardContent.clientsTitle,
         sections: [
           {
             items: [
-              { label: isChinese ? '客户列表' : 'Clients list' },
-              { label: isChinese ? '客户忠诚度' : 'Client loyalty' }
+              { label: dashboardContent.clientsList },
+              { label: dashboardContent.clientLoyalty }
             ]
           },
           {
-            title: isChinese ? '客户' : 'Clients',
+            title: dashboardContent.clientsTitle,
             items: buildStoredClientDrawerItems(client.customerProfiles ?? [], client.preferredLanguage)
           }
         ]
       },
       catalog: {
-        title: isChinese ? '目录' : 'Catalog',
+        title: dashboardContent.catalogTitle,
         sections: [
           {
             items: [
-              { label: isChinese ? '服务菜单' : 'Service menu' },
-              { label: isChinese ? '套餐' : 'Packages' },
+              { label: dashboardContent.serviceMenu },
+              { label: dashboardContent.packages },
               {
-                label: isChinese ? '产品' : 'Products',
+                label: dashboardContent.products,
                 subtitle:
                   commerce.activeProducts > 0
-                    ? isChinese
-                      ? `${commerce.activeProducts} 个在售产品`
-                      : `${commerce.activeProducts} active product${commerce.activeProducts === 1 ? '' : 's'}`
-                    : isChinese
-                      ? '还没有添加产品'
-                      : 'No products added yet'
+                    ? interpolateDashboardLabel(dashboardContent.activeProductsTemplate, {
+                        count: commerce.activeProducts
+                      })
+                    : dashboardContent.noProducts
               }
             ]
           },
           {
-            title: isChinese ? '库存' : 'Inventory',
+            title: dashboardContent.inventoryTitle,
             items: [
-              { label: isChinese ? '盘点' : 'Stocktakes' },
-              { label: isChinese ? '采购订单' : 'Stock orders' },
-              { label: isChinese ? '供应商' : 'Suppliers' }
+              { label: dashboardContent.stocktakes },
+              { label: dashboardContent.stockOrders },
+              { label: dashboardContent.suppliers }
             ]
           }
         ]
       },
       team: {
-        title: isChinese ? '团队' : 'Team',
+        title: dashboardContent.teamTitle,
         sections: buildTeamDrawerSections(client)
       }
     },
     reportsView: {
-      sidebarTitle: isChinese ? '报表' : 'Reports',
+      sidebarTitle: dashboardContent.reportsTitle,
       menu: [
-        { label: isChinese ? '全部报表' : 'All reports', active: true, meta: { type: 'count', value: '0' } },
-        { label: isChinese ? '收藏' : 'Favourites', meta: { type: 'count', value: '0' } },
-        { label: isChinese ? '仪表板' : 'Dashboards', meta: { type: 'count', value: '0' } },
-        { label: isChinese ? '标准' : 'Standard', meta: { type: 'count', value: '0' } },
-        { label: isChinese ? '高级' : 'Premium', meta: { type: 'count', value: '0' } },
-        { label: isChinese ? '自定义' : 'Custom', meta: { type: 'count', value: '0' } },
-        { label: isChinese ? '目标' : 'Targets', meta: { type: 'count', value: '0' } }
+        { label: dashboardContent.allReports, active: true, meta: { type: 'count', value: '0' } },
+        { label: dashboardContent.favourites, meta: { type: 'count', value: '0' } },
+        { label: dashboardContent.dashboards, meta: { type: 'count', value: '0' } },
+        { label: dashboardContent.standard, meta: { type: 'count', value: '0' } },
+        { label: dashboardContent.premium, meta: { type: 'count', value: '0' } },
+        { label: dashboardContent.custom, meta: { type: 'count', value: '0' } },
+        { label: dashboardContent.targets, meta: { type: 'count', value: '0' } }
       ],
-      folderTitle: isChinese ? '文件夹' : 'Folders',
-      folderActionLabel: isChinese ? '添加文件夹' : 'Add folder',
-      connectorLabel: isChinese ? '数据连接器' : 'Data connector',
+      folderTitle: dashboardContent.folders,
+      folderActionLabel: dashboardContent.addFolder,
+      connectorLabel: dashboardContent.dataConnector,
       pageTitle: reportPageTitle,
       pageSubtitle: reportPageSubtitle,
       totalLabel: '0',
-      searchPlaceholder: isChinese ? '按报表名称或描述搜索' : 'Search by report name or description',
-      filters: isChinese ? ['创建者', '分类'] : ['Created by', 'Category'],
+      searchPlaceholder: dashboardContent.searchReports,
+      filters: [dashboardContent.filterCreatedBy, dashboardContent.filterCategory],
       tabs: [
-        { label: isChinese ? '全部报表' : 'All reports', active: true },
-        { label: isChinese ? '销售' : 'Sales' },
-        { label: isChinese ? '财务' : 'Finance' },
-        { label: isChinese ? '预约' : 'Appointments' },
-        { label: isChinese ? '团队' : 'Team' },
-        { label: isChinese ? '客户' : 'Clients' },
-        { label: isChinese ? '库存' : 'Inventory' }
+        { label: dashboardContent.allReports, active: true },
+        { label: dashboardContent.salesTitle },
+        { label: dashboardContent.finance },
+        { label: dashboardContent.appointments },
+        { label: dashboardContent.teamTitle },
+        { label: dashboardContent.clientsTitle },
+        { label: dashboardContent.inventoryTitle }
       ],
       cards: [
         {
-          title: isChinese ? '经营表现仪表板' : 'Performance dashboard',
-          description: isChinese ? '查看你的业务表现总览。' : 'Dashboard of your business performance.'
+          title: dashboardContent.performanceDashboard,
+          description: dashboardContent.performanceDashboardDescription
         },
         {
-          title: isChinese ? '线上表现仪表板' : 'Online presence dashboard',
-          description: isChinese ? '查看线上销售和线上客户表现。' : 'Online sales and online client performance.'
+          title: dashboardContent.onlinePresenceDashboard,
+          description: dashboardContent.onlinePresenceDashboardDescription
         },
         {
-          title: isChinese ? '会员忠诚度仪表板' : 'Loyalty dashboard',
-          description: isChinese ? '查看忠诚度计划的表现。' : 'Dashboard of your loyalty program performance.'
+          title: dashboardContent.loyaltyDashboard,
+          description: dashboardContent.loyaltyDashboardDescription
         }
       ]
     }
@@ -2184,3 +2738,5 @@ export const clientPlatformService = {
 
 export const serializeClientForResponse = (client: ClientRecord): PublicClientRecord =>
   toPublicClientRecord(hydrateClientRecord(client));
+
+
