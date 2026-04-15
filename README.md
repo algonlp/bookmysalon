@@ -51,6 +51,9 @@ Core application settings:
 - `TRUST_PROXY`: trust reverse-proxy headers in production
 - `PUBLIC_BASE_URL`: canonical public app URL for QR codes and generated links
 - `CORS_ALLOWED_ORIGINS`: comma-separated list of allowed browser origins
+- `SUPABASE_URL`: your Supabase project URL
+- `SUPABASE_PUBLISHABLE_KEY`: public Supabase API key used as a fallback when no server key is set
+- `SUPABASE_SERVICE_ROLE_KEY`: recommended backend key for server-side Supabase writes when `CLIENT_PLATFORM_STORAGE=supabase`
 
 Customer and booking settings:
 - `ENABLE_PUBLIC_CUSTOMER_LOOKUPS`: enable phone-based public history and benefits lookup
@@ -113,6 +116,18 @@ npm run lint
 - Set `PUBLIC_BASE_URL` in deployed environments so generated booking, QR, and waitlist links use your real domain.
 - If the app runs behind a reverse proxy, set `TRUST_PROXY=true`.
 - Use `CLIENT_PLATFORM_STORAGE=file` for local persistence or `memory` for ephemeral environments.
+- Use `CLIENT_PLATFORM_STORAGE=supabase` after creating the tables in [supabase/schema.sql](</d:/algo nlp/fresha project algonlp/supabase/schema.sql>) and syncing current JSON data with `npm run sync:supabase`.
+
+## Supabase Migration
+
+To preserve the existing local JSON data while moving to Supabase:
+
+1. Copy [supabase/schema.sql](</d:/algo nlp/fresha project algonlp/supabase/schema.sql>) into the Supabase SQL editor and run it.
+2. Add `SUPABASE_URL` plus either `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_PUBLISHABLE_KEY` to `.env`.
+3. Run `npm run sync:supabase` to upload `data/appointments.json` and `data/client-platform.json`.
+4. Change `CLIENT_PLATFORM_STORAGE` from `file` to `supabase`.
+
+The migration keeps the current record shapes intact by storing each record as JSONB payload data in Supabase tables.
 
 ## Status
 

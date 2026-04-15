@@ -2,6 +2,7 @@ import type { ClientRecord } from './clientPlatform.types';
 import type { ClientPlatformStore } from './clientPlatform.store';
 import { ClientPlatformFileStore } from './storage/clientPlatformFile.store';
 import { ClientPlatformMemoryStore } from './storage/clientPlatformMemory.store';
+import { ClientPlatformSupabaseStore } from './storage/clientPlatformSupabase.store';
 
 const isTestEnvironment = (): boolean =>
   process.env.APP_ENV === 'test' ||
@@ -11,9 +12,13 @@ const isTestEnvironment = (): boolean =>
 const isVercelRuntime = (): boolean =>
   process.env.VERCEL === '1' || Boolean(process.env.VERCEL_ENV);
 
-const getConfiguredStoreType = (): 'file' | 'memory' => {
+const getConfiguredStoreType = (): 'file' | 'memory' | 'supabase' => {
   if (isTestEnvironment() || isVercelRuntime()) {
     return 'memory';
+  }
+
+  if (process.env.CLIENT_PLATFORM_STORAGE === 'supabase') {
+    return 'supabase';
   }
 
   return process.env.CLIENT_PLATFORM_STORAGE === 'memory' ? 'memory' : 'file';
@@ -21,9 +26,15 @@ const getConfiguredStoreType = (): 'file' | 'memory' => {
 
 const createStore = (): ClientPlatformStore => {
   const storeType = getConfiguredStoreType();
-  return storeType === 'memory'
-    ? new ClientPlatformMemoryStore()
-    : new ClientPlatformFileStore();
+  if (storeType === 'memory') {
+    return new ClientPlatformMemoryStore();
+  }
+
+  if (storeType === 'supabase') {
+    return new ClientPlatformSupabaseStore();
+  }
+
+  return new ClientPlatformFileStore();
 };
 
 class ClientPlatformRepository {

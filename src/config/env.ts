@@ -63,11 +63,14 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(8000),
   APP_ENV: z.enum(['dev', 'prod', 'test']).default('dev'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
-  CLIENT_PLATFORM_STORAGE: z.enum(['file', 'memory']).default('file'),
+  CLIENT_PLATFORM_STORAGE: z.enum(['file', 'memory', 'supabase']).default('file'),
   WAITLIST_OFFER_WINDOW_MINUTES: z.coerce.number().int().positive().default(10),
   TRUST_PROXY: z.boolean().default(false),
   PUBLIC_BASE_URL: z.string().url().optional(),
   CORS_ALLOWED_ORIGINS: z.array(z.string().url()).default([]),
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_PUBLISHABLE_KEY: z.string().trim().min(1).optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().trim().min(1).optional(),
   ENABLE_PUBLIC_CUSTOMER_LOOKUPS: z.boolean().default(false),
   PLATFORM_ADMIN_COOKIE_NAME: z.string().trim().min(1).default('platform_admin_session'),
   ADMIN_SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
@@ -219,6 +222,13 @@ const resolvedEnv = {
   TRUST_PROXY: parseBooleanEnv(process.env.TRUST_PROXY, appEnv === 'prod'),
   PUBLIC_BASE_URL: normalizeBaseUrl(process.env.PUBLIC_BASE_URL),
   CORS_ALLOWED_ORIGINS: parseCorsOrigins(process.env.CORS_ALLOWED_ORIGINS),
+  SUPABASE_URL: normalizeBaseUrl(process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL),
+  SUPABASE_PUBLISHABLE_KEY:
+    process.env.SUPABASE_PUBLISHABLE_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??
+    process.env.SUPABASE_ANON_KEY ??
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY?.trim(),
   ENABLE_PUBLIC_CUSTOMER_LOOKUPS: parseBooleanEnv(
     process.env.ENABLE_PUBLIC_CUSTOMER_LOOKUPS,
     appEnv !== 'prod'
@@ -357,4 +367,16 @@ const resolvedEnv = {
   TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER ?? process.env.TWILIO_FROM
 };
 
-export const env = envSchema.parse(resolvedEnv);
+const parsedEnv = envSchema.parse(resolvedEnv);
+
+if (
+  parsedEnv.CLIENT_PLATFORM_STORAGE === 'supabase' &&
+  (!parsedEnv.SUPABASE_URL ||
+    (!parsedEnv.SUPABASE_SERVICE_ROLE_KEY && !parsedEnv.SUPABASE_PUBLISHABLE_KEY))
+) {
+  throw new Error(
+    'Supabase storage requires SUPABASE_URL and either SUPABASE_SERVICE_ROLE_KEY or SUPABASE_PUBLISHABLE_KEY.'
+  );
+}
+
+export const env = parsedEnv;

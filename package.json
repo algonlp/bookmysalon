@@ -13,9 +13,11 @@
     "lint": "eslint .",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
-    "train": "tsx src/nlp/pipelines/trainingPipeline.ts"
+    "train": "tsx src/nlp/pipelines/trainingPipeline.ts",
+    "sync:supabase": "tsx scripts/sync-supabase.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.103.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

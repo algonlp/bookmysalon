@@ -9,6 +9,7 @@ import type {
 } from './appointment.types';
 import { AppointmentFileStore } from './storage/appointmentFile.store';
 import { AppointmentMemoryStore } from './storage/appointmentMemory.store';
+import { AppointmentSupabaseStore } from './storage/appointmentSupabase.store';
 
 const isTestEnvironment = (): boolean =>
   process.env.APP_ENV === 'test' ||
@@ -19,12 +20,17 @@ const isVercelRuntime = (): boolean =>
   process.env.VERCEL === '1' || Boolean(process.env.VERCEL_ENV);
 
 const createStore = (): AppointmentStore => {
-  const useMemory =
-    isTestEnvironment() ||
-    isVercelRuntime() ||
-    process.env.CLIENT_PLATFORM_STORAGE === 'memory';
+  if (isTestEnvironment() || isVercelRuntime()) {
+    return new AppointmentMemoryStore();
+  }
 
-  return useMemory ? new AppointmentMemoryStore() : new AppointmentFileStore();
+  if (process.env.CLIENT_PLATFORM_STORAGE === 'supabase') {
+    return new AppointmentSupabaseStore();
+  }
+
+  return process.env.CLIENT_PLATFORM_STORAGE === 'memory'
+    ? new AppointmentMemoryStore()
+    : new AppointmentFileStore();
 };
 
 class AppointmentRepository {
