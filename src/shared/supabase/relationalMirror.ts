@@ -72,6 +72,52 @@ const asServiceLocation = (value: unknown) => {
     : defaultServiceLocation;
 };
 
+const knownBusinessNames = new Map<string, string>();
+
+const ensureBusinessExists = async (
+  businessId: unknown,
+  businessName?: unknown
+): Promise<void> => {
+  const normalizedBusinessId = asText(businessId);
+
+  if (!normalizedBusinessId) {
+    return;
+  }
+
+  const normalizedBusinessName = asText(businessName);
+  const knownBusinessName = knownBusinessNames.get(normalizedBusinessId);
+
+  if (typeof knownBusinessName === 'string' && (knownBusinessName || !normalizedBusinessName)) {
+    return;
+  }
+
+  await upsertRows(
+    'businesses',
+    [
+      {
+        id: normalizedBusinessId,
+        admin_token: `legacy-${normalizedBusinessId}`,
+        email: '',
+        mobile_number: '',
+        business_phone_number: '',
+        provider: 'email',
+        business_name: normalizedBusinessName,
+        website: '',
+        profile_image_url: '',
+        account_type: null,
+        venue_address: '',
+        preferred_language: null,
+        onboarding_completed: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ],
+    'id'
+  );
+
+  knownBusinessNames.set(normalizedBusinessId, normalizedBusinessName);
+};
+
 const upsertRows = async (
   tableName: string,
   rows: Row[],
@@ -360,6 +406,8 @@ export const syncClientRecordToRelational = async (clientRecord: ClientRecord): 
     'id'
   );
 
+  knownBusinessNames.set(clientRecord.id, asText(clientRecord.businessName));
+
   await syncBusinessSettings(clientRecord);
   await syncBusinessServiceTypes(clientRecord);
   await syncBusinessServiceLocations(clientRecord);
@@ -390,6 +438,8 @@ const syncPackagePurchaseServices = async (
 export const syncPackagePurchaseToRelational = async (
   packagePurchase: PackagePurchaseRecord
 ): Promise<void> => {
+  await ensureBusinessExists(packagePurchase.businessId);
+
   await upsertRows(
     'package_purchases',
     [
@@ -436,6 +486,8 @@ const syncLoyaltyRewardServices = async (
 export const syncLoyaltyRewardToRelational = async (
   loyaltyReward: LoyaltyRewardRecord
 ): Promise<void> => {
+  await ensureBusinessExists(loyaltyReward.businessId);
+
   await upsertRows(
     'loyalty_rewards',
     [
@@ -465,6 +517,8 @@ export const syncLoyaltyRewardToRelational = async (
 export const syncAppointmentToRelational = async (
   appointment: AppointmentRecord
 ): Promise<void> => {
+  await ensureBusinessExists(appointment.businessId, appointment.businessName);
+
   await upsertRows(
     'appointments',
     [
@@ -507,6 +561,8 @@ export const syncAppointmentToRelational = async (
 export const syncPaymentRecordToRelational = async (
   paymentRecord: PaymentRecord
 ): Promise<void> => {
+  await ensureBusinessExists(paymentRecord.businessId);
+
   await upsertRows(
     'payments',
     [
@@ -533,6 +589,8 @@ export const syncPaymentRecordToRelational = async (
 };
 
 export const syncReviewToRelational = async (review: ReviewRecord): Promise<void> => {
+  await ensureBusinessExists(review.businessId);
+
   await upsertRows(
     'reviews',
     [
@@ -553,6 +611,8 @@ export const syncReviewToRelational = async (review: ReviewRecord): Promise<void
 export const syncWaitlistEntryToRelational = async (
   waitlistEntry: WaitlistRecord
 ): Promise<void> => {
+  await ensureBusinessExists(waitlistEntry.businessId);
+
   await upsertRows(
     'waitlist_entries',
     [
