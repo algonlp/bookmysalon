@@ -766,6 +766,22 @@ textarea:focus-visible {
   margin-top: 34px;
 }
 
+.public-salon-showcase-metrics {
+  display: grid;
+  justify-items: center;
+  gap: 0;
+  margin-top: 42px;
+}
+
+.public-salon-showcase-metrics .booking-count {
+  margin-top: 0;
+  text-align: center;
+}
+
+.public-salon-showcase-metrics .hero-highlight-grid {
+  margin-top: 26px;
+}
+
 .public-salon-card {
   display: grid;
   gap: 18px;
