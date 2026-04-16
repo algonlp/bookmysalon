@@ -8,6 +8,14 @@ import type {
 } from '../appointment.types';
 import type { AppointmentStore } from '../appointment.store';
 import { SupabaseJsonbTable, toJsonValue } from '../../shared/supabase/jsonbTable';
+import {
+  syncAppointmentToRelational,
+  syncLoyaltyRewardToRelational,
+  syncPackagePurchaseToRelational,
+  syncPaymentRecordToRelational,
+  syncReviewToRelational,
+  syncWaitlistEntryToRelational
+} from '../../shared/supabase/relationalMirror';
 
 const appointmentTable = new SupabaseJsonbTable<AppointmentRecord>({
   tableName: 'appointment_records',
@@ -96,28 +104,40 @@ export class AppointmentSupabaseStore implements AppointmentStore {
     return waitlistTable.list();
   }
 
-  saveAppointment(appointment: AppointmentRecord): Promise<AppointmentRecord> {
-    return appointmentTable.upsert(appointment);
+  async saveAppointment(appointment: AppointmentRecord): Promise<AppointmentRecord> {
+    await appointmentTable.upsert(appointment);
+    await syncAppointmentToRelational(appointment);
+    return appointment;
   }
 
-  savePaymentRecord(paymentRecord: PaymentRecord): Promise<PaymentRecord> {
-    return paymentTable.upsert(paymentRecord);
+  async savePaymentRecord(paymentRecord: PaymentRecord): Promise<PaymentRecord> {
+    await paymentTable.upsert(paymentRecord);
+    await syncPaymentRecordToRelational(paymentRecord);
+    return paymentRecord;
   }
 
-  saveReview(review: ReviewRecord): Promise<ReviewRecord> {
-    return reviewTable.upsert(review);
+  async saveReview(review: ReviewRecord): Promise<ReviewRecord> {
+    await reviewTable.upsert(review);
+    await syncReviewToRelational(review);
+    return review;
   }
 
-  savePackagePurchase(packagePurchase: PackagePurchaseRecord): Promise<PackagePurchaseRecord> {
-    return packagePurchaseTable.upsert(packagePurchase);
+  async savePackagePurchase(packagePurchase: PackagePurchaseRecord): Promise<PackagePurchaseRecord> {
+    await packagePurchaseTable.upsert(packagePurchase);
+    await syncPackagePurchaseToRelational(packagePurchase);
+    return packagePurchase;
   }
 
-  saveLoyaltyReward(loyaltyReward: LoyaltyRewardRecord): Promise<LoyaltyRewardRecord> {
-    return loyaltyRewardTable.upsert(loyaltyReward);
+  async saveLoyaltyReward(loyaltyReward: LoyaltyRewardRecord): Promise<LoyaltyRewardRecord> {
+    await loyaltyRewardTable.upsert(loyaltyReward);
+    await syncLoyaltyRewardToRelational(loyaltyReward);
+    return loyaltyReward;
   }
 
-  saveWaitlistEntry(waitlistEntry: WaitlistRecord): Promise<WaitlistRecord> {
-    return waitlistTable.upsert(waitlistEntry);
+  async saveWaitlistEntry(waitlistEntry: WaitlistRecord): Promise<WaitlistRecord> {
+    await waitlistTable.upsert(waitlistEntry);
+    await syncWaitlistEntryToRelational(waitlistEntry);
+    return waitlistEntry;
   }
 
   async reset(): Promise<void> {

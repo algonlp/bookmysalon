@@ -130,6 +130,60 @@ To preserve the existing local JSON data while moving to Supabase:
 
 The migration keeps the current record shapes intact by storing each record as JSONB payload data in Supabase tables.
 
+## Supabase Relational Schema
+
+If you want every major entity stored in its own table instead of JSONB payload blobs, use [supabase/relational-schema.sql](</d:/algo nlp/fresha project algonlp/supabase/relational-schema.sql>).
+
+This relational schema creates dedicated tables for:
+- businesses
+- business settings
+- service types and service locations
+- team members
+- services
+- products and product sales
+- package plans and package purchases
+- loyalty programs and loyalty rewards
+- customer profiles
+- appointments
+- payments
+- reviews
+- waitlist entries
+
+Important:
+- The current running app still uses the JSONB sync tables in [supabase/schema.sql](</d:/algo nlp/fresha project algonlp/supabase/schema.sql>).
+- Running the relational schema creates the tables, but the application code must still be migrated before the app reads and writes those new tables directly.
+- Use the relational schema when you are ready to do a full database migration away from payload-based storage.
+
+To backfill the current live Supabase JSONB data into the normalized relational tables:
+
+1. Run [supabase/relational-schema.sql](</d:/algo nlp/fresha project algonlp/supabase/relational-schema.sql>) in the Supabase SQL editor.
+2. Make sure your environment still points at the same Supabase project.
+3. Run:
+
+```bash
+npm run sync:supabase:relational
+```
+
+This copies data from the current live JSONB tables:
+- `client_platform_clients`
+- `appointment_records`
+- `payment_records`
+- `review_records`
+- `package_purchase_records`
+- `loyalty_reward_records`
+- `waitlist_records`
+
+into the normalized tables such as:
+- `businesses`
+- `team_members`
+- `services`
+- `appointments`
+- `payments`
+- `reviews`
+- `waitlist_entries`
+
+New writes made through the current Supabase storage layer are also mirrored into the relational tables after this update.
+
 ## Status
 
 This repository is an active application codebase, not just a scaffold. The current implementation covers public booking, salon onboarding, dashboard operations, and booking lifecycle flows.

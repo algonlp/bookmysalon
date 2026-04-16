@@ -105,10 +105,17 @@
                 id="service-query"
                 name="service"
                 type="text"
-                list="search-service-options"
                 autocomplete="off"
                 placeholder="All treatments and venues"
+                aria-controls="service-query-dropdown"
+                aria-expanded="false"
               />
+              <div
+                class="search-dropdown is-hidden"
+                id="service-query-dropdown"
+                role="listbox"
+                aria-label="Treatment suggestions"
+              ></div>
             </label>
 
             <label class="search-item">
@@ -129,7 +136,15 @@
                 type="text"
                 autocomplete="address-level2"
                 placeholder="Current location"
+                aria-controls="city-query-dropdown"
+                aria-expanded="false"
               />
+              <div
+                class="search-dropdown is-hidden"
+                id="city-query-dropdown"
+                role="listbox"
+                aria-label="Venue suggestions"
+              ></div>
             </label>
 
             <label class="search-item">
@@ -143,7 +158,6 @@
             </label>
 
             <button class="search-button" type="submit">Search</button>
-            <datalist id="search-service-options"></datalist>
           </form>
 
         </section>

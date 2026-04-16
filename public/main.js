@@ -1600,6 +1600,38 @@ const getSalonLocationScore = (salon, locationQuery) => {
   return matchedParts > 0 ? matchedParts * 18 : -1;
 };
 
+const getSalonLocationSearchValues = (salon) => {
+  const address = typeof salon.venueAddress === 'string' ? salon.venueAddress.trim() : '';
+
+  if (!address) {
+    return [];
+  }
+
+  const parts = address
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const cityLike = parts.length >= 3 ? parts[parts.length - 3] : '';
+  const regionLike = parts.length >= 4 ? parts[parts.length - 4] : '';
+
+  return [
+    cityLike,
+    regionLike,
+    parts[1],
+    parts[0],
+    parts.slice(0, 2).join(', '),
+    parts.slice(0, 3).join(', ')
+  ].filter((value, index, values) => {
+    if (typeof value !== 'string' || !value.trim()) {
+      return false;
+    }
+
+    return values.findIndex(
+      (entry) => normalizeSearchValue(entry) === normalizeSearchValue(value)
+    ) === index;
+  });
+};
+
 const getPublicSalonOnlineSummary = (salon) => {
   const onlineCount = Number(salon.onlineTeamMembersCount) || 0;
   const onlineNames = Array.isArray(salon.onlineTeamMemberNames)
@@ -1780,7 +1812,8 @@ const initHomeSalonSearch = () => {
   const showcaseEmpty = document.querySelector('#public-salon-showcase-empty');
   const showcaseTitle = document.querySelector('#public-salon-showcase-title');
   const showcaseStatus = document.querySelector('#public-salon-showcase-status');
-  const serviceOptions = document.querySelector('#search-service-options');
+  const serviceDropdown = document.querySelector('#service-query-dropdown');
+  const cityDropdown = document.querySelector('#city-query-dropdown');
   const locationTrigger = document.querySelector('#city-location-trigger');
 
   if (
@@ -1799,31 +1832,212 @@ const initHomeSalonSearch = () => {
   const defaultTitle = showcaseTitle.textContent ?? 'Newly launched salons ready for booking';
   const defaultStatus = showcaseStatus.textContent ?? 'Showing all salons ready for booking.';
   let allSalons = [];
+  let serviceSuggestions = [];
+  let citySuggestions = [];
   let resultsLimit = 3;
   let hasRequestedCurrentLocation = false;
 
-  const populateServiceOptions = (salons) => {
-    if (!(serviceOptions instanceof HTMLDataListElement)) {
-      return;
-    }
-
-    const optionValues = new Set();
+  const buildSuggestionEntries = (salons, getValues, chipLabel, metaBuilder) => {
+    const suggestionMap = new Map();
 
     for (const salon of salons) {
-      for (const value of getSalonServiceSearchValues(salon)) {
-        optionValues.add(value);
+      for (const value of getValues(salon)) {
+        const normalizedValue = normalizeSearchValue(value);
+
+        if (!normalizedValue) {
+          continue;
+        }
+
+        const currentSuggestion = suggestionMap.get(normalizedValue) ?? {
+          value: value.trim(),
+          count: 0
+        };
+        currentSuggestion.count += 1;
+        suggestionMap.set(normalizedValue, currentSuggestion);
       }
     }
 
-    const optionElements = [...optionValues]
-      .sort((left, right) => left.localeCompare(right))
-      .map((value) => {
-        const option = document.createElement('option');
-        option.value = value;
-        return option;
-      });
+    return [...suggestionMap.values()]
+      .sort(
+        (left, right) =>
+          right.count - left.count ||
+          left.value.localeCompare(right.value)
+      )
+      .map((entry) => ({
+        ...entry,
+        chipLabel,
+        meta: metaBuilder(entry.count)
+      }));
+  };
 
-    serviceOptions.replaceChildren(...optionElements);
+  const getRankedSuggestions = (suggestions, query) => {
+    const normalizedQuery = normalizeSearchValue(query);
+
+    return suggestions
+      .map((suggestion) => {
+        const normalizedValue = normalizeSearchValue(suggestion.value);
+        let score = 0;
+
+        if (!normalizedQuery) {
+          score = suggestion.count * 12;
+        } else if (normalizedValue === normalizedQuery) {
+          score = 140;
+        } else if (normalizedValue.startsWith(normalizedQuery)) {
+          score = 110;
+        } else if (normalizedValue.includes(normalizedQuery)) {
+          score = 82;
+        } else {
+          const matchedParts = normalizedQuery
+            .split(' ')
+            .filter(Boolean)
+            .filter((part) => normalizedValue.includes(part)).length;
+          score = matchedParts > 0 ? matchedParts * 24 : -1;
+        }
+
+        return {
+          ...suggestion,
+          score
+        };
+      })
+      .filter((suggestion) => suggestion.score >= 0)
+      .sort(
+        (left, right) =>
+          right.score - left.score ||
+          right.count - left.count ||
+          left.value.localeCompare(right.value)
+      )
+      .slice(0, 6);
+  };
+
+  const createSearchDropdownController = ({
+    input,
+    dropdown,
+    title,
+    subtitle,
+    getSuggestions,
+    onSelect,
+    onOpen
+  }) => {
+    if (!(input instanceof HTMLInputElement) || !(dropdown instanceof HTMLDivElement)) {
+      return {
+        open: () => {},
+        close: () => {},
+        refresh: () => {}
+      };
+    }
+
+    const container = input.closest('.search-item');
+
+    const close = () => {
+      dropdown.classList.add('is-hidden');
+      input.setAttribute('aria-expanded', 'false');
+    };
+
+    const open = () => {
+      onOpen?.();
+      dropdown.replaceChildren();
+
+      const copy = document.createElement('div');
+      copy.className = 'search-dropdown-copy';
+      const heading = document.createElement('strong');
+      heading.textContent = title;
+      const description = document.createElement('span');
+      description.textContent = subtitle;
+      copy.append(heading, description);
+      dropdown.append(copy);
+
+      const suggestions = getSuggestions(input.value);
+
+      if (suggestions.length === 0) {
+        const emptyState = document.createElement('p');
+        emptyState.className = 'search-dropdown-empty';
+        emptyState.textContent = 'No matching suggestions yet. Keep typing to search all salons.';
+        dropdown.append(emptyState);
+      } else {
+        const options = document.createElement('div');
+        options.className = 'search-dropdown-options';
+
+        for (const suggestion of suggestions) {
+          const optionButton = document.createElement('button');
+          optionButton.type = 'button';
+          optionButton.className = 'search-dropdown-option';
+          optionButton.setAttribute('role', 'option');
+          optionButton.dataset.suggestionValue = suggestion.value;
+
+          const optionCopy = document.createElement('div');
+          optionCopy.className = 'search-dropdown-option-copy';
+          const optionTitle = document.createElement('strong');
+          optionTitle.textContent = suggestion.value;
+          const optionMeta = document.createElement('span');
+          optionMeta.textContent = suggestion.meta;
+          optionCopy.append(optionTitle, optionMeta);
+
+          const optionChip = document.createElement('span');
+          optionChip.className = 'search-dropdown-option-chip';
+          optionChip.textContent = suggestion.chipLabel;
+
+          optionButton.append(optionCopy, optionChip);
+          optionButton.addEventListener('pointerdown', (event) => {
+            event.preventDefault();
+          });
+          optionButton.addEventListener('click', () => {
+            onSelect(suggestion.value);
+            close();
+          });
+          options.append(optionButton);
+        }
+
+        dropdown.append(options);
+      }
+
+      dropdown.classList.remove('is-hidden');
+      input.setAttribute('aria-expanded', 'true');
+    };
+
+    input.addEventListener('focus', open);
+    input.addEventListener('click', open);
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        close();
+        return;
+      }
+
+      if (event.key === 'ArrowDown') {
+        open();
+        const firstOption = dropdown.querySelector('.search-dropdown-option');
+
+        if (firstOption instanceof HTMLButtonElement) {
+          event.preventDefault();
+          firstOption.focus();
+        }
+      }
+    });
+
+    document.addEventListener('pointerdown', (event) => {
+      if (!(event.target instanceof Node) || !(container instanceof HTMLElement)) {
+        close();
+        return;
+      }
+
+      if (container.contains(event.target)) {
+        return;
+      }
+
+      close();
+    });
+
+    return {
+      open,
+      close,
+      refresh: () => {
+        if (
+          document.activeElement === input ||
+          !dropdown.classList.contains('is-hidden')
+        ) {
+          open();
+        }
+      }
+    };
   };
 
   const renderShowcase = (salons, filters = {}) => {
@@ -1977,34 +2191,64 @@ const initHomeSalonSearch = () => {
     }
   };
 
+  const serviceDropdownController = createSearchDropdownController({
+    input: serviceInput,
+    dropdown: serviceDropdown,
+    title: 'Treatments and categories',
+    subtitle: 'Choose a popular service to instantly filter salon cards.',
+    getSuggestions: (query) => getRankedSuggestions(serviceSuggestions, query),
+    onSelect: (value) => {
+      if (serviceInput instanceof HTMLInputElement) {
+        serviceInput.value = value;
+      }
+
+      applyShowcaseFilters();
+    }
+  });
+
+  const cityDropdownController = createSearchDropdownController({
+    input: cityInput,
+    dropdown: cityDropdown,
+    title: 'Venue areas',
+    subtitle: 'Search nearby salons by city, area, or venue address.',
+    getSuggestions: (query) => getRankedSuggestions(citySuggestions, query),
+    onSelect: (value) => {
+      if (cityInput instanceof HTMLInputElement) {
+        cityInput.value = value;
+      }
+
+      applyShowcaseFilters();
+    },
+    onOpen: () => {
+      detectCurrentLocation();
+    }
+  });
+
   searchPanel.addEventListener('submit', (event) => {
     event.preventDefault();
+    serviceDropdownController.close();
+    cityDropdownController.close();
     applyShowcaseFilters({ scrollIntoView: true });
   });
 
   if (cityInput instanceof HTMLInputElement) {
-    cityInput.addEventListener('focus', () => {
-      detectCurrentLocation();
-    });
-
-    cityInput.addEventListener('click', () => {
-      detectCurrentLocation();
-    });
-
     cityInput.addEventListener('input', () => {
       applyShowcaseFilters();
+      cityDropdownController.refresh();
     });
   }
 
   if (locationTrigger instanceof HTMLButtonElement) {
     locationTrigger.addEventListener('click', () => {
       detectCurrentLocation();
+      cityDropdownController.open();
     });
   }
 
   if (serviceInput instanceof HTMLInputElement) {
     serviceInput.addEventListener('input', () => {
       applyShowcaseFilters();
+      serviceDropdownController.refresh();
     });
   }
 
@@ -2028,7 +2272,18 @@ const initHomeSalonSearch = () => {
       }
 
       allSalons = Array.isArray(payload.salons) ? payload.salons : [];
-      populateServiceOptions(allSalons);
+      serviceSuggestions = buildSuggestionEntries(
+        allSalons,
+        (salon) => getSalonServiceSearchValues(salon),
+        'Service',
+        (count) => `${count} salon${count === 1 ? '' : 's'} offer this`
+      );
+      citySuggestions = buildSuggestionEntries(
+        allSalons,
+        (salon) => getSalonLocationSearchValues(salon),
+        'Venue',
+        (count) => `${count} salon${count === 1 ? '' : 's'} in this area`
+      );
       renderShowcase(allSalons);
       applyShowcaseFilters();
       detectCurrentLocation();

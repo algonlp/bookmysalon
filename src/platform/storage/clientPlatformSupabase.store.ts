@@ -1,6 +1,7 @@
 import type { ClientRecord } from '../clientPlatform.types';
 import type { ClientPlatformStore } from '../clientPlatform.store';
 import { SupabaseJsonbTable, toJsonValue } from '../../shared/supabase/jsonbTable';
+import { syncClientRecordToRelational } from '../../shared/supabase/relationalMirror';
 
 const clientTable = new SupabaseJsonbTable<ClientRecord>({
   tableName: 'client_platform_clients',
@@ -22,8 +23,10 @@ export class ClientPlatformSupabaseStore implements ClientPlatformStore {
     return clientTable.list();
   }
 
-  saveClient(client: ClientRecord): Promise<ClientRecord> {
-    return clientTable.upsert(client);
+  async saveClient(client: ClientRecord): Promise<ClientRecord> {
+    await clientTable.upsert(client);
+    await syncClientRecordToRelational(client);
+    return client;
   }
 
   reset(): Promise<void> {
