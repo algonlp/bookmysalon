@@ -576,6 +576,29 @@ const apiRequest = async (path, options = {}) => {
   return payload;
 };
 
+const getSetupGuideProgress = (client, appointments = []) => {
+  const activeTeamMembers = Array.isArray(client?.teamMembers)
+    ? client.teamMembers.filter((teamMember) => teamMember?.isActive !== false)
+    : [];
+  const activeServices = Array.isArray(client?.services)
+    ? client.services.filter((service) => service?.isActive !== false)
+    : [];
+  const appointmentRecords = Array.isArray(appointments) ? appointments : [];
+
+  const steps = {
+    account: Boolean(client?.id),
+    barber: activeTeamMembers.length > 0,
+    services: activeServices.length > 0,
+    appointment: appointmentRecords.length > 0,
+    checkout: appointmentRecords.some((appointment) => appointment?.status === 'completed')
+  };
+
+  return {
+    ...steps,
+    isAllComplete: Object.values(steps).every(Boolean)
+  };
+};
+
 let publicConfigRequest = null;
 let currentPublicConfig = null;
 
@@ -10085,6 +10108,9 @@ const createTrendCard = (
     qrCodeImagePath = launchLinks.qrCodeImageLink;
 
     const calendarCopy = getDashboardUiCopy().calendar ?? DEFAULT_DASHBOARD_UI_COPY.calendar;
+    const setupGuideProgress = getSetupGuideProgress(payload.client, payload.dashboard?.appointments);
+
+    setupButton.classList.toggle('is-hidden', setupGuideProgress.isAllComplete);
 
     if (bookingLink instanceof HTMLAnchorElement) {
       bookingLink.href = publicBookingPath;
@@ -11609,14 +11635,16 @@ const initManageBooking = () => {
 
 const initSetupGuide = () => {
   const backLink = document.querySelector('#setup-guide-back-link');
-  const barberLink = document.querySelector('#setup-guide-appointment-link');
-  const serviceLink = document.querySelector('#setup-guide-service-link');
-  const appointmentLink = document.querySelector('#setup-guide-booking-link');
-  const checkoutLink = document.querySelector('#setup-guide-checkout-link');
+  const accountItem = document.querySelector('#setup-guide-account-item');
+  const barberLink = document.querySelector('#setup-guide-barber-item');
+  const serviceLink = document.querySelector('#setup-guide-service-item');
+  const appointmentLink = document.querySelector('#setup-guide-booking-item');
+  const checkoutLink = document.querySelector('#setup-guide-checkout-item');
   const skipLink = document.querySelector('#setup-guide-skip-link');
 
   if (
     !(backLink instanceof HTMLAnchorElement) ||
+    !(accountItem instanceof HTMLElement) ||
     !(barberLink instanceof HTMLAnchorElement) ||
     !(serviceLink instanceof HTMLAnchorElement) ||
     !(appointmentLink instanceof HTMLAnchorElement) ||
@@ -11634,6 +11662,44 @@ const initSetupGuide = () => {
   appointmentLink.href = buildPathWithClientId('/calendar', clientId);
   checkoutLink.href = buildPathWithClientId('/calendar', clientId);
   skipLink.href = buildPathWithClientId('/calendar', clientId);
+
+  if (!clientId) {
+    return;
+  }
+
+  const setSetupGuideItemState = (element, isComplete) => {
+    element.classList.toggle('is-complete', isComplete);
+
+    const end = element.querySelector('.setup-guide-item-end');
+
+    if (!(end instanceof HTMLElement)) {
+      return;
+    }
+
+    if (isComplete) {
+      end.className = 'setup-guide-item-end is-success';
+      end.innerHTML =
+        '<svg viewBox="0 0 24 24" focusable="false"><path d="M5 12.5l4.2 4.2L19 7"></path></svg>';
+      return;
+    }
+
+    end.className = 'setup-guide-item-end';
+    end.innerHTML =
+      '<svg viewBox="0 0 24 24" focusable="false"><path d="M9 6l6 6-6 6"></path></svg>';
+  };
+
+  apiRequest(`/api/platform/clients/${clientId}/dashboard`)
+    .then((payload) => {
+      const progress = getSetupGuideProgress(payload.client, payload.dashboard?.appointments);
+
+      setSetupGuideItemState(accountItem, progress.account);
+      setSetupGuideItemState(barberLink, progress.barber);
+      setSetupGuideItemState(serviceLink, progress.services);
+      setSetupGuideItemState(appointmentLink, progress.appointment);
+      setSetupGuideItemState(checkoutLink, progress.checkout);
+      skipLink.classList.toggle('is-hidden', progress.isAllComplete);
+    })
+    .catch(() => {});
 };
 
 const initOnboardingComplete = () => {

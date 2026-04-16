@@ -4940,18 +4940,23 @@ button.calendar-reports-summary-card {
   inset: 0;
   z-index: 80;
   display: grid;
-  place-items: center;
+  place-items: start center;
   padding: 24px;
   background: rgba(19, 24, 39, 0.45);
   backdrop-filter: blur(6px);
+  overflow-y: auto;
 }
 
 .calendar-qr-dialog {
   width: min(560px, 100%);
+  max-height: min(calc(100vh - 48px), 900px);
+  margin: auto 0;
   padding: 26px;
   border-radius: 28px;
   background: rgba(255, 252, 248, 0.98);
   box-shadow: 0 28px 54px rgba(29, 34, 48, 0.22);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .calendar-qr-header,
@@ -6327,6 +6332,12 @@ button.calendar-reports-summary-card {
 .setup-guide-copy {
   font-size: 1.12rem;
   font-weight: 700;
+}
+
+.setup-guide-item.is-complete .setup-guide-step {
+  border-color: #43a15d;
+  color: #43a15d;
+  background: rgba(67, 161, 93, 0.08);
 }
 
 .setup-guide-item-end {
