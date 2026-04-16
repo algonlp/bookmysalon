@@ -64,6 +64,7 @@ const envSchema = z.object({
   APP_ENV: z.enum(['dev', 'prod', 'test']).default('dev'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   CLIENT_PLATFORM_STORAGE: z.enum(['file', 'memory', 'supabase']).default('file'),
+  APP_TIMEZONE: z.string().trim().min(1).default('Asia/Karachi'),
   WAITLIST_OFFER_WINDOW_MINUTES: z.coerce.number().int().positive().default(10),
   TRUST_PROXY: z.boolean().default(false),
   PUBLIC_BASE_URL: z.string().url().optional(),

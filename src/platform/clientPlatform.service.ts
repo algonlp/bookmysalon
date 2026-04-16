@@ -25,6 +25,7 @@ import {
   normalizeBusinessServices,
   syncBusinessServicesWithTypes
 } from './businessServices';
+import { formatInTimeZone } from '../shared/time';
 import type {
   AccountTypeInput,
   BusinessProfileInput,
@@ -1636,23 +1637,32 @@ const formatDashboardDate = (
   date: Date,
   preferredLanguage: PreferredLanguage | null | undefined
 ): string =>
-  new Intl.DateTimeFormat(getDashboardUiCopyForLanguage(preferredLanguage, DASHBOARD_UI_COPY_BY_LANGUAGE).locale, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short'
-  })
-    .format(date)
+  formatInTimeZone(
+    date,
+    getDashboardUiCopyForLanguage(preferredLanguage, DASHBOARD_UI_COPY_BY_LANGUAGE).locale,
+    env.APP_TIMEZONE,
+    {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short'
+    }
+  )
     .replace(',', '');
 
 const formatDashboardTime = (
   date: Date,
   preferredLanguage: PreferredLanguage | null | undefined
 ): string =>
-  new Intl.DateTimeFormat(getDashboardUiCopyForLanguage(preferredLanguage, DASHBOARD_UI_COPY_BY_LANGUAGE).locale, {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  }).format(date);
+  formatInTimeZone(
+    date,
+    getDashboardUiCopyForLanguage(preferredLanguage, DASHBOARD_UI_COPY_BY_LANGUAGE).locale,
+    env.APP_TIMEZONE,
+    {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }
+  );
 
 const buildDashboardLink = (clientId: string, origin: string): string =>
   `${origin}/calendar?clientId=${encodeURIComponent(clientId)}`;

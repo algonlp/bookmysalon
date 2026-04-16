@@ -838,6 +838,80 @@ describe('Client platform API', () => {
     );
   });
 
+  it('filters past same-day slots and stores bookings using the app timezone instead of server local time', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(Date.UTC(2026, 2, 11, 8, 30, 0)));
+
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'timezone-admin@example.com',
+      provider: 'email'
+    });
+
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/business-profile`)
+      .set('x-admin-token', adminToken)
+      .send({
+        businessName: 'Timezone House',
+        website: 'timezonehouse.example'
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-types`)
+      .set('x-admin-token', adminToken)
+      .send({
+        serviceTypes: ['Barber']
+      });
+
+    const slotsResponse = await request(app).get(
+      `/api/public/book/${clientId}/slots?date=2026-03-11`
+    );
+
+    expect(slotsResponse.status).toBe(200);
+    expect(slotsResponse.body.slots).not.toEqual(
+      expect.arrayContaining(['09:00', '10:00', '11:00', '12:00'])
+    );
+    expect(slotsResponse.body.slots).toEqual(expect.arrayContaining(['14:00', '15:00']));
+
+    const pastBookingResponse = await request(app)
+      .post(`/api/public/book/${clientId}/appointments`)
+      .send({
+        serviceName: 'Haircut',
+        appointmentDate: '2026-03-11',
+        appointmentTime: '09:00',
+        customerName: 'Late Customer',
+        customerPhone: '+923003330000',
+        source: 'direct'
+      });
+
+    expect(pastBookingResponse.status).toBe(409);
+    expect(pastBookingResponse.body.error).toBe('Selected appointment time is no longer available');
+
+    const futureBookingResponse = await request(app)
+      .post(`/api/public/book/${clientId}/appointments`)
+      .send({
+        serviceName: 'Haircut',
+        appointmentDate: '2026-03-11',
+        appointmentTime: '14:00',
+        customerName: 'Future Customer',
+        customerPhone: '+923003330001',
+        source: 'direct'
+      });
+
+    expect(futureBookingResponse.status).toBe(201);
+    expect(futureBookingResponse.body.appointment).toEqual(
+      expect.objectContaining({
+        appointmentDate: '2026-03-11',
+        appointmentTime: '14:00',
+        startAt: '2026-03-11T09:00:00.000Z'
+      })
+    );
+
+    vi.useRealTimers();
+  });
+
   it('lets an admin send a running-late sms and manually complete a booked appointment', async () => {
     const bookingDate = new Date();
     bookingDate.setDate(bookingDate.getDate() + 1);

@@ -32,6 +32,11 @@ import { HttpError } from '../shared/errors/httpError';
 import { twilioSmsService } from '../notifications/twilioSms.service';
 import type { DashboardCommerceViewModel } from '../platform/clientPlatform.types';
 import {
+  createUtcDateFromTimeZone,
+  formatDateValueInTimeZone,
+  getTimeMinutesInTimeZone
+} from '../shared/time';
+import {
   createFallbackAppointmentService,
   normalizeBusinessServices,
   toAppointmentServiceOptions
@@ -201,13 +206,6 @@ const normalizeEmailLookup = (emailValue: string): string =>
 
 const buildCustomerKey = (phoneValue: string, emailValue = ''): string =>
   normalizePhoneLookup(phoneValue) || normalizeEmailLookup(emailValue);
-
-const formatDateValue = (date: Date): string => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
 
 const parseMoneyValue = (
   priceLabel: string,
@@ -626,7 +624,7 @@ const buildPaymentSnapshotForAppointments = (
 
 const isPastSlot = (appointmentDate: string, slot: string): boolean => {
   const now = new Date();
-  const today = formatDateValue(now);
+  const today = formatDateValueInTimeZone(now, env.APP_TIMEZONE);
 
   if (appointmentDate < today) {
     return true;
@@ -636,8 +634,7 @@ const isPastSlot = (appointmentDate: string, slot: string): boolean => {
     return false;
   }
 
-  const slotStart = new Date(`${appointmentDate}T${slot}:00`);
-  return slotStart.getTime() <= now.getTime();
+  return parseTimeToMinutes(slot) <= getTimeMinutesInTimeZone(now, env.APP_TIMEZONE);
 };
 
 const parseTimeToMinutes = (timeValue: string): number => {
@@ -1648,7 +1645,11 @@ export const appointmentService = {
       throw new HttpError(400, 'Choose either a package or a loyalty reward');
     }
 
-    const startAt = new Date(`${input.appointmentDate}T${input.appointmentTime}:00`).toISOString();
+    const startAt = createUtcDateFromTimeZone(
+      input.appointmentDate,
+      input.appointmentTime,
+      env.APP_TIMEZONE
+    ).toISOString();
     const endAt = new Date(
       new Date(startAt).getTime() + selectedService.durationMinutes * 60 * 1000
     ).toISOString();
@@ -1902,7 +1903,11 @@ export const appointmentService = {
       throw new HttpError(404, 'Appointment service is no longer available');
     }
 
-    const startAt = new Date(`${input.appointmentDate}T${input.appointmentTime}:00`).toISOString();
+    const startAt = createUtcDateFromTimeZone(
+      input.appointmentDate,
+      input.appointmentTime,
+      env.APP_TIMEZONE
+    ).toISOString();
     const endAt = new Date(
       new Date(startAt).getTime() + selectedService.durationMinutes * 60 * 1000
     ).toISOString();

@@ -47,7 +47,8 @@ Core application settings:
 - `PORT`: API port
 - `APP_ENV`: `dev`, `prod`, or `test`
 - `LOG_LEVEL`: logger verbosity
-- `CLIENT_PLATFORM_STORAGE`: `file` or `memory`
+- `CLIENT_PLATFORM_STORAGE`: `file`, `memory`, or `supabase`
+- `APP_TIMEZONE`: IANA timezone used for same-day slot filtering, dashboard clock labels, and booking timestamp generation
 - `TRUST_PROXY`: trust reverse-proxy headers in production
 - `PUBLIC_BASE_URL`: canonical public app URL for QR codes and generated links
 - `CORS_ALLOWED_ORIGINS`: comma-separated list of allowed browser origins
