@@ -17,6 +17,7 @@ import type {
   ProductSaleRecord,
   TeamMemberRecord
 } from '../../platform/clientPlatform.types';
+import { defaultServiceLocation, serviceLocationValues } from '../../platform/serviceLocation.constants';
 import { getSupabaseClient } from './client';
 
 type Row = Record<string, unknown>;
@@ -63,6 +64,12 @@ const asStringArray = (value: unknown): string[] => {
         .map((entry) => entry.trim())
         .filter(Boolean)
     : [];
+};
+
+const asServiceLocation = (value: unknown) => {
+  return typeof value === 'string' && serviceLocationValues.includes(value as typeof serviceLocationValues[number])
+    ? value
+    : defaultServiceLocation;
 };
 
 const upsertRows = async (
@@ -474,7 +481,7 @@ export const syncAppointmentToRelational = async (
         customer_name: asText(appointment.customerName),
         customer_phone: asText(appointment.customerPhone),
         customer_email: asText(appointment.customerEmail),
-        service_location: appointment.serviceLocation,
+        service_location: asServiceLocation(appointment.serviceLocation),
         customer_address: asText(appointment.customerAddress),
         appointment_date: asText(appointment.appointmentDate),
         appointment_time: asText(appointment.appointmentTime),
