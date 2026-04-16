@@ -1316,8 +1316,8 @@ textarea:focus-visible {
 
 .pro-signup-shell {
   display: grid;
-  grid-template-columns: minmax(470px, 0.94fr) minmax(420px, 0.96fr);
-  width: min(1180px, 100%);
+  grid-template-columns: minmax(0, 1fr);
+  width: min(680px, 100%);
   min-height: calc(100vh - 44px);
   margin: 0 auto;
   border: 1px solid rgba(16, 16, 16, 0.08);
@@ -1552,43 +1552,6 @@ textarea:focus-visible {
   box-shadow: var(--shadow-soft);
 }
 
-.pro-signup-visual {
-  position: relative;
-  min-height: 720px;
-  overflow: hidden;
-  background: linear-gradient(180deg, #d7e8bf 0%, #edf3e3 100%);
-  perspective: 1400px;
-}
-
-.pro-signup-photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
-  display: block;
-  transform-origin: center center;
-  animation:
-    signup-photo-flip-in 1100ms cubic-bezier(0.2, 0.8, 0.2, 1) both,
-    signup-photo-float 6s ease-in-out 1200ms infinite;
-}
-
-.pro-signup-photo-overlay {
-  position: relative;
-  position: absolute;
-  inset: auto 24px 24px 24px;
-  display: inline-flex;
-  align-items: center;
-  min-height: 48px;
-  padding: 0 18px;
-  border-radius: 999px;
-  background: rgba(24, 31, 41, 0.62);
-  color: #ffffff;
-  font-size: 0.95rem;
-  font-weight: 700;
-  backdrop-filter: blur(6px);
-  animation: signup-photo-overlay-rise 900ms ease 300ms both;
-}
-
 .help-page {
   min-height: 100vh;
   padding: 28px;
@@ -1763,42 +1726,6 @@ textarea:focus-visible {
   .help-detail-row {
     grid-template-columns: 1fr;
     gap: 6px;
-  }
-}
-
-@keyframes signup-photo-flip-in {
-  0% {
-    opacity: 0;
-    transform: rotateY(-16deg) rotateX(8deg) scale(0.94);
-  }
-  60% {
-    opacity: 1;
-    transform: rotateY(6deg) rotateX(-2deg) scale(1.01);
-  }
-  100% {
-    opacity: 1;
-    transform: rotateY(0) rotateX(0) scale(1);
-  }
-}
-
-@keyframes signup-photo-float {
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    transform: translateY(-8px) scale(1.01);
-  }
-}
-
-@keyframes signup-photo-overlay-rise {
-  0% {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -7089,10 +7016,6 @@ button.calendar-reports-summary-card {
 
   .pro-signup-shell {
     grid-template-columns: 1fr;
-  }
-
-  .pro-signup-visual {
-    min-height: 420px;
   }
 
   .onboarding-header {
