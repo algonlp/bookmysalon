@@ -738,7 +738,8 @@ describe('Client platform API', () => {
         name: 'Sameer Khan',
         role: 'Lead Barber',
         phone: '+923001010109',
-        expertise: 'Beard shaping'
+        expertise: 'Beard shaping',
+        isActive: false
       });
 
     expect(updateTeamMemberResponse.status).toBe(200);
@@ -750,7 +751,7 @@ describe('Client platform API', () => {
           role: 'Lead Barber',
           phone: '+923001010109',
           expertise: 'Beard shaping',
-          isActive: true
+          isActive: false
         })
       ])
     );
@@ -1273,6 +1274,16 @@ describe('Client platform API', () => {
       });
 
     await request(app)
+      .post(`/api/platform/clients/${clientId}/team-members`)
+      .set('x-admin-token', adminToken)
+      .send({
+        name: 'Bilal',
+        phone: '+923001234561',
+        expertise: 'Color correction',
+        isActive: false
+      });
+
+    await request(app)
       .post(`/api/platform/clients/${clientId}/complete`)
       .set('x-admin-token', adminToken);
 
@@ -1307,7 +1318,9 @@ describe('Client platform API', () => {
         expect.objectContaining({
           clientId,
           businessName: 'Trim House',
-          bookingLink: `/book/${clientId}`
+          bookingLink: `/book/${clientId}`,
+          onlineTeamMembersCount: 1,
+          onlineTeamMemberNames: ['Asad']
         })
       ])
     );

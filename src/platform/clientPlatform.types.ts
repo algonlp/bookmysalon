@@ -237,6 +237,7 @@ export interface CreateTeamMemberInput {
   openingTime?: string;
   closingTime?: string;
   offDays?: WeekdayId[];
+  isActive?: boolean;
 }
 
 export interface UpdateTeamMemberInput {
@@ -247,6 +248,7 @@ export interface UpdateTeamMemberInput {
   openingTime?: string;
   closingTime?: string;
   offDays?: WeekdayId[];
+  isActive?: boolean;
 }
 
 export interface CreateBusinessServiceInput {
@@ -491,6 +493,8 @@ export interface PublicSalonShowcaseItem {
   serviceLocation: ServiceLocation[];
   venueAddress: string;
   bookingLink: string;
+  onlineTeamMembersCount: number;
+  onlineTeamMemberNames: string[];
   reviewSummary: {
     averageRating: number | null;
     totalReviews: number;

@@ -811,6 +811,38 @@ textarea:focus-visible {
   line-height: 1.5;
 }
 
+.public-salon-online-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin-top: 12px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(14, 125, 64, 0.1);
+  color: #0d7f44;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.public-salon-online-badge::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 5px rgba(13, 127, 68, 0.12);
+}
+
+.public-salon-online-badge.is-offline {
+  background: rgba(88, 82, 76, 0.08);
+  color: #6a635d;
+}
+
+.public-salon-online-badge.is-offline::before {
+  box-shadow: 0 0 0 5px rgba(106, 99, 93, 0.12);
+}
+
 .public-salon-review-meta {
   color: #6a635d;
   font-size: 0.92rem;
@@ -5286,6 +5318,48 @@ button.calendar-reports-summary-card {
   transform: translateX(2px);
 }
 
+.calendar-status-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.calendar-status-toggle-option {
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid rgba(18, 18, 18, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 252, 248, 0.96);
+  color: #2d2a28;
+  font: inherit;
+  font-weight: 800;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.calendar-status-toggle-option:hover,
+.calendar-status-toggle-option:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(89, 79, 226, 0.22);
+  box-shadow: 0 16px 28px rgba(89, 79, 226, 0.1);
+}
+
+.calendar-status-toggle-option.is-selected {
+  border-color: rgba(14, 125, 64, 0.24);
+  background: rgba(14, 125, 64, 0.1);
+  color: #0d7f44;
+}
+
+.calendar-status-toggle-option.is-inactive-option.is-selected {
+  border-color: rgba(138, 75, 53, 0.24);
+  background: rgba(138, 75, 53, 0.1);
+  color: #8a4b35;
+}
+
 .calendar-tool-image-preview {
   width: 88px;
   height: 88px;
@@ -5576,8 +5650,41 @@ button.calendar-reports-summary-card {
   gap: 12px;
 }
 
+.calendar-team-member-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .calendar-team-member-card .calendar-tool-inline-actions {
   margin-top: 2px;
+}
+
+.calendar-team-member-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(14, 125, 64, 0.1);
+  color: #0d7f44;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.calendar-team-member-status::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.calendar-team-member-status.is-inactive {
+  background: rgba(122, 54, 30, 0.1);
+  color: #8a4b35;
 }
 
 .calendar-tool-action {

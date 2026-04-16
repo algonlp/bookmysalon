@@ -2117,6 +2117,10 @@ export const clientPlatformService = {
       visibleClients.map(async (client) => {
         const services = await appointmentService.getServiceCatalogForBusiness(client.id);
         const reviews = await appointmentService.listReviewsForBusiness(client.id);
+        const onlineTeamMembers = normalizeTeamMembers(
+          client.teamMembers ?? [],
+          client.businessSettings
+        ).filter((teamMember) => teamMember.isActive !== false);
 
         return {
           clientId: client.id,
@@ -2125,6 +2129,8 @@ export const clientPlatformService = {
           serviceLocation: client.serviceLocation,
           venueAddress: client.venueAddress,
           bookingLink: `/book/${client.id}`,
+          onlineTeamMembersCount: onlineTeamMembers.length,
+          onlineTeamMemberNames: onlineTeamMembers.map((teamMember) => teamMember.name),
           reviewSummary: reviews.summary,
           services: services.slice(0, 3).map((service) => ({
             name: service.name,
@@ -2247,7 +2253,7 @@ export const clientPlatformService = {
           openingTime: input.openingTime,
           closingTime: input.closingTime,
           offDays: input.offDays,
-          isActive: true,
+          isActive: input.isActive !== false,
           createdAt: now,
           updatedAt: now
         },
@@ -2288,6 +2294,7 @@ export const clientPlatformService = {
           openingTime: input.openingTime,
           closingTime: input.closingTime,
           offDays: input.offDays,
+          isActive: input.isActive === undefined ? existingTeamMember.isActive : input.isActive,
           updatedAt: now
         },
         client.teamMembers.findIndex((teamMember) => teamMember.id === teamMemberId),

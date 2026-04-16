@@ -1600,6 +1600,36 @@ const getSalonLocationScore = (salon, locationQuery) => {
   return matchedParts > 0 ? matchedParts * 18 : -1;
 };
 
+const getPublicSalonOnlineSummary = (salon) => {
+  const onlineCount = Number(salon.onlineTeamMembersCount) || 0;
+  const onlineNames = Array.isArray(salon.onlineTeamMemberNames)
+    ? salon.onlineTeamMemberNames.filter((name) => typeof name === 'string' && name.trim().length > 0)
+    : [];
+  const roleLabel =
+    Array.isArray(salon.serviceTypes) && salon.serviceTypes.includes('Barber')
+      ? onlineCount === 1
+        ? 'barber'
+        : 'barbers'
+      : onlineCount === 1
+        ? 'team member'
+        : 'team members';
+
+  if (onlineCount <= 0) {
+    return {
+      isOnline: false,
+      label: `No ${roleLabel} online`
+    };
+  }
+
+  const previewNames =
+    onlineNames.length > 2 ? `${onlineNames.slice(0, 2).join(', ')} +${onlineNames.length - 2}` : onlineNames.join(', ');
+
+  return {
+    isOnline: true,
+    label: `${onlineCount} ${roleLabel} online${previewNames ? ` | ${previewNames}` : ''}`
+  };
+};
+
 const createSalonShowcaseCard = (salon) => {
   const card = document.createElement('article');
   card.className = 'public-salon-card';
@@ -1619,7 +1649,12 @@ const createSalonShowcaseCard = (salon) => {
       : 'Salon services';
   meta.textContent = `${locationLabel} | ${typeLabel}`;
 
-  titleBlock.append(title, meta);
+  const onlineSummary = getPublicSalonOnlineSummary(salon);
+  const onlineBadge = document.createElement('div');
+  onlineBadge.className = `public-salon-online-badge${onlineSummary.isOnline ? '' : ' is-offline'}`;
+  onlineBadge.textContent = onlineSummary.label;
+
+  titleBlock.append(title, meta, onlineBadge);
 
   const bookLink = document.createElement('a');
   bookLink.className = 'public-salon-book-link';
@@ -1676,6 +1711,9 @@ const initHomeSalonShowcase = () => {
       showcaseEmpty.classList.add('is-hidden');
 
       for (const salon of payload.salons) {
+        showcaseList.append(createSalonShowcaseCard(salon));
+        continue;
+
         const card = document.createElement('article');
         card.className = 'public-salon-card';
 
@@ -6395,7 +6433,16 @@ const createTrendCard = (
     openTeamMembersModal();
   };
 
-  const addTeamMember = async ({ name, role, phone, expertise, openingTime, closingTime, offDays }) => {
+  const addTeamMember = async ({
+    name,
+    role,
+    phone,
+    expertise,
+    openingTime,
+    closingTime,
+    offDays,
+    isActive
+  }) => {
     if (!clientId) {
       return;
     }
@@ -6409,7 +6456,8 @@ const createTrendCard = (
         expertise: expertise.trim(),
         openingTime: openingTime.trim(),
         closingTime: closingTime.trim(),
-        offDays
+        offDays,
+        isActive
       })
     });
 
@@ -6418,7 +6466,7 @@ const createTrendCard = (
 
   const updateTeamMember = async (
     teamMemberId,
-    { name, role, phone, expertise, openingTime, closingTime, offDays }
+    { name, role, phone, expertise, openingTime, closingTime, offDays, isActive }
   ) => {
     if (!clientId) {
       return;
@@ -6433,7 +6481,8 @@ const createTrendCard = (
         expertise: expertise.trim(),
         openingTime: openingTime.trim(),
         closingTime: closingTime.trim(),
-        offDays
+        offDays,
+        isActive
       })
     });
 
@@ -6650,6 +6699,51 @@ const createTrendCard = (
     customExpertiseInput.value = hasPresetExpertise ? '' : currentExpertise;
     customExpertiseField.append(customExpertiseLabel, customExpertiseInput);
 
+    const statusField = document.createElement('div');
+    statusField.className = 'calendar-tool-field';
+    const statusLabel = document.createElement('span');
+    statusLabel.textContent = `${roleLabelDisplay} status`;
+    const statusInput = document.createElement('input');
+    statusInput.type = 'hidden';
+    statusInput.name = 'is-active';
+    statusInput.value = teamMember?.isActive === false ? 'inactive' : 'active';
+    const statusToggle = document.createElement('div');
+    statusToggle.className = 'calendar-status-toggle';
+    const activeStatusButton = document.createElement('button');
+    activeStatusButton.type = 'button';
+    activeStatusButton.className = 'calendar-status-toggle-option is-active-option';
+    activeStatusButton.dataset.statusValue = 'active';
+    activeStatusButton.textContent = 'Active';
+    const inactiveStatusButton = document.createElement('button');
+    inactiveStatusButton.type = 'button';
+    inactiveStatusButton.className = 'calendar-status-toggle-option is-inactive-option';
+    inactiveStatusButton.dataset.statusValue = 'inactive';
+    inactiveStatusButton.textContent = 'Inactive';
+
+    const syncStatusSelection = (nextStatus) => {
+      statusInput.value = nextStatus;
+
+      for (const optionButton of statusToggle.querySelectorAll('.calendar-status-toggle-option')) {
+        if (!(optionButton instanceof HTMLButtonElement)) {
+          continue;
+        }
+
+        const isSelected = optionButton.dataset.statusValue === nextStatus;
+        optionButton.classList.toggle('is-selected', isSelected);
+        optionButton.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+      }
+    };
+
+    for (const optionButton of [activeStatusButton, inactiveStatusButton]) {
+      optionButton.addEventListener('click', () => {
+        syncStatusSelection(optionButton.dataset.statusValue || 'active');
+      });
+      statusToggle.append(optionButton);
+    }
+
+    syncStatusSelection(statusInput.value);
+    statusField.append(statusLabel, statusInput, statusToggle);
+
     const syncCustomExpertiseField = () => {
       const shouldShowCustomExpertise = expertiseSelect.value === customExpertiseValue;
       customExpertiseField.classList.toggle('is-hidden', !shouldShowCustomExpertise);
@@ -6672,6 +6766,7 @@ const createTrendCard = (
       nameField,
       roleField,
       phoneField,
+      statusField,
       openingTimeField,
       closingTimeField,
       offDaysFieldConfig.field,
@@ -6711,7 +6806,8 @@ const createTrendCard = (
             expertise: expertiseValue,
             openingTime: openingTimeInput.value,
             closingTime: closingTimeInput.value,
-            offDays: offDaysValue
+            offDays: offDaysValue,
+            isActive: statusInput.value !== 'inactive'
           });
         } else {
           await addTeamMember({
@@ -6721,7 +6817,8 @@ const createTrendCard = (
             expertise: expertiseValue,
             openingTime: openingTimeInput.value,
             closingTime: closingTimeInput.value,
-            offDays: offDaysValue
+            offDays: offDaysValue,
+            isActive: statusInput.value !== 'inactive'
           });
         }
       } catch (error) {
@@ -6763,8 +6860,14 @@ const createTrendCard = (
     const card = document.createElement('article');
     card.className = 'calendar-notification-item calendar-team-member-card';
 
+    const header = document.createElement('div');
+    header.className = 'calendar-team-member-card-header';
     const heading = document.createElement('strong');
     heading.textContent = teamMember.name;
+    const statusBadge = document.createElement('span');
+    statusBadge.className = `calendar-team-member-status${teamMember.isActive === false ? ' is-inactive' : ''}`;
+    statusBadge.textContent = teamMember.isActive === false ? 'Inactive' : 'Online';
+    header.append(heading, statusBadge);
 
     const copy = document.createElement('p');
     const scheduleSummary = formatTeamMemberScheduleSummary(teamMember);
@@ -6784,6 +6887,36 @@ const createTrendCard = (
       closeToolModal();
       openEditTeamMemberModal(teamMember);
     });
+    const toggleStatusButton = createToolActionButton(
+      teamMember.isActive === false ? 'Mark active' : 'Mark inactive',
+      async () => {
+        toggleStatusButton.disabled = true;
+        toggleStatusButton.textContent =
+          teamMember.isActive === false ? 'Activating...' : 'Updating...';
+
+        try {
+          await updateTeamMember(teamMember.id, {
+            name: teamMember.name || '',
+            role: teamMember.role || getDefaultTeamMemberRole(),
+            phone: teamMember.phone || '',
+            expertise: teamMember.expertise || '',
+            openingTime: teamMember.openingTime || '',
+            closingTime: teamMember.closingTime || '',
+            offDays: Array.isArray(teamMember.offDays) ? teamMember.offDays : [],
+            isActive: teamMember.isActive === false
+          });
+        } catch (error) {
+          toggleStatusButton.disabled = false;
+          toggleStatusButton.textContent =
+            teamMember.isActive === false ? 'Mark active' : 'Mark inactive';
+          safeAlert(
+            error instanceof Error
+              ? error.message
+              : `Unable to update ${teamMember.name} status`
+          );
+        }
+      }
+    );
     const removeButton = createToolActionButton('Remove', async () => {
       const shouldRemove = window.confirm(
         `Remove ${teamMember.name} from the active ${roleLabel} list?`
@@ -6806,8 +6939,8 @@ const createTrendCard = (
     });
     removeButton.classList.add('calendar-tool-action-danger');
 
-    actions.append(editButton, removeButton);
-    card.append(heading, copy, actions);
+    actions.append(editButton, toggleStatusButton, removeButton);
+    card.append(header, copy, actions);
     return card;
   };
 
