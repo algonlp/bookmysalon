@@ -1475,6 +1475,7 @@ const toPublicClientRecord = (client: ClientRecord): PublicClientRecord => ({
   id: client.id,
   email: client.email,
   mobileNumber: client.mobileNumber,
+  businessPhoneNumber: client.businessPhoneNumber,
   provider: client.provider,
   businessName: client.businessName,
   website: client.website,
@@ -1509,6 +1510,7 @@ const DEMO_SALONS: ClientRecord[] = [
     adminToken: 'demo-admin-luna-luxe',
     email: 'hello@lunaluxe.demo',
     mobileNumber: '',
+    businessPhoneNumber: '+92 300 1110001',
     provider: 'email',
     businessName: 'Luna Luxe Salon',
     website: 'www.lunaluxe.demo',
@@ -1552,6 +1554,7 @@ const DEMO_SALONS: ClientRecord[] = [
     adminToken: 'demo-admin-urban-trim',
     email: 'hello@urbantrim.demo',
     mobileNumber: '',
+    businessPhoneNumber: '+92 300 1110003',
     provider: 'email',
     businessName: 'Urban Trim Studio',
     website: 'www.urbantrim.demo',
@@ -1578,6 +1581,7 @@ const DEMO_SALONS: ClientRecord[] = [
     adminToken: 'demo-admin-serene-glow',
     email: 'hello@sereneglow.demo',
     mobileNumber: '',
+    businessPhoneNumber: '+92 300 1110002',
     provider: 'email',
     businessName: 'Serene Glow Spa',
     website: 'www.sereneglow.demo',
@@ -1966,6 +1970,8 @@ const hydrateClientRecord = (client: ClientRecord): ClientRecord => {
   return {
     ...client,
     mobileNumber: typeof client.mobileNumber === 'string' ? client.mobileNumber.trim() : '',
+    businessPhoneNumber:
+      typeof client.businessPhoneNumber === 'string' ? client.businessPhoneNumber.trim() : '',
     businessSettings,
     serviceLocation: normalizeServiceLocations(client.serviceLocation),
     services: normalizeBusinessServices(
@@ -2045,6 +2051,7 @@ export const clientPlatformService = {
       adminToken: randomUUID(),
       email: normalizedEmail || buildFallbackEmail(input.provider),
       mobileNumber: normalizedMobileNumber,
+      businessPhoneNumber: '',
       provider: input.provider,
       businessName: '',
       website: '',
@@ -2084,6 +2091,14 @@ export const clientPlatformService = {
       client,
       nextStep: getNextClientStep(client)
     };
+  },
+
+  logoutClient(clientId: string): Promise<ClientRecord> {
+    return updateClient(clientId, (client) => ({
+      ...client,
+      adminToken: randomUUID(),
+      updatedAt: new Date().toISOString()
+    }));
   },
 
   getClient(clientId: string): Promise<ClientRecord> {
@@ -2126,6 +2141,7 @@ export const clientPlatformService = {
       ...client,
       businessName: input.businessName.trim(),
       website: input.website?.trim() ?? '',
+      businessPhoneNumber: input.businessPhoneNumber?.trim() ?? '',
       profileImageUrl: input.profileImageUrl?.trim() ?? '',
       venueAddress: input.venueAddress?.trim() ?? client.venueAddress,
       updatedAt: new Date().toISOString()

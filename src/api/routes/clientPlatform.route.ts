@@ -7,6 +7,11 @@ export const clientPlatformRouter = Router();
 
 clientPlatformRouter.post('/platform/clients', asyncHandler(clientPlatformController.createClient));
 clientPlatformRouter.post('/platform/clients/login', asyncHandler(clientPlatformController.loginClient));
+clientPlatformRouter.post(
+  '/platform/clients/:clientId/logout',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.logoutClient)
+);
 clientPlatformRouter.get(
   '/public/salons',
   asyncHandler(clientPlatformController.listPublicSalons)

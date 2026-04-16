@@ -1347,6 +1347,9 @@ export const appointmentService = {
     return {
       businessId: business.id,
       businessName: getBusinessDisplayName(business),
+      businessPhoneNumber: business.businessPhoneNumber ?? '',
+      website: business.website ?? '',
+      venueAddress: business.venueAddress ?? '',
       serviceTypes: business.serviceTypes,
       serviceLocations: getAvailableBookingServiceLocations(business),
       services,

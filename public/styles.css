@@ -3636,8 +3636,12 @@ textarea:focus-visible {
 .calendar-user-avatar {
   width: 44px;
   height: 44px;
+  padding: 0;
+  border: none;
   color: #fff7ee;
   background: #35527e;
+  cursor: pointer;
+  font: inherit;
   box-shadow:
     0 10px 22px rgba(53, 82, 126, 0.2),
     inset 0 0 0 1px rgba(255, 255, 255, 0.18);
@@ -3653,6 +3657,11 @@ textarea:focus-visible {
     0 16px 28px rgba(53, 82, 126, 0.24),
     inset 0 0 0 1px rgba(255, 255, 255, 0.22);
   filter: saturate(1.04);
+}
+
+.calendar-user-avatar:focus-visible {
+  outline: 3px solid rgba(53, 82, 126, 0.26);
+  outline-offset: 3px;
 }
 
 .calendar-chip,
@@ -5008,6 +5017,29 @@ button.calendar-reports-summary-card {
   gap: 16px;
 }
 
+.calendar-share-links {
+  display: grid;
+  gap: 10px;
+}
+
+.calendar-share-link {
+  display: block;
+  padding: 12px 14px;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #2d3f63;
+  font-weight: 700;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.calendar-share-link:hover,
+.calendar-share-link:focus-visible {
+  border-color: rgba(53, 82, 126, 0.22);
+  background: rgba(53, 82, 126, 0.08);
+}
+
 .calendar-qr-copy p {
   margin: 0;
   color: #5c5651;
@@ -5661,6 +5693,51 @@ button.calendar-reports-summary-card {
   margin: 0;
   padding-left: 18px;
   color: #5d5752;
+}
+
+.booking-footer {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+  padding: 20px 22px;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 252, 248, 0.7);
+}
+
+.booking-footer-item {
+  display: grid;
+  gap: 6px;
+}
+
+.booking-footer-item.is-hidden {
+  display: none;
+}
+
+.booking-footer-label {
+  color: #5d5574;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.booking-footer a,
+.booking-footer p {
+  margin: 0;
+  color: #1f2f4f;
+  font-weight: 700;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.booking-footer a {
+  text-decoration: none;
+}
+
+.booking-footer a:hover,
+.booking-footer a:focus-visible {
+  text-decoration: underline;
 }
 
 .booking-summary-card {

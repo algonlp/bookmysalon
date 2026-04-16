@@ -75,7 +75,7 @@ const DEFAULT_DASHBOARD_UI_COPY = {
     clients: 'Clients',
     bookedInRangeTemplate: '{count} booked in range',
     completionFlowTemplate: '{label} completion flow',
-    repeatClientsTeamTemplate: '{repeat} repeat • {team} team'
+    repeatClientsTeamTemplate: '{repeat} repeat â€¢ {team} team'
   }
 };
 let currentDashboardUiCopy = DEFAULT_DASHBOARD_UI_COPY;
@@ -494,6 +494,35 @@ const setReportsWorkspaceState = (clientId, value) => {
 
 const clearAdminSession = () => {
   window.localStorage.removeItem(CLIENT_STORAGE_KEY);
+};
+
+const normalizeExternalUrl = (value) => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return '';
+  }
+
+  return /^https?:\/\//i.test(trimmedValue) ? trimmedValue : `https://${trimmedValue}`;
+};
+
+const logoutAdminSession = async (clientId) => {
+  if (!clientId) {
+    clearAdminSession();
+    window.location.assign('/login');
+    return;
+  }
+
+  const payload = await apiRequest(`/api/platform/clients/${clientId}/logout`, {
+    method: 'POST'
+  });
+
+  clearAdminSession();
+  window.location.assign(payload?.nextStep || '/login');
 };
 
 const buildPathWithClientId = (path, clientId) => {
@@ -1638,9 +1667,9 @@ const initHomeSalonShowcase = () => {
         const locationLabel = formatAddressSingleLine(salon.venueAddress) || 'Booking available';
         const typeLabel =
           Array.isArray(salon.serviceTypes) && salon.serviceTypes.length > 0
-            ? salon.serviceTypes.join(' • ')
+            ? salon.serviceTypes.join(' â€¢ ')
             : 'Salon services';
-        meta.textContent = `${locationLabel} • ${typeLabel}`;
+        meta.textContent = `${locationLabel} â€¢ ${typeLabel}`;
 
         titleBlock.append(title, meta);
 
@@ -1655,8 +1684,8 @@ const initHomeSalonShowcase = () => {
         reviewMeta.className = 'public-salon-review-meta';
         reviewMeta.textContent =
           salon.reviewSummary?.totalReviews > 0
-            ? `${salon.reviewSummary.averageRating}/5 • ${salon.reviewSummary.totalReviews} review${salon.reviewSummary.totalReviews === 1 ? '' : 's'}`
-            : 'New salon • No reviews yet';
+            ? `${salon.reviewSummary.averageRating}/5 â€¢ ${salon.reviewSummary.totalReviews} review${salon.reviewSummary.totalReviews === 1 ? '' : 's'}`
+            : 'New salon â€¢ No reviews yet';
 
         const services = document.createElement('div');
         services.className = 'public-salon-services';
@@ -1669,7 +1698,7 @@ const initHomeSalonShowcase = () => {
           name.textContent = service.name;
 
           const details = document.createElement('span');
-          details.textContent = `${service.durationMinutes} min • ${service.priceLabel}`;
+          details.textContent = `${service.durationMinutes} min â€¢ ${service.priceLabel}`;
 
           serviceCard.append(name, details);
           services.append(serviceCard);
@@ -2153,12 +2182,14 @@ const initBusinessProfile = () => {
   const businessForm = document.querySelector('#business-profile-form');
   const businessNameInput = document.querySelector('#business-name-input');
   const businessWebsiteInput = document.querySelector('#business-website-input');
+  const businessPhoneInput = document.querySelector('#business-phone-input');
   const continueButton = document.querySelector('#business-profile-continue');
 
   if (
     !(businessForm instanceof HTMLFormElement) ||
     !(businessNameInput instanceof HTMLInputElement) ||
     !(businessWebsiteInput instanceof HTMLInputElement) ||
+    !(businessPhoneInput instanceof HTMLInputElement) ||
     !(continueButton instanceof HTMLAnchorElement)
   ) {
     return;
@@ -2174,6 +2205,7 @@ const initBusinessProfile = () => {
       const payload = await apiRequest(`/api/platform/clients/${clientId}`);
       businessNameInput.value = payload.client.businessName ?? '';
       businessWebsiteInput.value = payload.client.website ?? '';
+      businessPhoneInput.value = payload.client.businessPhoneNumber ?? '';
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to load client');
     }
@@ -2190,7 +2222,8 @@ const initBusinessProfile = () => {
         method: 'PATCH',
         body: JSON.stringify({
           businessName: businessNameInput.value.trim(),
-          website: businessWebsiteInput.value.trim()
+          website: businessWebsiteInput.value.trim(),
+          businessPhoneNumber: businessPhoneInput.value.trim()
         })
       });
 
@@ -2980,6 +3013,11 @@ const initCalendar = () => {
   const qrImage = document.querySelector('#calendar-qr-image');
   const qrLink = document.querySelector('#calendar-qr-link');
   const qrPrint = document.querySelector('#calendar-qr-print');
+  const shareDirectLink = document.querySelector('#calendar-share-direct-link');
+  const shareInstagramLink = document.querySelector('#calendar-share-instagram-link');
+  const shareFacebookLink = document.querySelector('#calendar-share-facebook-link');
+  const shareAppleMapsLink = document.querySelector('#calendar-share-applemaps-link');
+  const shareQrLink = document.querySelector('#calendar-share-qr-link');
   const qrEyebrow = document.querySelector('#calendar-qr-eyebrow');
   const qrTitle = document.querySelector('#calendar-qr-title');
   const qrDescription = document.querySelector('#calendar-qr-description');
@@ -2998,7 +3036,7 @@ const initCalendar = () => {
     !(calendarNavCalendar instanceof HTMLAnchorElement) ||
     !(setupLabel instanceof HTMLSpanElement) ||
     !(setupButton instanceof HTMLAnchorElement) ||
-    !(userAvatar instanceof HTMLDivElement) ||
+    !(userAvatar instanceof HTMLButtonElement) ||
     !(staffAvatar instanceof HTMLDivElement) ||
     !(staffName instanceof HTMLElement) ||
     !(dateLabel instanceof HTMLButtonElement) ||
@@ -3027,6 +3065,9 @@ const initCalendar = () => {
   const hasSideDrawers =
     hasSalesDrawer || hasClientsDrawer || hasCatalogDrawer || hasTeamDrawer;
   let publicBookingPath = '';
+  let instagramBookingPath = '';
+  let facebookBookingPath = '';
+  let appleMapsBookingPath = '';
   let qrBookingPath = '';
   let qrCodeImagePath = '';
   let dashboardPayload = null;
@@ -4170,7 +4211,7 @@ const createTrendCard = (
         createdBy: 'platform',
         plan: 'premium',
         kind: 'dashboards',
-        summary: `${salesInsights.totalAppointments} appointments • ${formatCurrencyLabel(salesInsights.totalRevenue)}`,
+        summary: `${salesInsights.totalAppointments} appointments â€¢ ${formatCurrencyLabel(salesInsights.totalRevenue)}`,
         detail: {
           eyebrow: 'Dashboard',
           description: 'High-level business performance across bookings, revenue, and next operational focus.',
@@ -4330,7 +4371,7 @@ const createTrendCard = (
         createdBy: 'platform',
         plan: 'standard',
         kind: 'standard',
-        summary: `${bookedAppointments.length} booked • ${completedAppointments.length} completed`,
+        summary: `${bookedAppointments.length} booked â€¢ ${completedAppointments.length} completed`,
         detail: {
           eyebrow: 'Appointments',
           description: 'Operational throughput of appointments currently moving through the business.',
@@ -5079,7 +5120,7 @@ const createTrendCard = (
           if (label === 'daily sales summary') {
             return {
               ...item,
-              subtitle: `${insights.selectedDayCount} on ${insights.selectedDayLabel} • ${formatCurrencyLabel(insights.selectedDayRevenue)}`
+              subtitle: `${insights.selectedDayCount} on ${insights.selectedDayLabel} â€¢ ${formatCurrencyLabel(insights.selectedDayRevenue)}`
             };
           }
 
@@ -5101,7 +5142,7 @@ const createTrendCard = (
             return {
               ...item,
               subtitle:
-                `${formatMoneyValue(paymentInsights.collectedAmountValue, paymentInsights.currencyCode)} collected • ` +
+                `${formatMoneyValue(paymentInsights.collectedAmountValue, paymentInsights.currencyCode)} collected â€¢ ` +
                 `${formatMoneyValue(paymentInsights.pendingAmountValue, paymentInsights.currencyCode)} pending`
             };
           }
@@ -5109,7 +5150,7 @@ const createTrendCard = (
           if (label === 'payments') {
             return {
               ...item,
-              subtitle: `${formatCurrencyLabel(insights.collectedRevenue)} completed • ${formatCurrencyLabel(insights.pendingRevenue)} pending`
+              subtitle: `${formatCurrencyLabel(insights.collectedRevenue)} completed â€¢ ${formatCurrencyLabel(insights.pendingRevenue)} pending`
             };
           }
 
@@ -5165,7 +5206,7 @@ const createTrendCard = (
           if (label === 'service menu') {
             return {
               ...item,
-              subtitle: `${insights.activeServices} active service${insights.activeServices === 1 ? '' : 's'} • ${insights.categoryCount} categor${insights.categoryCount === 1 ? 'y' : 'ies'}`
+              subtitle: `${insights.activeServices} active service${insights.activeServices === 1 ? '' : 's'} â€¢ ${insights.categoryCount} categor${insights.categoryCount === 1 ? 'y' : 'ies'}`
             };
           }
 
@@ -5270,7 +5311,7 @@ const createTrendCard = (
 
     openToolModal({
       eyebrow: 'Sales',
-      title: `Daily sales summary • ${insights.selectedDayLabel}`,
+      title: `Daily sales summary â€¢ ${insights.selectedDayLabel}`,
       description: 'Track the day view of bookings and estimated revenue from your active service prices.',
       actions: [
         createToolInfoCard(
@@ -5317,7 +5358,7 @@ const createTrendCard = (
           insights.topServices.length > 0
             ? insights.topServices
                 .map((service) => `${service.serviceName} (${service.count}, ${service.revenueLabel})`)
-                .join(' • ')
+                .join(' â€¢ ')
             : 'Top services will appear after the first bookings come in.'
         ),
         createToolActionButton('Open sales reports', () => {
@@ -7071,6 +7112,17 @@ const createTrendCard = (
     websiteInput.placeholder = profileUiCopy.fieldWebsitePlaceholder || 'Enter website';
     websiteField.append(websiteLabel, websiteInput);
 
+    const phoneField = document.createElement('label');
+    phoneField.className = 'calendar-tool-field';
+    const phoneLabel = document.createElement('span');
+    phoneLabel.textContent = 'Salon phone number';
+    const phoneInput = document.createElement('input');
+    phoneInput.type = 'tel';
+    phoneInput.name = 'businessPhoneNumber';
+    phoneInput.value = dashboardPayload?.client?.businessPhoneNumber ?? '';
+    phoneInput.placeholder = '+92 300 1234567';
+    phoneField.append(phoneLabel, phoneInput);
+
     const addressField = document.createElement('label');
     addressField.className = 'calendar-tool-field';
     const addressLabel = document.createElement('span');
@@ -7122,7 +7174,25 @@ const createTrendCard = (
     submitButton.type = 'submit';
     submitButton.textContent = profileUiCopy.actionSave || 'Update profile';
 
-    form.append(businessField, websiteField, addressField, imageField, submitButton);
+    const logoutButton = document.createElement('button');
+    logoutButton.className = 'calendar-tool-action calendar-tool-action-danger';
+    logoutButton.type = 'button';
+    logoutButton.textContent = 'Log out';
+
+    logoutButton.addEventListener('click', async () => {
+      logoutButton.disabled = true;
+      logoutButton.textContent = 'Logging out...';
+
+      try {
+        await logoutAdminSession(clientId);
+      } catch (error) {
+        logoutButton.disabled = false;
+        logoutButton.textContent = 'Log out';
+        safeAlert(error instanceof Error ? error.message : 'Unable to log out');
+      }
+    });
+
+    form.append(businessField, websiteField, phoneField, addressField, imageField, submitButton, logoutButton);
 
     const syncProfilePreview = () => {
       renderCalendarAvatar(
@@ -7195,6 +7265,7 @@ const createTrendCard = (
           body: JSON.stringify({
             businessName: businessInput.value.trim(),
             website: websiteInput.value.trim(),
+            businessPhoneNumber: phoneInput.value.trim(),
             venueAddress: addressInput.value.trim(),
             profileImageUrl: imageInput.value.trim()
           })
@@ -8074,7 +8145,7 @@ const createTrendCard = (
         ...topClients.map((client) =>
           createToolInfoCard(
             client.customerName,
-            `${client.customerPhone || 'No phone'}${client.customerEmail ? ` • ${client.customerEmail}` : ''} • ${client.visits} visit${client.visits === 1 ? '' : 's'}`
+            `${client.customerPhone || 'No phone'}${client.customerEmail ? ` â€¢ ${client.customerEmail}` : ''} â€¢ ${client.visits} visit${client.visits === 1 ? '' : 's'}`
           )
         ),
         ...rankedClients.map((client) => createClientDetailCard(client, { loyaltyProgram })),
@@ -8125,7 +8196,7 @@ const createTrendCard = (
         ...loyaltyClients.map((client) =>
           createToolInfoCard(
             client.customerName,
-            `${client.completedVisits} completed visits • Last service: ${client.lastService}`
+            `${client.completedVisits} completed visits â€¢ Last service: ${client.lastService}`
           )
         ),
         ...(rankedLoyaltyClients.length > 0
@@ -8564,7 +8635,7 @@ const createTrendCard = (
       actions: [
         createToolInfoCard(
           'Current booking',
-          `${formatDateTimeForDisplay(appointment.appointmentDate, appointment.appointmentTime)} • Ref: ${appointment.id.slice(0, 8)}`
+          `${formatDateTimeForDisplay(appointment.appointmentDate, appointment.appointmentTime)} â€¢ Ref: ${appointment.id.slice(0, 8)}`
         ),
         form
       ]
@@ -8646,7 +8717,7 @@ const createTrendCard = (
       actions: [
         createToolInfoCard(
           'Appointment',
-          `${formatDateTimeForDisplay(appointment.appointmentDate, appointment.appointmentTime)} • Ref: ${appointment.id.slice(0, 8)}`
+          `${formatDateTimeForDisplay(appointment.appointmentDate, appointment.appointmentTime)} â€¢ Ref: ${appointment.id.slice(0, 8)}`
         ),
         form
       ]
@@ -9175,6 +9246,26 @@ const createTrendCard = (
       const svgMarkup = await response.text();
       qrImage.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgMarkup)}`;
       qrLink.href = qrBookingPath || publicBookingPath;
+      if (shareDirectLink instanceof HTMLAnchorElement) {
+        shareDirectLink.href = publicBookingPath;
+        shareDirectLink.textContent = `Direct: ${publicBookingPath}`;
+      }
+      if (shareInstagramLink instanceof HTMLAnchorElement) {
+        shareInstagramLink.href = instagramBookingPath || publicBookingPath;
+        shareInstagramLink.textContent = `Instagram: ${instagramBookingPath || publicBookingPath}`;
+      }
+      if (shareFacebookLink instanceof HTMLAnchorElement) {
+        shareFacebookLink.href = facebookBookingPath || publicBookingPath;
+        shareFacebookLink.textContent = `Facebook: ${facebookBookingPath || publicBookingPath}`;
+      }
+      if (shareAppleMapsLink instanceof HTMLAnchorElement) {
+        shareAppleMapsLink.href = appleMapsBookingPath || publicBookingPath;
+        shareAppleMapsLink.textContent = `Apple Maps: ${appleMapsBookingPath || publicBookingPath}`;
+      }
+      if (shareQrLink instanceof HTMLAnchorElement) {
+        shareQrLink.href = qrBookingPath || publicBookingPath;
+        shareQrLink.textContent = `QR: ${qrBookingPath || publicBookingPath}`;
+      }
       qrModal.classList.remove('is-hidden');
       qrModal.setAttribute('aria-hidden', 'false');
     } catch (error) {
@@ -9907,6 +9998,12 @@ const createTrendCard = (
     });
   }
 
+  if (userAvatar instanceof HTMLButtonElement) {
+    userAvatar.addEventListener('click', () => {
+      openProfileModal();
+    });
+  }
+
   if (marketingAction instanceof HTMLButtonElement) {
     marketingAction.addEventListener('click', () => {
       openToolModal({
@@ -9968,6 +10065,9 @@ const createTrendCard = (
     ]);
     const launchLinks = payload.dashboard.launchLinks ?? {
       bookingPageLink: `${window.location.origin}${buildTrackedBookingPath(clientId, 'direct')}`,
+      instagramBookingLink: `${window.location.origin}${buildTrackedBookingPath(clientId, 'instagram')}`,
+      facebookBookingLink: `${window.location.origin}${buildTrackedBookingPath(clientId, 'facebook')}`,
+      appleMapsBookingLink: `${window.location.origin}${buildTrackedBookingPath(clientId, 'applemaps')}`,
       qrBookingPageLink: `${window.location.origin}${buildTrackedBookingPath(clientId, 'qr')}`,
       qrCodeImageLink: `${window.location.origin}/api/public/book/${encodeURIComponent(clientId)}/qr`
     };
@@ -9978,6 +10078,9 @@ const createTrendCard = (
     currentBusinessSettings = getDashboardBusinessSettings();
     reportsWorkspace = getReportsWorkspaceState(clientId);
     publicBookingPath = launchLinks.bookingPageLink;
+    instagramBookingPath = launchLinks.instagramBookingLink;
+    facebookBookingPath = launchLinks.facebookBookingLink;
+    appleMapsBookingPath = launchLinks.appleMapsBookingLink;
     qrBookingPath = launchLinks.qrBookingPageLink;
     qrCodeImagePath = launchLinks.qrCodeImageLink;
 
@@ -10278,6 +10381,12 @@ const initPublicBooking = () => {
   const customerAddressLabel = document.querySelector('#booking-customer-address-label');
   const customerAddressInput = document.querySelector('#booking-customer-address');
   const customerAddressHelp = document.querySelector('#booking-customer-address-help');
+  const bookingFooterPhoneRow = document.querySelector('#booking-footer-phone-row');
+  const bookingFooterPhoneLink = document.querySelector('#booking-footer-phone-link');
+  const bookingFooterWebsiteRow = document.querySelector('#booking-footer-website-row');
+  const bookingFooterWebsiteLink = document.querySelector('#booking-footer-website-link');
+  const bookingFooterAddressRow = document.querySelector('#booking-footer-address-row');
+  const bookingFooterAddressText = document.querySelector('#booking-footer-address-text');
   const waitlistPanel = document.querySelector('#booking-waitlist-panel');
   const waitlistCopy = document.querySelector('#booking-waitlist-copy');
   const waitlistButton = document.querySelector('#booking-waitlist-button');
@@ -10305,6 +10414,7 @@ const initPublicBooking = () => {
   let activeWaitlistOffer = null;
   let savedWaitlistSignature = '';
   let currentBusinessName = '';
+  let currentBusinessPhoneNumber = '';
   let bookingHeadingFallback = '';
   let availableBookingLocations = [];
   let bookingUiCopy = {
@@ -10335,6 +10445,37 @@ const initPublicBooking = () => {
     if (bookingHeading) {
       document.title = `${bookingHeading} | Book appointment`;
     }
+  };
+
+  const syncBookingFooter = (payload = {}) => {
+    const businessPhoneNumber =
+      typeof payload.businessPhoneNumber === 'string' ? payload.businessPhoneNumber.trim() : '';
+    const websiteValue = typeof payload.website === 'string' ? payload.website.trim() : '';
+    const venueAddressValue =
+      typeof payload.venueAddress === 'string' ? payload.venueAddress.trim() : '';
+    const websiteUrl = normalizeExternalUrl(websiteValue);
+
+    bookingFooterPhoneRow.classList.toggle('is-hidden', !businessPhoneNumber);
+    bookingFooterWebsiteRow.classList.toggle('is-hidden', !websiteUrl);
+    bookingFooterAddressRow.classList.toggle('is-hidden', !venueAddressValue);
+
+    if (businessPhoneNumber) {
+      bookingFooterPhoneLink.href = `tel:${businessPhoneNumber.replace(/\s+/g, '')}`;
+      bookingFooterPhoneLink.textContent = businessPhoneNumber;
+    } else {
+      bookingFooterPhoneLink.removeAttribute('href');
+      bookingFooterPhoneLink.textContent = '';
+    }
+
+    if (websiteUrl) {
+      bookingFooterWebsiteLink.href = websiteUrl;
+      bookingFooterWebsiteLink.textContent = websiteValue;
+    } else {
+      bookingFooterWebsiteLink.removeAttribute('href');
+      bookingFooterWebsiteLink.textContent = '';
+    }
+
+    bookingFooterAddressText.textContent = venueAddressValue;
   };
 
   const syncBookingUiCopy = (config = {}) => {
@@ -10500,6 +10641,12 @@ const initPublicBooking = () => {
     !(customerAddressLabel instanceof HTMLElement) ||
     !(customerAddressInput instanceof HTMLTextAreaElement) ||
     !(customerAddressHelp instanceof HTMLElement) ||
+    !(bookingFooterPhoneRow instanceof HTMLElement) ||
+    !(bookingFooterPhoneLink instanceof HTMLAnchorElement) ||
+    !(bookingFooterWebsiteRow instanceof HTMLElement) ||
+    !(bookingFooterWebsiteLink instanceof HTMLAnchorElement) ||
+    !(bookingFooterAddressRow instanceof HTMLElement) ||
+    !(bookingFooterAddressText instanceof HTMLParagraphElement) ||
     !(waitlistPanel instanceof HTMLDivElement) ||
     !(waitlistCopy instanceof HTMLParagraphElement) ||
     !(waitlistButton instanceof HTMLButtonElement) ||
@@ -10647,10 +10794,10 @@ const initPublicBooking = () => {
         item.className = 'booking-history-item';
 
         const title = document.createElement('strong');
-        title.textContent = `${entry.serviceName} • ${entry.status}`;
+        title.textContent = `${entry.serviceName} â€¢ ${entry.status}`;
 
         const meta = document.createElement('p');
-        meta.textContent = `${formatDateTimeForDisplay(entry.appointmentDate, entry.appointmentTime)} • Ref: ${entry.reference}`;
+        meta.textContent = `${formatDateTimeForDisplay(entry.appointmentDate, entry.appointmentTime)} â€¢ Ref: ${entry.reference}`;
 
         item.append(title, meta);
         phoneHistoryList.append(item);
@@ -10743,6 +10890,7 @@ const initPublicBooking = () => {
     const serviceLabel = selectedService?.name || '';
     const teamMemberLabel = selectedTeamMember?.name || '';
     const salonLabel = currentBusinessName;
+    const salonSummaryLabel = [salonLabel, currentBusinessPhoneNumber].filter(Boolean).join(' | ');
     const formattedDateTime = formatDateTimeForDisplay(dateInput.value, timeSelect.value);
     const selectedBookingLocation = getSelectedBookingLocation();
     const selectedBookingLocationLabel = getSelectedBookingLocationLabel();
@@ -10765,25 +10913,25 @@ const initPublicBooking = () => {
 
     if (serviceLabel && !formattedDateTime) {
       const summaryPriceLabel = selectedService?.priceLabel ?? '';
-      summaryTitle.textContent = `${serviceLabel} • ${selectedService?.priceLabel ?? ''}`.trim();
-      if (salonLabel) {
-        summaryTitle.textContent = `${serviceLabel} at ${salonLabel}${summaryPriceLabel ? ` • ${summaryPriceLabel}` : ''}`.trim();
+      summaryTitle.textContent = `${serviceLabel} â€¢ ${selectedService?.priceLabel ?? ''}`.trim();
+      if (salonSummaryLabel) {
+        summaryTitle.textContent = `${serviceLabel} at ${salonSummaryLabel}${summaryPriceLabel ? ` | ${summaryPriceLabel}` : ''}`.trim();
       }
       summaryCopy.textContent = selectedService
-        ? `${selectedService.durationMinutes} min service${teamMemberLabel ? ` with ${teamMemberLabel}` : ''}${salonLabel ? ` at ${salonLabel}` : ''}. ${bookingLocationSummary}${selectedBenefit ? `Benefit selected: ${selectedBenefit.title}. ` : ''}Now choose the best day and time for your appointment.`
+        ? `${selectedService.durationMinutes} min service${teamMemberLabel ? ` with ${teamMemberLabel}` : ''}${salonSummaryLabel ? ` at ${salonSummaryLabel}` : ''}. ${bookingLocationSummary}${selectedBenefit ? `Benefit selected: ${selectedBenefit.title}. ` : ''}Now choose the best day and time for your appointment.`
         : 'Now choose the best day and time for your appointment.';
       return;
     }
 
     summaryTitle.textContent =
       serviceLabel && selectedService?.priceLabel
-        ? `${serviceLabel} • ${selectedService.priceLabel}`
+        ? `${serviceLabel} â€¢ ${selectedService.priceLabel}`
         : serviceLabel || 'Appointment selected';
-    if (salonLabel && serviceLabel) {
-      summaryTitle.textContent = `${serviceLabel} at ${salonLabel}${selectedService?.priceLabel ? ` • ${selectedService.priceLabel}` : ''}`.trim();
+    if (salonSummaryLabel && serviceLabel) {
+      summaryTitle.textContent = `${serviceLabel} at ${salonSummaryLabel}${selectedService?.priceLabel ? ` | ${selectedService.priceLabel}` : ''}`.trim();
     }
     summaryCopy.textContent = formattedDateTime
-      ? `${selectedService?.durationMinutes ? `${selectedService.durationMinutes} min service${teamMemberLabel ? ` with ${teamMemberLabel}` : ''}${salonLabel ? ` at ${salonLabel}` : ''}. ` : ''}${bookingLocationSummary}${selectedBenefit ? `${selectedBenefit.title} will be applied. ` : ''}Your booking is planned for ${formattedDateTime}.`
+      ? `${selectedService?.durationMinutes ? `${selectedService.durationMinutes} min service${teamMemberLabel ? ` with ${teamMemberLabel}` : ''}${salonSummaryLabel ? ` at ${salonSummaryLabel}` : ''}. ` : ''}${bookingLocationSummary}${selectedBenefit ? `${selectedBenefit.title} will be applied. ` : ''}Your booking is planned for ${formattedDateTime}.`
       : 'Choose the best available time for your appointment.';
   };
 
@@ -10908,7 +11056,9 @@ const initPublicBooking = () => {
     .then(async (payload) => {
       currentBusinessName =
         typeof payload.businessName === 'string' ? payload.businessName.trim() : '';
+      currentBusinessPhoneNumber = typeof payload.businessPhoneNumber === 'string' ? payload.businessPhoneNumber.trim() : '';
       syncBookingHero();
+      syncBookingFooter(payload);
       serviceTypes.textContent =
         payload.serviceTypes.length > 0 ? payload.serviceTypes.join(' | ') : 'Salon services';
       populateBookingLocations(payload.serviceLocations);

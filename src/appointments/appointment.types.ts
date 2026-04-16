@@ -129,6 +129,9 @@ export interface CreateAppointmentInput {
 export interface PublicBookingPage {
   businessId: string;
   businessName: string;
+  businessPhoneNumber: string;
+  website: string;
+  venueAddress: string;
   serviceTypes: string[];
   serviceLocations: ServiceLocation[];
   services: AppointmentServiceOption[];

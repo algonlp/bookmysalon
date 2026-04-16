@@ -13,7 +13,7 @@ import {
 } from '../../platform/clientPlatform.paths';
 import { preferredLanguageValues } from '../../platform/clientPlatform.types';
 import { appointmentService } from '../../appointments/appointment.service';
-import { getRequestOrigin, setAdminSessionCookie } from '../../shared/http';
+import { clearAdminSessionCookie, getRequestOrigin, setAdminSessionCookie } from '../../shared/http';
 
 const isValidProfileImageValue = (value: string): boolean => {
   if (!value) {
@@ -58,6 +58,7 @@ const loginClientSchema = z.object({
 const businessProfileSchema = z.object({
   businessName: z.string().trim().min(1, 'Business name is required'),
   website: z.string().trim().optional(),
+  businessPhoneNumber: z.string().trim().optional(),
   venueAddress: z.string().trim().optional(),
   profileImageUrl: z
     .string()
@@ -266,6 +267,15 @@ export const clientPlatformController = {
       client: serializeClientForResponse(payload.client),
       ...(shouldExposeAdminTokenForTests() ? { adminToken: payload.client.adminToken } : {}),
       nextStep: payload.nextStep
+    });
+  },
+
+  async logoutClient(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    await clientPlatformService.logoutClient(getClientId(req));
+    clearAdminSessionCookie(res);
+    res.status(200).json({
+      success: true,
+      nextStep: '/login'
     });
   },
 

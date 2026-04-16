@@ -43,6 +43,42 @@ describe('Client platform API', () => {
     expect(authorizedApiResponse.status).toBe(200);
   });
 
+  it('logs out by clearing the cookie and rotating the admin token', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'logout-owner@example.com',
+      provider: 'email'
+    });
+
+    expect(createResponse.status).toBe(201);
+
+    const clientId = createResponse.body.client.id as string;
+    const adminCookie = createResponse.headers['set-cookie'] ?? [];
+    const adminToken = createResponse.body.adminToken as string;
+
+    const logoutResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/logout`)
+      .set('Cookie', adminCookie);
+
+    expect(logoutResponse.status).toBe(200);
+    expect(logoutResponse.body.success).toBe(true);
+    expect(logoutResponse.body.nextStep).toBe('/login');
+    expect(logoutResponse.headers['set-cookie']).toEqual(
+      expect.arrayContaining([expect.stringContaining('platform_admin_session=;')])
+    );
+
+    const cookieApiResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}`)
+      .set('Cookie', adminCookie);
+
+    expect(cookieApiResponse.status).toBe(403);
+
+    const tokenApiResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}`)
+      .set('x-admin-token', adminToken);
+
+    expect(tokenApiResponse.status).toBe(403);
+  });
+
   it('logs in an existing account by email and sends completed businesses to the dashboard', async () => {
     const createResponse = await request(app).post('/api/platform/clients').send({
       email: 'login-owner@example.com',
@@ -176,6 +212,7 @@ describe('Client platform API', () => {
       .send({
         businessName: 'Maqsood Studio',
         website: 'www.maqsoodstudio.com',
+        businessPhoneNumber: '+92 300 1234567',
         profileImageUrl: uploadedProfileImage
       });
 
@@ -293,6 +330,7 @@ describe('Client platform API', () => {
 
     expect(clientResponse.status).toBe(200);
     expect(clientResponse.body.client.website).toBe('www.maqsoodstudio.com');
+    expect(clientResponse.body.client.businessPhoneNumber).toBe('+92 300 1234567');
     expect(clientResponse.body.client.profileImageUrl).toBe(uploadedProfileImage);
     expect(clientResponse.body.client.preferredLanguage).toBe('spanish');
 
@@ -396,6 +434,13 @@ describe('Client platform API', () => {
     expect(new URL(launchLinksPayload.qrCodeImageLink).pathname).toBe(
       new URL(dashboardLaunchLinks.qrCodeImageLink).pathname
     );
+
+    const publicBookingPageResponse = await request(app).get(`/api/public/book/${clientId}`);
+
+    expect(publicBookingPageResponse.status).toBe(200);
+    expect(publicBookingPageResponse.body.businessPhoneNumber).toBe('+92 300 1234567');
+    expect(publicBookingPageResponse.body.website).toBe('www.maqsoodstudio.com');
+    expect(publicBookingPageResponse.body.venueAddress).toContain('MM Alam Road');
   });
 
   it('localizes dashboard copy when the preferred language is chinese', async () => {
