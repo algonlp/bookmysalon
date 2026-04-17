@@ -148,6 +148,40 @@ const deleteByColumnValue = async (
   }
 };
 
+const deleteMissingRows = async (
+  tableName: string,
+  scopeColumn: string,
+  scopeValue: string,
+  idColumn: string,
+  retainedIds: string[]
+): Promise<void> => {
+  const client = getSupabaseClient();
+  const { data, error: selectError } = await client.from(tableName).select(idColumn).eq(scopeColumn, scopeValue);
+
+  if (selectError) {
+    throw new Error(`Failed to inspect ${tableName}: ${selectError.message}`);
+  }
+
+  const retainedIdSet = new Set(retainedIds);
+  const idsToDelete = (data ?? [])
+    .map((row) => (row as unknown as Record<string, unknown>)[idColumn])
+    .filter((value): value is string => typeof value === 'string' && !retainedIdSet.has(value));
+
+  if (idsToDelete.length === 0) {
+    return;
+  }
+
+  const { error } = await client
+    .from(tableName)
+    .delete()
+    .eq(scopeColumn, scopeValue)
+    .in(idColumn, idsToDelete);
+
+  if (error) {
+    throw new Error(`Failed to prune ${tableName}: ${error.message}`);
+  }
+};
+
 const syncBusinessSettings = async (clientRecord: ClientRecord): Promise<void> => {
   await upsertRows(
     'business_settings',
@@ -255,6 +289,14 @@ const syncProducts = async (businessId: string, products: ProductRecord[]): Prom
 };
 
 const syncProductSales = async (businessId: string, productSales: ProductSaleRecord[]): Promise<void> => {
+  await deleteMissingRows(
+    'product_sales',
+    'business_id',
+    businessId,
+    'id',
+    productSales.map((productSale) => productSale.id)
+  );
+
   await upsertRows(
     'product_sales',
     productSales.map((productSale) => ({
@@ -357,6 +399,14 @@ const syncCustomerProfiles = async (
   businessId: string,
   customerProfiles: CustomerProfileRecord[]
 ): Promise<void> => {
+  await deleteMissingRows(
+    'customer_profiles',
+    'business_id',
+    businessId,
+    'id',
+    customerProfiles.map((customerProfile) => customerProfile.id)
+  );
+
   await upsertRows(
     'customer_profiles',
     customerProfiles.map((customerProfile) => ({

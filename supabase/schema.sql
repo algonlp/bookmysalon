@@ -9,6 +9,27 @@ create table if not exists client_platform_clients (
 create index if not exists client_platform_clients_email_idx
   on client_platform_clients (email);
 
+create table if not exists product_sale_records (
+  id text primary key,
+  business_id text not null default '',
+  product_id text not null default '',
+  customer_phone text not null default '',
+  sold_at text not null default '',
+  payload jsonb not null
+);
+
+create index if not exists product_sale_records_business_id_idx
+  on product_sale_records (business_id);
+
+create index if not exists product_sale_records_product_id_idx
+  on product_sale_records (product_id);
+
+create index if not exists product_sale_records_customer_phone_idx
+  on product_sale_records (customer_phone);
+
+create index if not exists product_sale_records_sold_at_idx
+  on product_sale_records (sold_at);
+
 create table if not exists appointment_records (
   id text primary key,
   business_id text not null default '',

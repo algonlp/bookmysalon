@@ -7,6 +7,7 @@ import type {
   ReviewRecord,
   WaitlistRecord
 } from './appointment.types';
+import { env } from '../config/env';
 import { AppointmentFileStore } from './storage/appointmentFile.store';
 import { AppointmentMemoryStore } from './storage/appointmentMemory.store';
 import { AppointmentSupabaseStore } from './storage/appointmentSupabase.store';
@@ -19,18 +20,33 @@ const isTestEnvironment = (): boolean =>
 const isVercelRuntime = (): boolean =>
   process.env.VERCEL === '1' || Boolean(process.env.VERCEL_ENV);
 
+const hasSupabaseConfiguration = (): boolean =>
+  Boolean(env.SUPABASE_URL && (env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_PUBLISHABLE_KEY));
+
 const createStore = (): AppointmentStore => {
-  if (isTestEnvironment() || isVercelRuntime()) {
+  if (isTestEnvironment()) {
     return new AppointmentMemoryStore();
   }
 
   if (process.env.CLIENT_PLATFORM_STORAGE === 'supabase') {
+    return hasSupabaseConfiguration()
+      ? new AppointmentSupabaseStore()
+      : new AppointmentFileStore();
+  }
+
+  if (process.env.CLIENT_PLATFORM_STORAGE === 'memory') {
+    return new AppointmentMemoryStore();
+  }
+
+  if (process.env.CLIENT_PLATFORM_STORAGE === 'file') {
+    return new AppointmentFileStore();
+  }
+
+  if (hasSupabaseConfiguration()) {
     return new AppointmentSupabaseStore();
   }
 
-  return process.env.CLIENT_PLATFORM_STORAGE === 'memory'
-    ? new AppointmentMemoryStore()
-    : new AppointmentFileStore();
+  return isVercelRuntime() ? new AppointmentMemoryStore() : new AppointmentFileStore();
 };
 
 class AppointmentRepository {

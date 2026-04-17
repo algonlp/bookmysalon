@@ -49,6 +49,19 @@ const main = async (): Promise<void> => {
       }))
     ),
     upsertRows(
+      'product_sale_records',
+      clientPlatformState.clients.flatMap((client) =>
+        client.productSales.map((productSale) => ({
+          id: productSale.id,
+          business_id: client.id,
+          product_id: productSale.productId,
+          customer_phone: productSale.customerPhone,
+          sold_at: productSale.soldAt,
+          payload: toJsonValue(productSale)
+        }))
+      )
+    ),
+    upsertRows(
       'appointment_records',
       appointmentState.appointments.map((appointment) => ({
         id: appointment.id,
@@ -108,12 +121,13 @@ const main = async (): Promise<void> => {
 
   console.log('Supabase sync complete.');
   console.log(`Clients synced: ${totals[0]}`);
-  console.log(`Appointments synced: ${totals[1]}`);
-  console.log(`Payments synced: ${totals[2]}`);
-  console.log(`Reviews synced: ${totals[3]}`);
-  console.log(`Package purchases synced: ${totals[4]}`);
-  console.log(`Loyalty rewards synced: ${totals[5]}`);
-  console.log(`Waitlist entries synced: ${totals[6]}`);
+  console.log(`Product sales synced: ${totals[1]}`);
+  console.log(`Appointments synced: ${totals[2]}`);
+  console.log(`Payments synced: ${totals[3]}`);
+  console.log(`Reviews synced: ${totals[4]}`);
+  console.log(`Package purchases synced: ${totals[5]}`);
+  console.log(`Loyalty rewards synced: ${totals[6]}`);
+  console.log(`Waitlist entries synced: ${totals[7]}`);
 };
 
 main().catch((error: unknown) => {

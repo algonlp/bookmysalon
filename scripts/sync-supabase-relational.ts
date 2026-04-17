@@ -8,6 +8,24 @@ import {
   syncClientPlatformStateToRelational
 } from '../src/shared/supabase/relationalMirror';
 
+const upsertRows = async (
+  tableName: string,
+  rows: Array<Record<string, unknown>>
+): Promise<number> => {
+  if (rows.length === 0) {
+    return 0;
+  }
+
+  const client = getSupabaseClient();
+  const { error } = await client.from(tableName).upsert(rows, { onConflict: 'id' });
+
+  if (error) {
+    throw new Error(`Failed to sync ${tableName}: ${error.message}`);
+  }
+
+  return rows.length;
+};
+
 const loadPayloadRecords = async <TRecord>(tableName: string): Promise<TRecord[]> => {
   const client = getSupabaseClient();
   const { data, error } = await client.from(tableName).select('payload').order('id', { ascending: true });
@@ -48,11 +66,26 @@ const main = async (): Promise<void> => {
     waitlistEntries
   };
 
+  const productSalesSynced = await upsertRows(
+    'product_sale_records',
+    clients.flatMap((client) =>
+      client.productSales.map((productSale) => ({
+        id: productSale.id,
+        business_id: client.id,
+        product_id: productSale.productId,
+        customer_phone: productSale.customerPhone,
+        sold_at: productSale.soldAt,
+        payload: productSale
+      }))
+    )
+  );
+
   await syncClientPlatformStateToRelational(clientPlatformState);
   await syncAppointmentStateToRelational(appointmentState);
 
   console.log('Supabase relational backfill complete.');
   console.log(`Businesses synced: ${clients.length}`);
+  console.log(`Product sales JSONB rows synced: ${productSalesSynced}`);
   console.log(`Appointments synced: ${appointments.length}`);
   console.log(`Payments synced: ${paymentRecords.length}`);
   console.log(`Reviews synced: ${reviews.length}`);
