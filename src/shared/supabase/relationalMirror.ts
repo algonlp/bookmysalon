@@ -73,6 +73,7 @@ const asServiceLocation = (value: unknown) => {
 };
 
 const knownBusinessNames = new Map<string, string>();
+const existingRowCache = new Map<string, boolean>();
 
 const ensureBusinessExists = async (
   businessId: unknown,
@@ -180,6 +181,49 @@ const deleteMissingRows = async (
   if (error) {
     throw new Error(`Failed to prune ${tableName}: ${error.message}`);
   }
+};
+
+const hasExistingRow = async (tableName: string, id: string): Promise<boolean> => {
+  const cacheKey = `${tableName}:${id}`;
+  const cached = existingRowCache.get(cacheKey);
+
+  if (typeof cached === 'boolean') {
+    return cached;
+  }
+
+  const client = getSupabaseClient();
+  const { data, error } = await client.from(tableName).select('id').eq('id', id).maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to inspect ${tableName}/${id}: ${error.message}`);
+  }
+
+  const exists = Boolean(data);
+  existingRowCache.set(cacheKey, exists);
+  return exists;
+};
+
+const resolveOptionalForeignKey = async (
+  tableName: string,
+  id: string | null
+): Promise<string | null> => {
+  if (!id) {
+    return null;
+  }
+
+  return (await hasExistingRow(tableName, id)) ? id : null;
+};
+
+const filterExistingIds = async (tableName: string, ids: string[]): Promise<string[]> => {
+  const resolvedIds: string[] = [];
+
+  for (const id of ids) {
+    if (await hasExistingRow(tableName, id)) {
+      resolvedIds.push(id);
+    }
+  }
+
+  return resolvedIds;
 };
 
 const syncBusinessSettings = async (clientRecord: ClientRecord): Promise<void> => {
@@ -321,9 +365,10 @@ const syncProductSales = async (businessId: string, productSales: ProductSaleRec
 
 const syncPackagePlanServices = async (packagePlan: PackagePlanRecord): Promise<void> => {
   await deleteByColumnValue('package_plan_services', 'package_plan_id', packagePlan.id);
+  const existingServiceIds = await filterExistingIds('services', asStringArray(packagePlan.includedServiceIds));
   await upsertRows(
     'package_plan_services',
-    asStringArray(packagePlan.includedServiceIds).map((serviceId) => ({
+    existingServiceIds.map((serviceId) => ({
       package_plan_id: packagePlan.id,
       service_id: serviceId,
       created_at: asTimestamp(packagePlan.updatedAt)
@@ -355,9 +400,13 @@ const syncPackagePlans = async (businessId: string, packagePlans: PackagePlanRec
 
 const syncLoyaltyProgramServices = async (loyaltyProgram: LoyaltyProgramRecord): Promise<void> => {
   await deleteByColumnValue('loyalty_program_services', 'loyalty_program_id', loyaltyProgram.id);
+  const existingServiceIds = await filterExistingIds(
+    'services',
+    asStringArray(loyaltyProgram.includedServiceIds)
+  );
   await upsertRows(
     'loyalty_program_services',
-    asStringArray(loyaltyProgram.includedServiceIds).map((serviceId) => ({
+    existingServiceIds.map((serviceId) => ({
       loyalty_program_id: loyaltyProgram.id,
       service_id: serviceId,
       created_at: asTimestamp(loyaltyProgram.updatedAt)
@@ -474,9 +523,13 @@ const syncPackagePurchaseServices = async (
   packagePurchase: PackagePurchaseRecord
 ): Promise<void> => {
   await deleteByColumnValue('package_purchase_services', 'package_purchase_id', packagePurchase.id);
+  const existingServiceIds = await filterExistingIds(
+    'services',
+    asStringArray(packagePurchase.includedServiceIds)
+  );
   await upsertRows(
     'package_purchase_services',
-    asStringArray(packagePurchase.includedServiceIds).map((serviceId) => ({
+    existingServiceIds.map((serviceId) => ({
       package_purchase_id: packagePurchase.id,
       service_id: serviceId,
       created_at: asTimestamp(packagePurchase.updatedAt)
@@ -522,9 +575,13 @@ const syncLoyaltyRewardServices = async (
   loyaltyReward: LoyaltyRewardRecord
 ): Promise<void> => {
   await deleteByColumnValue('loyalty_reward_services', 'loyalty_reward_id', loyaltyReward.id);
+  const existingServiceIds = await filterExistingIds(
+    'services',
+    asStringArray(loyaltyReward.includedServiceIds)
+  );
   await upsertRows(
     'loyalty_reward_services',
-    asStringArray(loyaltyReward.includedServiceIds).map((serviceId) => ({
+    existingServiceIds.map((serviceId) => ({
       loyalty_reward_id: loyaltyReward.id,
       service_id: serviceId,
       created_at: asTimestamp(loyaltyReward.updatedAt)
@@ -568,6 +625,16 @@ export const syncAppointmentToRelational = async (
   appointment: AppointmentRecord
 ): Promise<void> => {
   await ensureBusinessExists(appointment.businessId, appointment.businessName);
+  const serviceId = await resolveOptionalForeignKey('services', asNullableText(appointment.serviceId));
+  const teamMemberId = await resolveOptionalForeignKey('team_members', asNullableText(appointment.teamMemberId));
+  const packagePurchaseId = await resolveOptionalForeignKey(
+    'package_purchases',
+    asNullableText(appointment.packagePurchaseId)
+  );
+  const loyaltyRewardId = await resolveOptionalForeignKey(
+    'loyalty_rewards',
+    asNullableText(appointment.loyaltyRewardId)
+  );
 
   await upsertRows(
     'appointments',
@@ -577,10 +644,10 @@ export const syncAppointmentToRelational = async (
         business_id: asText(appointment.businessId),
         business_name: asText(appointment.businessName),
         public_access_token: asNullableText(appointment.publicAccessToken),
-        service_id: asNullableText(appointment.serviceId),
+        service_id: serviceId,
         category_name: asText(appointment.categoryName),
         service_name: asText(appointment.serviceName),
-        team_member_id: asNullableText(appointment.teamMemberId),
+        team_member_id: teamMemberId,
         team_member_name: asText(appointment.teamMemberName),
         customer_name: asText(appointment.customerName),
         customer_phone: asText(appointment.customerPhone),
@@ -596,9 +663,9 @@ export const syncAppointmentToRelational = async (
         end_at: asTimestamp(appointment.endAt),
         status: appointment.status,
         source: appointment.source,
-        package_purchase_id: asNullableText(appointment.packagePurchaseId),
+        package_purchase_id: packagePurchaseId,
         package_name: asText(appointment.packageName),
-        loyalty_reward_id: asNullableText(appointment.loyaltyRewardId),
+        loyalty_reward_id: loyaltyRewardId,
         loyalty_reward_label: asText(appointment.loyaltyRewardLabel),
         created_at: asTimestamp(appointment.createdAt),
         updated_at: asTimestamp(appointment.updatedAt)
@@ -662,6 +729,11 @@ export const syncWaitlistEntryToRelational = async (
   waitlistEntry: WaitlistRecord
 ): Promise<void> => {
   await ensureBusinessExists(waitlistEntry.businessId);
+  const serviceId = await resolveOptionalForeignKey('services', asNullableText(waitlistEntry.serviceId));
+  const teamMemberId = await resolveOptionalForeignKey(
+    'team_members',
+    asNullableText(waitlistEntry.teamMemberId)
+  );
 
   await upsertRows(
     'waitlist_entries',
@@ -669,9 +741,9 @@ export const syncWaitlistEntryToRelational = async (
       {
         id: waitlistEntry.id,
         business_id: asText(waitlistEntry.businessId),
-        service_id: asNullableText(waitlistEntry.serviceId),
+        service_id: serviceId,
         service_name: asText(waitlistEntry.serviceName),
-        team_member_id: asNullableText(waitlistEntry.teamMemberId),
+        team_member_id: teamMemberId,
         team_member_name: asText(waitlistEntry.teamMemberName),
         appointment_date: asText(waitlistEntry.appointmentDate),
         preferred_time: asTime(waitlistEntry.preferredTime),
