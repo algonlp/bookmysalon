@@ -9,6 +9,14 @@ import type {
 import type { AppointmentStore } from '../appointment.store';
 import { SupabaseJsonbTable, toJsonValue } from '../../shared/supabase/jsonbTable';
 import {
+  deleteAppointmentFromRelational,
+  deleteBusinessFromRelational,
+  deleteLoyaltyRewardFromRelational,
+  deletePackagePurchaseFromRelational,
+  deletePaymentRecordFromRelational,
+  deleteReviewFromRelational,
+  deleteWaitlistEntryFromRelational,
+  relationalBusinessExists,
   syncAppointmentToRelational,
   syncLoyaltyRewardToRelational,
   syncPackagePurchaseToRelational,
@@ -16,6 +24,7 @@ import {
   syncReviewToRelational,
   syncWaitlistEntryToRelational
 } from '../../shared/supabase/relationalMirror';
+import { logger } from '../../shared/logger';
 
 const appointmentTable = new SupabaseJsonbTable<AppointmentRecord>({
   tableName: 'appointment_records',
@@ -79,6 +88,59 @@ const waitlistTable = new SupabaseJsonbTable<WaitlistRecord>({
   })
 });
 
+interface BusinessScopedRecord {
+  id: string;
+  businessId: string;
+}
+
+const asErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : String(error);
+
+const saveWithAutomaticRollback = async <TRecord extends BusinessScopedRecord>(
+  table: SupabaseJsonbTable<TRecord>,
+  record: TRecord,
+  label: string,
+  syncRelational: (value: TRecord) => Promise<void>,
+  deleteRelational: (recordId: string) => Promise<void>
+): Promise<TRecord> => {
+  const previousRecord = await table.getById(record.id);
+  const businessExisted = await relationalBusinessExists(record.businessId);
+
+  try {
+    await table.upsert(record);
+    await syncRelational(record);
+    return record;
+  } catch (error) {
+    try {
+      if (previousRecord) {
+        await table.upsert(previousRecord);
+        await syncRelational(previousRecord);
+      } else {
+        await table.deleteById(record.id);
+        await deleteRelational(record.id);
+
+        if (!businessExisted) {
+          await deleteBusinessFromRelational(record.businessId);
+        }
+      }
+    } catch (rollbackError) {
+      logger.error('Failed to rollback Supabase persistence after relational sync error', {
+        label,
+        recordId: record.id,
+        businessId: record.businessId,
+        error: asErrorMessage(error),
+        rollbackError: asErrorMessage(rollbackError)
+      });
+
+      throw new Error(
+        `Failed to save ${label} ${record.id}: ${asErrorMessage(error)}. Rollback failed: ${asErrorMessage(rollbackError)}`
+      );
+    }
+
+    throw error;
+  }
+};
+
 export class AppointmentSupabaseStore implements AppointmentStore {
   listAppointments(): Promise<AppointmentRecord[]> {
     return appointmentTable.list();
@@ -105,39 +167,63 @@ export class AppointmentSupabaseStore implements AppointmentStore {
   }
 
   async saveAppointment(appointment: AppointmentRecord): Promise<AppointmentRecord> {
-    await appointmentTable.upsert(appointment);
-    await syncAppointmentToRelational(appointment);
-    return appointment;
+    return saveWithAutomaticRollback(
+      appointmentTable,
+      appointment,
+      'appointment',
+      syncAppointmentToRelational,
+      deleteAppointmentFromRelational
+    );
   }
 
   async savePaymentRecord(paymentRecord: PaymentRecord): Promise<PaymentRecord> {
-    await paymentTable.upsert(paymentRecord);
-    await syncPaymentRecordToRelational(paymentRecord);
-    return paymentRecord;
+    return saveWithAutomaticRollback(
+      paymentTable,
+      paymentRecord,
+      'payment record',
+      syncPaymentRecordToRelational,
+      deletePaymentRecordFromRelational
+    );
   }
 
   async saveReview(review: ReviewRecord): Promise<ReviewRecord> {
-    await reviewTable.upsert(review);
-    await syncReviewToRelational(review);
-    return review;
+    return saveWithAutomaticRollback(
+      reviewTable,
+      review,
+      'review',
+      syncReviewToRelational,
+      deleteReviewFromRelational
+    );
   }
 
   async savePackagePurchase(packagePurchase: PackagePurchaseRecord): Promise<PackagePurchaseRecord> {
-    await packagePurchaseTable.upsert(packagePurchase);
-    await syncPackagePurchaseToRelational(packagePurchase);
-    return packagePurchase;
+    return saveWithAutomaticRollback(
+      packagePurchaseTable,
+      packagePurchase,
+      'package purchase',
+      syncPackagePurchaseToRelational,
+      deletePackagePurchaseFromRelational
+    );
   }
 
   async saveLoyaltyReward(loyaltyReward: LoyaltyRewardRecord): Promise<LoyaltyRewardRecord> {
-    await loyaltyRewardTable.upsert(loyaltyReward);
-    await syncLoyaltyRewardToRelational(loyaltyReward);
-    return loyaltyReward;
+    return saveWithAutomaticRollback(
+      loyaltyRewardTable,
+      loyaltyReward,
+      'loyalty reward',
+      syncLoyaltyRewardToRelational,
+      deleteLoyaltyRewardFromRelational
+    );
   }
 
   async saveWaitlistEntry(waitlistEntry: WaitlistRecord): Promise<WaitlistRecord> {
-    await waitlistTable.upsert(waitlistEntry);
-    await syncWaitlistEntryToRelational(waitlistEntry);
-    return waitlistEntry;
+    return saveWithAutomaticRollback(
+      waitlistTable,
+      waitlistEntry,
+      'waitlist entry',
+      syncWaitlistEntryToRelational,
+      deleteWaitlistEntryFromRelational
+    );
   }
 
   async reset(): Promise<void> {

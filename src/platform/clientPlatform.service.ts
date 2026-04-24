@@ -8,10 +8,7 @@ import {
   platformClientAuthMessages,
   platformClientPagePaths
 } from './clientPlatform.paths';
-import {
-  defaultServiceLocation,
-  normalizeServiceLocations
-} from './serviceLocation.constants';
+import { normalizeServiceLocations } from './serviceLocation.constants';
 import {
   getDashboardContentForLanguage,
   getDashboardLocaleKey,
@@ -20,11 +17,7 @@ import {
 } from './dashboardLocalization';
 import { preferredLanguageValues } from './clientPlatform.types';
 import type { AppointmentRecord } from '../appointments/appointment.types';
-import {
-  createSeededBusinessServices,
-  normalizeBusinessServices,
-  syncBusinessServicesWithTypes
-} from './businessServices';
+import { normalizeBusinessServices, syncBusinessServicesWithTypes } from './businessServices';
 import { formatInTimeZone } from '../shared/time';
 import type {
   AccountTypeInput,
@@ -73,8 +66,8 @@ const DEFAULT_REPORT_METADATA: ReportMetadataRecord = {
 };
 
 const DEFAULT_BUSINESS_SETTINGS: BusinessSettingsRecord = {
-  currencyCode: 'PKR',
-  currencyLocale: 'en-PK',
+  currencyCode: env.DEFAULT_BUSINESS_CURRENCY_CODE,
+  currencyLocale: env.DEFAULT_BUSINESS_CURRENCY_LOCALE,
   slotTimes: DEFAULT_BUSINESS_SLOT_TIMES,
   useServiceTemplates: true,
   reportMetadata: DEFAULT_REPORT_METADATA
@@ -1502,141 +1495,6 @@ const toPublicClientRecord = (client: ClientRecord): PublicClientRecord => ({
   updatedAt: client.updatedAt
 });
 
-const shouldSeedDemoSalons = (): boolean => env.APP_ENV === 'dev';
-
-const DEMO_SALONS: ClientRecord[] = [
-  {
-    id: 'demo-luna-luxe',
-    adminToken: 'demo-admin-luna-luxe',
-    email: 'hello@lunaluxe.demo',
-    mobileNumber: '',
-    businessPhoneNumber: '+92 300 1110001',
-    provider: 'email',
-    businessName: 'Luna Luxe Salon',
-    website: 'www.lunaluxe.demo',
-    profileImageUrl: '',
-    serviceTypes: ['Hair salon', 'Beauty salon'],
-    services: createSeededBusinessServices(
-      ['Hair salon', 'Beauty salon'],
-      getServiceTemplateOptions(DEFAULT_BUSINESS_SETTINGS)
-    ),
-    products: [],
-    productSales: [],
-    packagePlans: [],
-    loyaltyProgram: null,
-    businessSettings: normalizeBusinessSettings(DEFAULT_BUSINESS_SETTINGS),
-    customerProfiles: [],
-    teamMembers: [
-      {
-        id: 'team-luna-1',
-        name: 'Mina',
-        role: 'Stylist',
-        phone: '+923001110001',
-        expertise: 'Colour and blow-dry',
-        openingTime: '09:00',
-        closingTime: '18:00',
-        offDays: [],
-        isActive: true,
-        createdAt: '2026-03-01T09:00:00.000Z',
-        updatedAt: '2026-03-12T08:30:00.000Z'
-      }
-    ],
-    accountType: 'team',
-    serviceLocation: [defaultServiceLocation],
-    venueAddress: 'Clifton Block 5, Schon Circle, Karachi, Sindh, Pakistan',
-    preferredLanguage: 'english',
-    onboardingCompleted: true,
-    createdAt: '2026-03-01T09:00:00.000Z',
-    updatedAt: '2026-03-12T08:30:00.000Z'
-  },
-  {
-    id: 'demo-urban-trim',
-    adminToken: 'demo-admin-urban-trim',
-    email: 'hello@urbantrim.demo',
-    mobileNumber: '',
-    businessPhoneNumber: '+92 300 1110003',
-    provider: 'email',
-    businessName: 'Urban Trim Studio',
-    website: 'www.urbantrim.demo',
-    profileImageUrl: '',
-    serviceTypes: ['Barber'],
-    services: createSeededBusinessServices(['Barber'], getServiceTemplateOptions(DEFAULT_BUSINESS_SETTINGS)),
-    products: [],
-    productSales: [],
-    packagePlans: [],
-    loyaltyProgram: null,
-    businessSettings: normalizeBusinessSettings(DEFAULT_BUSINESS_SETTINGS),
-    customerProfiles: [],
-    teamMembers: [],
-    accountType: 'independent',
-    serviceLocation: [defaultServiceLocation],
-    venueAddress: 'MM Alam Road, Gulberg III, Lahore, Punjab, Pakistan',
-    preferredLanguage: 'english',
-    onboardingCompleted: true,
-    createdAt: '2026-03-02T10:00:00.000Z',
-    updatedAt: '2026-03-12T08:00:00.000Z'
-  },
-  {
-    id: 'demo-serene-glow',
-    adminToken: 'demo-admin-serene-glow',
-    email: 'hello@sereneglow.demo',
-    mobileNumber: '',
-    businessPhoneNumber: '+92 300 1110002',
-    provider: 'email',
-    businessName: 'Serene Glow Spa',
-    website: 'www.sereneglow.demo',
-    profileImageUrl: '',
-    serviceTypes: ['Massage', 'Spa & sauna'],
-    services: createSeededBusinessServices(
-      ['Massage', 'Spa & sauna'],
-      getServiceTemplateOptions(DEFAULT_BUSINESS_SETTINGS)
-    ),
-    products: [],
-    productSales: [],
-    packagePlans: [],
-    loyaltyProgram: null,
-    businessSettings: normalizeBusinessSettings(DEFAULT_BUSINESS_SETTINGS),
-    customerProfiles: [],
-    teamMembers: [
-      {
-        id: 'team-serene-1',
-        name: 'Hira',
-        role: 'Therapist',
-        phone: '+923001110002',
-        expertise: 'Deep tissue massage',
-        openingTime: '09:00',
-        closingTime: '18:00',
-        offDays: [],
-        isActive: true,
-        createdAt: '2026-03-03T11:00:00.000Z',
-        updatedAt: '2026-03-12T07:30:00.000Z'
-      }
-    ],
-    accountType: 'team',
-    serviceLocation: [defaultServiceLocation],
-    venueAddress: 'Blue Area, Jinnah Avenue, Islamabad, Islamabad Capital Territory, Pakistan',
-    preferredLanguage: 'english',
-    onboardingCompleted: true,
-    createdAt: '2026-03-03T11:00:00.000Z',
-    updatedAt: '2026-03-12T07:30:00.000Z'
-  }
-];
-
-const ensureDemoSalons = async (): Promise<void> => {
-  if (!shouldSeedDemoSalons()) {
-    return;
-  }
-
-  const existingClients = await clientPlatformRepository.listClients();
-  const existingIds = new Set(existingClients.map((client) => client.id));
-
-  await Promise.all(
-    DEMO_SALONS.filter((client) => !existingIds.has(client.id)).map((client) =>
-      clientPlatformRepository.saveClient(hydrateClientRecord(client))
-    )
-  );
-};
-
 const formatDashboardDate = (
   date: Date,
   preferredLanguage: PreferredLanguage | null | undefined
@@ -2106,7 +1964,6 @@ export const clientPlatformService = {
   },
 
   async getPublicSalons(): Promise<PublicSalonShowcaseItem[]> {
-    await ensureDemoSalons();
     const clients = await clientPlatformRepository.listClients();
     const visibleClients = clients
       .map(hydrateClientRecord)

@@ -21,20 +21,16 @@ const getConfiguredStoreType = (): 'file' | 'memory' | 'supabase' => {
     return 'memory';
   }
 
-  if (process.env.CLIENT_PLATFORM_STORAGE === 'supabase') {
+  if (env.CLIENT_PLATFORM_STORAGE === 'supabase') {
     return hasSupabaseConfiguration() ? 'supabase' : 'file';
   }
 
-  if (process.env.CLIENT_PLATFORM_STORAGE === 'memory') {
+  if (env.CLIENT_PLATFORM_STORAGE === 'memory') {
     return 'memory';
   }
 
-  if (process.env.CLIENT_PLATFORM_STORAGE === 'file') {
+  if (env.CLIENT_PLATFORM_STORAGE === 'file') {
     return 'file';
-  }
-
-  if (hasSupabaseConfiguration()) {
-    return 'supabase';
   }
 
   return isVercelRuntime() ? 'memory' : 'file';

@@ -2,6 +2,12 @@ const CLIENT_STORAGE_KEY = 'qr-platform-client-id';
 const NOTIFICATION_READ_STORAGE_KEY = 'qr-platform-read-notifications';
 const REPORTS_WORKSPACE_STORAGE_KEY = 'qr-platform-reports-workspace';
 const DASHBOARD_NOTIFICATION_REFRESH_INTERVAL_MS = 30000;
+const DEFAULT_PHONE_PLACEHOLDER = '+1234567890';
+const DEFAULT_BOOKING_PHONE_PLACEHOLDER = 'Enter phone number';
+const DEFAULT_BOOKING_PHONE_LABEL = 'Phone number';
+const DEFAULT_BOOKING_PHONE_HELP = 'You and the business will receive SMS updates on this number.';
+const DEFAULT_PHONE_COUNTRY_CODE_LABEL = 'Country code';
+const DEFAULT_BUSINESS_PHONE_LABEL = 'Business phone number';
 const DEFAULT_DASHBOARD_UI_COPY = {
   locale: 'en-GB',
   bookingSourceLabels: {
@@ -81,8 +87,8 @@ const DEFAULT_DASHBOARD_UI_COPY = {
 let currentDashboardUiCopy = DEFAULT_DASHBOARD_UI_COPY;
 const DEFAULT_CALENDAR_TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
 const DEFAULT_BUSINESS_SETTINGS = {
-  currencyCode: 'PKR',
-  currencyLocale: 'en-PK',
+  currencyCode: 'USD',
+  currencyLocale: 'en-US',
   slotTimes: DEFAULT_CALENDAR_TIME_SLOTS,
   useServiceTemplates: true,
   reportMetadata: {
@@ -628,6 +634,77 @@ const interpolateLabel = (template, values = {}) => {
     template
   );
 };
+
+const getProfileUiCopy = () => ({
+  titleSuffix:
+    typeof currentPublicConfig?.profileTitleSuffix === 'string'
+      ? currentPublicConfig.profileTitleSuffix.trim()
+      : '',
+  description:
+    typeof currentPublicConfig?.profileDescription === 'string'
+      ? currentPublicConfig.profileDescription.trim()
+      : '',
+  fieldBusinessNameLabel:
+    typeof currentPublicConfig?.profileFieldBusinessNameLabel === 'string'
+      ? currentPublicConfig.profileFieldBusinessNameLabel.trim()
+      : '',
+  fieldBusinessNamePlaceholder:
+    typeof currentPublicConfig?.profileFieldBusinessNamePlaceholder === 'string'
+      ? currentPublicConfig.profileFieldBusinessNamePlaceholder.trim()
+      : '',
+  fieldWebsiteLabel:
+    typeof currentPublicConfig?.profileFieldWebsiteLabel === 'string'
+      ? currentPublicConfig.profileFieldWebsiteLabel.trim()
+      : '',
+  fieldWebsitePlaceholder:
+    typeof currentPublicConfig?.profileFieldWebsitePlaceholder === 'string'
+      ? currentPublicConfig.profileFieldWebsitePlaceholder.trim()
+      : '',
+  fieldPhoneLabel:
+    typeof currentPublicConfig?.profileFieldPhoneLabel === 'string'
+      ? currentPublicConfig.profileFieldPhoneLabel.trim()
+      : '',
+  fieldPhonePlaceholder:
+    typeof currentPublicConfig?.profileFieldPhonePlaceholder === 'string'
+      ? currentPublicConfig.profileFieldPhonePlaceholder.trim()
+      : '',
+  fieldAddressLabel:
+    typeof currentPublicConfig?.profileFieldAddressLabel === 'string'
+      ? currentPublicConfig.profileFieldAddressLabel.trim()
+      : '',
+  fieldAddressPlaceholder:
+    typeof currentPublicConfig?.profileFieldAddressPlaceholder === 'string'
+      ? currentPublicConfig.profileFieldAddressPlaceholder.trim()
+      : '',
+  fieldImageLabel:
+    typeof currentPublicConfig?.profileFieldImageLabel === 'string'
+      ? currentPublicConfig.profileFieldImageLabel.trim()
+      : '',
+  fieldImagePlaceholder:
+    typeof currentPublicConfig?.profileFieldImagePlaceholder === 'string'
+      ? currentPublicConfig.profileFieldImagePlaceholder.trim()
+      : '',
+  actionUploadImage:
+    typeof currentPublicConfig?.profileActionUploadImage === 'string'
+      ? currentPublicConfig.profileActionUploadImage.trim()
+      : '',
+  actionRemoveImage:
+    typeof currentPublicConfig?.profileActionRemoveImage === 'string'
+      ? currentPublicConfig.profileActionRemoveImage.trim()
+      : '',
+  actionSave:
+    typeof currentPublicConfig?.profileActionSave === 'string'
+      ? currentPublicConfig.profileActionSave.trim()
+      : '',
+  validationRequired:
+    typeof currentPublicConfig?.profileValidationRequired === 'string'
+      ? currentPublicConfig.profileValidationRequired.trim()
+      : '',
+  errorUpdate:
+    typeof currentPublicConfig?.profileErrorUpdate === 'string'
+      ? currentPublicConfig.profileErrorUpdate.trim()
+      : ''
+});
 
 const formatAddressSingleLine = (address) =>
   typeof address === 'string'
@@ -2499,6 +2576,7 @@ const initBusinessProfile = () => {
   const businessNameInput = document.querySelector('#business-name-input');
   const businessWebsiteInput = document.querySelector('#business-website-input');
   const businessPhoneInput = document.querySelector('#business-phone-input');
+  const businessPhoneLabelText = document.querySelector('#business-phone-label-text');
   const continueButton = document.querySelector('#business-profile-continue');
 
   if (
@@ -2516,8 +2594,23 @@ const initBusinessProfile = () => {
     return;
   }
 
+  const applyBusinessProfileUiCopy = () => {
+    const profileUiCopy = getProfileUiCopy();
+
+    if (businessPhoneLabelText instanceof HTMLElement) {
+      businessPhoneLabelText.textContent =
+        profileUiCopy.fieldPhoneLabel || DEFAULT_BUSINESS_PHONE_LABEL;
+    }
+
+    businessPhoneInput.placeholder =
+      profileUiCopy.fieldPhonePlaceholder || DEFAULT_PHONE_PLACEHOLDER;
+  };
+
   const hydrateClient = async () => {
     try {
+      await loadPublicConfig().catch(() => ({}));
+      applyBusinessProfileUiCopy();
+
       const payload = await apiRequest(`/api/platform/clients/${clientId}`);
       businessNameInput.value = payload.client.businessName ?? '';
       businessWebsiteInput.value = payload.client.website ?? '';
@@ -3233,6 +3326,7 @@ const initCalendar = () => {
   const calendarMain = document.querySelector('.calendar-main');
   const calendarToolbar = document.querySelector('.calendar-toolbar');
   const brand = document.querySelector('#calendar-brand');
+  const planChip = document.querySelector('#calendar-plan-chip');
   const setupLabel = document.querySelector('#calendar-setup-label');
   const setupButton = document.querySelector('#calendar-setup-button');
   const userAvatar = document.querySelector('#calendar-user-avatar');
@@ -3349,6 +3443,7 @@ const initCalendar = () => {
     !(calendarMain instanceof HTMLElement) ||
     !(calendarToolbar instanceof HTMLElement) ||
     !(brand instanceof HTMLAnchorElement) ||
+    !(planChip instanceof HTMLButtonElement) ||
     !(calendarNavCalendar instanceof HTMLAnchorElement) ||
     !(setupLabel instanceof HTMLSpanElement) ||
     !(setupButton instanceof HTMLAnchorElement) ||
@@ -3388,6 +3483,7 @@ const initCalendar = () => {
   let qrCodeImagePath = '';
   let dashboardPayload = null;
   let paymentsPayload = null;
+  let billingPayload = null;
   let selectedDate = new Date();
   let appointmentFilter = 'all';
   let currentView = 'day';
@@ -3403,6 +3499,83 @@ const initCalendar = () => {
   };
   let activeReportsFolderId = '';
   let reportsDateRange = '30d';
+
+  const isBillingFeatureLocked = (featureKey) =>
+    Array.isArray(billingPayload?.lockedFeatureKeys) &&
+    billingPayload.lockedFeatureKeys.includes(featureKey);
+
+  const getBillingFeatureLabel = (featureKey) => {
+    const matchedFeature = Array.isArray(billingPayload?.featureAccess)
+      ? billingPayload.featureAccess.find((feature) => feature.key === featureKey)
+      : null;
+
+    return matchedFeature?.label || 'This feature';
+  };
+
+  const getPricingPath = () => buildPathWithClientId('/pricing', clientId);
+
+  const redirectToPricingForUpgrade = (featureKey) => {
+    const featureLabel = getBillingFeatureLabel(featureKey);
+    window.sessionStorage.setItem(
+      'qr-platform-upgrade-reason',
+      `${featureLabel} requires a higher plan. Choose a plan and complete demo checkout to unlock it.`
+    );
+    window.location.assign(getPricingPath());
+  };
+
+  const guardBillingFeature = (featureKey) => {
+    if (!isBillingFeatureLocked(featureKey)) {
+      return false;
+    }
+
+    redirectToPricingForUpgrade(featureKey);
+    return true;
+  };
+
+  const setBillingLockedState = (element, featureKey) => {
+    if (!(element instanceof HTMLElement)) {
+      return;
+    }
+
+    const isLocked = isBillingFeatureLocked(featureKey);
+    element.classList.toggle('calendar-billing-locked', isLocked);
+    element.setAttribute(
+      'title',
+      isLocked
+        ? `${getBillingFeatureLabel(featureKey)} requires a higher plan`
+        : element.getAttribute('aria-label') || ''
+    );
+  };
+
+  const renderBillingPlanChip = () => {
+    const currentPlan = billingPayload?.currentPlan;
+    const subscriptionStatus = billingPayload?.subscription?.status;
+    const remainingCredits = Number(billingPayload?.creditBalance?.remaining ?? 0);
+    const grantedCredits = Number(billingPayload?.creditBalance?.granted ?? 0);
+
+    planChip.classList.toggle('is-active', Boolean(currentPlan));
+    planChip.innerHTML = `
+      <span>Using plan</span>
+      <strong>${escapeHtml(currentPlan?.name ?? 'No plan')} | ${remainingCredits}/${grantedCredits} credits</strong>
+    `;
+    planChip.setAttribute(
+      'aria-label',
+      currentPlan
+        ? `Using ${currentPlan.name} plan, status ${subscriptionStatus ?? 'active'}, ${remainingCredits} appointment credits remaining`
+        : 'No subscription plan selected, 0 appointment credits remaining'
+    );
+
+    setBillingLockedState(salesToggle, 'payments');
+    setBillingLockedState(saleAction, 'payments');
+    setBillingLockedState(quickPaymentAction, 'payments');
+    setBillingLockedState(clientsToggle, 'client_crm');
+    setBillingLockedState(catalogToggle, 'products');
+    setBillingLockedState(teamToggle, 'team_management');
+    setBillingLockedState(teamShortcut, 'team_management');
+    setBillingLockedState(reportsToggle, 'advanced_reports');
+    setBillingLockedState(analyticsAction, 'advanced_reports');
+    setBillingLockedState(marketingAction, 'marketing');
+  };
 
   const getSelectedDateValue = () => {
     const year = selectedDate.getFullYear();
@@ -3990,69 +4163,6 @@ const initCalendar = () => {
     offDaysEmpty:
       typeof currentPublicConfig?.teamMemberFieldOffDaysEmpty === 'string'
         ? currentPublicConfig.teamMemberFieldOffDaysEmpty.trim()
-        : ''
-  });
-
-  const getProfileUiCopy = () => ({
-    titleSuffix:
-      typeof currentPublicConfig?.profileTitleSuffix === 'string'
-        ? currentPublicConfig.profileTitleSuffix.trim()
-        : '',
-    description:
-      typeof currentPublicConfig?.profileDescription === 'string'
-        ? currentPublicConfig.profileDescription.trim()
-        : '',
-    fieldBusinessNameLabel:
-      typeof currentPublicConfig?.profileFieldBusinessNameLabel === 'string'
-        ? currentPublicConfig.profileFieldBusinessNameLabel.trim()
-        : '',
-    fieldBusinessNamePlaceholder:
-      typeof currentPublicConfig?.profileFieldBusinessNamePlaceholder === 'string'
-        ? currentPublicConfig.profileFieldBusinessNamePlaceholder.trim()
-        : '',
-    fieldWebsiteLabel:
-      typeof currentPublicConfig?.profileFieldWebsiteLabel === 'string'
-        ? currentPublicConfig.profileFieldWebsiteLabel.trim()
-        : '',
-    fieldWebsitePlaceholder:
-      typeof currentPublicConfig?.profileFieldWebsitePlaceholder === 'string'
-        ? currentPublicConfig.profileFieldWebsitePlaceholder.trim()
-        : '',
-    fieldAddressLabel:
-      typeof currentPublicConfig?.profileFieldAddressLabel === 'string'
-        ? currentPublicConfig.profileFieldAddressLabel.trim()
-        : '',
-    fieldAddressPlaceholder:
-      typeof currentPublicConfig?.profileFieldAddressPlaceholder === 'string'
-        ? currentPublicConfig.profileFieldAddressPlaceholder.trim()
-        : '',
-    fieldImageLabel:
-      typeof currentPublicConfig?.profileFieldImageLabel === 'string'
-        ? currentPublicConfig.profileFieldImageLabel.trim()
-        : '',
-    fieldImagePlaceholder:
-      typeof currentPublicConfig?.profileFieldImagePlaceholder === 'string'
-        ? currentPublicConfig.profileFieldImagePlaceholder.trim()
-        : '',
-    actionUploadImage:
-      typeof currentPublicConfig?.profileActionUploadImage === 'string'
-        ? currentPublicConfig.profileActionUploadImage.trim()
-        : '',
-    actionRemoveImage:
-      typeof currentPublicConfig?.profileActionRemoveImage === 'string'
-        ? currentPublicConfig.profileActionRemoveImage.trim()
-        : '',
-    actionSave:
-      typeof currentPublicConfig?.profileActionSave === 'string'
-        ? currentPublicConfig.profileActionSave.trim()
-        : '',
-    validationRequired:
-      typeof currentPublicConfig?.profileValidationRequired === 'string'
-        ? currentPublicConfig.profileValidationRequired.trim()
-        : '',
-    errorUpdate:
-      typeof currentPublicConfig?.profileErrorUpdate === 'string'
-        ? currentPublicConfig.profileErrorUpdate.trim()
         : ''
   });
 
@@ -6483,7 +6593,7 @@ const createTrendCard = (
     phoneLabel.textContent = 'Customer phone';
     const phoneInput = document.createElement('input');
     phoneInput.type = 'text';
-    phoneInput.placeholder = '+923001234567';
+    phoneInput.placeholder = DEFAULT_PHONE_PLACEHOLDER;
     phoneInput.required = true;
     phoneField.append(phoneLabel, phoneInput);
 
@@ -6874,7 +6984,7 @@ const createTrendCard = (
     const phoneInput = document.createElement('input');
     phoneInput.type = 'text';
     phoneInput.name = 'phone';
-    phoneInput.placeholder = 'e.g. +923001234567';
+    phoneInput.placeholder = `e.g. ${DEFAULT_PHONE_PLACEHOLDER}`;
     phoneInput.value = teamMember?.phone ?? '';
     phoneField.append(phoneLabel, phoneInput);
 
@@ -7526,12 +7636,12 @@ const createTrendCard = (
     const phoneField = document.createElement('label');
     phoneField.className = 'calendar-tool-field';
     const phoneLabel = document.createElement('span');
-    phoneLabel.textContent = 'Salon phone number';
+    phoneLabel.textContent = profileUiCopy.fieldPhoneLabel || DEFAULT_BUSINESS_PHONE_LABEL;
     const phoneInput = document.createElement('input');
     phoneInput.type = 'tel';
     phoneInput.name = 'businessPhoneNumber';
     phoneInput.value = dashboardPayload?.client?.businessPhoneNumber ?? '';
-    phoneInput.placeholder = '+92 300 1234567';
+    phoneInput.placeholder = profileUiCopy.fieldPhonePlaceholder || DEFAULT_PHONE_PLACEHOLDER;
     phoneField.append(phoneLabel, phoneInput);
 
     const addressField = document.createElement('label');
@@ -8165,7 +8275,7 @@ const createTrendCard = (
     phoneLabel.textContent = productUiCopy.fieldCustomerPhone || 'Customer phone';
     const phoneInput = document.createElement('input');
     phoneInput.type = 'text';
-    phoneInput.placeholder = '+923001234567';
+    phoneInput.placeholder = DEFAULT_PHONE_PLACEHOLDER;
     phoneInput.required = true;
     phoneField.append(phoneLabel, phoneInput);
 
@@ -9938,6 +10048,10 @@ const createTrendCard = (
     if (quickPaymentAction instanceof HTMLButtonElement) {
       quickPaymentAction.addEventListener('click', () => {
         closeAddMenu();
+        if (guardBillingFeature('payments')) {
+          return;
+        }
+
         setMainView('calendar');
         syncSideDrawerOffset();
         setActiveDrawer('sales');
@@ -9948,6 +10062,10 @@ const createTrendCard = (
 
   if (hasSalesDrawer) {
     saleAction.addEventListener('click', () => {
+      if (guardBillingFeature('payments')) {
+        return;
+      }
+
       syncSideDrawerOffset();
       setMainView('calendar');
       setActiveDrawer('sales');
@@ -9958,6 +10076,10 @@ const createTrendCard = (
     salesToggle.addEventListener('click', (event) => {
       event.stopPropagation();
       closeAddMenu();
+
+      if (guardBillingFeature('payments')) {
+        return;
+      }
 
       if (getActiveDrawer() !== 'sales') {
         syncSideDrawerOffset();
@@ -10136,6 +10258,10 @@ const createTrendCard = (
       event.stopPropagation();
       closeAddMenu();
 
+      if (guardBillingFeature('team_management')) {
+        return;
+      }
+
       if (getActiveDrawer() !== 'team') {
         syncSideDrawerOffset();
         setMainView('calendar');
@@ -10221,6 +10347,10 @@ const createTrendCard = (
     closeAddMenu();
     setActiveDrawer('');
 
+    if (guardBillingFeature('advanced_reports')) {
+      return;
+    }
+
     if (getMainView() !== 'reports') {
       setMainView('reports');
       return;
@@ -10288,6 +10418,10 @@ const createTrendCard = (
   if (teamShortcut instanceof HTMLButtonElement && hasTeamDrawer) {
     teamShortcut.addEventListener('click', () => {
       closeAddMenu();
+      if (guardBillingFeature('team_management')) {
+        return;
+      }
+
       setMainView('calendar');
 
       if (getActiveDrawer() === 'team') {
@@ -10380,6 +10514,10 @@ const createTrendCard = (
 
   if (analyticsAction instanceof HTMLButtonElement) {
     analyticsAction.addEventListener('click', () => {
+      if (guardBillingFeature('advanced_reports')) {
+        return;
+      }
+
       setActiveDrawer('');
       setMainView('reports');
       reportsSearchInput?.focus();
@@ -10415,8 +10553,16 @@ const createTrendCard = (
     });
   }
 
+  planChip.addEventListener('click', () => {
+    window.location.assign(getPricingPath());
+  });
+
   if (marketingAction instanceof HTMLButtonElement) {
     marketingAction.addEventListener('click', () => {
+      if (guardBillingFeature('marketing')) {
+        return;
+      }
+
       openToolModal({
         eyebrow: 'Marketing',
         title: 'Marketing tools',
@@ -10448,6 +10594,10 @@ const createTrendCard = (
         actions: [
           createToolActionButton('Open sales', () => {
             closeToolModal();
+            if (guardBillingFeature('payments')) {
+              return;
+            }
+
             setMainView('calendar');
             syncSideDrawerOffset();
             setActiveDrawer('sales');
@@ -10470,9 +10620,10 @@ const createTrendCard = (
   }
 
   const loadDashboard = async () => {
-    const [payload, paymentPayload] = await Promise.all([
+    const [payload, paymentPayload, billingOverviewPayload] = await Promise.all([
       apiRequest(`/api/platform/clients/${clientId}/dashboard`),
-      apiRequest(`/api/platform/clients/${clientId}/payments`)
+      apiRequest(`/api/platform/clients/${clientId}/payments`),
+      apiRequest(`/api/platform/clients/${clientId}/billing`)
     ]);
     const launchLinks = payload.dashboard.launchLinks ?? {
       bookingPageLink: `${window.location.origin}${buildTrackedBookingPath(clientId, 'direct')}`,
@@ -10485,6 +10636,7 @@ const createTrendCard = (
 
     dashboardPayload = payload;
     paymentsPayload = paymentPayload;
+    billingPayload = billingOverviewPayload;
     setDashboardUiCopy(payload.dashboard.uiCopy);
     currentBusinessSettings = getDashboardBusinessSettings();
     reportsWorkspace = getReportsWorkspaceState(clientId);
@@ -10621,6 +10773,7 @@ const createTrendCard = (
     );
     staffName.textContent = payload.dashboard.ownerName;
     nowBadge.textContent = payload.dashboard.currentTimeLabel;
+    renderBillingPlanChip();
 
     renderSalesDrawer();
     renderClientsDrawer();
@@ -10925,20 +11078,28 @@ const initPublicBooking = () => {
         typeof config.bookingAddressRequired === 'string'
           ? config.bookingAddressRequired.trim()
           : '',
-      phoneLabel: typeof config.bookingPhoneLabel === 'string' ? config.bookingPhoneLabel.trim() : '',
-      phoneHelp: typeof config.bookingPhoneHelp === 'string' ? config.bookingPhoneHelp.trim() : '',
+      phoneLabel:
+        typeof config.bookingPhoneLabel === 'string' && config.bookingPhoneLabel.trim()
+          ? config.bookingPhoneLabel.trim()
+          : DEFAULT_BOOKING_PHONE_LABEL,
+      phoneHelp:
+        typeof config.bookingPhoneHelp === 'string' && config.bookingPhoneHelp.trim()
+          ? config.bookingPhoneHelp.trim()
+          : DEFAULT_BOOKING_PHONE_HELP,
       phoneCountryCodeLabel:
-        typeof config.bookingPhoneCountryCodeLabel === 'string'
+        typeof config.bookingPhoneCountryCodeLabel === 'string' &&
+        config.bookingPhoneCountryCodeLabel.trim()
           ? config.bookingPhoneCountryCodeLabel.trim()
-          : '',
+          : DEFAULT_PHONE_COUNTRY_CODE_LABEL,
       phoneCountryCode:
         typeof config.bookingPhoneCountryCode === 'string'
           ? normalizePhoneCountryCode(config.bookingPhoneCountryCode)
           : '',
       phoneNumberPlaceholder:
-        typeof config.bookingPhoneNumberPlaceholder === 'string'
+        typeof config.bookingPhoneNumberPlaceholder === 'string' &&
+        config.bookingPhoneNumberPlaceholder.trim()
           ? config.bookingPhoneNumberPlaceholder.trim()
-          : ''
+          : DEFAULT_BOOKING_PHONE_PLACEHOLDER
     };
 
     serviceLocationLabel.textContent = bookingUiCopy.locationLabel;
@@ -12289,6 +12450,313 @@ const initOnboardingLaunchLinks = async () => {
   });
 };
 
+const formatSubscriptionPlanPrice = (plan) => {
+  const amount = Number(plan?.amountCents ?? 0) / 100;
+  const currencyCode = typeof plan?.currencyCode === 'string' ? plan.currencyCode : 'USD';
+
+  try {
+    return new Intl.NumberFormat('en-PK', {
+      style: 'currency',
+      currency: currencyCode,
+      maximumFractionDigits: amount % 1 === 0 ? 0 : 2
+    }).format(amount);
+  } catch (_error) {
+    return `${currencyCode} ${Math.round(amount).toLocaleString('en-US')}`;
+  }
+};
+
+const getSubscriptionFeatureLabels = (plan) => {
+  const entitlements = plan?.entitlements ?? {};
+  const featureKeys = Array.isArray(entitlements.featureKeys) ? entitlements.featureKeys : [];
+  const fallbackAppointmentCredits = {
+    solo: 50,
+    single: 150,
+    team_premium: 500
+  };
+  const labels = [];
+
+  if (Number.isFinite(Number(entitlements.maxTeamMembers))) {
+    labels.push(`${entitlements.maxTeamMembers} team member limit`);
+  }
+
+  if (Number.isFinite(Number(entitlements.includedMessages))) {
+    labels.push(`${entitlements.includedMessages} messages included`);
+  }
+
+  if (Number.isFinite(Number(entitlements.includedMarketingEmails))) {
+    labels.push(`${entitlements.includedMarketingEmails} marketing emails`);
+  }
+
+  const includedAppointmentCredits = Number.isFinite(Number(entitlements.includedAppointmentCredits))
+    ? Number(entitlements.includedAppointmentCredits)
+    : fallbackAppointmentCredits[plan?.key] ?? 0;
+
+  if (includedAppointmentCredits > 0) {
+    labels.push(`${includedAppointmentCredits} appointment credits`);
+  }
+
+  if (featureKeys.includes('payments')) {
+    labels.push('Payments and checkout');
+  }
+
+  if (featureKeys.includes('service_packages')) {
+    labels.push('Prepaid service packages');
+  }
+
+  if (featureKeys.includes('team_management')) {
+    labels.push('Team calendars');
+  }
+
+  if (featureKeys.includes('advanced_reports')) {
+    labels.push('Advanced reports');
+  }
+
+  return labels.slice(0, 6);
+};
+
+const initPricingPage = () => {
+  const pricingGrid = document.querySelector('#pricing-grid');
+  const pricingCheckout = document.querySelector('#pricing-checkout');
+  const pricingStatus = document.querySelector('#pricing-status');
+
+  if (
+    !(pricingGrid instanceof HTMLElement) ||
+    !(pricingCheckout instanceof HTMLElement) ||
+    !(pricingStatus instanceof HTMLElement)
+  ) {
+    return;
+  }
+
+  const clientId = getClientId();
+  let plans = [];
+  let selectedPlan = null;
+  let billingOverview = null;
+  const upgradeReason = window.sessionStorage.getItem('qr-platform-upgrade-reason') || '';
+  window.sessionStorage.removeItem('qr-platform-upgrade-reason');
+
+  const getCheckoutInputValue = (selector) => {
+    const element = pricingCheckout.querySelector(selector);
+    return element instanceof HTMLInputElement ? element.value : '';
+  };
+
+  const renderStatus = () => {
+    const currentPlan = billingOverview?.currentPlan;
+    const subscription = billingOverview?.subscription;
+    const credits = billingOverview?.creditBalance ?? { granted: 0, remaining: 0, used: 0 };
+
+    if (!clientId) {
+      pricingStatus.innerHTML = `
+        <p class="pricing-label">Subscription setup</p>
+        <h1>Choose a plan for your business workspace</h1>
+        <p>Sign up first, then come back here to attach demo card details and activate a plan.</p>
+      `;
+      return;
+    }
+
+    pricingStatus.innerHTML = `
+      <p class="pricing-label">Subscription setup</p>
+      <h1>${currentPlan ? `Using ${escapeHtml(currentPlan.name)}` : 'No plan selected'}</h1>
+      <p>${
+        upgradeReason
+          ? escapeHtml(upgradeReason)
+          : currentPlan
+            ? `Status: ${escapeHtml(subscription?.status ?? 'active')}. Appointment credits: ${credits.remaining} of ${credits.granted} remaining. Select another plan below to add more credits.`
+            : 'Choose Solo, Single, or Team Premium to unlock the disabled dashboard functions.'
+      }</p>
+    `;
+  };
+
+  const renderCheckout = () => {
+    if (!selectedPlan) {
+      pricingCheckout.classList.add('is-hidden');
+      pricingCheckout.replaceChildren();
+      return;
+    }
+
+    pricingCheckout.classList.remove('is-hidden');
+    pricingCheckout.innerHTML = `
+      <h2>Demo checkout for ${escapeHtml(selectedPlan.name)}</h2>
+      <p>
+        Use any test card number, for example 4242 4242 4242 4242. This demo stores only
+        brand, last four digits, holder name, and expiry.
+      </p>
+      <form class="pricing-checkout-form" id="pricing-checkout-form">
+        <label class="is-wide">
+          <span>Cardholder name</span>
+          <input id="pricing-cardholder-name" type="text" value="" required />
+        </label>
+        <label class="is-wide">
+          <span>Card number</span>
+          <input id="pricing-card-number" type="text" inputmode="numeric" placeholder="4242 4242 4242 4242" required />
+        </label>
+        <label>
+          <span>Expiry month</span>
+          <input id="pricing-exp-month" type="number" min="1" max="12" value="12" required />
+        </label>
+        <label>
+          <span>Expiry year</span>
+          <input id="pricing-exp-year" type="number" min="2026" max="2100" value="2030" required />
+        </label>
+        <label>
+          <span>CVC</span>
+          <input id="pricing-cvc" type="password" inputmode="numeric" maxlength="4" placeholder="123" required />
+        </label>
+        <label>
+          <span>Billing email</span>
+          <input id="pricing-billing-email" type="email" placeholder="owner@example.com" />
+        </label>
+        <div class="pricing-checkout-actions">
+          <button class="pricing-cta" type="submit">Activate demo plan</button>
+          <span class="pricing-note">No real payment is processed.</span>
+        </div>
+      </form>
+    `;
+
+    const form = pricingCheckout.querySelector('#pricing-checkout-form');
+
+    if (!(form instanceof HTMLFormElement)) {
+      return;
+    }
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      if (!clientId) {
+        window.location.assign(`/signup?plan=${encodeURIComponent(selectedPlan.key)}`);
+        return;
+      }
+
+      const submitButton = form.querySelector('button[type="submit"]');
+
+      if (submitButton instanceof HTMLButtonElement) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Activating...';
+      }
+
+      try {
+        const payload = await apiRequest(
+          `/api/platform/clients/${encodeURIComponent(clientId)}/billing/demo-checkout`,
+          {
+            method: 'POST',
+            body: JSON.stringify({
+              planId: selectedPlan.id,
+              cardholderName: getCheckoutInputValue('#pricing-cardholder-name'),
+              cardNumber: getCheckoutInputValue('#pricing-card-number'),
+              expMonth: getCheckoutInputValue('#pricing-exp-month'),
+              expYear: getCheckoutInputValue('#pricing-exp-year'),
+              cvc: getCheckoutInputValue('#pricing-cvc'),
+              billingEmail: getCheckoutInputValue('#pricing-billing-email')
+            })
+          }
+        );
+
+        billingOverview = payload.overview;
+        selectedPlan = null;
+        renderStatus();
+        renderPlans();
+        pricingCheckout.classList.remove('is-hidden');
+        pricingCheckout.innerHTML = `
+          <h2>Plan activated</h2>
+          <p>${escapeHtml(payload.overview.currentPlan?.name ?? 'Selected plan')} is now active for this demo workspace. Invoice ${escapeHtml(payload.invoice.id.slice(0, 8))} was stored.</p>
+          <div class="pricing-checkout-actions">
+            <a class="pricing-cta" href="${escapeHtml(buildPathWithClientId('/calendar', clientId))}">Return to dashboard</a>
+          </div>
+        `;
+      } catch (error) {
+        if (submitButton instanceof HTMLButtonElement) {
+          submitButton.disabled = false;
+          submitButton.textContent = 'Activate demo plan';
+        }
+
+        safeAlert(error instanceof Error ? error.message : 'Unable to activate plan');
+      }
+    });
+
+    pricingCheckout.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const renderPlans = () => {
+    const currentPlanId = billingOverview?.currentPlan?.id ?? '';
+    const cards = plans.map((plan, index) => {
+      const card = document.createElement('article');
+      card.className = `pricing-card pricing-card-${String.fromCharCode(97 + index)}${
+        plan.id === currentPlanId ? ' is-current' : ''
+      }`;
+
+      const top = document.createElement('div');
+      top.className = 'pricing-top';
+      const heading = document.createElement('h2');
+      heading.textContent = plan.name;
+      const badge = document.createElement('span');
+      badge.className = 'trial-pill';
+      badge.textContent = plan.badgeLabel || `${plan.trialDays} day trial`;
+      top.append(heading, badge);
+
+      const price = document.createElement('div');
+      price.className = 'price-wrap';
+      const amount = document.createElement('strong');
+      amount.textContent = formatSubscriptionPlanPrice(plan);
+      const interval = document.createElement('span');
+      interval.textContent =
+        plan.key === 'team_premium'
+          ? 'per team member monthly'
+          : `per ${plan.billingInterval}`;
+      price.append(amount, interval);
+
+      const copy = document.createElement('div');
+      copy.className = 'pricing-copy';
+      const summary = document.createElement('p');
+      summary.textContent = plan.summary;
+      copy.append(summary);
+
+      const featureWrap = document.createElement('div');
+      featureWrap.className = 'pricing-features';
+      for (const label of getSubscriptionFeatureLabels(plan)) {
+        const pill = document.createElement('span');
+        pill.className = 'pricing-feature-pill';
+        pill.textContent = label;
+        featureWrap.append(pill);
+      }
+
+      const action = document.createElement('button');
+      action.className = 'pricing-cta';
+      action.type = 'button';
+      action.textContent = plan.id === currentPlanId ? 'Current plan' : clientId ? 'Choose plan' : 'Sign up first';
+      action.addEventListener('click', () => {
+        if (!clientId) {
+          window.location.assign(`/signup?plan=${encodeURIComponent(plan.key)}`);
+          return;
+        }
+
+        selectedPlan = plan;
+        renderCheckout();
+      });
+
+      card.append(top, price, copy, featureWrap, action);
+      return card;
+    });
+
+    pricingGrid.replaceChildren(...cards);
+  };
+
+  Promise.all([
+    apiRequest('/api/billing/subscription-plans'),
+    clientId
+      ? apiRequest(`/api/platform/clients/${encodeURIComponent(clientId)}/billing`).catch(() => null)
+      : Promise.resolve(null)
+  ])
+    .then(([plansPayload, overviewPayload]) => {
+      plans = Array.isArray(plansPayload?.plans) ? plansPayload.plans : [];
+      billingOverview = overviewPayload;
+      renderStatus();
+      renderPlans();
+    })
+    .catch((error) => {
+      pricingGrid.innerHTML = '<article class="pricing-card"><h2>Unable to load plans</h2></article>';
+      safeAlert(error instanceof Error ? error.message : 'Unable to load pricing plans');
+    });
+};
+
 syncClientIdFromQuery();
 
 if (guardAdminPages()) {
@@ -12307,6 +12775,7 @@ if (guardAdminPages()) {
   initOnboardingComplete();
 }
 
+initPricingPage();
 initHomeSalonSearch();
 initPublicBooking();
 initManageBooking();

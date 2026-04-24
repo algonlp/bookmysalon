@@ -49,6 +49,7 @@ import {
   serviceLocationRequiresAddress
 } from '../platform/serviceLocation.constants';
 import { env } from '../config/env';
+import { billingService } from '../billing/billing.service';
 
 const DEFAULT_SLOT_TIMES = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
 const WEEKDAY_IDS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
@@ -138,8 +139,10 @@ const getBusinessServiceTemplateOptions = (
   currencyLocale: string;
   useServiceTemplates: boolean;
 } => ({
-  currencyCode: business.businessSettings?.currencyCode?.trim() || 'PKR',
-  currencyLocale: business.businessSettings?.currencyLocale?.trim() || 'en-PK',
+  currencyCode:
+    business.businessSettings?.currencyCode?.trim() || env.DEFAULT_BUSINESS_CURRENCY_CODE,
+  currencyLocale:
+    business.businessSettings?.currencyLocale?.trim() || env.DEFAULT_BUSINESS_CURRENCY_LOCALE,
   useServiceTemplates: business.businessSettings?.useServiceTemplates !== false
 });
 
@@ -1813,7 +1816,14 @@ export const appointmentService = {
       updatedAt: now
     };
 
-    await appointmentRepository.saveAppointment(appointment);
+    const consumedSubscription = await billingService.consumeAppointmentCreditForBooking(businessId);
+
+    try {
+      await appointmentRepository.saveAppointment(appointment);
+    } catch (error) {
+      await billingService.restoreAppointmentCreditForBooking(consumedSubscription);
+      throw error;
+    }
 
     if (updatedPackagePurchase) {
       await appointmentRepository.savePackagePurchase(updatedPackagePurchase);

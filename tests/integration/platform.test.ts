@@ -3,7 +3,9 @@ import { vi } from 'vitest';
 import { app } from '../../src/app';
 import { appointmentRepository } from '../../src/appointments/appointment.repository';
 import { resetAppointmentRepositoryForTests } from '../../src/appointments/appointment.repository';
+import { billingRepository } from '../../src/billing/billing.repository';
 import { resetClientPlatformRepositoryForTests } from '../../src/platform/clientPlatform.repository';
+import { resetBillingRepositoryForTests } from '../../src/billing/billing.repository';
 
 describe('Client platform API', () => {
   const uploadedProfileImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB';
@@ -14,6 +16,7 @@ describe('Client platform API', () => {
     vi.useRealTimers();
     await resetClientPlatformRepositoryForTests();
     await resetAppointmentRepositoryForTests();
+    await resetBillingRepositoryForTests();
   });
 
   it('sets an admin session cookie for the whole app and accepts it on protected routes', async () => {
@@ -886,7 +889,7 @@ describe('Client platform API', () => {
 
   it('filters past same-day slots and stores bookings using the app timezone instead of server local time', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
-    vi.setSystemTime(new Date(Date.UTC(2026, 2, 11, 8, 30, 0)));
+    vi.setSystemTime(new Date(Date.UTC(2026, 2, 11, 13, 30, 0)));
 
     const createResponse = await request(app).post('/api/platform/clients').send({
       email: 'timezone-admin@example.com',
@@ -951,7 +954,7 @@ describe('Client platform API', () => {
       expect.objectContaining({
         appointmentDate: '2026-03-11',
         appointmentTime: '14:00',
-        startAt: '2026-03-11T09:00:00.000Z'
+        startAt: '2026-03-11T14:00:00.000Z'
       })
     );
 
@@ -1551,7 +1554,7 @@ describe('Client platform API', () => {
 
   it('supports package sales and loyalty rewards through the booking flow', async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 2, 11, 8, 0, 0));
+    vi.setSystemTime(new Date(Date.UTC(2026, 2, 11, 8, 0, 0)));
 
     const createResponse = await request(app).post('/api/platform/clients').send({
       email: 'commerce@example.com',
@@ -1653,7 +1656,7 @@ describe('Client platform API', () => {
     expect(bookingResponse.status).toBe(201);
     expect(bookingResponse.body.appointment.packageName).toBe('Haircut Duo');
 
-    vi.setSystemTime(new Date(2026, 2, 11, 10, 30, 0));
+    vi.setSystemTime(new Date(Date.UTC(2026, 2, 11, 10, 30, 0)));
 
     const appointmentsResponse = await request(app)
       .get(`/api/platform/clients/${clientId}/appointments`)
@@ -1703,7 +1706,7 @@ describe('Client platform API', () => {
 
   it('automatically completes spent appointments and frees the live calendar slot', async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 2, 11, 10, 30, 0));
+    vi.setSystemTime(new Date(Date.UTC(2026, 2, 11, 10, 30, 0)));
 
     const createResponse = await request(app).post('/api/platform/clients').send({
       email: 'salon@example.com',
@@ -1739,12 +1742,12 @@ describe('Client platform API', () => {
       customerEmail: 'ali@example.com',
       appointmentDate: '2026-03-11',
       appointmentTime: '09:00',
-      startAt: new Date(2026, 2, 11, 9, 0, 0).toISOString(),
-      endAt: new Date(2026, 2, 11, 9, 45, 0).toISOString(),
+      startAt: new Date(Date.UTC(2026, 2, 11, 9, 0, 0)).toISOString(),
+      endAt: new Date(Date.UTC(2026, 2, 11, 9, 45, 0)).toISOString(),
       status: 'booked',
       source: 'qr',
-      createdAt: new Date(2026, 2, 11, 8, 55, 0).toISOString(),
-      updatedAt: new Date(2026, 2, 11, 8, 55, 0).toISOString()
+      createdAt: new Date(Date.UTC(2026, 2, 11, 8, 55, 0)).toISOString(),
+      updatedAt: new Date(Date.UTC(2026, 2, 11, 8, 55, 0)).toISOString()
     });
 
     const appointmentsResponse = await request(app).get(
@@ -2031,5 +2034,275 @@ describe('Client platform API', () => {
         })
       ])
     );
+  });
+
+  it('lists subscription plans and stores a demo business subscription checkout', async () => {
+    const plansResponse = await request(app).get('/api/billing/subscription-plans');
+
+    expect(plansResponse.status).toBe(200);
+    expect(plansResponse.body.plans).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'plan_solo', key: 'solo' }),
+        expect.objectContaining({ id: 'plan_single', key: 'single' }),
+        expect.objectContaining({ id: 'plan_team_premium', key: 'team_premium' })
+      ])
+    );
+
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'billing-owner@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    const initialBillingResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}/billing`)
+      .set('x-admin-token', adminToken);
+
+    expect(initialBillingResponse.status).toBe(200);
+    expect(initialBillingResponse.body.currentPlan).toBeNull();
+    expect(initialBillingResponse.body.lockedFeatureKeys).toEqual(
+      expect.arrayContaining(['payments', 'advanced_reports'])
+    );
+
+    const checkoutResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/demo-checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        planId: 'plan_single',
+        cardholderName: 'Billing Owner',
+        cardNumber: '4242 4242 4242 4242',
+        expMonth: 12,
+        expYear: 2030,
+        cvc: '123',
+        billingEmail: 'billing-owner@example.com'
+      });
+
+    expect(checkoutResponse.status).toBe(201);
+    expect(checkoutResponse.body.subscription).toEqual(
+      expect.objectContaining({
+        businessId: clientId,
+        planId: 'plan_single',
+        status: 'trialing',
+        demoCard: expect.objectContaining({
+          brand: 'visa',
+          last4: '4242'
+        })
+      })
+    );
+    expect(checkoutResponse.body.invoice).toEqual(
+      expect.objectContaining({
+        businessId: clientId,
+        planId: 'plan_single',
+        status: 'paid'
+      })
+    );
+    expect(checkoutResponse.body.overview.currentPlan).toEqual(
+      expect.objectContaining({ key: 'single' })
+    );
+    expect(checkoutResponse.body.overview.creditBalance).toEqual({
+      granted: 150,
+      remaining: 150,
+      used: 0
+    });
+    expect(checkoutResponse.body.overview.lockedFeatureKeys).not.toContain('payments');
+    expect(checkoutResponse.body.overview.lockedFeatureKeys).not.toContain('advanced_reports');
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/business-profile`)
+      .set('x-admin-token', adminToken)
+      .send({
+        businessName: 'Credit Salon',
+        website: 'credits.example'
+      });
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-types`)
+      .set('x-admin-token', adminToken)
+      .send({
+        serviceTypes: ['Haircut']
+      });
+    await request(app)
+      .post(`/api/platform/clients/${clientId}/services`)
+      .set('x-admin-token', adminToken)
+      .send({
+        name: 'Haircut',
+        categoryName: 'Haircut',
+        durationMinutes: 60,
+        priceLabel: 'PKR 1,000',
+        description: 'Credit test service'
+      });
+
+    const bookingDate = new Date();
+    bookingDate.setDate(bookingDate.getDate() + 1);
+    const bookingDateValue = `${bookingDate.getFullYear()}-${String(
+      bookingDate.getMonth() + 1
+    ).padStart(2, '0')}-${String(bookingDate.getDate()).padStart(2, '0')}`;
+
+    const bookingResponse = await request(app)
+      .post(`/api/public/book/${clientId}/appointments`)
+      .send({
+        serviceName: 'Haircut',
+        appointmentDate: bookingDateValue,
+        appointmentTime: '09:00',
+        customerName: 'Credit Customer',
+        customerPhone: '+923001234567',
+        customerEmail: 'credit.customer@example.com',
+        source: 'direct'
+      });
+
+    expect(bookingResponse.status).toBe(201);
+
+    const updatedBillingResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}/billing`)
+      .set('x-admin-token', adminToken);
+
+    expect(updatedBillingResponse.body.creditBalance).toEqual({
+      granted: 150,
+      remaining: 149,
+      used: 1
+    });
+  });
+
+  it('restores the previous plan when demo checkout fails after the existing subscription is cancelled', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'billing-rollback@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    const firstCheckoutResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/demo-checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        planId: 'plan_single',
+        cardholderName: 'Billing Owner',
+        cardNumber: '4242 4242 4242 4242',
+        expMonth: 12,
+        expYear: 2030,
+        cvc: '123',
+        billingEmail: 'billing-rollback@example.com'
+      });
+
+    expect(firstCheckoutResponse.status).toBe(201);
+
+    const saveBillingInvoiceSpy = vi
+      .spyOn(billingRepository, 'saveBillingInvoice')
+      .mockRejectedValueOnce(new Error('invoice write failed'));
+
+    const failedCheckoutResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/demo-checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        planId: 'plan_team_premium',
+        cardholderName: 'Billing Owner',
+        cardNumber: '4242 4242 4242 4242',
+        expMonth: 12,
+        expYear: 2030,
+        cvc: '123',
+        billingEmail: 'billing-rollback@example.com'
+      });
+
+    expect(failedCheckoutResponse.status).toBe(500);
+
+    saveBillingInvoiceSpy.mockRestore();
+
+    const billingResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}/billing`)
+      .set('x-admin-token', adminToken);
+
+    expect(billingResponse.status).toBe(200);
+    expect(billingResponse.body.currentPlan).toEqual(expect.objectContaining({ id: 'plan_single' }));
+    expect(billingResponse.body.subscription).toEqual(
+      expect.objectContaining({
+        planId: 'plan_single',
+        status: 'trialing'
+      })
+    );
+  });
+
+  it('restores appointment credits when booking persistence fails before the appointment is saved', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'billing-credit-rollback@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    const checkoutResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/demo-checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        planId: 'plan_single',
+        cardholderName: 'Billing Owner',
+        cardNumber: '4242 4242 4242 4242',
+        expMonth: 12,
+        expYear: 2030,
+        cvc: '123',
+        billingEmail: 'billing-credit-rollback@example.com'
+      });
+
+    expect(checkoutResponse.status).toBe(201);
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/business-profile`)
+      .set('x-admin-token', adminToken)
+      .send({
+        businessName: 'Credit Rollback Salon',
+        website: 'credit-rollback.example'
+      });
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-types`)
+      .set('x-admin-token', adminToken)
+      .send({
+        serviceTypes: ['Haircut']
+      });
+    await request(app)
+      .post(`/api/platform/clients/${clientId}/services`)
+      .set('x-admin-token', adminToken)
+      .send({
+        name: 'Haircut',
+        categoryName: 'Haircut',
+        durationMinutes: 60,
+        priceLabel: 'PKR 1,000',
+        description: 'Rollback test service'
+      });
+
+    const saveAppointmentSpy = vi
+      .spyOn(appointmentRepository, 'saveAppointment')
+      .mockRejectedValueOnce(new Error('appointment write failed'));
+
+    const bookingDate = new Date();
+    bookingDate.setDate(bookingDate.getDate() + 1);
+    const bookingDateValue = `${bookingDate.getFullYear()}-${String(
+      bookingDate.getMonth() + 1
+    ).padStart(2, '0')}-${String(bookingDate.getDate()).padStart(2, '0')}`;
+
+    const bookingResponse = await request(app)
+      .post(`/api/public/book/${clientId}/appointments`)
+      .send({
+        serviceName: 'Haircut',
+        appointmentDate: bookingDateValue,
+        appointmentTime: '09:00',
+        customerName: 'Credit Customer',
+        customerPhone: '+923001234567',
+        customerEmail: 'credit.rollback@example.com',
+        source: 'direct'
+      });
+
+    expect(bookingResponse.status).toBe(500);
+
+    saveAppointmentSpy.mockRestore();
+
+    const billingResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}/billing`)
+      .set('x-admin-token', adminToken);
+
+    expect(billingResponse.status).toBe(200);
+    expect(billingResponse.body.creditBalance).toEqual({
+      granted: 150,
+      remaining: 150,
+      used: 0
+    });
   });
 });

@@ -23,30 +23,37 @@ const isVercelRuntime = (): boolean =>
 const hasSupabaseConfiguration = (): boolean =>
   Boolean(env.SUPABASE_URL && (env.SUPABASE_SERVICE_ROLE_KEY || env.SUPABASE_PUBLISHABLE_KEY));
 
-const createStore = (): AppointmentStore => {
+const getConfiguredStoreType = (): 'file' | 'memory' | 'supabase' => {
   if (isTestEnvironment()) {
+    return 'memory';
+  }
+
+  if (env.CLIENT_PLATFORM_STORAGE === 'supabase') {
+    return hasSupabaseConfiguration() ? 'supabase' : 'file';
+  }
+
+  if (env.CLIENT_PLATFORM_STORAGE === 'memory') {
+    return 'memory';
+  }
+
+  if (env.CLIENT_PLATFORM_STORAGE === 'file') {
+    return 'file';
+  }
+
+  return isVercelRuntime() ? 'memory' : 'file';
+};
+
+const createStore = (): AppointmentStore => {
+  const storeType = getConfiguredStoreType();
+  if (storeType === 'memory') {
     return new AppointmentMemoryStore();
   }
 
-  if (process.env.CLIENT_PLATFORM_STORAGE === 'supabase') {
-    return hasSupabaseConfiguration()
-      ? new AppointmentSupabaseStore()
-      : new AppointmentFileStore();
-  }
-
-  if (process.env.CLIENT_PLATFORM_STORAGE === 'memory') {
-    return new AppointmentMemoryStore();
-  }
-
-  if (process.env.CLIENT_PLATFORM_STORAGE === 'file') {
-    return new AppointmentFileStore();
-  }
-
-  if (hasSupabaseConfiguration()) {
+  if (storeType === 'supabase') {
     return new AppointmentSupabaseStore();
   }
 
-  return isVercelRuntime() ? new AppointmentMemoryStore() : new AppointmentFileStore();
+  return new AppointmentFileStore();
 };
 
 class AppointmentRepository {

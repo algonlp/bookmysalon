@@ -17,6 +17,7 @@ import type {
   ProductSaleRecord,
   TeamMemberRecord
 } from '../../platform/clientPlatform.types';
+import { env } from '../../config/env';
 import { defaultServiceLocation, serviceLocationValues } from '../../platform/serviceLocation.constants';
 import { getSupabaseClient } from './client';
 
@@ -74,6 +75,37 @@ const asServiceLocation = (value: unknown) => {
 
 const knownBusinessNames = new Map<string, string>();
 const existingRowCache = new Map<string, boolean>();
+const businessScopedCacheTables = [
+  'businesses',
+  'business_settings',
+  'team_members',
+  'services',
+  'products',
+  'product_sales',
+  'package_plans',
+  'loyalty_programs',
+  'customer_profiles',
+  'appointments',
+  'payments',
+  'reviews',
+  'waitlist_entries',
+  'package_purchases',
+  'loyalty_rewards'
+] as const;
+
+const setExistingRowCache = (tableName: string, id: string, exists: boolean): void => {
+  existingRowCache.set(`${tableName}:${id}`, exists);
+};
+
+const clearExistingRowCacheForTable = (tableName: string): void => {
+  const tablePrefix = `${tableName}:`;
+
+  for (const key of existingRowCache.keys()) {
+    if (key.startsWith(tablePrefix)) {
+      existingRowCache.delete(key);
+    }
+  }
+};
 
 const ensureBusinessExists = async (
   businessId: unknown,
@@ -134,6 +166,14 @@ const upsertRows = async (
   if (error) {
     throw new Error(`Failed to upsert ${tableName}: ${error.message}`);
   }
+
+  for (const row of rows) {
+    const id = row.id;
+
+    if (typeof id === 'string' && id.trim()) {
+      setExistingRowCache(tableName, id, true);
+    }
+  }
 };
 
 const deleteByColumnValue = async (
@@ -147,6 +187,8 @@ const deleteByColumnValue = async (
   if (error) {
     throw new Error(`Failed to delete ${tableName}: ${error.message}`);
   }
+
+  clearExistingRowCacheForTable(tableName);
 };
 
 const deleteMissingRows = async (
@@ -181,6 +223,10 @@ const deleteMissingRows = async (
   if (error) {
     throw new Error(`Failed to prune ${tableName}: ${error.message}`);
   }
+
+  for (const id of idsToDelete) {
+    setExistingRowCache(tableName, id, false);
+  }
 };
 
 const hasExistingRow = async (tableName: string, id: string): Promise<boolean> => {
@@ -199,8 +245,19 @@ const hasExistingRow = async (tableName: string, id: string): Promise<boolean> =
   }
 
   const exists = Boolean(data);
-  existingRowCache.set(cacheKey, exists);
+  setExistingRowCache(tableName, id, exists);
   return exists;
+};
+
+const deleteRowById = async (tableName: string, id: string): Promise<void> => {
+  const client = getSupabaseClient();
+  const { error } = await client.from(tableName).delete().eq('id', id);
+
+  if (error) {
+    throw new Error(`Failed to delete ${tableName}/${id}: ${error.message}`);
+  }
+
+  setExistingRowCache(tableName, id, false);
 };
 
 const resolveOptionalForeignKey = async (
@@ -232,8 +289,12 @@ const syncBusinessSettings = async (clientRecord: ClientRecord): Promise<void> =
     [
       {
         business_id: clientRecord.id,
-        currency_code: asText(clientRecord.businessSettings.currencyCode) || 'PKR',
-        currency_locale: asText(clientRecord.businessSettings.currencyLocale) || 'en-PK',
+        currency_code:
+          asText(clientRecord.businessSettings.currencyCode) ||
+          env.DEFAULT_BUSINESS_CURRENCY_CODE,
+        currency_locale:
+          asText(clientRecord.businessSettings.currencyLocale) ||
+          env.DEFAULT_BUSINESS_CURRENCY_LOCALE,
         slot_times: asStringArray(clientRecord.businessSettings.slotTimes),
         use_service_templates: asBoolean(clientRecord.businessSettings.useServiceTemplates, true),
         report_page_title: asText(clientRecord.businessSettings.reportMetadata.pageTitle),
@@ -765,6 +826,48 @@ export const syncWaitlistEntryToRelational = async (
     ],
     'id'
   );
+};
+
+export const relationalBusinessExists = async (businessId: string): Promise<boolean> =>
+  hasExistingRow('businesses', businessId);
+
+export const deleteBusinessFromRelational = async (businessId: string): Promise<void> => {
+  await deleteRowById('businesses', businessId);
+  knownBusinessNames.delete(businessId);
+
+  for (const tableName of businessScopedCacheTables) {
+    clearExistingRowCacheForTable(tableName);
+  }
+};
+
+export const deleteAppointmentFromRelational = async (appointmentId: string): Promise<void> => {
+  await deleteRowById('appointments', appointmentId);
+};
+
+export const deletePaymentRecordFromRelational = async (paymentRecordId: string): Promise<void> => {
+  await deleteRowById('payments', paymentRecordId);
+};
+
+export const deleteReviewFromRelational = async (reviewId: string): Promise<void> => {
+  await deleteRowById('reviews', reviewId);
+};
+
+export const deletePackagePurchaseFromRelational = async (
+  packagePurchaseId: string
+): Promise<void> => {
+  await deleteRowById('package_purchases', packagePurchaseId);
+};
+
+export const deleteLoyaltyRewardFromRelational = async (
+  loyaltyRewardId: string
+): Promise<void> => {
+  await deleteRowById('loyalty_rewards', loyaltyRewardId);
+};
+
+export const deleteWaitlistEntryFromRelational = async (
+  waitlistEntryId: string
+): Promise<void> => {
+  await deleteRowById('waitlist_entries', waitlistEntryId);
 };
 
 export const syncClientPlatformStateToRelational = async (

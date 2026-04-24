@@ -116,6 +116,8 @@ export const publicConfigController = (_req: Request, res: Response): void => {
     profileFieldBusinessNamePlaceholder: env.PUBLIC_PROFILE_FIELD_BUSINESS_NAME_PLACEHOLDER?.trim() ?? '',
     profileFieldWebsiteLabel: env.PUBLIC_PROFILE_FIELD_WEBSITE_LABEL?.trim() ?? '',
     profileFieldWebsitePlaceholder: env.PUBLIC_PROFILE_FIELD_WEBSITE_PLACEHOLDER?.trim() ?? '',
+    profileFieldPhoneLabel: env.PUBLIC_PROFILE_FIELD_PHONE_LABEL?.trim() ?? '',
+    profileFieldPhonePlaceholder: env.PUBLIC_PROFILE_FIELD_PHONE_PLACEHOLDER?.trim() ?? '',
     profileFieldAddressLabel: env.PUBLIC_PROFILE_FIELD_ADDRESS_LABEL?.trim() ?? '',
     profileFieldAddressPlaceholder: env.PUBLIC_PROFILE_FIELD_ADDRESS_PLACEHOLDER?.trim() ?? '',
     profileFieldImageLabel: env.PUBLIC_PROFILE_FIELD_IMAGE_LABEL?.trim() ?? '',

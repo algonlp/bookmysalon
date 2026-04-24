@@ -30,10 +30,9 @@ describe('GET /', () => {
     expect(response.text).toContain('List your business');
     expect(response.text).toContain('href="/login"');
     expect(response.text).toContain('href="/for-businesses"');
-    expect(response.text).toContain('list="search-service-options"');
+    expect(response.text).toContain('id="service-query-dropdown"');
     expect(response.text).toContain('id="city-location-trigger"');
     expect(response.text).toContain('id="time-query" name="time" type="date"');
-    expect(response.text).toContain('<datalist id="search-service-options"></datalist>');
     expect(response.text).toContain('Showing all salons ready for booking.');
     expect(response.text).toContain('For customers');
     expect(response.text).toContain('For businesses');
@@ -69,11 +68,10 @@ describe('GET /', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
-    expect(response.text).toContain('Independent');
-    expect(response.text).toContain('PKR 1,260');
-    expect(response.text).toContain('Team');
-    expect(response.text).toContain('Enterprise');
-    expect(response.text).toContain('Custom rates');
+    expect(response.text).toContain('Choose a plan for your business workspace');
+    expect(response.text).toContain('Plans and limits are loaded from the billing API');
+    expect(response.text).toContain('id="pricing-grid"');
+    expect(response.text).toContain('id="pricing-checkout"');
   });
 
   it('serves the professional signup page', async () => {

@@ -70,6 +70,18 @@ export class SupabaseJsonbTable<TRecord extends { id: string }> {
     return record;
   }
 
+  async deleteById(id: string): Promise<void> {
+    const client = getSupabaseClient();
+    const { error } = await client
+      .from(this.definition.tableName)
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete ${this.definition.tableName}/${id}: ${error.message}`);
+    }
+  }
+
   async reset(): Promise<void> {
     await deleteAllRows(this.definition.tableName);
   }
