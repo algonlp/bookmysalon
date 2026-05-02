@@ -10809,6 +10809,10 @@ const createTrendCard = (
         description:
           'Calendar preferences are not persisted yet, but these shortcuts now guide the admin to the active working areas.',
         actions: [
+          createToolActionButton('Open SMS logs', () => {
+            closeToolModal();
+            window.location.assign(buildPathWithClientId('/sms-logs', clientId));
+          }),
           createToolActionButton('Open team panel', () => {
             closeToolModal();
             setMainView('calendar');
@@ -13104,6 +13108,177 @@ const initPricingPage = () => {
     });
 };
 
+const initSmsLogs = () => {
+  const logsFeed = document.querySelector('#sms-logs-feed');
+  const backLink = document.querySelector('#sms-logs-back-link');
+  const totalMetric = document.querySelector('#sms-logs-total');
+  const sentMetric = document.querySelector('#sms-logs-sent');
+  const failedMetric = document.querySelector('#sms-logs-failed');
+  const skippedMetric = document.querySelector('#sms-logs-skipped');
+
+  if (!(logsFeed instanceof HTMLElement)) {
+    return;
+  }
+
+  const clientId = requireClientId();
+
+  if (!clientId) {
+    return;
+  }
+
+  if (backLink instanceof HTMLAnchorElement) {
+    backLink.href = buildPathWithClientId('/calendar', clientId);
+  }
+
+  const formatSmsLogSourceLabel = (sourceValue) => {
+    const sourceLabelMap = {
+      appointment_confirmation: 'Appointment confirmation',
+      appointment_rescheduled: 'Appointment rescheduled',
+      running_late: 'Running late update',
+      waitlist_offer: 'Waitlist offer',
+      unknown: 'SMS event'
+    };
+
+    return sourceLabelMap[sourceValue] ?? 'SMS event';
+  };
+
+  const formatSmsLogTimestamp = (createdAt) => {
+    if (typeof createdAt !== 'string' || !createdAt) {
+      return 'Unknown time';
+    }
+
+    const parsedDate = new Date(createdAt);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return createdAt;
+    }
+
+    return new Intl.DateTimeFormat(getDashboardUiCopy().locale || 'en-GB', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(parsedDate);
+  };
+
+  const renderEmptyState = (title, description) => {
+    logsFeed.replaceChildren();
+
+    const card = document.createElement('article');
+    card.className = 'sms-log-empty';
+
+    const heading = document.createElement('h2');
+    heading.textContent = title;
+
+    const copy = document.createElement('p');
+    copy.textContent = description;
+
+    card.append(heading, copy);
+    logsFeed.append(card);
+  };
+
+  apiRequest(`/api/platform/clients/${clientId}/sms-logs`)
+    .then((payload) => {
+      const logs = Array.isArray(payload.logs) ? payload.logs : [];
+      const sentCount = logs.filter((entry) => entry.status === 'sent').length;
+      const failedCount = logs.filter((entry) => entry.status === 'failed').length;
+      const skippedCount = logs.filter((entry) => entry.status === 'skipped').length;
+
+      if (totalMetric instanceof HTMLElement) {
+        totalMetric.textContent = String(logs.length);
+      }
+
+      if (sentMetric instanceof HTMLElement) {
+        sentMetric.textContent = String(sentCount);
+      }
+
+      if (failedMetric instanceof HTMLElement) {
+        failedMetric.textContent = String(failedCount);
+      }
+
+      if (skippedMetric instanceof HTMLElement) {
+        skippedMetric.textContent = String(skippedCount);
+      }
+
+      if (logs.length === 0) {
+        renderEmptyState(
+          'No SMS logs yet',
+          'Send a booking confirmation or update to start seeing delivery history here.'
+        );
+        return;
+      }
+
+      const cards = logs.map((entry) => {
+        const card = document.createElement('article');
+        card.className = 'sms-log-card';
+
+        const top = document.createElement('div');
+        top.className = 'sms-log-card-top';
+
+        const meta = document.createElement('div');
+        meta.className = 'sms-log-meta';
+
+        const title = document.createElement('strong');
+        title.textContent = formatSmsLogSourceLabel(entry.source);
+
+        const subtitle = document.createElement('p');
+        subtitle.textContent = `${formatSmsLogTimestamp(entry.createdAt)} • ${entry.recipient} • ${entry.destination || 'No destination'}`;
+
+        meta.append(title, subtitle);
+
+        const status = document.createElement('span');
+        status.className = `sms-log-status is-${entry.status}`;
+        status.textContent = entry.status;
+
+        top.append(meta, status);
+
+        const grid = document.createElement('div');
+        grid.className = 'sms-log-grid';
+
+        const details = [
+          ['Channel', entry.channel || 'sms'],
+          ['Message ID', entry.messageId || 'Not available'],
+          ['Appointment', entry.appointmentId || 'Not linked'],
+          ['Reason', entry.reason || 'Delivered without reported errors']
+        ];
+
+        for (const [label, value] of details) {
+          const pill = document.createElement('div');
+          pill.className = 'sms-log-pill';
+
+          const pillLabel = document.createElement('span');
+          pillLabel.textContent = label;
+
+          const pillValue = document.createElement('strong');
+          pillValue.textContent = value;
+
+          pill.append(pillLabel, pillValue);
+          grid.append(pill);
+        }
+
+        const message = document.createElement('div');
+        message.className = 'sms-log-message';
+
+        const messageLabel = document.createElement('span');
+        messageLabel.textContent = 'Message';
+
+        const messageBody = document.createElement('p');
+        messageBody.textContent = entry.body || 'No message content saved.';
+
+        message.append(messageLabel, messageBody);
+
+        card.append(top, grid, message);
+        return card;
+      });
+
+      logsFeed.replaceChildren(...cards);
+    })
+    .catch((error) => {
+      renderEmptyState(
+        'Unable to load SMS logs',
+        error instanceof Error ? error.message : 'SMS log history is not available right now.'
+      );
+    });
+};
+
 syncClientIdFromQuery();
 
 if (guardAdminPages()) {
@@ -13123,6 +13298,7 @@ if (guardAdminPages()) {
 }
 
 initPricingPage();
+initSmsLogs();
 initHomeSalonSearch();
 initPublicBooking();
 initManageBooking();

@@ -372,9 +372,9 @@ const resolvedEnv = {
   PUBLIC_LOCATION_SEARCH_COUNTRY_CODE: process.env.PUBLIC_LOCATION_SEARCH_COUNTRY_CODE?.trim().toLowerCase(),
   PUBLIC_LOCATION_SEARCH_COUNTRY_LABEL: process.env.PUBLIC_LOCATION_SEARCH_COUNTRY_LABEL?.trim(),
   LOCATION_SEARCH_PROVIDER_BASE_URL: normalizeBaseUrl(process.env.LOCATION_SEARCH_PROVIDER_BASE_URL),
-  TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID ?? process.env.TWILIO_SID,
-  TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN ?? process.env.TWILIO_TOKEN,
-  TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER ?? process.env.TWILIO_FROM
+  TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID?.trim() || process.env.TWILIO_SID?.trim(),
+  TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN?.trim() || process.env.TWILIO_TOKEN?.trim(),
+  TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER?.trim() || process.env.TWILIO_FROM?.trim()
 };
 
 const parsedEnv = envSchema.parse(resolvedEnv);

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | SMS logs</title>
+    <meta
+      name="description"
+      content="Review all SMS delivery attempts for your booking confirmations and updates."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="sms-logs-page">
+      <div class="sms-logs-shell">
+        <header class="sms-logs-header">
+          <div class="sms-logs-header-copy">
+            <p class="sms-logs-eyebrow">Communication</p>
+            <h1>SMS logs</h1>
+            <p>
+              Review every confirmation, reminder, waitlist, and running-late SMS attempt for
+              this business.
+            </p>
+          </div>
+          <a class="calendar-booking-link sms-logs-back-link" id="sms-logs-back-link" href="/calendar">
+            Return to dashboard
+          </a>
+        </header>
+
+        <section class="sms-logs-summary" id="sms-logs-summary">
+          <article class="sms-logs-metric">
+            <span>Total</span>
+            <strong id="sms-logs-total">0</strong>
+          </article>
+          <article class="sms-logs-metric">
+            <span>Sent</span>
+            <strong id="sms-logs-sent">0</strong>
+          </article>
+          <article class="sms-logs-metric">
+            <span>Failed</span>
+            <strong id="sms-logs-failed">0</strong>
+          </article>
+          <article class="sms-logs-metric">
+            <span>Skipped</span>
+            <strong id="sms-logs-skipped">0</strong>
+          </article>
+        </section>
+
+        <section class="sms-logs-feed" id="sms-logs-feed" aria-live="polite">
+          <article class="sms-log-empty">
+            <h2>No SMS logs yet</h2>
+            <p>Send a booking confirmation or update to start seeing delivery history here.</p>
+          </article>
+        </section>
+      </div>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

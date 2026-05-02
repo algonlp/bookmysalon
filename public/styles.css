@@ -1800,6 +1800,247 @@ textarea:focus-visible {
   box-shadow: 0 28px 80px rgba(80, 53, 22, 0.14);
 }
 
+.sms-logs-page {
+  min-height: 100vh;
+  padding: 28px;
+  background:
+    radial-gradient(circle at top left, rgba(106, 84, 236, 0.12), transparent 24%),
+    linear-gradient(180deg, #f3e5dc 0%, #fbf4ee 100%);
+}
+
+.sms-logs-shell {
+  width: min(1160px, 100%);
+  margin: 0 auto;
+  padding: 34px;
+  border-radius: 36px;
+  background: rgba(255, 251, 246, 0.94);
+  box-shadow: 0 28px 80px rgba(80, 53, 22, 0.14);
+}
+
+.sms-logs-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.sms-logs-header-copy {
+  display: grid;
+  gap: 10px;
+  max-width: 720px;
+}
+
+.sms-logs-eyebrow {
+  margin: 0;
+  color: #5d5574;
+  font-size: 0.84rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sms-logs-header-copy h1,
+.sms-logs-header-copy p {
+  margin: 0;
+}
+
+.sms-logs-header-copy h1 {
+  color: #171d2c;
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: -0.05em;
+}
+
+.sms-logs-header-copy p {
+  color: #5f5851;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.sms-logs-back-link {
+  flex: 0 0 auto;
+}
+
+.sms-logs-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.sms-logs-metric {
+  display: grid;
+  gap: 10px;
+  padding: 18px 20px;
+  border: 1px solid rgba(22, 28, 42, 0.08);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(246, 240, 235, 0.92));
+  box-shadow: 0 14px 28px rgba(27, 35, 52, 0.06);
+}
+
+.sms-logs-metric span {
+  color: #675f58;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.sms-logs-metric strong {
+  color: #1a2333;
+  font-size: 1.9rem;
+  letter-spacing: -0.05em;
+}
+
+.sms-logs-feed {
+  display: grid;
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.sms-log-card {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid rgba(20, 29, 45, 0.08);
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 16px 30px rgba(20, 29, 45, 0.06);
+}
+
+.sms-log-card-top {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.sms-log-meta {
+  display: grid;
+  gap: 8px;
+}
+
+.sms-log-meta strong,
+.sms-log-meta p {
+  margin: 0;
+}
+
+.sms-log-meta strong {
+  color: #172033;
+  font-size: 1.02rem;
+  letter-spacing: -0.03em;
+}
+
+.sms-log-meta p {
+  color: #6a635d;
+  line-height: 1.65;
+}
+
+.sms-log-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sms-log-status.is-sent {
+  background: rgba(14, 125, 64, 0.12);
+  color: #0e7d40;
+}
+
+.sms-log-status.is-failed {
+  background: rgba(186, 48, 48, 0.12);
+  color: #ba3030;
+}
+
+.sms-log-status.is-skipped {
+  background: rgba(31, 51, 93, 0.1);
+  color: #1f335d;
+}
+
+.sms-log-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.sms-log-pill {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(247, 242, 237, 0.92);
+}
+
+.sms-log-pill span {
+  color: #7a736d;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sms-log-pill strong {
+  color: #24344e;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.sms-log-message {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(245, 249, 255, 0.96), rgba(235, 242, 255, 0.92));
+}
+
+.sms-log-message span {
+  color: #526682;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sms-log-message p {
+  margin: 0;
+  color: #24344e;
+  line-height: 1.7;
+}
+
+.sms-log-empty {
+  display: grid;
+  gap: 10px;
+  padding: 34px;
+  border: 1px dashed rgba(24, 31, 47, 0.16);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.72);
+  text-align: center;
+}
+
+.sms-log-empty h2,
+.sms-log-empty p {
+  margin: 0;
+}
+
+.sms-log-empty h2 {
+  color: #182133;
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+.sms-log-empty p {
+  color: #6a635d;
+  line-height: 1.65;
+}
+
 .help-back-link {
   display: inline-flex;
   align-items: center;
@@ -7775,6 +8016,25 @@ button.calendar-reports-summary-card {
 
   .calendar-qr-copy .calendar-booking-link {
     justify-self: stretch;
+  }
+
+  .sms-logs-page {
+    padding: 16px;
+  }
+
+  .sms-logs-shell {
+    padding: 24px;
+  }
+
+  .sms-logs-header,
+  .sms-log-card-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sms-logs-summary,
+  .sms-log-grid {
+    grid-template-columns: 1fr;
   }
 
   .business-nav,

@@ -126,6 +126,10 @@ app.get('/calendar', requirePlatformAdminPageAccess, (_req, res) => {
   res.sendFile(resolve(publicDir, 'calendar.html'));
 });
 
+app.get('/sms-logs', requirePlatformAdminPageAccess, (_req, res) => {
+  res.sendFile(resolve(publicDir, 'sms-logs.html'));
+});
+
 app.get('/book/:clientId', (_req, res) => {
   res.sendFile(resolve(publicDir, 'book.html'));
 });

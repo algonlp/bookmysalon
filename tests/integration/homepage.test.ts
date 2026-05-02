@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { app } from '../../src/app';
 import { resetClientPlatformRepositoryForTests } from '../../src/platform/clientPlatform.repository';
+import { resetSmsLogRepositoryForTests } from '../../src/notifications/smsLog.repository';
 
 const createAdminSession = async (): Promise<{ clientId: string; adminCookie: string[] }> => {
   const response = await request(app).post('/api/platform/clients').send({
@@ -17,6 +18,7 @@ const createAdminSession = async (): Promise<{ clientId: string; adminCookie: st
 describe('GET /', () => {
   beforeEach(async () => {
     await resetClientPlatformRepositoryForTests();
+    await resetSmsLogRepositoryForTests();
   });
 
   it('serves the single landing page', async () => {
@@ -112,6 +114,19 @@ describe('GET /', () => {
     expect(response.text).toContain('Business name');
     expect(response.text).toContain('Website');
     expect(response.text).toContain('Continue');
+  });
+
+  it('serves the SMS logs page for an authenticated admin session', async () => {
+    const { clientId, adminCookie } = await createAdminSession();
+    const response = await request(app)
+      .get(`/sms-logs?clientId=${clientId}`)
+      .set('Cookie', adminCookie);
+
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toContain('text/html');
+    expect(response.text).toContain('SMS logs');
+    expect(response.text).toContain('Return to dashboard');
+    expect(response.text).toContain('id="sms-logs-feed"');
   });
 
   it('serves the legendary learner guide page', async () => {

@@ -4,6 +4,7 @@ import { HttpError } from '../shared/errors/httpError';
 import { clientPlatformRepository } from './clientPlatform.repository';
 import { appointmentService } from '../appointments/appointment.service';
 import { googleIdentityService } from '../auth/googleIdentity.service';
+import { smsLogRepository } from '../notifications/smsLog.repository';
 import {
   buildPlatformClientPagePath,
   platformClientAuthMessages,
@@ -2045,6 +2046,16 @@ export const clientPlatformService = {
         };
       })
     );
+  },
+
+  async getSmsLogs(clientId: string) {
+    await getClientOrThrow(clientId);
+
+    const smsLogs = await smsLogRepository.listSmsLogs();
+
+    return smsLogs
+      .filter((entry) => entry.businessId === clientId)
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   },
 
   updateBusinessProfile(clientId: string, input: BusinessProfileInput): Promise<ClientRecord> {

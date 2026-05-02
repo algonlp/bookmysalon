@@ -1218,7 +1218,11 @@ const sendWaitlistOfferNotification = async (
     `${waitlistEntry.teamMemberName ? ` Team member: ${waitlistEntry.teamMemberName}.` : ''} ` +
     `Book it here within ${expiresInMinutes} minute${expiresInMinutes === 1 ? '' : 's'}: ${claimLink}`;
 
-  return twilioSmsService.sendSms(waitlistEntry.customerPhone, message, 'customer');
+  return twilioSmsService.sendSms(waitlistEntry.customerPhone, message, 'customer', {
+    businessId: waitlistEntry.businessId,
+    waitlistEntryId: waitlistEntry.id,
+    source: 'waitlist_offer'
+  });
 };
 
 const offerWaitlistEntryForOpenSlot = async (
@@ -1283,7 +1287,11 @@ const sendAppointmentConfirmationNotification = async (
     `Open your live booking link for the countdown and updates: ${manageLink}`;
 
   return Promise.all([
-    twilioSmsService.sendSms(appointment.customerPhone, customerMessage, 'customer')
+    twilioSmsService.sendSms(appointment.customerPhone, customerMessage, 'customer', {
+      appointmentId: appointment.id,
+      businessId: appointment.businessId,
+      source: mode === 'rescheduled' ? 'appointment_rescheduled' : 'appointment_confirmation'
+    })
   ]);
 };
 
@@ -1309,7 +1317,11 @@ const sendRunningLateNotification = async (
     `${delayCopy}${noteCopy} Open your live booking link for the countdown or to adjust the booking: ${manageLink}`;
 
   return Promise.all([
-    twilioSmsService.sendSms(appointment.customerPhone, customerMessage, 'customer')
+    twilioSmsService.sendSms(appointment.customerPhone, customerMessage, 'customer', {
+      appointmentId: appointment.id,
+      businessId: appointment.businessId,
+      source: 'running_late'
+    })
   ]);
 };
 

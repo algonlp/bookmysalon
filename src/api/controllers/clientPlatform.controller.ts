@@ -569,6 +569,12 @@ export const clientPlatformController = {
     });
   },
 
+  async getSmsLogs(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    res.status(200).json({
+      logs: await clientPlatformService.getSmsLogs(getClientId(req))
+    });
+  },
+
   async listPublicSalons(req: Request, res: Response, _next: NextFunction): Promise<void> {
     res.status(200).json({
       salons: await clientPlatformService.getPublicSalons()

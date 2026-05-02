@@ -150,3 +150,8 @@ clientPlatformRouter.get(
   asyncHandler(requirePlatformAdminAccess),
   asyncHandler(clientPlatformController.getDashboard)
 );
+clientPlatformRouter.get(
+  '/platform/clients/:clientId/sms-logs',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.getSmsLogs)
+);

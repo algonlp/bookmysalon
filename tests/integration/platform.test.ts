@@ -5,6 +5,7 @@ import { appointmentRepository } from '../../src/appointments/appointment.reposi
 import { resetAppointmentRepositoryForTests } from '../../src/appointments/appointment.repository';
 import { billingRepository } from '../../src/billing/billing.repository';
 import { env } from '../../src/config/env';
+import { resetSmsLogRepositoryForTests, smsLogRepository } from '../../src/notifications/smsLog.repository';
 import { resetClientPlatformRepositoryForTests } from '../../src/platform/clientPlatform.repository';
 import { resetBillingRepositoryForTests } from '../../src/billing/billing.repository';
 
@@ -21,6 +22,7 @@ describe('Client platform API', () => {
     await resetClientPlatformRepositoryForTests();
     await resetAppointmentRepositoryForTests();
     await resetBillingRepositoryForTests();
+    await resetSmsLogRepositoryForTests();
   });
 
   it('sets an admin session cookie for the whole app and accepts it on protected routes', async () => {
@@ -244,6 +246,56 @@ describe('Client platform API', () => {
     expect(response.body.googleProfile).toEqual({
       email: 'existing-google@example.com',
       name: 'Existing Google'
+    });
+  });
+
+  it('returns SMS logs for the current business only', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'sms-owner@example.com',
+      provider: 'email'
+    });
+    const otherClientResponse = await request(app).post('/api/platform/clients').send({
+      email: 'other-sms-owner@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    await smsLogRepository.saveSmsLog({
+      id: 'sms-log-1',
+      businessId: clientId,
+      recipient: 'customer',
+      channel: 'sms',
+      destination: '+1234567890',
+      status: 'failed',
+      source: 'appointment_confirmation',
+      body: 'Confirmation message',
+      reason: 'Twilio SMS request failed',
+      createdAt: '2026-01-02T10:00:00.000Z'
+    });
+    await smsLogRepository.saveSmsLog({
+      id: 'sms-log-2',
+      businessId: otherClientResponse.body.client.id as string,
+      recipient: 'customer',
+      channel: 'sms',
+      destination: '+1098765432',
+      status: 'sent',
+      source: 'running_late',
+      body: 'Other business message',
+      createdAt: '2026-01-03T10:00:00.000Z'
+    });
+
+    const response = await request(app)
+      .get(`/api/platform/clients/${clientId}/sms-logs`)
+      .set('x-admin-token', adminToken);
+
+    expect(response.status).toBe(200);
+    expect(response.body.logs).toHaveLength(1);
+    expect(response.body.logs[0]).toMatchObject({
+      id: 'sms-log-1',
+      businessId: clientId,
+      status: 'failed',
+      destination: '+1234567890'
     });
   });
 
