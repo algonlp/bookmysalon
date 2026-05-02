@@ -239,7 +239,12 @@ const resolvedEnv = {
     process.env.ENABLE_PUBLIC_CUSTOMER_LOOKUPS,
     appEnv !== 'prod'
   ),
-  PUBLIC_GOOGLE_CLIENT_ID: process.env.PUBLIC_GOOGLE_CLIENT_ID?.trim() || undefined,
+  PUBLIC_GOOGLE_CLIENT_ID:
+    process.env.PUBLIC_GOOGLE_CLIENT_ID?.trim() ||
+    process.env.GOOGLE_CLIENT_ID?.trim() ||
+    process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim() ||
+    process.env.VITE_GOOGLE_CLIENT_ID?.trim() ||
+    undefined,
   PUBLIC_SERVICE_LABEL_SINGULAR: process.env.PUBLIC_SERVICE_LABEL_SINGULAR?.trim(),
   PUBLIC_SERVICE_LABEL_PLURAL: process.env.PUBLIC_SERVICE_LABEL_PLURAL?.trim(),
   PUBLIC_SERVICE_MENU_TITLE: process.env.PUBLIC_SERVICE_MENU_TITLE?.trim(),

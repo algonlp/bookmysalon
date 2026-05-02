@@ -2825,7 +2825,9 @@ const initSignup = () => {
       const googleReady = await ensureGoogleIdentityInitialized();
 
       if (!googleReady) {
-        safeAlert('Google sign-in is not configured for this environment yet.');
+        safeAlert(
+          'Google sign-in is not configured on this server yet. Set PUBLIC_GOOGLE_CLIENT_ID or GOOGLE_CLIENT_ID and restart the app.'
+        );
         return;
       }
 
