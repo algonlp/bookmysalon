@@ -44,7 +44,7 @@ describe('GET /', () => {
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
     expect(response.text).toContain('Create an account or log in to manage your business.');
-    expect(response.text).toContain('Fresha for professionals');
+    expect(response.text).toContain('QR schedule');
     expect(response.text).toContain('Enter your email address');
     expect(response.text).toContain('Enter your mobile number');
   });
@@ -79,12 +79,12 @@ describe('GET /', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
-    expect(response.text).toContain('Fresha for professionals');
+    expect(response.text).toContain('QR schedule');
     expect(response.text).toContain('Enter your email address');
     expect(response.text).toContain('Enter your mobile number');
-    expect(response.text).toContain('Continue with Facebook');
     expect(response.text).toContain('Continue with Google');
-    expect(response.text).toContain('Continue with Apple');
+    expect(response.text).not.toContain('Continue with Facebook');
+    expect(response.text).not.toContain('Continue with Apple');
   });
 
   it('serves the public manage booking page', async () => {

@@ -15,7 +15,8 @@ export const publicConfigController = (_req: Request, res: Response): void => {
   };
 
   res.status(200).json({
-    supportCompanyName: env.PUBLIC_SUPPORT_COMPANY_NAME?.trim() ?? '',
+    supportCompanyName: env.PUBLIC_SUPPORT_COMPANY_NAME?.trim() || 'Algonlp',
+    googleClientId: env.PUBLIC_GOOGLE_CLIENT_ID?.trim() ?? '',
     supportPlatformName: env.PUBLIC_SUPPORT_PLATFORM_NAME?.trim() ?? '',
     supportWebsiteUrl: env.PUBLIC_SUPPORT_WEBSITE_URL?.trim() ?? env.PUBLIC_BASE_URL ?? '',
     supportFocusText: env.PUBLIC_SUPPORT_FOCUS_TEXT?.trim() ?? '',

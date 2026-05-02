@@ -162,6 +162,9 @@
             <button class="calendar-round-button" id="calendar-settings-action" type="button" aria-label="Settings">
               <svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1 1 0 00.2 1.1l.1.1a2 2 0 01-2.8 2.8l-.1-.1a1 1 0 00-1.1-.2 1 1 0 00-.6.9V20a2 2 0 01-4 0v-.2a1 1 0 00-.6-.9 1 1 0 00-1.1.2l-.1.1a2 2 0 01-2.8-2.8l.1-.1a1 1 0 00.2-1.1 1 1 0 00-.9-.6H4a2 2 0 010-4h.2a1 1 0 00.9-.6 1 1 0 00-.2-1.1l-.1-.1a2 2 0 012.8-2.8l.1.1a1 1 0 001.1.2h.1a1 1 0 00.6-.9V4a2 2 0 014 0v.2a1 1 0 00.6.9h.1a1 1 0 001.1-.2l.1-.1a2 2 0 012.8 2.8l-.1.1a1 1 0 00-.2 1.1v.1a1 1 0 00.9.6H20a2 2 0 010 4h-.2a1 1 0 00-.9.6z"></path></svg>
             </button>
+            <button class="calendar-round-button" id="calendar-qr-shortcut-action" type="button" aria-label="Show QR code">
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"></path><path d="M16 14h-2v2h2v-2zm4 0h-2v6h2v-6zm-4 4h-2v2h2v-2z"></path></svg>
+            </button>
             <button class="calendar-round-button" id="calendar-appointments-action" type="button" aria-label="Appointments">
               <svg viewBox="0 0 24 24" focusable="false"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4M16 3v4M4 10h16"></path><path d="M9 14h6"></path></svg>
             </button>
@@ -410,12 +413,18 @@
             </div>
 
             <div class="calendar-qr-body">
-              <img id="calendar-qr-image" alt="Booking QR code" />
+              <div class="calendar-qr-preview">
+                <img id="calendar-qr-image" alt="Booking QR code" />
+              </div>
               <div class="calendar-qr-copy">
                 <p id="calendar-qr-description">Place this QR code on your salon door so clients can scan and book instantly.</p>
                 <a class="calendar-booking-link" id="calendar-qr-link" href="#" target="_blank" rel="noreferrer">
                   Open booking page
                 </a>
+                <div class="calendar-share-links-head">
+                  <strong>Share channels</strong>
+                  <span>Use the direct link or track bookings from social, maps, and QR placements.</span>
+                </div>
                 <div class="calendar-share-links" id="calendar-share-links">
                   <a class="calendar-share-link" id="calendar-share-direct-link" href="#" target="_blank" rel="noreferrer"></a>
                   <a class="calendar-share-link" id="calendar-share-instagram-link" href="#" target="_blank" rel="noreferrer"></a>

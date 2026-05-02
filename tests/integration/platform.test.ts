@@ -4,6 +4,7 @@ import { app } from '../../src/app';
 import { appointmentRepository } from '../../src/appointments/appointment.repository';
 import { resetAppointmentRepositoryForTests } from '../../src/appointments/appointment.repository';
 import { billingRepository } from '../../src/billing/billing.repository';
+import { env } from '../../src/config/env';
 import { resetClientPlatformRepositoryForTests } from '../../src/platform/clientPlatform.repository';
 import { resetBillingRepositoryForTests } from '../../src/billing/billing.repository';
 
@@ -11,9 +12,12 @@ describe('Client platform API', () => {
   const uploadedProfileImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB';
   const largeUploadedProfileImage = `data:image/png;base64,${'a'.repeat(180000)}`;
   const completedReviewAppointmentId = '11111111-1111-4111-8111-111111111111';
+  const originalGoogleClientId = env.PUBLIC_GOOGLE_CLIENT_ID;
 
   beforeEach(async () => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
+    env.PUBLIC_GOOGLE_CLIENT_ID = originalGoogleClientId;
     await resetClientPlatformRepositoryForTests();
     await resetAppointmentRepositoryForTests();
     await resetBillingRepositoryForTests();
@@ -178,6 +182,69 @@ describe('Client platform API', () => {
     expect(loginResponse.status).toBe(200);
     expect(loginResponse.body.client.id).toBe(clientId);
     expect(loginResponse.body.nextStep).toBe(`/onboarding/service-types?clientId=${clientId}`);
+  });
+
+  it('authenticates a professional with a verified Google credential and creates the account', async () => {
+    env.PUBLIC_GOOGLE_CLIENT_ID = 'test-google-client-id';
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      json: async () => ({
+        aud: 'test-google-client-id',
+        email: 'google-owner@example.com',
+        email_verified: 'true',
+        iss: 'https://accounts.google.com',
+        name: 'Google Owner',
+        sub: 'google-subject-123'
+      }),
+      ok: true,
+      status: 200
+    } as Response);
+
+    const response = await request(app).post('/api/platform/clients/google-auth').send({
+      credential: 'google-id-token'
+    });
+
+    expect(response.status).toBe(201);
+    expect(response.body.client.email).toBe('google-owner@example.com');
+    expect(response.body.client.provider).toBe('google');
+    expect(response.body.googleProfile).toEqual({
+      email: 'google-owner@example.com',
+      name: 'Google Owner'
+    });
+    expect(response.headers['set-cookie']).toEqual(
+      expect.arrayContaining([expect.stringContaining('Path=/')])
+    );
+  });
+
+  it('logs in the existing professional when Google returns an email that already exists', async () => {
+    env.PUBLIC_GOOGLE_CLIENT_ID = 'test-google-client-id';
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'existing-google@example.com',
+      provider: 'email'
+    });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      json: async () => ({
+        aud: 'test-google-client-id',
+        email: 'existing-google@example.com',
+        email_verified: 'true',
+        iss: 'accounts.google.com',
+        name: 'Existing Google',
+        sub: 'google-subject-456'
+      }),
+      ok: true,
+      status: 200
+    } as Response);
+
+    const response = await request(app).post('/api/platform/clients/google-auth').send({
+      credential: 'google-id-token'
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.client.id).toBe(createResponse.body.client.id);
+    expect(response.body.client.provider).toBe('email');
+    expect(response.body.googleProfile).toEqual({
+      email: 'existing-google@example.com',
+      name: 'Existing Google'
+    });
   });
 
   it('rejects creating a duplicate account for an existing email', async () => {

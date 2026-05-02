@@ -193,6 +193,10 @@ export interface CreateClientInput {
   provider: AuthProvider;
 }
 
+export interface AuthenticateGoogleClientInput {
+  idToken: string;
+}
+
 export interface BusinessProfileInput {
   businessName: string;
   website?: string;
@@ -493,6 +497,8 @@ export interface PublicSalonShowcaseItem {
   serviceLocation: ServiceLocation[];
   venueAddress: string;
   bookingLink: string;
+  openingTime: string;
+  closingTime: string;
   onlineTeamMembersCount: number;
   onlineTeamMemberNames: string[];
   reviewSummary: {

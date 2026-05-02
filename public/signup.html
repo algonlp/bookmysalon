@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>QR schedule.com | Fresha for professionals</title>
+    <title>QR schedule.com | QR schedule</title>
     <meta
       name="description"
       content="Create an account or log in to manage your business."
@@ -29,7 +29,7 @@
           </div>
 
           <div class="pro-signup-content">
-            <h1>Fresha for professionals</h1>
+            <h1>QR schedule</h1>
             <p>Create an account or log in to manage your business.</p>
 
             <form
@@ -37,6 +37,7 @@
               id="pro-signup-form"
               action="/onboarding/business-name"
               data-create-endpoint="/api/platform/clients"
+              data-google-auth-endpoint="/api/platform/clients/google-auth"
               data-login-endpoint="/api/platform/clients/login"
             >
               <div class="pro-signup-form-intro">
@@ -49,6 +50,7 @@
                   id="professional-email"
                   name="email"
                   type="email"
+                  autocomplete="email"
                   placeholder="Enter your email address"
                 />
               </label>
@@ -63,6 +65,7 @@
                   name="mobileNumber"
                   type="tel"
                   inputmode="tel"
+                  autocomplete="tel"
                   placeholder="Enter your mobile number"
                 />
               </label>
@@ -81,17 +84,10 @@
             <span class="divider-copy">OR</span>
 
             <div class="social-stack">
-              <button class="social-button" type="button" data-auth-provider="facebook">
-                <span class="social-icon facebook">f</span>
-                <span>Continue with Facebook</span>
-              </button>
+              <div class="google-signin-host is-hidden" id="google-signin-host"></div>
               <button class="social-button" type="button" data-auth-provider="google">
                 <span class="social-icon google">G</span>
                 <span>Continue with Google</span>
-              </button>
-              <button class="social-button" type="button" data-auth-provider="apple">
-                <span class="social-icon apple">a</span>
-                <span>Continue with Apple</span>
               </button>
             </div>
           </div>

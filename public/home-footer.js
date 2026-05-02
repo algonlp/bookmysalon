@@ -11,8 +11,7 @@ const applyFooterCompanyName = (config) => {
   }
 
   const supportCompanyName = config.supportCompanyName?.trim() ?? '';
-  footerCompany.textContent =
-    supportCompanyName.length > 0 ? supportCompanyName : 'the configured company';
+  footerCompany.textContent = supportCompanyName.length > 0 ? supportCompanyName : 'Algonlp';
 };
 
 const loadFooterCompanyName = async () => {
@@ -26,7 +25,9 @@ const loadFooterCompanyName = async () => {
     const config = await response.json();
     applyFooterCompanyName(config);
   } catch {
-    // Keep the generic fallback label if public config is unavailable.
+    if (footerCompany) {
+      footerCompany.textContent = 'Algonlp';
+    }
   }
 };
 

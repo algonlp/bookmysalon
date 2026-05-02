@@ -3,6 +3,7 @@ import { env } from '../config/env';
 import { HttpError } from '../shared/errors/httpError';
 import { clientPlatformRepository } from './clientPlatform.repository';
 import { appointmentService } from '../appointments/appointment.service';
+import { googleIdentityService } from '../auth/googleIdentity.service';
 import {
   buildPlatformClientPagePath,
   platformClientAuthMessages,
@@ -21,6 +22,7 @@ import { normalizeBusinessServices, syncBusinessServicesWithTypes } from './busi
 import { formatInTimeZone } from '../shared/time';
 import type {
   AccountTypeInput,
+  AuthenticateGoogleClientInput,
   BusinessProfileInput,
   BusinessSettingsRecord,
   ClientRecord,
@@ -1887,53 +1889,57 @@ const findClientByLoginInput = async (
   return null;
 };
 
+const createClientRecord = async (input: CreateClientInput): Promise<ClientRecord> => {
+  const now = new Date().toISOString();
+  const normalizedEmail = normalizeClientEmail(input.email);
+  const normalizedMobileNumber = normalizeClientMobileNumber(input.mobileNumber);
+
+  if (normalizedEmail || normalizedMobileNumber) {
+    const existingClient = await findClientByLoginInput({
+      email: normalizedEmail,
+      mobileNumber: normalizedMobileNumber
+    });
+
+    if (existingClient) {
+      throw new HttpError(409, platformClientAuthMessages.accountExists);
+    }
+  }
+
+  const client: ClientRecord = {
+    id: randomUUID(),
+    adminToken: randomUUID(),
+    email: normalizedEmail || buildFallbackEmail(input.provider),
+    mobileNumber: normalizedMobileNumber,
+    businessPhoneNumber: '',
+    provider: input.provider,
+    businessName: '',
+    website: '',
+    profileImageUrl: '',
+    serviceTypes: [],
+    services: [],
+    products: [],
+    productSales: [],
+    packagePlans: [],
+    loyaltyProgram: null,
+    businessSettings: normalizeBusinessSettings(undefined),
+    customerProfiles: [],
+    teamMembers: [],
+    accountType: null,
+    serviceLocation: [],
+    venueAddress: '',
+    preferredLanguage: null,
+    onboardingCompleted: false,
+    createdAt: now,
+    updatedAt: now
+  };
+
+  await clientPlatformRepository.saveClient(client);
+  return client;
+};
+
 export const clientPlatformService = {
   async createClient(input: CreateClientInput): Promise<ClientRecord> {
-    const now = new Date().toISOString();
-    const normalizedEmail = normalizeClientEmail(input.email);
-    const normalizedMobileNumber = normalizeClientMobileNumber(input.mobileNumber);
-
-    if (normalizedEmail || normalizedMobileNumber) {
-      const existingClient = await findClientByLoginInput({
-        email: normalizedEmail,
-        mobileNumber: normalizedMobileNumber
-      });
-
-      if (existingClient) {
-        throw new HttpError(409, platformClientAuthMessages.accountExists);
-      }
-    }
-
-    const client: ClientRecord = {
-      id: randomUUID(),
-      adminToken: randomUUID(),
-      email: normalizedEmail || buildFallbackEmail(input.provider),
-      mobileNumber: normalizedMobileNumber,
-      businessPhoneNumber: '',
-      provider: input.provider,
-      businessName: '',
-      website: '',
-      profileImageUrl: '',
-      serviceTypes: [],
-      services: [],
-      products: [],
-      productSales: [],
-      packagePlans: [],
-      loyaltyProgram: null,
-      businessSettings: normalizeBusinessSettings(undefined),
-      customerProfiles: [],
-      teamMembers: [],
-      accountType: null,
-      serviceLocation: [],
-      venueAddress: '',
-      preferredLanguage: null,
-      onboardingCompleted: false,
-      createdAt: now,
-      updatedAt: now
-    };
-
-    await clientPlatformRepository.saveClient(client);
-    return client;
+    return createClientRecord(input);
   },
 
   async loginClient(
@@ -1947,6 +1953,45 @@ export const clientPlatformService = {
 
     return {
       client,
+      nextStep: getNextClientStep(client)
+    };
+  },
+
+  async authenticateGoogleClient(
+    input: AuthenticateGoogleClientInput
+  ): Promise<{
+    client: ClientRecord;
+    created: boolean;
+    googleIdentity: { email: string; name: string };
+    nextStep: string;
+  }> {
+    const googleIdentity = await googleIdentityService.verifyIdToken(input.idToken);
+    const existingClient = await findClientByLoginInput({ email: googleIdentity.email });
+
+    if (existingClient) {
+      return {
+        client: existingClient,
+        created: false,
+        googleIdentity: {
+          email: googleIdentity.email,
+          name: googleIdentity.name
+        },
+        nextStep: getNextClientStep(existingClient)
+      };
+    }
+
+    const client = await createClientRecord({
+      email: googleIdentity.email,
+      provider: 'google'
+    });
+
+    return {
+      client,
+      created: true,
+      googleIdentity: {
+        email: googleIdentity.email,
+        name: googleIdentity.name
+      },
       nextStep: getNextClientStep(client)
     };
   },
@@ -1978,6 +2023,7 @@ export const clientPlatformService = {
           client.teamMembers ?? [],
           client.businessSettings
         ).filter((teamMember) => teamMember.isActive !== false);
+        const businessHours = getDefaultTeamMemberTimeRange(client.businessSettings);
 
         return {
           clientId: client.id,
@@ -1986,6 +2032,8 @@ export const clientPlatformService = {
           serviceLocation: client.serviceLocation,
           venueAddress: client.venueAddress,
           bookingLink: `/book/${client.id}`,
+          openingTime: businessHours.openingTime,
+          closingTime: businessHours.closingTime,
           onlineTeamMembersCount: onlineTeamMembers.length,
           onlineTeamMemberNames: onlineTeamMembers.map((teamMember) => teamMember.name),
           reviewSummary: reviews.summary,

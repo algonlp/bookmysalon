@@ -1,6 +1,7 @@
 const CLIENT_STORAGE_KEY = 'qr-platform-client-id';
 const NOTIFICATION_READ_STORAGE_KEY = 'qr-platform-read-notifications';
 const REPORTS_WORKSPACE_STORAGE_KEY = 'qr-platform-reports-workspace';
+const GOOGLE_PROFILE_STORAGE_KEY = 'qr-platform-google-profile';
 const DASHBOARD_NOTIFICATION_REFRESH_INTERVAL_MS = 30000;
 const DEFAULT_PHONE_PLACEHOLDER = '+1234567890';
 const DEFAULT_BOOKING_PHONE_PLACEHOLDER = 'Enter phone number';
@@ -607,6 +608,8 @@ const getSetupGuideProgress = (client, appointments = []) => {
 
 let publicConfigRequest = null;
 let currentPublicConfig = null;
+let googleIdentityScriptRequest = null;
+let googleIdentityInitialized = false;
 
 const loadPublicConfig = async () => {
   if (!publicConfigRequest) {
@@ -622,6 +625,104 @@ const loadPublicConfig = async () => {
   }
 
   return publicConfigRequest;
+};
+
+const getGoogleClientId = () =>
+  typeof currentPublicConfig?.googleClientId === 'string' ? currentPublicConfig.googleClientId.trim() : '';
+
+const loadGoogleIdentityScript = async () => {
+  if (!googleIdentityScriptRequest) {
+    googleIdentityScriptRequest = new Promise((resolve, reject) => {
+      const existingScript = document.querySelector('script[data-google-identity-script="true"]');
+
+      if (existingScript instanceof HTMLScriptElement) {
+        if (window.google?.accounts?.id) {
+          resolve(window.google);
+          return;
+        }
+
+        existingScript.addEventListener('load', () => resolve(window.google), { once: true });
+        existingScript.addEventListener('error', () => reject(new Error('Unable to load Google sign-in')), {
+          once: true
+        });
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.dataset.googleIdentityScript = 'true';
+      script.addEventListener('load', () => resolve(window.google), { once: true });
+      script.addEventListener('error', () => reject(new Error('Unable to load Google sign-in')), { once: true });
+      document.head.append(script);
+    }).catch((error) => {
+      googleIdentityScriptRequest = null;
+      throw error;
+    });
+  }
+
+  return googleIdentityScriptRequest;
+};
+
+const decodeJsonWebTokenPayload = (token) => {
+  if (typeof token !== 'string' || token.split('.').length < 2) {
+    return null;
+  }
+
+  try {
+    const [, payloadSegment] = token.split('.');
+    const normalizedPayload = payloadSegment.replace(/-/g, '+').replace(/_/g, '/');
+    const paddedPayload = normalizedPayload.padEnd(Math.ceil(normalizedPayload.length / 4) * 4, '=');
+    return JSON.parse(window.atob(paddedPayload));
+  } catch {
+    return null;
+  }
+};
+
+const readStoredGoogleProfile = () => {
+  try {
+    const storedValue = window.sessionStorage.getItem(GOOGLE_PROFILE_STORAGE_KEY);
+
+    if (!storedValue) {
+      return null;
+    }
+
+    const parsedValue = JSON.parse(storedValue);
+
+    if (!parsedValue || typeof parsedValue !== 'object') {
+      return null;
+    }
+
+    return {
+      email: typeof parsedValue.email === 'string' ? parsedValue.email.trim() : '',
+      name: typeof parsedValue.name === 'string' ? parsedValue.name.trim() : ''
+    };
+  } catch {
+    return null;
+  }
+};
+
+const storeGoogleProfile = ({ email = '', name = '' }) => {
+  try {
+    window.sessionStorage.setItem(
+      GOOGLE_PROFILE_STORAGE_KEY,
+      JSON.stringify({
+        email: typeof email === 'string' ? email.trim() : '',
+        name: typeof name === 'string' ? name.trim() : ''
+      })
+    );
+  } catch {
+    // Ignore storage errors and continue without the prefill cache.
+  }
+};
+
+const clearStoredGoogleProfile = () => {
+  try {
+    window.sessionStorage.removeItem(GOOGLE_PROFILE_STORAGE_KEY);
+  } catch {
+    // Ignore storage errors.
+  }
 };
 
 const interpolateLabel = (template, values = {}) => {
@@ -715,6 +816,22 @@ const formatAddressSingleLine = (address) =>
         .slice(0, 2)
         .join(', ')
     : '';
+
+const getVisibleSalonServiceTypes = (serviceTypes, limit = 4) => {
+  if (!Array.isArray(serviceTypes) || limit <= 0) {
+    return {
+      labels: [],
+      hiddenCount: 0
+    };
+  }
+
+  const labels = [...new Set(serviceTypes.map((type) => (typeof type === 'string' ? type.trim() : '')).filter(Boolean))];
+
+  return {
+    labels: labels.slice(0, limit),
+    hiddenCount: Math.max(labels.length - limit, 0)
+  };
+};
 
 const safeAlert = (message) => {
   window.alert(message);
@@ -1709,33 +1826,42 @@ const getSalonLocationSearchValues = (salon) => {
   });
 };
 
-const getPublicSalonOnlineSummary = (salon) => {
-  const onlineCount = Number(salon.onlineTeamMembersCount) || 0;
-  const onlineNames = Array.isArray(salon.onlineTeamMemberNames)
-    ? salon.onlineTeamMemberNames.filter((name) => typeof name === 'string' && name.trim().length > 0)
-    : [];
-  const roleLabel =
-    Array.isArray(salon.serviceTypes) && salon.serviceTypes.includes('Barber')
-      ? onlineCount === 1
-        ? 'barber'
-        : 'barbers'
-      : onlineCount === 1
-        ? 'team member'
-        : 'team members';
+const parseTimeValueToMinutes = (timeValue) => {
+  if (typeof timeValue !== 'string' || !/^\d{2}:\d{2}$/.test(timeValue)) {
+    return null;
+  }
 
-  if (onlineCount <= 0) {
+  const [hoursValue, minutesValue] = timeValue.split(':');
+  const hours = Number(hoursValue);
+  const minutes = Number(minutesValue);
+
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    return null;
+  }
+
+  return hours * 60 + minutes;
+};
+
+const getPublicSalonOpenStatus = (salon) => {
+  const openingMinutes = parseTimeValueToMinutes(salon.openingTime);
+  const closingMinutes = parseTimeValueToMinutes(salon.closingTime);
+
+  if (openingMinutes === null || closingMinutes === null || closingMinutes <= openingMinutes) {
     return {
-      isOnline: false,
-      label: `No ${roleLabel} online`
+      isOpen: false,
+      label: 'Hours unavailable'
     };
   }
 
-  const previewNames =
-    onlineNames.length > 2 ? `${onlineNames.slice(0, 2).join(', ')} +${onlineNames.length - 2}` : onlineNames.join(', ');
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const isOpen = currentMinutes >= openingMinutes && currentMinutes < closingMinutes;
 
   return {
-    isOnline: true,
-    label: `${onlineCount} ${roleLabel} online${previewNames ? ` | ${previewNames}` : ''}`
+    isOpen,
+    label: isOpen
+      ? `Open now | Until ${formatTimeForDisplay(salon.closingTime)}`
+      : `Closed now | Opens ${formatTimeForDisplay(salon.openingTime)}`
   };
 };
 
@@ -1747,23 +1873,41 @@ const createSalonShowcaseCard = (salon) => {
   header.className = 'public-salon-card-header';
 
   const titleBlock = document.createElement('div');
+  titleBlock.className = 'public-salon-card-title-block';
+
   const title = document.createElement('h3');
   title.textContent = salon.businessName;
 
-  const meta = document.createElement('p');
-  const locationLabel = formatAddressSingleLine(salon.venueAddress) || 'Booking available';
-  const typeLabel =
-    Array.isArray(salon.serviceTypes) && salon.serviceTypes.length > 0
-      ? salon.serviceTypes.join(' | ')
-      : 'Salon services';
-  meta.textContent = `${locationLabel} | ${typeLabel}`;
+  const location = document.createElement('p');
+  location.className = 'public-salon-card-location';
+  location.textContent = formatAddressSingleLine(salon.venueAddress) || 'Booking available';
 
-  const onlineSummary = getPublicSalonOnlineSummary(salon);
+  const typeList = document.createElement('div');
+  typeList.className = 'public-salon-type-list';
+
+  const { labels: typeLabels, hiddenCount } = getVisibleSalonServiceTypes(salon.serviceTypes);
+  const visibleTypeLabels = typeLabels.length > 0 ? typeLabels : ['Salon services'];
+
+  visibleTypeLabels.forEach((label) => {
+    const typePill = document.createElement('span');
+    typePill.className = 'public-salon-type-pill';
+    typePill.textContent = label;
+    typeList.append(typePill);
+  });
+
+  if (hiddenCount > 0) {
+    const morePill = document.createElement('span');
+    morePill.className = 'public-salon-type-pill is-muted';
+    morePill.textContent = `+${hiddenCount} more`;
+    typeList.append(morePill);
+  }
+
+  const openStatus = getPublicSalonOpenStatus(salon);
   const onlineBadge = document.createElement('div');
-  onlineBadge.className = `public-salon-online-badge${onlineSummary.isOnline ? '' : ' is-offline'}`;
-  onlineBadge.textContent = onlineSummary.label;
+  onlineBadge.className = `public-salon-online-badge${openStatus.isOpen ? '' : ' is-offline'}`;
+  onlineBadge.textContent = openStatus.label;
 
-  titleBlock.append(title, meta, onlineBadge);
+  titleBlock.append(title, location, typeList, onlineBadge);
 
   const bookLink = document.createElement('a');
   bookLink.className = 'public-salon-book-link';
@@ -2482,6 +2626,7 @@ const guardAdminPages = () => {
 const initSignup = () => {
   const signupForm = document.querySelector('#pro-signup-form');
   const emailInput = document.querySelector('#professional-email');
+  const googleSigninHost = document.querySelector('#google-signin-host');
   const mobileInput = document.querySelector('#professional-mobile');
   const providerButtons = document.querySelectorAll('[data-auth-provider]');
 
@@ -2490,9 +2635,10 @@ const initSignup = () => {
   }
 
   const createEndpoint = signupForm.dataset.createEndpoint?.trim();
+  const googleAuthEndpoint = signupForm.dataset.googleAuthEndpoint?.trim();
   const loginEndpoint = signupForm.dataset.loginEndpoint?.trim();
 
-  if (!createEndpoint || !loginEndpoint) {
+  if (!createEndpoint || !googleAuthEndpoint || !loginEndpoint) {
     safeAlert('Signup configuration is missing.');
     return;
   }
@@ -2524,6 +2670,40 @@ const initSignup = () => {
     window.location.assign(payload.nextStep);
   };
 
+  const authenticateGoogleClient = async (credential, fallbackProfile = null) => {
+    const payload = await apiRequest(googleAuthEndpoint, {
+      method: 'POST',
+      body: JSON.stringify({
+        credential
+      })
+    });
+
+    const emailValue =
+      typeof payload?.googleProfile?.email === 'string'
+        ? payload.googleProfile.email.trim()
+        : typeof fallbackProfile?.email === 'string'
+          ? fallbackProfile.email.trim()
+          : '';
+    const nameValue =
+      typeof payload?.googleProfile?.name === 'string'
+        ? payload.googleProfile.name.trim()
+        : typeof fallbackProfile?.name === 'string'
+          ? fallbackProfile.name.trim()
+          : '';
+
+    if (emailInput instanceof HTMLInputElement && emailValue) {
+      emailInput.value = emailValue;
+    }
+
+    storeGoogleProfile({
+      email: emailValue,
+      name: nameValue
+    });
+
+    setAdminSession(payload.client.id);
+    window.location.assign(payload.nextStep);
+  };
+
   const continueWithEmailOrMobile = async (email = '', mobileNumber = '') => {
     try {
       await loginClient(email, mobileNumber);
@@ -2539,6 +2719,123 @@ const initSignup = () => {
       }
 
       safeAlert(error instanceof Error ? error.message : 'Unable to continue');
+    }
+  };
+
+  const finishGoogleSignin = async (profile) => {
+    const emailValue = typeof profile?.email === 'string' ? profile.email.trim() : '';
+    const nameValue = typeof profile?.name === 'string' ? profile.name.trim() : '';
+    const credentialValue = typeof profile?.credential === 'string' ? profile.credential.trim() : '';
+
+    if (!credentialValue) {
+      safeAlert('Google sign-in did not return a valid credential.');
+      return;
+    }
+
+    if (!emailValue) {
+      safeAlert('Google did not return an email address.');
+      return;
+    }
+
+    if (emailInput instanceof HTMLInputElement) {
+      emailInput.value = emailValue;
+    }
+
+    try {
+      await authenticateGoogleClient(credentialValue, {
+        email: emailValue,
+        name: nameValue
+      });
+    } catch (error) {
+      safeAlert(error instanceof Error ? error.message : 'Unable to continue');
+    }
+  };
+
+  const ensureGoogleIdentityInitialized = async () => {
+    await loadPublicConfig().catch(() => ({}));
+
+    const googleClientId = getGoogleClientId();
+
+    if (!googleClientId) {
+      return false;
+    }
+
+    await loadGoogleIdentityScript();
+
+    if (!window.google?.accounts?.id) {
+      return false;
+    }
+
+    if (!googleIdentityInitialized) {
+      window.google.accounts.id.initialize({
+        client_id: googleClientId,
+        callback: (response) => {
+          const tokenPayload = decodeJsonWebTokenPayload(response?.credential);
+
+          void finishGoogleSignin({
+            credential: response?.credential,
+            email: tokenPayload?.email,
+            name: tokenPayload?.name
+          });
+        }
+      });
+
+      googleIdentityInitialized = true;
+    }
+
+    return true;
+  };
+
+  const renderGoogleSigninButton = () => {
+    if (!(googleSigninHost instanceof HTMLElement) || !window.google?.accounts?.id?.renderButton) {
+      return false;
+    }
+
+    const fallbackButton = Array.from(providerButtons).find(
+      (button) => button instanceof HTMLButtonElement && button.dataset.authProvider === 'google'
+    );
+    const buttonWidth = Math.max(
+      260,
+      Math.round(
+        (fallbackButton instanceof HTMLElement
+          ? fallbackButton.getBoundingClientRect().width
+          : googleSigninHost.getBoundingClientRect().width) || 320
+      )
+    );
+
+    googleSigninHost.replaceChildren();
+    window.google.accounts.id.renderButton(googleSigninHost, {
+      shape: 'pill',
+      size: 'large',
+      text: 'continue_with',
+      theme: 'outline',
+      width: buttonWidth
+    });
+    googleSigninHost.classList.remove('is-hidden');
+
+    if (fallbackButton instanceof HTMLElement) {
+      fallbackButton.classList.add('is-hidden');
+    }
+
+    return true;
+  };
+
+  const continueWithGoogle = async () => {
+    try {
+      const googleReady = await ensureGoogleIdentityInitialized();
+
+      if (!googleReady) {
+        safeAlert('Google sign-in is not configured for this environment yet.');
+        return;
+      }
+
+      if (renderGoogleSigninButton()) {
+        return;
+      }
+
+      safeAlert('Google sign-in is not available right now. Reload the page and try again.');
+    } catch {
+      safeAlert('Google sign-in is not available right now. Reload the page and try again.');
     }
   };
 
@@ -2562,6 +2859,11 @@ const initSignup = () => {
     }
 
     button.addEventListener('click', async () => {
+      if (button.dataset.authProvider === 'google') {
+        await continueWithGoogle();
+        return;
+      }
+
       try {
         await createClient(button.dataset.authProvider ?? 'email');
       } catch (error) {
@@ -2569,6 +2871,14 @@ const initSignup = () => {
       }
     });
   }
+
+  void ensureGoogleIdentityInitialized()
+    .then((googleReady) => {
+      if (googleReady) {
+        renderGoogleSigninButton();
+      }
+    })
+    .catch(() => {});
 };
 
 const initBusinessProfile = () => {
@@ -2612,7 +2922,17 @@ const initBusinessProfile = () => {
       applyBusinessProfileUiCopy();
 
       const payload = await apiRequest(`/api/platform/clients/${clientId}`);
-      businessNameInput.value = payload.client.businessName ?? '';
+      const storedGoogleProfile = readStoredGoogleProfile();
+      const savedBusinessName = typeof payload.client.businessName === 'string' ? payload.client.businessName : '';
+      const savedEmail = typeof payload.client.email === 'string' ? payload.client.email.trim() : '';
+
+      businessNameInput.value =
+        savedBusinessName ||
+        (payload.client.provider === 'google' &&
+        storedGoogleProfile?.name &&
+        (!storedGoogleProfile.email || storedGoogleProfile.email === savedEmail)
+          ? storedGoogleProfile.name
+          : '');
       businessWebsiteInput.value = payload.client.website ?? '';
       businessPhoneInput.value = payload.client.businessPhoneNumber ?? '';
     } catch (error) {
@@ -2636,6 +2956,7 @@ const initBusinessProfile = () => {
         })
       });
 
+      clearStoredGoogleProfile();
       redirectTo('/onboarding/service-types', clientId);
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to save business profile');
@@ -3346,6 +3667,7 @@ const initCalendar = () => {
   const teamShortcut = document.querySelector('#calendar-team-shortcut');
   const filtersAction = document.querySelector('#calendar-filters-action');
   const settingsAction = document.querySelector('#calendar-settings-action');
+  const qrShortcutAction = document.querySelector('#calendar-qr-shortcut-action');
   const appointmentsAction = document.querySelector('#calendar-appointments-action');
   const refreshAction = document.querySelector('#calendar-refresh-action');
   const viewToggle = document.querySelector('#calendar-view-toggle');
@@ -9765,27 +10087,41 @@ const createTrendCard = (
       }
 
       const svgMarkup = await response.text();
+      const setShareLinkContent = (element, label, url) => {
+        if (!(element instanceof HTMLAnchorElement)) {
+          return;
+        }
+
+        element.href = url;
+        element.replaceChildren();
+
+        const labelElement = document.createElement('span');
+        labelElement.className = 'calendar-share-link-label';
+        labelElement.textContent = label;
+
+        const valueElement = document.createElement('span');
+        valueElement.className = 'calendar-share-link-value';
+        valueElement.textContent = url;
+
+        element.append(labelElement, valueElement);
+      };
+
       qrImage.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgMarkup)}`;
       qrLink.href = qrBookingPath || publicBookingPath;
       if (shareDirectLink instanceof HTMLAnchorElement) {
-        shareDirectLink.href = publicBookingPath;
-        shareDirectLink.textContent = `Direct: ${publicBookingPath}`;
+        setShareLinkContent(shareDirectLink, 'Direct', publicBookingPath);
       }
       if (shareInstagramLink instanceof HTMLAnchorElement) {
-        shareInstagramLink.href = instagramBookingPath || publicBookingPath;
-        shareInstagramLink.textContent = `Instagram: ${instagramBookingPath || publicBookingPath}`;
+        setShareLinkContent(shareInstagramLink, 'Instagram', instagramBookingPath || publicBookingPath);
       }
       if (shareFacebookLink instanceof HTMLAnchorElement) {
-        shareFacebookLink.href = facebookBookingPath || publicBookingPath;
-        shareFacebookLink.textContent = `Facebook: ${facebookBookingPath || publicBookingPath}`;
+        setShareLinkContent(shareFacebookLink, 'Facebook', facebookBookingPath || publicBookingPath);
       }
       if (shareAppleMapsLink instanceof HTMLAnchorElement) {
-        shareAppleMapsLink.href = appleMapsBookingPath || publicBookingPath;
-        shareAppleMapsLink.textContent = `Apple Maps: ${appleMapsBookingPath || publicBookingPath}`;
+        setShareLinkContent(shareAppleMapsLink, 'Apple Maps', appleMapsBookingPath || publicBookingPath);
       }
       if (shareQrLink instanceof HTMLAnchorElement) {
-        shareQrLink.href = qrBookingPath || publicBookingPath;
-        shareQrLink.textContent = `QR: ${qrBookingPath || publicBookingPath}`;
+        setShareLinkContent(shareQrLink, 'QR', qrBookingPath || publicBookingPath);
       }
       qrModal.classList.remove('is-hidden');
       qrModal.setAttribute('aria-hidden', 'false');
@@ -10553,6 +10889,12 @@ const createTrendCard = (
     });
   }
 
+  if (qrShortcutAction instanceof HTMLButtonElement) {
+    qrShortcutAction.addEventListener('click', async () => {
+      await openQrModal();
+    });
+  }
+
   planChip.addEventListener('click', () => {
     window.location.assign(getPricingPath());
   });
@@ -10680,6 +11022,11 @@ const createTrendCard = (
 
     if (showQrAction instanceof HTMLButtonElement) {
       showQrAction.lastElementChild.textContent = calendarCopy.showQrCode;
+    }
+
+    if (qrShortcutAction instanceof HTMLButtonElement) {
+      qrShortcutAction.setAttribute('aria-label', calendarCopy.showQrCode);
+      qrShortcutAction.title = calendarCopy.showQrCode;
     }
 
     if (groupAppointmentAction instanceof HTMLButtonElement) {

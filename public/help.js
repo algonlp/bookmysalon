@@ -47,7 +47,7 @@ const buildSupportCopy = ({ supportCompanyName, supportFocusText }) => {
 };
 
 const applyPublicConfig = (config) => {
-  const supportCompanyName = config.supportCompanyName?.trim() ?? '';
+  const supportCompanyName = config.supportCompanyName?.trim() || 'Algonlp';
   const supportPlatformName = config.supportPlatformName?.trim() ?? '';
   const supportWebsiteUrl = config.supportWebsiteUrl?.trim() ?? '';
   const supportFocusText = config.supportFocusText?.trim() ?? '';

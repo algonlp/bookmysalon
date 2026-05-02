@@ -44,6 +44,10 @@ const createClientSchema = z.object({
   }
 );
 
+const googleAuthSchema = z.object({
+  credential: z.string().trim().min(1, 'Google credential is required')
+});
+
 const loginClientSchema = z.object({
   email: z.string().trim().email().optional(),
   mobileNumber: z.string().trim().min(7, 'Mobile number is required').optional()
@@ -259,6 +263,19 @@ export const clientPlatformController = {
       client: serializeClientForResponse(client),
       ...(shouldExposeAdminTokenForTests() ? { adminToken: client.adminToken } : {}),
       nextStep: buildPlatformClientPagePath(platformClientPagePaths.onboarding.businessName, client.id)
+    });
+  },
+
+  async authenticateGoogleClient(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const payload = await clientPlatformService.authenticateGoogleClient({
+      idToken: googleAuthSchema.parse(req.body).credential
+    });
+    setAdminSessionCookie(res, payload.client.adminToken);
+    res.status(payload.created ? 201 : 200).json({
+      client: serializeClientForResponse(payload.client),
+      ...(shouldExposeAdminTokenForTests() ? { adminToken: payload.client.adminToken } : {}),
+      googleProfile: payload.googleIdentity,
+      nextStep: payload.nextStep
     });
   },
 
