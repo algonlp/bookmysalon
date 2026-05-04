@@ -1,10 +1,11 @@
--- Complete Supabase schema for BookMySalon.
+-- Mirror copy of supabase/schema.sql for BookMySalon.
 --
 -- Important:
 -- 1. This file is safe to run directly in the Supabase SQL editor.
 -- 2. It creates both the current JSONB sync tables and the normalized relational tables.
 -- 3. `create table if not exists` and `create index if not exists` keep it re-runnable.
--- 4. Back up production data before applying schema changes.
+-- 4. `supabase/schema.sql` is the canonical file to run.
+-- 5. Back up production data before applying schema changes.
 
 create extension if not exists pgcrypto;
 
@@ -67,14 +68,14 @@ values
     'solo',
     true,
     10,
-    '{"id":"plan_solo","key":"solo","name":"Solo","summary":"For one independent professional starting with online bookings and QR links.","amountCents":126000,"currencyCode":"PKR","billingInterval":"month","trialDays":7,"badgeLabel":"7 day trial","isActive":true,"displayOrder":10,"entitlements":{"maxTeamMembers":1,"includedMessages":20,"includedMarketingEmails":50,"includedAppointmentCredits":50,"featureKeys":["online_booking","qr_booking"]},"createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2026-01-01T00:00:00.000Z"}'::jsonb
+    '{"id":"plan_solo","key":"solo","name":"Solo","summary":"For one independent professional with full workspace access until appointment credits run out.","amountCents":126000,"currencyCode":"PKR","billingInterval":"month","trialDays":7,"badgeLabel":"7 day trial","isActive":true,"displayOrder":10,"entitlements":{"maxTeamMembers":1,"includedMessages":20,"includedMarketingEmails":50,"includedAppointmentCredits":50,"featureKeys":["online_booking","qr_booking","payments","service_packages","products","client_crm","advanced_reports","team_management","marketing","premium_support"]},"createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2026-01-01T00:00:00.000Z"}'::jsonb
   ),
   (
     'plan_single',
     'single',
     true,
     20,
-    '{"id":"plan_single","key":"single","name":"Single","summary":"For a growing business that needs checkout, packages, clients, and reports.","amountCents":249000,"currencyCode":"PKR","billingInterval":"month","trialDays":7,"badgeLabel":"Popular","isActive":true,"displayOrder":20,"entitlements":{"maxTeamMembers":3,"includedMessages":100,"includedMarketingEmails":500,"includedAppointmentCredits":150,"featureKeys":["online_booking","qr_booking","payments","service_packages","products","client_crm","advanced_reports"]},"createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2026-01-01T00:00:00.000Z"}'::jsonb
+    '{"id":"plan_single","key":"single","name":"Single","summary":"For a growing business that needs checkout, packages, clients, and reports.","amountCents":249000,"currencyCode":"PKR","billingInterval":"month","trialDays":7,"badgeLabel":"Popular","isActive":true,"displayOrder":20,"entitlements":{"maxTeamMembers":3,"includedMessages":100,"includedMarketingEmails":500,"includedAppointmentCredits":150,"featureKeys":["online_booking","qr_booking","team_management","payments","service_packages","products","client_crm","advanced_reports"]},"createdAt":"2026-01-01T00:00:00.000Z","updatedAt":"2026-01-01T00:00:00.000Z"}'::jsonb
   ),
   (
     'plan_team_premium',
@@ -430,10 +431,14 @@ create table if not exists package_plans (
   name text not null,
   total_uses integer not null check (total_uses > 0),
   price_label text not null default '',
+  expires_at timestamptz null,
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table package_plans
+  add column if not exists expires_at timestamptz null;
 
 create index if not exists package_plans_business_id_idx on package_plans (business_id);
 create index if not exists package_plans_business_active_idx on package_plans (business_id, is_active);
@@ -568,19 +573,60 @@ create table if not exists appointments (
   end_at timestamptz not null,
   status appointment_status not null,
   source appointment_source not null,
+  package_plan_id text null references package_plans (id) on delete set null,
   package_purchase_id text null references package_purchases (id) on delete set null,
   package_name text not null default '',
+  package_price_label text not null default '',
+  package_total_uses integer null check (package_total_uses is null or package_total_uses >= 0),
   loyalty_reward_id text null references loyalty_rewards (id) on delete set null,
   loyalty_reward_label text not null default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
+alter table appointments
+  add column if not exists package_plan_id text null;
+
+alter table appointments
+  add column if not exists package_price_label text not null default '';
+
+alter table appointments
+  add column if not exists package_total_uses integer null;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'appointments_package_plan_id_fkey'
+  ) then
+    alter table appointments
+      add constraint appointments_package_plan_id_fkey
+      foreign key (package_plan_id) references package_plans (id) on delete set null;
+  end if;
+end
+$$;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'appointments_package_total_uses_check'
+  ) then
+    alter table appointments
+      add constraint appointments_package_total_uses_check
+      check (package_total_uses is null or package_total_uses >= 0);
+  end if;
+end
+$$;
+
 create index if not exists appointments_business_id_idx on appointments (business_id);
 create index if not exists appointments_customer_phone_idx on appointments (customer_phone);
 create index if not exists appointments_date_idx on appointments (appointment_date);
 create index if not exists appointments_status_idx on appointments (status);
 create index if not exists appointments_team_member_id_idx on appointments (team_member_id);
+create index if not exists appointments_package_plan_id_idx on appointments (package_plan_id);
 
 create table if not exists reviews (
   id text primary key,

@@ -98,6 +98,7 @@ export interface PackagePlanRecord {
   includedServiceIds: string[];
   totalUses: number;
   priceLabel: string;
+  expiresAt?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -294,6 +295,7 @@ export interface CreatePackagePlanInput {
   includedServiceIds?: string[];
   totalUses: number;
   priceLabel: string;
+  expiresAt?: string;
 }
 
 export interface UpdatePackagePlanInput {
@@ -301,6 +303,7 @@ export interface UpdatePackagePlanInput {
   includedServiceIds?: string[];
   totalUses: number;
   priceLabel: string;
+  expiresAt?: string;
 }
 
 export interface SellProductInput {
@@ -509,5 +512,7 @@ export interface PublicSalonShowcaseItem {
     name: string;
     durationMinutes: number;
     priceLabel: string;
+    isPackageHighlighted?: boolean;
+    highlightedPackageNames?: string[];
   }>;
 }

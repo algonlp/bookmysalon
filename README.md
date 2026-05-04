@@ -128,13 +128,13 @@ To preserve the existing local JSON data while moving to Supabase:
 3. Run `npm run sync:supabase` to upload `data/appointments.json` and `data/client-platform.json`.
 4. Change `CLIENT_PLATFORM_STORAGE` from `file` to `supabase`.
 
-The migration keeps the current record shapes intact by storing each record as JSONB payload data in Supabase tables.
+The migration keeps the current record shapes intact by storing each record as JSONB payload data in Supabase tables, while also creating the normalized reporting tables used by the relational mirror.
 
 ## Supabase Relational Schema
 
-If you want every major entity stored in its own table instead of JSONB payload blobs, use [supabase/relational-schema.sql](</d:/algo nlp/fresha project algonlp/supabase/relational-schema.sql>).
+The canonical Supabase SQL file is [supabase/schema.sql](</d:/algo nlp/fresha project algonlp/supabase/schema.sql>). It already includes the normalized relational tables too. [supabase/relational-schema.sql](</d:/algo nlp/fresha project algonlp/supabase/relational-schema.sql>) is kept as a mirror copy.
 
-This relational schema creates dedicated tables for:
+The normalized relational section creates dedicated tables for:
 - businesses
 - business settings
 - service types and service locations
@@ -150,13 +150,13 @@ This relational schema creates dedicated tables for:
 - waitlist entries
 
 Important:
-- The current running app still uses the JSONB sync tables in [supabase/schema.sql](</d:/algo nlp/fresha project algonlp/supabase/schema.sql>).
-- Running the relational schema creates the tables, but the application code must still be migrated before the app reads and writes those new tables directly.
-- Use the relational schema when you are ready to do a full database migration away from payload-based storage.
+- The current running app still reads and writes the JSONB sync tables in [supabase/schema.sql](</d:/algo nlp/fresha project algonlp/supabase/schema.sql>).
+- The normalized relational tables are created in the same file and are filled by the relational mirror sync.
+- Run `schema.sql` as the single setup file in Supabase.
 
 To backfill the current live Supabase JSONB data into the normalized relational tables:
 
-1. Run [supabase/relational-schema.sql](</d:/algo nlp/fresha project algonlp/supabase/relational-schema.sql>) in the Supabase SQL editor.
+1. Run [supabase/schema.sql](</d:/algo nlp/fresha project algonlp/supabase/schema.sql>) in the Supabase SQL editor.
 2. Make sure your environment still points at the same Supabase project.
 3. Run:
 

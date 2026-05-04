@@ -1113,6 +1113,10 @@ const sanitizePackagePlan = (
 
   const timestamp = new Date().toISOString();
   const totalUses = Number(packagePlan.totalUses);
+  const expiresAt =
+    typeof packagePlan.expiresAt === 'string' && packagePlan.expiresAt.trim().length > 0
+      ? packagePlan.expiresAt.trim()
+      : undefined;
 
   return {
     id:
@@ -1128,6 +1132,7 @@ const sanitizePackagePlan = (
       : [],
     totalUses: Number.isFinite(totalUses) && totalUses > 0 ? Math.floor(totalUses) : 1,
     priceLabel: typeof packagePlan.priceLabel === 'string' ? packagePlan.priceLabel.trim() : '',
+    expiresAt,
     isActive: packagePlan.isActive !== false,
     createdAt:
       typeof packagePlan.createdAt === 'string' && packagePlan.createdAt.trim().length > 0
@@ -2041,7 +2046,9 @@ export const clientPlatformService = {
           services: services.slice(0, 3).map((service) => ({
             name: service.name,
             durationMinutes: service.durationMinutes,
-            priceLabel: service.priceLabel
+            priceLabel: service.priceLabel,
+            isPackageHighlighted: service.isPackageHighlighted,
+            highlightedPackageNames: service.highlightedPackageNames
           }))
         };
       })
@@ -2509,6 +2516,7 @@ export const clientPlatformService = {
             includedServiceIds: input.includedServiceIds ?? [],
             totalUses: input.totalUses,
             priceLabel: input.priceLabel.trim(),
+            expiresAt: input.expiresAt?.trim() || undefined,
             isActive: true,
             createdAt: now,
             updatedAt: now
@@ -2542,6 +2550,7 @@ export const clientPlatformService = {
                   includedServiceIds: input.includedServiceIds ?? [],
                   totalUses: input.totalUses,
                   priceLabel: input.priceLabel.trim(),
+                  expiresAt: input.expiresAt?.trim() || undefined,
                   isActive: packagePlan.isActive !== false,
                   updatedAt: new Date().toISOString()
                 }

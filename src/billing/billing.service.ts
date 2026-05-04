@@ -1,6 +1,10 @@
 import { randomUUID } from 'crypto';
 import { billingRepository } from './billing.repository';
-import { billingFeatureCatalog, defaultSubscriptionPlans } from './defaultPlans';
+import {
+  billingFeatureCatalog,
+  defaultSubscriptionPlans,
+  normalizeSubscriptionPlans
+} from './defaultPlans';
 import type {
   BillingInvoice,
   BillingOverview,
@@ -14,11 +18,16 @@ import { clientPlatformRepository } from '../platform/clientPlatform.repository'
 import { HttpError } from '../shared/errors/httpError';
 
 const activeSubscriptionStatuses: BusinessSubscriptionStatus[] = ['active', 'trialing'];
+const appointmentCreditsFinishedMessage =
+  'Appointment credits are finished. Buy or upgrade a plan to receive more booking credits.';
 
 const sortPlans = (plans: SubscriptionPlan[]): SubscriptionPlan[] =>
   [...plans]
     .filter((plan) => plan.isActive !== false)
     .sort((left, right) => left.displayOrder - right.displayOrder || left.name.localeCompare(right.name));
+
+const listNormalizedSubscriptionPlans = async (): Promise<SubscriptionPlan[]> =>
+  sortPlans(normalizeSubscriptionPlans(await billingRepository.listSubscriptionPlans()));
 
 const getBusinessOrThrow = async (businessId: string): Promise<void> => {
   const business = await clientPlatformRepository.getClientById(businessId);
@@ -142,6 +151,11 @@ const hydrateSubscriptionCredits = (
 
 const buildFeatureAccess = (currentPlan: SubscriptionPlan | null): BillingOverview['featureAccess'] => {
   const enabledFeatureKeys = new Set(currentPlan?.entitlements.featureKeys ?? ['online_booking', 'qr_booking']);
+  const maxTeamMembers = Number(currentPlan?.entitlements.maxTeamMembers ?? 0);
+
+  if (Number.isFinite(maxTeamMembers) && maxTeamMembers > 0) {
+    enabledFeatureKeys.add('team_management');
+  }
 
   return billingFeatureCatalog.map((feature) => ({
     key: feature.key,
@@ -154,7 +168,7 @@ const buildFeatureAccess = (currentPlan: SubscriptionPlan | null): BillingOvervi
 export const billingService = {
   async listSubscriptionPlans(): Promise<{ plans: SubscriptionPlan[] }> {
     return {
-      plans: sortPlans(await billingRepository.listSubscriptionPlans())
+      plans: await listNormalizedSubscriptionPlans()
     };
   },
 
@@ -162,11 +176,11 @@ export const billingService = {
     await getBusinessOrThrow(businessId);
 
     const [plans, subscriptions, invoices] = await Promise.all([
-      billingRepository.listSubscriptionPlans(),
+      listNormalizedSubscriptionPlans(),
       billingRepository.listBusinessSubscriptions(),
       billingRepository.listBillingInvoices()
     ]);
-    const sortedPlans = sortPlans(plans);
+    const sortedPlans = plans;
     const businessSubscriptions = subscriptions.filter(
       (subscription) => subscription.businessId === businessId
     );
@@ -207,7 +221,7 @@ export const billingService = {
     overview: BillingOverview;
   }> {
     await getBusinessOrThrow(businessId);
-    const plans = sortPlans(await billingRepository.listSubscriptionPlans());
+    const plans = await listNormalizedSubscriptionPlans();
     const plan = plans.find((entry) => entry.id === input.planId);
 
     if (!plan) {
@@ -317,10 +331,10 @@ export const billingService = {
   ): Promise<BusinessSubscription | null> {
     await getBusinessOrThrow(businessId);
     const [plans, subscriptions] = await Promise.all([
-      billingRepository.listSubscriptionPlans(),
+      listNormalizedSubscriptionPlans(),
       billingRepository.listBusinessSubscriptions()
     ]);
-    const sortedPlans = sortPlans(plans);
+    const sortedPlans = plans;
     const rawSubscription = getLatestSubscription(
       subscriptions.filter((subscription) => subscription.businessId === businessId)
     );
@@ -333,10 +347,7 @@ export const billingService = {
     const subscription = hydrateSubscriptionCredits(rawSubscription, currentPlan);
 
     if (subscription.appointmentCreditsRemaining <= 0) {
-      throw new HttpError(
-        402,
-        'Appointment credits are finished. Buy or upgrade a plan to receive more booking credits.'
-      );
+      throw new HttpError(402, appointmentCreditsFinishedMessage);
     }
 
     const updatedSubscription: BusinessSubscription = {
@@ -358,5 +369,44 @@ export const billingService = {
     }
 
     await billingRepository.saveBusinessSubscription(subscription);
+  },
+
+  async getPublicBookingAvailability(
+    businessId: string
+  ): Promise<{
+    hasActiveSubscription: boolean;
+    remainingCredits: number;
+    isBookingEnabled: boolean;
+    reason: string;
+  }> {
+    await getBusinessOrThrow(businessId);
+    const [plans, subscriptions] = await Promise.all([
+      listNormalizedSubscriptionPlans(),
+      billingRepository.listBusinessSubscriptions()
+    ]);
+    const sortedPlans = plans;
+    const rawSubscription = getLatestSubscription(
+      subscriptions.filter((subscription) => subscription.businessId === businessId)
+    );
+
+    if (!rawSubscription) {
+      return {
+        hasActiveSubscription: false,
+        remainingCredits: 0,
+        isBookingEnabled: true,
+        reason: ''
+      };
+    }
+
+    const currentPlan = sortedPlans.find((plan) => plan.id === rawSubscription.planId) ?? null;
+    const subscription = hydrateSubscriptionCredits(rawSubscription, currentPlan);
+    const remainingCredits = subscription.appointmentCreditsRemaining;
+
+    return {
+      hasActiveSubscription: true,
+      remainingCredits,
+      isBookingEnabled: remainingCredits > 0,
+      reason: remainingCredits > 0 ? '' : appointmentCreditsFinishedMessage
+    };
   }
 };

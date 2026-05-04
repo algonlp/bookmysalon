@@ -38,6 +38,7 @@ const createAppointmentSchema = z.object({
   source: z
     .enum(['qr', 'direct', 'instagram', 'facebook', 'applemaps'])
     .optional(),
+  packagePlanId: z.string().trim().optional().or(z.literal('')),
   packagePurchaseId: z.string().trim().optional().or(z.literal('')),
   loyaltyRewardId: z.string().trim().optional().or(z.literal('')),
   waitlistEntryId: z.string().uuid().optional().or(z.literal('')),

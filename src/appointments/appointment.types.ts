@@ -55,8 +55,11 @@ export interface AppointmentRecord {
   endAt: string;
   status: AppointmentStatus;
   source: AppointmentSource;
+  packagePlanId?: string;
   packagePurchaseId?: string;
   packageName?: string;
+  packagePriceLabel?: string;
+  packageTotalUses?: number;
   loyaltyRewardId?: string;
   loyaltyRewardLabel?: string;
   createdAt: string;
@@ -70,6 +73,8 @@ export interface AppointmentServiceOption {
   categoryName: string;
   priceLabel: string;
   description: string;
+  isPackageHighlighted?: boolean;
+  highlightedPackageNames?: string[];
 }
 
 export interface AppointmentTeamMemberOption {
@@ -81,6 +86,18 @@ export interface AppointmentTeamMemberOption {
   offDays: string[];
 }
 
+export interface PublicPackagePlanOption {
+  id: string;
+  name: string;
+  totalUses: number;
+  priceLabel: string;
+  includedServiceIds: string[];
+  includedServiceNames: string[];
+  expiresAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PublicBookingHistoryItem {
   reference: string;
   serviceName: string;
@@ -90,6 +107,8 @@ export interface PublicBookingHistoryItem {
   customerName: string;
   customerEmail: string;
   packageName?: string;
+  packagePriceLabel?: string;
+  packageTotalUses?: number;
   loyaltyRewardLabel?: string;
   createdAt: string;
 }
@@ -120,6 +139,7 @@ export interface CreateAppointmentInput {
   customerPhone: string;
   customerEmail?: string;
   source?: AppointmentSource;
+  packagePlanId?: string;
   packagePurchaseId?: string;
   loyaltyRewardId?: string;
   waitlistEntryId?: string;
@@ -135,8 +155,11 @@ export interface PublicBookingPage {
   serviceTypes: string[];
   serviceLocations: ServiceLocation[];
   services: AppointmentServiceOption[];
+  packagePlans: PublicPackagePlanOption[];
   teamMembers: AppointmentTeamMemberOption[];
   bookingLink: string;
+  isBookingEnabled: boolean;
+  bookingDisabledReason: string;
   reviews: ReviewRecord[];
   reviewSummary: ReviewSummary;
   waitlistOffer: PublicWaitlistOffer | null;
@@ -152,6 +175,9 @@ export interface PublicManagedAppointment {
   appointmentDate: string;
   appointmentTime: string;
   status: AppointmentStatus;
+  packageName?: string;
+  packagePriceLabel?: string;
+  packageTotalUses?: number;
   bookingLink: string;
 }
 

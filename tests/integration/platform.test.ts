@@ -14,11 +14,19 @@ describe('Client platform API', () => {
   const largeUploadedProfileImage = `data:image/png;base64,${'a'.repeat(180000)}`;
   const completedReviewAppointmentId = '11111111-1111-4111-8111-111111111111';
   const originalGoogleClientId = env.PUBLIC_GOOGLE_CLIENT_ID;
+  const originalBookingPhoneCountryCode = env.PUBLIC_BOOKING_PHONE_COUNTRY_CODE;
+  const originalTwilioAccountSid = env.TWILIO_ACCOUNT_SID;
+  const originalTwilioAuthToken = env.TWILIO_AUTH_TOKEN;
+  const originalTwilioPhoneNumber = env.TWILIO_PHONE_NUMBER;
 
   beforeEach(async () => {
     vi.useRealTimers();
     vi.restoreAllMocks();
     env.PUBLIC_GOOGLE_CLIENT_ID = originalGoogleClientId;
+    env.PUBLIC_BOOKING_PHONE_COUNTRY_CODE = originalBookingPhoneCountryCode;
+    env.TWILIO_ACCOUNT_SID = originalTwilioAccountSid;
+    env.TWILIO_AUTH_TOKEN = originalTwilioAuthToken;
+    env.TWILIO_PHONE_NUMBER = originalTwilioPhoneNumber;
     await resetClientPlatformRepositoryForTests();
     await resetAppointmentRepositoryForTests();
     await resetBillingRepositoryForTests();
@@ -297,6 +305,168 @@ describe('Client platform API', () => {
       status: 'failed',
       destination: '+1234567890'
     });
+  });
+
+  it('fails fast when a booking phone number does not include a valid country code', async () => {
+    env.PUBLIC_BOOKING_PHONE_COUNTRY_CODE = '';
+    env.TWILIO_ACCOUNT_SID = 'test-sid';
+    env.TWILIO_AUTH_TOKEN = 'test-token';
+    env.TWILIO_PHONE_NUMBER = '+15551234567';
+
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'invalid-phone-owner@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/business-profile`)
+      .set('x-admin-token', adminToken)
+      .send({
+        businessName: 'Invalid Phone Studio',
+        website: 'invalid-phone.example'
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-types`)
+      .set('x-admin-token', adminToken)
+      .send({
+        serviceTypes: ['Barber']
+      });
+
+    const bookingDate = new Date();
+    bookingDate.setDate(bookingDate.getDate() + 1);
+    const bookingDateValue = `${bookingDate.getFullYear()}-${String(
+      bookingDate.getMonth() + 1
+    ).padStart(2, '0')}-${String(bookingDate.getDate()).padStart(2, '0')}`;
+
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+    const bookingResponse = await request(app)
+      .post(`/api/public/book/${clientId}/appointments`)
+      .send({
+        serviceName: 'Haircut',
+        appointmentDate: bookingDateValue,
+        appointmentTime: '09:00',
+        customerName: 'Local Number Customer',
+        customerPhone: '03001234567',
+        source: 'direct'
+      });
+
+    expect(bookingResponse.status).toBe(201);
+    expect(bookingResponse.body.notifications).toEqual([
+      expect.objectContaining({
+        recipient: 'customer',
+        status: 'failed',
+        reason: expect.stringContaining('valid country code')
+      })
+    ]);
+    expect(fetchSpy).not.toHaveBeenCalled();
+
+    const smsLogsResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}/sms-logs`)
+      .set('x-admin-token', adminToken);
+
+    expect(smsLogsResponse.status).toBe(200);
+    expect(smsLogsResponse.body.logs).toEqual([
+      expect.objectContaining({
+        status: 'failed',
+        destination: '03001234567',
+        reason: expect.stringContaining('valid country code')
+      })
+    ]);
+  });
+
+  it('stores the Twilio error code in SMS logs when the provider rejects a message', async () => {
+    const originalAppEnv = env.APP_ENV;
+    const originalNodeEnv = process.env.NODE_ENV;
+    const originalVitestEnv = process.env.VITEST;
+    try {
+      env.APP_ENV = 'prod';
+      process.env.NODE_ENV = 'production';
+      process.env.VITEST = 'false';
+      env.PUBLIC_BOOKING_PHONE_COUNTRY_CODE = '+92';
+      env.TWILIO_ACCOUNT_SID = 'test-sid';
+      env.TWILIO_AUTH_TOKEN = 'test-token';
+      env.TWILIO_PHONE_NUMBER = '+15551234567';
+
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+        json: async () => ({
+          code: 21608,
+          message:
+            'The number +15551234567 is unverified. Trial accounts cannot send messages to unverified numbers.'
+        }),
+        ok: false,
+        status: 400
+      } as Response);
+
+      const createResponse = await request(app).post('/api/platform/clients').send({
+        email: 'twilio-error-owner@example.com',
+        provider: 'email'
+      });
+      const clientId = createResponse.body.client.id as string;
+      const adminCookie = createResponse.headers['set-cookie'] ?? [];
+
+      await request(app)
+        .patch(`/api/platform/clients/${clientId}/business-profile`)
+        .set('Cookie', adminCookie)
+        .send({
+          businessName: 'Twilio Error Studio',
+          website: 'twilio-error.example'
+        });
+
+      await request(app)
+        .patch(`/api/platform/clients/${clientId}/service-types`)
+        .set('Cookie', adminCookie)
+        .send({
+          serviceTypes: ['Barber']
+        });
+
+      const bookingDate = new Date();
+      bookingDate.setDate(bookingDate.getDate() + 1);
+      const bookingDateValue = `${bookingDate.getFullYear()}-${String(
+        bookingDate.getMonth() + 1
+      ).padStart(2, '0')}-${String(bookingDate.getDate()).padStart(2, '0')}`;
+
+      const bookingResponse = await request(app)
+        .post(`/api/public/book/${clientId}/appointments`)
+        .send({
+          serviceName: 'Haircut',
+          appointmentDate: bookingDateValue,
+          appointmentTime: '09:00',
+          customerName: 'Twilio Trial Customer',
+          customerPhone: '03001234567',
+          source: 'direct'
+        });
+
+      expect(bookingResponse.status).toBe(201);
+      expect(bookingResponse.body.notifications).toEqual([
+        expect.objectContaining({
+          recipient: 'customer',
+          status: 'failed',
+          reason: expect.stringContaining('Twilio error 21608')
+        })
+      ]);
+
+      const smsLogsResponse = await request(app)
+        .get(`/api/platform/clients/${clientId}/sms-logs`)
+        .set('Cookie', adminCookie);
+
+      expect(smsLogsResponse.status).toBe(200);
+      expect(smsLogsResponse.body.logs).toEqual([
+        expect.objectContaining({
+          status: 'failed',
+          destination: '+923001234567',
+          reason: expect.stringContaining('Twilio error 21608')
+        })
+      ]);
+      expect(fetchSpy).toHaveBeenCalled();
+    } finally {
+      env.APP_ENV = originalAppEnv;
+      process.env.NODE_ENV = originalNodeEnv;
+      process.env.VITEST = originalVitestEnv;
+    }
   });
 
   it('rejects creating a duplicate account for an existing email', async () => {
@@ -1823,6 +1993,296 @@ describe('Client platform API', () => {
     vi.useRealTimers();
   });
 
+  it('stores selected published package details on a public booking and includes them in the SMS body', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'public-package-booking@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/business-profile`)
+      .set('x-admin-token', adminToken)
+      .send({
+        businessName: 'Package Booking House',
+        website: 'package-booking.example'
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-types`)
+      .set('x-admin-token', adminToken)
+      .send({
+        serviceTypes: ['Barber']
+      });
+
+    const createPackageResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/packages`)
+      .set('x-admin-token', adminToken)
+      .send({
+        name: 'Haircut Duo',
+        includedServiceIds: ['barber-haircut'],
+        totalUses: 2,
+        priceLabel: 'PKR 2,000'
+      });
+
+    expect(createPackageResponse.status).toBe(201);
+
+    const bookingDate = new Date();
+    bookingDate.setDate(bookingDate.getDate() + 1);
+    const bookingDateValue = `${bookingDate.getFullYear()}-${String(
+      bookingDate.getMonth() + 1
+    ).padStart(2, '0')}-${String(bookingDate.getDate()).padStart(2, '0')}`;
+
+    const bookingResponse = await request(app)
+      .post(`/api/public/book/${clientId}/appointments`)
+      .send({
+        serviceName: 'Haircut',
+        appointmentDate: bookingDateValue,
+        appointmentTime: '09:00',
+        customerName: 'Package Customer',
+        customerPhone: '+923001888888',
+        customerEmail: 'package.customer@example.com',
+        packagePlanId: createPackageResponse.body.client.packagePlans[0].id,
+        source: 'direct'
+      });
+
+    expect(bookingResponse.status).toBe(201);
+    expect(bookingResponse.body.appointment).toMatchObject({
+      serviceName: 'Haircut',
+      packagePlanId: createPackageResponse.body.client.packagePlans[0].id,
+      packageName: 'Haircut Duo',
+      packagePriceLabel: 'PKR 2,000',
+      packageTotalUses: 2
+    });
+
+    const smsLogsResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}/sms-logs`)
+      .set('x-admin-token', adminToken);
+
+    expect(smsLogsResponse.status).toBe(200);
+    expect(smsLogsResponse.body.logs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          body: expect.stringContaining('Package: Haircut Duo (2 uses, PKR 2,000).')
+        })
+      ])
+    );
+  });
+
+  it('highlights services that belong to active packages and removes the highlight when the package is removed', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'package-highlight@example.com',
+      provider: 'email'
+    });
+
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/business-profile`)
+      .set('x-admin-token', adminToken)
+      .send({
+        businessName: 'Package Highlight House',
+        website: 'package-highlight.example'
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-types`)
+      .set('x-admin-token', adminToken)
+      .send({
+        serviceTypes: ['Barber']
+      });
+
+    const createPackageResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/packages`)
+      .set('x-admin-token', adminToken)
+      .send({
+        name: 'Haircut Duo',
+        includedServiceIds: ['barber-haircut'],
+        totalUses: 2,
+        priceLabel: 'PKR 2,000'
+      });
+
+    expect(createPackageResponse.status).toBe(201);
+
+    const highlightedBookingPageResponse = await request(app).get(`/api/public/book/${clientId}`);
+
+    expect(highlightedBookingPageResponse.status).toBe(200);
+    expect(highlightedBookingPageResponse.body.packagePlans).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'Haircut Duo',
+          totalUses: 2,
+          priceLabel: 'PKR 2,000',
+          includedServiceIds: ['barber-haircut'],
+          includedServiceNames: ['Haircut']
+        })
+      ])
+    );
+    expect(highlightedBookingPageResponse.body.services).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'barber-haircut',
+          name: 'Haircut',
+          isPackageHighlighted: true,
+          highlightedPackageNames: ['Haircut Duo']
+        })
+      ])
+    );
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/account-type`)
+      .set('x-admin-token', adminToken)
+      .send({
+        accountType: 'independent'
+      });
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-location`)
+      .set('x-admin-token', adminToken)
+      .send({
+        serviceLocation: ['physical']
+      });
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/venue-location`)
+      .set('x-admin-token', adminToken)
+      .send({
+        venueAddress: 'MM Alam Road, Gulberg III, Lahore, Punjab, Pakistan'
+      });
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/preferred-language`)
+      .set('x-admin-token', adminToken)
+      .send({
+        preferredLanguage: 'english'
+      });
+    await request(app)
+      .post(`/api/platform/clients/${clientId}/complete`)
+      .set('x-admin-token', adminToken);
+
+    const highlightedSalonsResponse = await request(app).get('/api/public/salons');
+
+    expect(highlightedSalonsResponse.status).toBe(200);
+    expect(highlightedSalonsResponse.body.salons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          clientId,
+          services: expect.arrayContaining([
+            expect.objectContaining({
+              name: 'Haircut',
+              isPackageHighlighted: true,
+              highlightedPackageNames: ['Haircut Duo']
+            })
+          ])
+        })
+      ])
+    );
+
+    const removePackageResponse = await request(app)
+      .delete(
+        `/api/platform/clients/${clientId}/packages/${encodeURIComponent(
+          createPackageResponse.body.client.packagePlans[0].id
+        )}`
+      )
+      .set('x-admin-token', adminToken);
+
+    expect(removePackageResponse.status).toBe(200);
+
+    const updatedBookingPageResponse = await request(app).get(`/api/public/book/${clientId}`);
+    const haircutService = updatedBookingPageResponse.body.services.find(
+      (service: { id: string }) => service.id === 'barber-haircut'
+    );
+
+    expect(updatedBookingPageResponse.status).toBe(200);
+    expect(updatedBookingPageResponse.body.packagePlans).toEqual([]);
+    expect(haircutService).toMatchObject({
+      id: 'barber-haircut',
+      isPackageHighlighted: false,
+      highlightedPackageNames: []
+    });
+  });
+
+  it('hides expired package plans from public booking and prevents selling them', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'package-expiry@example.com',
+      provider: 'email'
+    });
+
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/business-profile`)
+      .set('x-admin-token', adminToken)
+      .send({
+        businessName: 'Expiry Barber House',
+        website: 'package-expiry.example'
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-types`)
+      .set('x-admin-token', adminToken)
+      .send({
+        serviceTypes: ['Barber']
+      });
+
+    const expiredPackageResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/packages`)
+      .set('x-admin-token', adminToken)
+      .send({
+        name: 'Old Eid Bundle',
+        includedServiceIds: ['barber-haircut'],
+        totalUses: 5,
+        priceLabel: 'PKR 2,333',
+        expiresAt: '2000-01-01'
+      });
+
+    const activePackageResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/packages`)
+      .set('x-admin-token', adminToken)
+      .send({
+        name: 'Fresh Summer Bundle',
+        includedServiceIds: ['barber-haircut'],
+        totalUses: 5,
+        priceLabel: 'PKR 8,888',
+        expiresAt: '2999-05-20'
+      });
+
+    expect(expiredPackageResponse.status).toBe(201);
+    expect(activePackageResponse.status).toBe(201);
+
+    const bookingPageResponse = await request(app).get(`/api/public/book/${clientId}`);
+
+    expect(bookingPageResponse.status).toBe(200);
+    expect(bookingPageResponse.body.packagePlans).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'Fresh Summer Bundle',
+          expiresAt: '2999-05-20'
+        })
+      ])
+    );
+    expect(bookingPageResponse.body.packagePlans).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'Old Eid Bundle'
+        })
+      ])
+    );
+
+    const sellExpiredPackageResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/package-sales`)
+      .set('x-admin-token', adminToken)
+      .send({
+        packagePlanId: expiredPackageResponse.body.client.packagePlans[0].id,
+        customerName: 'Maqsood',
+        customerPhone: '+923001234567',
+        customerEmail: 'maqsood@example.com'
+      });
+
+    expect(sellExpiredPackageResponse.status).toBe(404);
+    expect(sellExpiredPackageResponse.body.error).toContain('Package plan was not found');
+  });
+
   it('automatically completes spent appointments and frees the live calendar slot', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(Date.UTC(2026, 2, 11, 10, 30, 0)));
@@ -2226,6 +2686,7 @@ describe('Client platform API', () => {
     });
     expect(checkoutResponse.body.overview.lockedFeatureKeys).not.toContain('payments');
     expect(checkoutResponse.body.overview.lockedFeatureKeys).not.toContain('advanced_reports');
+    expect(checkoutResponse.body.overview.lockedFeatureKeys).not.toContain('team_management');
 
     await request(app)
       .patch(`/api/platform/clients/${clientId}/business-profile`)
@@ -2280,6 +2741,207 @@ describe('Client platform API', () => {
       remaining: 149,
       used: 1
     });
+  });
+
+  it('keeps services open on the solo plan while appointment credits remain', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'solo-credits@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    const checkoutResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/demo-checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        planId: 'plan_solo',
+        cardholderName: 'Solo Owner',
+        cardNumber: '4242 4242 4242 4242',
+        expMonth: 12,
+        expYear: 2030,
+        cvc: '123',
+        billingEmail: 'solo-credits@example.com'
+      });
+
+    expect(checkoutResponse.status).toBe(201);
+    expect(checkoutResponse.body.overview.currentPlan).toEqual(
+      expect.objectContaining({ id: 'plan_solo', key: 'solo' })
+    );
+    expect(checkoutResponse.body.overview.creditBalance).toEqual({
+      granted: 50,
+      remaining: 50,
+      used: 0
+    });
+    expect(checkoutResponse.body.overview.lockedFeatureKeys).toEqual([]);
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/business-profile`)
+      .set('x-admin-token', adminToken)
+      .send({
+        businessName: 'Solo Credit Salon',
+        website: 'solo-credit.example'
+      });
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-types`)
+      .set('x-admin-token', adminToken)
+      .send({
+        serviceTypes: ['Haircut']
+      });
+    await request(app)
+      .post(`/api/platform/clients/${clientId}/services`)
+      .set('x-admin-token', adminToken)
+      .send({
+        name: 'Haircut',
+        categoryName: 'Haircut',
+        durationMinutes: 60,
+        priceLabel: 'PKR 1,000',
+        description: 'Solo credit service'
+      });
+
+    const bookingPageResponse = await request(app).get(`/api/public/book/${clientId}`);
+
+    expect(bookingPageResponse.status).toBe(200);
+    expect(bookingPageResponse.body.isBookingEnabled).toBe(true);
+    expect(bookingPageResponse.body.bookingDisabledReason).toBe('');
+    expect(bookingPageResponse.body.services).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: 'Haircut' })])
+    );
+
+    const bookingDate = new Date();
+    bookingDate.setDate(bookingDate.getDate() + 1);
+    const bookingDateValue = `${bookingDate.getFullYear()}-${String(
+      bookingDate.getMonth() + 1
+    ).padStart(2, '0')}-${String(bookingDate.getDate()).padStart(2, '0')}`;
+
+    const bookingResponse = await request(app)
+      .post(`/api/public/book/${clientId}/appointments`)
+      .send({
+        serviceName: 'Haircut',
+        appointmentDate: bookingDateValue,
+        appointmentTime: '09:00',
+        customerName: 'Solo Customer',
+        customerPhone: '+923001234567',
+        customerEmail: 'solo.customer@example.com',
+        source: 'direct'
+      });
+
+    expect(bookingResponse.status).toBe(201);
+
+    const updatedBillingResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}/billing`)
+      .set('x-admin-token', adminToken);
+
+    expect(updatedBillingResponse.status).toBe(200);
+    expect(updatedBillingResponse.body.currentPlan).toEqual(
+      expect.objectContaining({ id: 'plan_solo', key: 'solo' })
+    );
+    expect(updatedBillingResponse.body.lockedFeatureKeys).toEqual([]);
+    expect(updatedBillingResponse.body.creditBalance).toEqual({
+      granted: 50,
+      remaining: 49,
+      used: 1
+    });
+  });
+
+  it('blocks public booking when an active subscription runs out of appointment credits', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'credit-block@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    const checkoutResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/demo-checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        planId: 'plan_single',
+        cardholderName: 'Billing Owner',
+        cardNumber: '4242 4242 4242 4242',
+        expMonth: 12,
+        expYear: 2030,
+        cvc: '123',
+        billingEmail: 'credit-block@example.com'
+      });
+
+    expect(checkoutResponse.status).toBe(201);
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/business-profile`)
+      .set('x-admin-token', adminToken)
+      .send({
+        businessName: 'Credit Block Salon',
+        website: 'credit-block.example'
+      });
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-types`)
+      .set('x-admin-token', adminToken)
+      .send({
+        serviceTypes: ['Haircut']
+      });
+    await request(app)
+      .post(`/api/platform/clients/${clientId}/services`)
+      .set('x-admin-token', adminToken)
+      .send({
+        name: 'Haircut',
+        categoryName: 'Haircut',
+        durationMinutes: 60,
+        priceLabel: 'PKR 1,000',
+        description: 'Credit block service'
+      });
+
+    const activeSubscription = (await billingRepository.listBusinessSubscriptions()).find(
+      (subscription) => subscription.businessId === clientId && subscription.status === 'trialing'
+    );
+
+    expect(activeSubscription).toBeTruthy();
+
+    await billingRepository.saveBusinessSubscription({
+      ...activeSubscription!,
+      appointmentCreditsRemaining: 0,
+      appointmentCreditsUsed: activeSubscription!.appointmentCreditsGranted,
+      updatedAt: new Date().toISOString()
+    });
+
+    const bookingPageResponse = await request(app).get(`/api/public/book/${clientId}`);
+
+    expect(bookingPageResponse.status).toBe(200);
+    expect(bookingPageResponse.body.isBookingEnabled).toBe(false);
+    expect(bookingPageResponse.body.bookingDisabledReason).toContain(
+      'Appointment credits are finished'
+    );
+    expect(bookingPageResponse.body.services).toEqual(
+      expect.arrayContaining([expect.objectContaining({ name: 'Haircut' })])
+    );
+
+    const bookingDate = new Date();
+    bookingDate.setDate(bookingDate.getDate() + 1);
+    const bookingDateValue = `${bookingDate.getFullYear()}-${String(
+      bookingDate.getMonth() + 1
+    ).padStart(2, '0')}-${String(bookingDate.getDate()).padStart(2, '0')}`;
+
+    const slotsResponse = await request(app).get(
+      `/api/public/book/${clientId}/slots?date=${bookingDateValue}`
+    );
+
+    expect(slotsResponse.status).toBe(402);
+    expect(slotsResponse.body.error).toContain('Appointment credits are finished');
+
+    const bookingResponse = await request(app)
+      .post(`/api/public/book/${clientId}/appointments`)
+      .send({
+        serviceName: 'Haircut',
+        appointmentDate: bookingDateValue,
+        appointmentTime: '09:00',
+        customerName: 'Blocked Customer',
+        customerPhone: '+923001234567',
+        customerEmail: 'blocked.customer@example.com',
+        source: 'direct'
+      });
+
+    expect(bookingResponse.status).toBe(402);
+    expect(bookingResponse.body.error).toContain('Appointment credits are finished');
   });
 
   it('restores the previous plan when demo checkout fails after the existing subscription is cancelled', async () => {

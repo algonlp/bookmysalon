@@ -44,6 +44,10 @@ const asNumber = (value: unknown, fallback = 0): number => {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 };
 
+const asNullableNumber = (value: unknown): number | null => {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+};
+
 const asTime = (value: unknown, fallback: string | null = null): string | null => {
   const normalizedValue = asNullableText(value);
   return normalizedValue ?? fallback;
@@ -447,6 +451,7 @@ const syncPackagePlans = async (businessId: string, packagePlans: PackagePlanRec
       name: asText(packagePlan.name),
       total_uses: asNumber(packagePlan.totalUses, 1),
       price_label: asText(packagePlan.priceLabel),
+      expires_at: asNullableText(packagePlan.expiresAt),
       is_active: asBoolean(packagePlan.isActive, true),
       created_at: asTimestamp(packagePlan.createdAt),
       updated_at: asTimestamp(packagePlan.updatedAt)
@@ -688,6 +693,10 @@ export const syncAppointmentToRelational = async (
   await ensureBusinessExists(appointment.businessId, appointment.businessName);
   const serviceId = await resolveOptionalForeignKey('services', asNullableText(appointment.serviceId));
   const teamMemberId = await resolveOptionalForeignKey('team_members', asNullableText(appointment.teamMemberId));
+  const packagePlanId = await resolveOptionalForeignKey(
+    'package_plans',
+    asNullableText(appointment.packagePlanId)
+  );
   const packagePurchaseId = await resolveOptionalForeignKey(
     'package_purchases',
     asNullableText(appointment.packagePurchaseId)
@@ -724,8 +733,11 @@ export const syncAppointmentToRelational = async (
         end_at: asTimestamp(appointment.endAt),
         status: appointment.status,
         source: appointment.source,
+        package_plan_id: packagePlanId,
         package_purchase_id: packagePurchaseId,
         package_name: asText(appointment.packageName),
+        package_price_label: asText(appointment.packagePriceLabel),
+        package_total_uses: asNullableNumber(appointment.packageTotalUses),
         loyalty_reward_id: loyaltyRewardId,
         loyalty_reward_label: asText(appointment.loyaltyRewardLabel),
         created_at: asTimestamp(appointment.createdAt),

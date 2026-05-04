@@ -58,7 +58,7 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
     id: 'plan_solo',
     key: 'solo',
     name: 'Solo',
-    summary: 'For one independent professional starting with online bookings and QR links.',
+    summary: 'For one independent professional with full workspace access until appointment credits run out.',
     amountCents: 126000,
     currencyCode: 'PKR',
     billingInterval: 'month',
@@ -71,7 +71,7 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
       includedMessages: 20,
       includedMarketingEmails: 50,
       includedAppointmentCredits: 50,
-      featureKeys: ['online_booking', 'qr_booking']
+      featureKeys: billingFeatureCatalog.map((feature) => feature.key)
     },
     createdAt: timestamp,
     updatedAt: timestamp
@@ -96,6 +96,7 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
       featureKeys: [
         'online_booking',
         'qr_booking',
+        'team_management',
         'payments',
         'service_packages',
         'products',
@@ -129,3 +130,34 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
     updatedAt: timestamp
   }
 ];
+
+export const normalizeSubscriptionPlans = (
+  plans: SubscriptionPlan[]
+): SubscriptionPlan[] => {
+  const normalizedPlans = plans.map((plan) => {
+    const defaultPlan = defaultSubscriptionPlans.find(
+      (entry) => entry.id === plan.id || entry.key === plan.key
+    );
+
+    if (!defaultPlan) {
+      return plan;
+    }
+
+    return {
+      ...defaultPlan,
+      id: plan.id,
+      key: plan.key,
+      createdAt: plan.createdAt || defaultPlan.createdAt,
+      updatedAt: plan.updatedAt || defaultPlan.updatedAt
+    };
+  });
+
+  const missingDefaultPlans = defaultSubscriptionPlans.filter(
+    (defaultPlan) =>
+      !normalizedPlans.some(
+        (plan) => plan.id === defaultPlan.id || plan.key === defaultPlan.key
+      )
+  );
+
+  return [...normalizedPlans, ...missingDefaultPlans];
+};

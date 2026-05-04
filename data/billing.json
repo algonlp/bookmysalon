@@ -4,7 +4,7 @@
       "id": "plan_solo",
       "key": "solo",
       "name": "Solo",
-      "summary": "For one independent professional starting with online bookings and QR links.",
+      "summary": "For one independent professional with full workspace access until appointment credits run out.",
       "amountCents": 126000,
       "currencyCode": "PKR",
       "billingInterval": "month",
@@ -17,7 +17,18 @@
         "includedMessages": 20,
         "includedMarketingEmails": 50,
         "includedAppointmentCredits": 50,
-        "featureKeys": ["online_booking", "qr_booking"]
+        "featureKeys": [
+          "online_booking",
+          "qr_booking",
+          "payments",
+          "service_packages",
+          "products",
+          "client_crm",
+          "advanced_reports",
+          "team_management",
+          "marketing",
+          "premium_support"
+        ]
       },
       "createdAt": "2026-01-01T00:00:00.000Z",
       "updatedAt": "2026-01-01T00:00:00.000Z"
@@ -42,6 +53,7 @@
         "featureKeys": [
           "online_booking",
           "qr_booking",
+          "team_management",
           "payments",
           "service_packages",
           "products",

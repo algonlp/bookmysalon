@@ -16,6 +16,7 @@ import type {
   PaymentRecord,
   PaymentSnapshot,
   PackagePurchaseRecord,
+  PublicPackagePlanOption,
   PublicBookingHistoryItem,
   PublicBookingPage,
   PublicBenefitOption,
@@ -165,6 +166,117 @@ function addMinutesToTimeValue(timeValue: string, minutesToAdd: number): string 
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
 
+const getPackagePlanExpiryTimestamp = (expiresAt?: string): number | null => {
+  if (typeof expiresAt !== 'string' || !expiresAt.trim()) {
+    return null;
+  }
+
+  const normalizedValue = expiresAt.trim();
+  const parsedValue = /^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)
+    ? new Date(`${normalizedValue}T23:59:59.999`)
+    : new Date(normalizedValue);
+
+  return Number.isNaN(parsedValue.getTime()) ? null : parsedValue.getTime();
+};
+
+const isPackagePlanExpired = (packagePlan: { expiresAt?: string }, now = new Date()): boolean => {
+  const expiryTimestamp = getPackagePlanExpiryTimestamp(packagePlan.expiresAt);
+  return expiryTimestamp !== null && expiryTimestamp <= now.getTime();
+};
+
+const getActivePackagePlansForBusiness = (
+  business: Awaited<ReturnType<typeof getBusinessOrThrow>>,
+  now = new Date()
+) =>
+  (business.packagePlans ?? []).filter(
+    (packagePlan) => packagePlan.isActive !== false && !isPackagePlanExpired(packagePlan, now)
+  );
+
+const resolvePackagePlanIncludedServices = (
+  packagePlan: { includedServiceIds?: string[] },
+  services: AppointmentServiceOption[]
+): AppointmentServiceOption[] => {
+  const servicesById = new Map(services.map((service) => [service.id, service]));
+  const servicesByName = new Map(services.map((service) => [service.name.trim().toLowerCase(), service]));
+  const resolvedServices: AppointmentServiceOption[] = [];
+  const seenServiceIds = new Set<string>();
+
+  for (const rawValue of packagePlan.includedServiceIds ?? []) {
+    if (typeof rawValue !== 'string' || !rawValue.trim()) {
+      continue;
+    }
+
+    const normalizedValue = rawValue.trim();
+    const matchedService =
+      servicesById.get(normalizedValue) ??
+      servicesByName.get(normalizedValue.toLowerCase()) ??
+      null;
+
+    if (!matchedService || seenServiceIds.has(matchedService.id)) {
+      continue;
+    }
+
+    seenServiceIds.add(matchedService.id);
+    resolvedServices.push(matchedService);
+  }
+
+  return resolvedServices;
+};
+
+const applyPackageHighlightsToServices = (
+  services: AppointmentServiceOption[],
+  business: Awaited<ReturnType<typeof getBusinessOrThrow>>
+): AppointmentServiceOption[] => {
+  const highlightedPackageNamesByServiceId = new Map<string, string[]>();
+
+  for (const packagePlan of getActivePackagePlansForBusiness(business)) {
+    for (const service of resolvePackagePlanIncludedServices(packagePlan, services)) {
+      const existingPackageNames = highlightedPackageNamesByServiceId.get(service.id) ?? [];
+      highlightedPackageNamesByServiceId.set(service.id, [...existingPackageNames, packagePlan.name]);
+    }
+  }
+
+  return services.map((service) => {
+    const highlightedPackageNames = highlightedPackageNamesByServiceId.get(service.id) ?? [];
+
+    return {
+      ...service,
+      isPackageHighlighted: highlightedPackageNames.length > 0,
+      highlightedPackageNames
+    };
+  });
+};
+
+const buildPublicPackagePlans = (
+  services: AppointmentServiceOption[],
+  business: Awaited<ReturnType<typeof getBusinessOrThrow>>
+): PublicPackagePlanOption[] => {
+  return getActivePackagePlansForBusiness(business).map((packagePlan) => {
+    const includedServices = resolvePackagePlanIncludedServices(packagePlan, services);
+    const includedServiceIds = includedServices.map((service) => service.id);
+
+    return {
+      id: packagePlan.id,
+      name: packagePlan.name,
+      totalUses: packagePlan.totalUses,
+      priceLabel: packagePlan.priceLabel,
+      includedServiceIds,
+      includedServiceNames: includedServices.map((service) => service.name),
+      expiresAt: packagePlan.expiresAt,
+      createdAt: packagePlan.createdAt,
+      updatedAt: packagePlan.updatedAt
+    };
+  });
+};
+
+const ensurePublicBookingIsEnabled = async (businessId: string): Promise<void> => {
+  const bookingAvailability = await billingService.getPublicBookingAvailability(businessId);
+
+  if (!bookingAvailability.isBookingEnabled) {
+    throw new HttpError(402, bookingAvailability.reason);
+  }
+};
+
 const getServiceCatalogForBusiness = async (businessId: string): Promise<AppointmentServiceOption[]> => {
   const business = await getBusinessOrThrow(businessId);
   const configuredServices = normalizeBusinessServices(
@@ -175,14 +287,17 @@ const getServiceCatalogForBusiness = async (businessId: string): Promise<Appoint
   const activeServices = toAppointmentServiceOptions(configuredServices);
 
   if (activeServices.length > 0) {
-    return activeServices;
+    return applyPackageHighlightsToServices(activeServices, business);
   }
 
   if (configuredServices.length > 0) {
     return [];
   }
 
-  return [createFallbackAppointmentService(business.serviceTypes[0], getBusinessServiceTemplateOptions(business))];
+  return applyPackageHighlightsToServices(
+    [createFallbackAppointmentService(business.serviceTypes[0], getBusinessServiceTemplateOptions(business))],
+    business
+  );
 };
 
 const listBusinessAppointments = async (businessId: string): Promise<AppointmentRecord[]> => {
@@ -1153,6 +1268,9 @@ const toPublicManagedAppointment = (appointment: AppointmentRecord): PublicManag
   appointmentDate: appointment.appointmentDate,
   appointmentTime: appointment.appointmentTime,
   status: appointment.status,
+  packageName: appointment.packageName,
+  packagePriceLabel: appointment.packagePriceLabel,
+  packageTotalUses: appointment.packageTotalUses,
   bookingLink: `/book/${appointment.businessId}`
 });
 
@@ -1280,10 +1398,24 @@ const sendAppointmentConfirmationNotification = async (
 ): Promise<NotificationDispatchResult[]> => {
   const manageLink = buildAppointmentManagementLink(appointment, origin);
   const statusLabel = mode === 'rescheduled' ? 'has been rescheduled' : 'is confirmed';
+  const packageDetail =
+    appointment.packageName
+      ? ` Package: ${appointment.packageName}${
+          appointment.packageTotalUses
+            ? ` (${appointment.packageTotalUses} use${appointment.packageTotalUses === 1 ? '' : 's'}`
+            : ''
+        }${
+          appointment.packagePriceLabel
+            ? `${appointment.packageTotalUses ? ', ' : ' ('}${appointment.packagePriceLabel}`
+            : ''
+        }${
+          appointment.packageTotalUses || appointment.packagePriceLabel ? ').' : '.'
+        }`
+      : '';
   const customerMessage =
     `Your appointment at ${appointment.businessName} ${statusLabel} for ` +
     `${formatSmsDate(appointment.appointmentDate, appointment.appointmentTime)}. ` +
-    `Service: ${appointment.serviceName}. Ref: ${appointment.id.slice(0, 8)}. ` +
+    `Service: ${appointment.serviceName}.${packageDetail} Ref: ${appointment.id.slice(0, 8)}. ` +
     `Open your live booking link for the countdown and updates: ${manageLink}`;
 
   return Promise.all([
@@ -1350,7 +1482,9 @@ export const appointmentService = {
     waitlistOfferToken = ''
   ): Promise<PublicBookingPage> {
     const business = await getBusinessOrThrow(businessId);
+    const bookingAvailability = await billingService.getPublicBookingAvailability(businessId);
     const services = await getServiceCatalogForBusiness(businessId);
+    const packagePlans = buildPublicPackagePlans(services, business);
     const reviews = await listBusinessReviews(businessId);
     const teamMembers = getActiveTeamMembersForBusiness(business);
     const waitlistOffer = await getActiveWaitlistClaim(
@@ -1368,8 +1502,11 @@ export const appointmentService = {
       serviceTypes: business.serviceTypes,
       serviceLocations: getAvailableBookingServiceLocations(business),
       services,
+      packagePlans,
       teamMembers,
       bookingLink: `/book/${business.id}`,
+      isBookingEnabled: bookingAvailability.isBookingEnabled,
+      bookingDisabledReason: bookingAvailability.reason,
       reviews: reviews.slice(0, 5),
       reviewSummary: buildReviewSummary(reviews),
       waitlistOffer: waitlistOffer ? toPublicWaitlistOffer(waitlistOffer) : null
@@ -1399,6 +1536,8 @@ export const appointmentService = {
         excludeAppointmentId,
         appointmentAccessToken
       );
+    } else {
+      await ensurePublicBookingIsEnabled(businessId);
     }
 
     return {
@@ -1470,6 +1609,7 @@ export const appointmentService = {
   ): Promise<{
     waitlistEntry: WaitlistRecord;
   }> {
+    await ensurePublicBookingIsEnabled(businessId);
     const business = await getBusinessOrThrow(businessId);
     const services = await getServiceCatalogForBusiness(businessId);
     const teamMembers = getActiveTeamMembersForBusiness(business);
@@ -1592,6 +1732,8 @@ export const appointmentService = {
         customerName: appointment.customerName,
         customerEmail: appointment.customerEmail,
         packageName: appointment.packageName,
+        packagePriceLabel: appointment.packagePriceLabel,
+        packageTotalUses: appointment.packageTotalUses,
         loyaltyRewardLabel: appointment.loyaltyRewardLabel,
         createdAt: appointment.createdAt
       }));
@@ -1609,6 +1751,7 @@ export const appointmentService = {
     publicAccessToken: string;
     manageLink: string;
   }> {
+    await ensurePublicBookingIsEnabled(businessId);
     const business = await getBusinessOrThrow(businessId);
     const services = await getServiceCatalogForBusiness(businessId);
     const teamMembers = getActiveTeamMembersForBusiness(business);
@@ -1678,6 +1821,26 @@ export const appointmentService = {
     const customerKey = buildCustomerKey(customerPhone, customerEmail);
     let updatedPackagePurchase: PackagePurchaseRecord | null = null;
     let updatedLoyaltyReward: LoyaltyRewardRecord | null = null;
+    const selectedPackagePlan = input.packagePlanId
+      ? getActivePackagePlansForBusiness(business).find(
+          (packagePlan) => packagePlan.id === input.packagePlanId
+        ) ?? null
+      : null;
+    const selectedPackagePlanServiceIds = selectedPackagePlan
+      ? resolvePackagePlanIncludedServices(selectedPackagePlan, services).map((service) => service.id)
+      : [];
+
+    if (input.packagePlanId && !selectedPackagePlan) {
+      throw new HttpError(404, 'Selected package is not available');
+    }
+
+    if (
+      selectedPackagePlan &&
+      selectedPackagePlanServiceIds.length > 0 &&
+      !selectedPackagePlanServiceIds.includes(selectedService.id)
+    ) {
+      throw new HttpError(409, 'Selected package does not cover the selected service');
+    }
 
     if (activeWaitlistClaim) {
       if (
@@ -1793,6 +1956,22 @@ export const appointmentService = {
       throw new HttpError(409, 'This waitlist offer is reserved for a different team member');
     }
 
+    const packageSnapshot = updatedPackagePurchase
+      ? {
+          packagePlanId: updatedPackagePurchase.packagePlanId,
+          packageName: updatedPackagePurchase.packageName,
+          packagePriceLabel: updatedPackagePurchase.priceLabel,
+          packageTotalUses: updatedPackagePurchase.totalUses
+        }
+      : selectedPackagePlan
+        ? {
+            packagePlanId: selectedPackagePlan.id,
+            packageName: selectedPackagePlan.name,
+            packagePriceLabel: selectedPackagePlan.priceLabel,
+            packageTotalUses: selectedPackagePlan.totalUses
+          }
+        : null;
+
     const appointment: AppointmentRecord = {
       id: randomUUID(),
       businessId,
@@ -1820,8 +1999,11 @@ export const appointmentService = {
       endAt,
       status: 'booked',
       source: input.source ?? 'qr',
+      packagePlanId: packageSnapshot?.packagePlanId,
       packagePurchaseId: updatedPackagePurchase?.id,
-      packageName: updatedPackagePurchase?.packageName,
+      packageName: packageSnapshot?.packageName,
+      packagePriceLabel: packageSnapshot?.packagePriceLabel,
+      packageTotalUses: packageSnapshot?.packageTotalUses,
       loyaltyRewardId: updatedLoyaltyReward?.id,
       loyaltyRewardLabel: updatedLoyaltyReward?.label,
       createdAt: now,
@@ -2244,8 +2426,9 @@ export const appointmentService = {
     input: SellPackageInput
   ): Promise<{ packagePurchase: PackagePurchaseRecord }> {
     const business = await getBusinessOrThrow(businessId);
-    const packagePlan = (business.packagePlans ?? []).find(
-      (entry) => entry.id === input.packagePlanId && entry.isActive
+    const services = await getServiceCatalogForBusiness(businessId);
+    const packagePlan = getActivePackagePlansForBusiness(business).find(
+      (entry) => entry.id === input.packagePlanId
     );
 
     if (!packagePlan) {
@@ -2267,7 +2450,9 @@ export const appointmentService = {
       businessId,
       packagePlanId: packagePlan.id,
       packageName: packagePlan.name,
-      includedServiceIds: packagePlan.includedServiceIds,
+      includedServiceIds: resolvePackagePlanIncludedServices(packagePlan, services).map(
+        (service) => service.id
+      ),
       customerKey,
       customerName: input.customerName.trim(),
       customerPhone,
@@ -2296,8 +2481,7 @@ export const appointmentService = {
     ]);
 
     return {
-      activePackagePlans: (business.packagePlans ?? []).filter((packagePlan) => packagePlan.isActive)
-        .length,
+      activePackagePlans: getActivePackagePlansForBusiness(business).length,
       packagesSold: packagePurchases.length,
       activePackageBalances: packagePurchases.filter(
         (packagePurchase) => packagePurchase.status === 'active'

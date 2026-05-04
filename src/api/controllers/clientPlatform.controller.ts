@@ -188,7 +188,16 @@ const createPackagePlanSchema = z.object({
   name: z.string().trim().min(1, 'Package name is required'),
   includedServiceIds: z.array(z.string().trim().min(1)).optional().default([]),
   totalUses: z.number().int().min(1).max(100),
-  priceLabel: z.string().trim().min(1, 'Package price is required')
+  priceLabel: z.string().trim().min(1, 'Package price is required'),
+  expiresAt: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(''))
+    .refine(
+      (value) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value),
+      'Expiry date must use YYYY-MM-DD format'
+    )
 });
 
 const updatePackagePlanSchema = createPackagePlanSchema;

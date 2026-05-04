@@ -2,6 +2,7 @@ const CLIENT_STORAGE_KEY = 'qr-platform-client-id';
 const NOTIFICATION_READ_STORAGE_KEY = 'qr-platform-read-notifications';
 const REPORTS_WORKSPACE_STORAGE_KEY = 'qr-platform-reports-workspace';
 const GOOGLE_PROFILE_STORAGE_KEY = 'qr-platform-google-profile';
+const BOOKING_PACKAGE_ANNOUNCEMENT_STORAGE_KEY_PREFIX = 'qr-booking-package-announcement';
 const DASHBOARD_NOTIFICATION_REFRESH_INTERVAL_MS = 30000;
 const DEFAULT_PHONE_PLACEHOLDER = '+1234567890';
 const DEFAULT_BOOKING_PHONE_PLACEHOLDER = 'Enter phone number';
@@ -196,6 +197,34 @@ const formatDateForDisplay = (dateValue) => {
     month: 'short',
     year: 'numeric'
   }).format(parsedDate);
+};
+
+const getPackageExpiryDate = (expiresAt) => {
+  if (typeof expiresAt !== 'string' || !expiresAt.trim()) {
+    return null;
+  }
+
+  const normalizedValue = expiresAt.trim();
+  const parsedDate = /^\d{4}-\d{2}-\d{2}$/.test(normalizedValue)
+    ? new Date(`${normalizedValue}T23:59:59`)
+    : new Date(normalizedValue);
+
+  return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+};
+
+const isPackagePlanExpired = (packagePlan) => {
+  const expiryDate = getPackageExpiryDate(packagePlan?.expiresAt);
+  return Boolean(expiryDate) && expiryDate.getTime() <= Date.now();
+};
+
+const formatPackagePlanExpiryLabel = (expiresAt) => {
+  if (typeof expiresAt !== 'string' || !expiresAt.trim()) {
+    return 'No expiry date';
+  }
+
+  const normalizedDateValue = expiresAt.trim().slice(0, 10);
+  const formattedExpiry = formatDateForDisplay(normalizedDateValue);
+  return formattedExpiry ? `Expires ${formattedExpiry}` : `Expires ${expiresAt.trim()}`;
 };
 
 const formatDateTimeForDisplay = (dateValue, timeValue) => {
@@ -956,11 +985,21 @@ const createDrawerLinks = (items) => {
   for (const item of items) {
     const button = document.createElement('button');
     const hasDotMeta = item.meta?.type === 'dot';
+    const lockedFeatureKey =
+      typeof item.lockedFeatureKey === 'string' ? item.lockedFeatureKey.trim() : '';
+    const isLocked = item.isLocked === true;
     button.className = hasDotMeta
       ? 'calendar-drawer-link calendar-drawer-link-with-meta'
       : 'calendar-drawer-link';
     button.type = 'button';
     button.dataset.drawerLabel = item.label;
+    if (lockedFeatureKey) {
+      button.dataset.lockedFeatureKey = lockedFeatureKey;
+    }
+    if (isLocked) {
+      button.classList.add('calendar-billing-locked');
+      button.setAttribute('title', item.lockedTitle || 'This feature requires a higher plan');
+    }
 
     const label = document.createElement('span');
     if (item.subtitle) {
@@ -1928,7 +1967,12 @@ const createSalonShowcaseCard = (salon) => {
 
   for (const service of salon.services ?? []) {
     const serviceCard = document.createElement('div');
-    serviceCard.className = 'public-salon-service-card';
+    const highlightedPackageNames = Array.isArray(service.highlightedPackageNames)
+      ? service.highlightedPackageNames.filter(Boolean)
+      : [];
+    serviceCard.className = highlightedPackageNames.length > 0
+      ? 'public-salon-service-card is-package-highlighted'
+      : 'public-salon-service-card';
 
     const name = document.createElement('strong');
     name.textContent = service.name;
@@ -1937,6 +1981,17 @@ const createSalonShowcaseCard = (salon) => {
     details.textContent = `${service.durationMinutes} min | ${service.priceLabel}`;
 
     serviceCard.append(name, details);
+
+    if (highlightedPackageNames.length > 0) {
+      const badge = document.createElement('span');
+      badge.className = 'public-salon-service-badge';
+      badge.textContent =
+        highlightedPackageNames.length === 1
+          ? `Package: ${highlightedPackageNames[0]}`
+          : `Packages: ${highlightedPackageNames.join(', ')}`;
+      serviceCard.append(badge);
+    }
+
     services.append(serviceCard);
   }
 
@@ -3871,6 +3926,15 @@ const initCalendar = () => {
     );
   };
 
+  const clearBillingLockedState = (element) => {
+    if (!(element instanceof HTMLElement)) {
+      return;
+    }
+
+    element.classList.remove('calendar-billing-locked');
+    element.removeAttribute('title');
+  };
+
   const renderBillingPlanChip = () => {
     const currentPlan = billingPayload?.currentPlan;
     const subscriptionStatus = billingPayload?.subscription?.status;
@@ -3893,7 +3957,7 @@ const initCalendar = () => {
     setBillingLockedState(saleAction, 'payments');
     setBillingLockedState(quickPaymentAction, 'payments');
     setBillingLockedState(clientsToggle, 'client_crm');
-    setBillingLockedState(catalogToggle, 'products');
+    clearBillingLockedState(catalogToggle);
     setBillingLockedState(teamToggle, 'team_management');
     setBillingLockedState(teamShortcut, 'team_management');
     setBillingLockedState(reportsToggle, 'advanced_reports');
@@ -4031,6 +4095,17 @@ const initCalendar = () => {
     const packagePlans = dashboardPayload?.client?.packagePlans;
     return Array.isArray(packagePlans) ? packagePlans : [];
   };
+
+  const getPublishedDashboardPackagePlans = () =>
+    getDashboardPackagePlans().filter(
+      (packagePlan) => packagePlan?.isActive !== false && !isPackagePlanExpired(packagePlan)
+    );
+
+  const getActivePackageNamesForService = (serviceId) =>
+    getPublishedDashboardPackagePlans()
+      .filter((packagePlan) => Array.isArray(packagePlan?.includedServiceIds) && packagePlan.includedServiceIds.includes(serviceId))
+      .map((packagePlan) => packagePlan.name)
+      .filter(Boolean);
 
   const getDashboardLoyaltyProgram = () => {
     const loyaltyProgram = dashboardPayload?.client?.loyaltyProgram;
@@ -5961,8 +6036,12 @@ const createTrendCard = (
           }
 
           if (label === 'packages' || label === 'memberships') {
+            const lockedFeatureKey = 'service_packages';
             return {
               ...item,
+              lockedFeatureKey,
+              isLocked: isBillingFeatureLocked(lockedFeatureKey),
+              lockedTitle: `${getBillingFeatureLabel(lockedFeatureKey)} requires a higher plan`,
               subtitle:
                 commerce.activePackagePlans > 0
                   ? `${commerce.activePackagePlans} active package plan${commerce.activePackagePlans === 1 ? '' : 's'}`
@@ -5971,8 +6050,12 @@ const createTrendCard = (
           }
 
           if (label === 'products') {
+            const lockedFeatureKey = 'products';
             return {
               ...item,
+              lockedFeatureKey,
+              isLocked: isBillingFeatureLocked(lockedFeatureKey),
+              lockedTitle: `${getBillingFeatureLabel(lockedFeatureKey)} requires a higher plan`,
               subtitle:
                 commerce.activeProducts > 0
                   ? `${commerce.activeProducts} active ${productLabelSingular}${commerce.activeProducts === 1 ? '' : 's'} | ${commerce.productUnitsSold} sold`
@@ -5981,22 +6064,34 @@ const createTrendCard = (
           }
 
           if (label === 'stocktakes') {
+            const lockedFeatureKey = 'products';
             return {
               ...item,
+              lockedFeatureKey,
+              isLocked: isBillingFeatureLocked(lockedFeatureKey),
+              lockedTitle: `${getBillingFeatureLabel(lockedFeatureKey)} requires a higher plan`,
               subtitle: 'Inventory counts are not started yet'
             };
           }
 
           if (label === 'stock orders') {
+            const lockedFeatureKey = 'products';
             return {
               ...item,
+              lockedFeatureKey,
+              isLocked: isBillingFeatureLocked(lockedFeatureKey),
+              lockedTitle: `${getBillingFeatureLabel(lockedFeatureKey)} requires a higher plan`,
               subtitle: 'No supplier purchase orders yet'
             };
           }
 
           if (label === 'suppliers') {
+            const lockedFeatureKey = 'products';
             return {
               ...item,
+              lockedFeatureKey,
+              isLocked: isBillingFeatureLocked(lockedFeatureKey),
+              lockedTitle: `${getBillingFeatureLabel(lockedFeatureKey)} requires a higher plan`,
               subtitle: 'Supplier management is ready for setup'
             };
           }
@@ -6488,7 +6583,7 @@ const createTrendCard = (
       .map((option) => option.value)
       .filter((value) => typeof value === 'string' && value.trim().length > 0);
 
-  const createPackagePlan = async ({ name, totalUses, priceLabel, includedServiceIds }) => {
+  const createPackagePlan = async ({ name, totalUses, priceLabel, includedServiceIds, expiresAt }) => {
     if (!clientId) {
       return;
     }
@@ -6499,14 +6594,15 @@ const createTrendCard = (
         name: name.trim(),
         totalUses,
         priceLabel: priceLabel.trim(),
-        includedServiceIds
+        includedServiceIds,
+        expiresAt: expiresAt?.trim() || ''
       })
     });
 
     await loadDashboard();
   };
 
-  const updatePackagePlan = async (packagePlanId, { name, totalUses, priceLabel, includedServiceIds }) => {
+  const updatePackagePlan = async (packagePlanId, { name, totalUses, priceLabel, includedServiceIds, expiresAt }) => {
     if (!clientId) {
       return;
     }
@@ -6517,7 +6613,8 @@ const createTrendCard = (
         name: name.trim(),
         totalUses,
         priceLabel: priceLabel.trim(),
-        includedServiceIds
+        includedServiceIds,
+        expiresAt: expiresAt?.trim() || ''
       })
     });
 
@@ -6658,6 +6755,9 @@ const createTrendCard = (
     const services = getDashboardServices();
     const form = document.createElement('form');
     form.className = 'calendar-tool-form';
+    const defaultExpiryDate = new Date();
+    defaultExpiryDate.setDate(defaultExpiryDate.getDate() + 30);
+    const defaultExpiryValue = defaultExpiryDate.toISOString().slice(0, 10);
 
     const nameField = document.createElement('label');
     nameField.className = 'calendar-tool-field';
@@ -6693,6 +6793,17 @@ const createTrendCard = (
     priceInput.required = true;
     priceField.append(priceLabel, priceInput);
 
+    const expiryField = document.createElement('label');
+    expiryField.className = 'calendar-tool-field';
+    const expiryLabel = document.createElement('span');
+    expiryLabel.textContent = 'Expiry date';
+    const expiryInput = document.createElement('input');
+    expiryInput.type = 'date';
+    expiryInput.min = new Date().toISOString().slice(0, 10);
+    expiryInput.value = packagePlan?.expiresAt?.slice(0, 10) ?? defaultExpiryValue;
+    expiryInput.required = true;
+    expiryField.append(expiryLabel, expiryInput);
+
     const servicesFieldConfig = createMultiSelectField(
       packageUiCopy.fieldIncludedServices || 'Included services',
       services.map((service) => ({
@@ -6713,15 +6824,15 @@ const createTrendCard = (
     submitButton.type = 'submit';
     submitButton.textContent = mode === 'edit' ? updateActionLabel : saveActionLabel;
 
-    form.append(nameField, usesField, priceField, servicesFieldConfig.field, submitButton);
+    form.append(nameField, usesField, priceField, expiryField, servicesFieldConfig.field, submitButton);
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
 
-      if (!nameInput.value.trim() || !priceInput.value.trim()) {
+      if (!nameInput.value.trim() || !priceInput.value.trim() || !expiryInput.value) {
         safeAlert(
           packageUiCopy.validationRequired ||
-            `Please enter a ${packageLabelSingular} name and price.`
+            `Please enter a ${packageLabelSingular} name, price, and expiry date.`
         );
         return;
       }
@@ -6735,14 +6846,16 @@ const createTrendCard = (
             name: nameInput.value,
             totalUses: Number(usesInput.value),
             priceLabel: priceInput.value,
-            includedServiceIds: getSelectedValues(servicesFieldConfig.select)
+            includedServiceIds: getSelectedValues(servicesFieldConfig.select),
+            expiresAt: expiryInput.value
           });
         } else {
           await createPackagePlan({
             name: nameInput.value,
             totalUses: Number(usesInput.value),
             priceLabel: priceInput.value,
-            includedServiceIds: getSelectedValues(servicesFieldConfig.select)
+            includedServiceIds: getSelectedValues(servicesFieldConfig.select),
+            expiresAt: expiryInput.value
           });
         }
         closeToolModal();
@@ -6877,7 +6990,7 @@ const createTrendCard = (
     const packageLabelSingular = packageUiCopy.singular || 'package';
     const packageLabelPlural = packageUiCopy.plural || `${packageLabelSingular}s`;
     const sellActionLabel = packageUiCopy.actionSell || `Sell ${packageLabelSingular}`;
-    const packagePlans = getDashboardPackagePlans().filter((packagePlan) => packagePlan.isActive !== false);
+    const packagePlans = getPublishedDashboardPackagePlans();
 
     if (packagePlans.length === 0) {
       safeAlert(packageUiCopy.emptyDescription || `Add your first ${packageLabelSingular} before selling it.`);
@@ -6975,7 +7088,7 @@ const createTrendCard = (
     const openCatalogActionLabel = packageUiCopy.actionOpenCatalog || `Open ${packageLabelPlural}`;
     const openReportsActionLabel = packageUiCopy.actionOpenReports || 'Open finance reports';
     const commerce = getDashboardCommerce();
-    const packagePlans = getDashboardPackagePlans().filter((packagePlan) => packagePlan.isActive !== false);
+    const packagePlans = getPublishedDashboardPackagePlans();
 
     openToolModal({
       eyebrow: 'Sales',
@@ -7850,14 +7963,29 @@ const createTrendCard = (
     const editActionLabel = serviceUiCopy.actionEdit || 'Edit';
     const removeActionLabel = serviceUiCopy.actionRemove || 'Remove';
     const serviceMenuTitle = serviceUiCopy.menuTitle || 'service menu';
+    const highlightedPackageNames = getActivePackageNamesForService(service.id);
     const card = document.createElement('article');
-    card.className = 'calendar-notification-item calendar-service-card';
+    card.className = highlightedPackageNames.length > 0
+      ? 'calendar-notification-item calendar-service-card is-package-highlighted'
+      : 'calendar-notification-item calendar-service-card';
 
     const heading = document.createElement('strong');
     heading.textContent = service.name;
 
     const copy = document.createElement('p');
     copy.textContent = `${service.priceLabel} | ${service.durationMinutes} min | ${service.categoryName}${service.description ? ` | ${service.description}` : ''}`;
+
+    if (highlightedPackageNames.length > 0) {
+      const highlight = document.createElement('p');
+      highlight.className = 'calendar-service-card-highlight';
+      highlight.textContent =
+        highlightedPackageNames.length === 1
+          ? `Highlighted in package: ${highlightedPackageNames[0]}`
+          : `Highlighted in packages: ${highlightedPackageNames.join(', ')}`;
+      card.append(heading, copy, highlight);
+    } else {
+      card.append(heading, copy);
+    }
 
     const actions = document.createElement('div');
     actions.className = 'calendar-tool-inline-actions';
@@ -7892,7 +8020,7 @@ const createTrendCard = (
     removeButton.classList.add('calendar-tool-action-danger');
 
     actions.append(editButton, removeButton);
-    card.append(heading, copy, actions);
+    card.append(actions);
     return card;
   };
 
@@ -8201,10 +8329,16 @@ const createTrendCard = (
     card.className = 'calendar-notification-item calendar-service-card';
 
     const heading = document.createElement('strong');
-    heading.textContent = packagePlan.name;
+    heading.textContent = `${packagePlan.name}${isPackagePlanExpired(packagePlan) ? ' - Expired' : ''}`;
 
     const copy = document.createElement('p');
-    copy.textContent = `${packagePlan.priceLabel} | ${packagePlan.totalUses} uses`;
+    copy.textContent = [
+      packagePlan.priceLabel,
+      `${packagePlan.totalUses} uses`,
+      formatPackagePlanExpiryLabel(packagePlan.expiresAt)
+    ]
+      .filter(Boolean)
+      .join(' | ');
 
     const actions = document.createElement('div');
     actions.className = 'calendar-tool-inline-actions';
@@ -8249,7 +8383,7 @@ const createTrendCard = (
     const packageLabelSingular = packageUiCopy.singular || 'package';
     const packageLabelPlural = packageUiCopy.plural || `${packageLabelSingular}s`;
     const addActionLabel = packageUiCopy.actionAdd || `Add ${packageLabelSingular}`;
-    const packagePlans = getDashboardPackagePlans().filter((packagePlan) => packagePlan.isActive !== false);
+    const packagePlans = getPublishedDashboardPackagePlans();
     const loyaltyProgram = getDashboardLoyaltyProgram();
     const packageCards =
       packagePlans.length > 0
@@ -10444,6 +10578,12 @@ const createTrendCard = (
         return;
       }
 
+      const lockedFeatureKey = button.dataset.lockedFeatureKey?.trim() ?? '';
+
+      if (lockedFeatureKey && guardBillingFeature(lockedFeatureKey)) {
+        return;
+      }
+
       const actionLabel = button.dataset.drawerLabel?.trim().toLowerCase();
 
       if (actionLabel === 'appointments') {
@@ -11292,6 +11432,15 @@ const initPublicBooking = () => {
   const phoneHistoryList = document.querySelector('#booking-phone-history-list');
   const benefitsPanel = document.querySelector('#booking-benefits-panel');
   const benefitsList = document.querySelector('#booking-benefits-list');
+  const packagePlansPanel = document.querySelector('#booking-package-plans-panel');
+  const packagePlansList = document.querySelector('#booking-package-plans-list');
+  const packagePlanSelect = document.querySelector('#booking-package-plan-select');
+  const packagePlanDateSelect = document.querySelector('#booking-package-plan-date-select');
+  const packagePlanPreview = document.querySelector('#booking-package-plan-preview');
+  const packagePlanPreviewTitle = document.querySelector('#booking-package-plan-preview-title');
+  const packagePlanPreviewBadge = document.querySelector('#booking-package-plan-preview-badge');
+  const packagePlanPreviewCopy = document.querySelector('#booking-package-plan-preview-copy');
+  const packagePlanPreviewServices = document.querySelector('#booking-package-plan-preview-services');
   const benefitField = document.querySelector('#booking-benefit-field');
   const benefitSelect = document.querySelector('#booking-benefit-select');
   const serviceLocationField = document.querySelector('#booking-service-location-field');
@@ -11313,6 +11462,10 @@ const initPublicBooking = () => {
   const summaryBusinessName = document.querySelector('#booking-summary-business-name');
   const summaryTitle = document.querySelector('#booking-summary-title');
   const summaryCopy = document.querySelector('#booking-summary-copy');
+  const packageToast = document.querySelector('#booking-package-toast');
+  const packageToastTitle = document.querySelector('#booking-package-toast-title');
+  const packageToastMessage = document.querySelector('#booking-package-toast-message');
+  const packageToastClose = document.querySelector('#booking-package-toast-close');
   const successPanel = document.querySelector('#booking-success');
   const successCopy = document.querySelector('#booking-success-copy');
   const reviewForm = document.querySelector('#booking-review-form');
@@ -11322,8 +11475,10 @@ const initPublicBooking = () => {
   const reviewSuccessPanel = document.querySelector('#booking-review-success');
   const reviewSuccessCopy = document.querySelector('#booking-review-success-copy');
   const servicesByName = new Map();
+  const servicesById = new Map();
   const teamMembersById = new Map();
   const benefitOptionsByValue = new Map();
+  const publishedPackagePlansById = new Map();
   const bookingLocationLabelsByValue = new Map();
   let latestAppointmentReference = '';
   let phoneHistoryRequestCounter = 0;
@@ -11337,6 +11492,10 @@ const initPublicBooking = () => {
   let currentBusinessPhoneNumber = '';
   let bookingHeadingFallback = '';
   let availableBookingLocations = [];
+  let isPublicBookingEnabled = true;
+  let bookingDisabledReason = '';
+  let selectedPublishedPackagePlanId = '';
+  let packageToastTimeoutId = 0;
   let bookingUiCopy = {
     locationLabel: '',
     locationLabels: {},
@@ -11514,6 +11673,14 @@ const initPublicBooking = () => {
     }
   };
 
+  const setBookingFormDisabled = (disabled) => {
+    for (const field of bookingForm.querySelectorAll('input, select, textarea, button')) {
+      if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement || field instanceof HTMLButtonElement) {
+        field.disabled = disabled;
+      }
+    }
+  };
+
   const populateBookingLocations = (serviceLocations = []) => {
     availableBookingLocations = Array.isArray(serviceLocations)
       ? serviceLocations.filter((value) => typeof value === 'string' && value.trim())
@@ -11560,6 +11727,15 @@ const initPublicBooking = () => {
     !(phoneHistoryList instanceof HTMLDivElement) ||
     !(benefitsPanel instanceof HTMLDivElement) ||
     !(benefitsList instanceof HTMLDivElement) ||
+    !(packagePlansPanel instanceof HTMLDivElement) ||
+    !(packagePlansList instanceof HTMLDivElement) ||
+    !(packagePlanSelect instanceof HTMLSelectElement) ||
+    !(packagePlanDateSelect instanceof HTMLSelectElement) ||
+    !(packagePlanPreview instanceof HTMLDivElement) ||
+    !(packagePlanPreviewTitle instanceof HTMLElement) ||
+    !(packagePlanPreviewBadge instanceof HTMLElement) ||
+    !(packagePlanPreviewCopy instanceof HTMLParagraphElement) ||
+    !(packagePlanPreviewServices instanceof HTMLParagraphElement) ||
     !(benefitField instanceof HTMLElement) ||
     !(benefitSelect instanceof HTMLSelectElement) ||
     !(serviceLocationField instanceof HTMLElement) ||
@@ -11581,6 +11757,10 @@ const initPublicBooking = () => {
     !(summaryBusinessName instanceof HTMLParagraphElement) ||
     !(summaryTitle instanceof HTMLElement) ||
     !(summaryCopy instanceof HTMLParagraphElement) ||
+    !(packageToast instanceof HTMLDivElement) ||
+    !(packageToastTitle instanceof HTMLElement) ||
+    !(packageToastMessage instanceof HTMLParagraphElement) ||
+    !(packageToastClose instanceof HTMLButtonElement) ||
     !(successPanel instanceof HTMLDivElement) ||
     !(successCopy instanceof HTMLParagraphElement) ||
     !(reviewForm instanceof HTMLFormElement) ||
@@ -11605,6 +11785,197 @@ const initPublicBooking = () => {
   const today = new Date();
   dateInput.value = today.toISOString().slice(0, 10);
   dateInput.min = today.toISOString().slice(0, 10);
+
+  const getBookingPackageAnnouncementStorageKey = () =>
+    `${BOOKING_PACKAGE_ANNOUNCEMENT_STORAGE_KEY_PREFIX}:${businessId}`;
+
+  const hidePackageToast = () => {
+    packageToast.classList.add('is-hidden');
+
+    if (packageToastTimeoutId) {
+      window.clearTimeout(packageToastTimeoutId);
+      packageToastTimeoutId = 0;
+    }
+  };
+
+  const showPackageToast = (title, message) => {
+    packageToastTitle.textContent = title;
+    packageToastMessage.textContent = message;
+    packageToast.classList.remove('is-hidden');
+
+    if (packageToastTimeoutId) {
+      window.clearTimeout(packageToastTimeoutId);
+    }
+
+    packageToastTimeoutId = window.setTimeout(() => {
+      packageToast.classList.add('is-hidden');
+      packageToastTimeoutId = 0;
+    }, 7000);
+  };
+
+  const announceNewPublishedPackage = (packagePlans = []) => {
+    if (!Array.isArray(packagePlans) || packagePlans.length === 0) {
+      return;
+    }
+
+    const newestPackagePlan = [...packagePlans]
+      .filter((packagePlan) => packagePlan && typeof packagePlan.id === 'string')
+      .sort((left, right) =>
+        `${right.updatedAt || right.createdAt || ''}`.localeCompare(
+          `${left.updatedAt || left.createdAt || ''}`
+        )
+      )[0];
+
+    if (!newestPackagePlan) {
+      return;
+    }
+
+    const versionToken =
+      `${newestPackagePlan.id}:${newestPackagePlan.updatedAt || newestPackagePlan.createdAt || ''}`;
+    const storageKey = getBookingPackageAnnouncementStorageKey();
+
+    try {
+      if (window.localStorage.getItem(storageKey) === versionToken) {
+        return;
+      }
+
+      window.localStorage.setItem(storageKey, versionToken);
+    } catch {
+      return;
+    }
+
+    const expiryLabel = newestPackagePlan.expiresAt
+      ? ` ${formatPackagePlanExpiryLabel(newestPackagePlan.expiresAt)}.`
+      : '';
+    showPackageToast(
+      'New package available',
+      `${newestPackagePlan.name}${newestPackagePlan.priceLabel ? ` for ${newestPackagePlan.priceLabel}` : ''} is now live on this booking page.${expiryLabel}`
+    );
+  };
+
+  const syncPackagePlanDateOptions = () => {
+    packagePlanDateSelect.replaceChildren();
+
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Select a date';
+    packagePlanDateSelect.append(placeholder);
+
+    const baseDateValue = dateInput.min || today.toISOString().slice(0, 10);
+    const baseDate = new Date(`${baseDateValue}T00:00:00`);
+
+    if (Number.isNaN(baseDate.getTime())) {
+      packagePlanDateSelect.value = '';
+      return;
+    }
+
+    const optionValues = new Set();
+
+    for (let offset = 0; offset < 30; offset += 1) {
+      const optionDate = new Date(baseDate);
+      optionDate.setDate(baseDate.getDate() + offset);
+      const optionValue = optionDate.toISOString().slice(0, 10);
+      optionValues.add(optionValue);
+
+      const option = document.createElement('option');
+      option.value = optionValue;
+      option.textContent = formatDateForDisplay(optionValue);
+      packagePlanDateSelect.append(option);
+    }
+
+    if (dateInput.value && !optionValues.has(dateInput.value)) {
+      const customOption = document.createElement('option');
+      customOption.value = dateInput.value;
+      customOption.textContent = formatDateForDisplay(dateInput.value);
+      packagePlanDateSelect.append(customOption);
+    }
+
+    packagePlanDateSelect.value = dateInput.value || '';
+  };
+
+  const syncPackagePlanSelectOptions = (packagePlans = []) => {
+    packagePlanSelect.replaceChildren();
+
+    const placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = 'Select a package';
+    packagePlanSelect.append(placeholder);
+
+    for (const packagePlan of packagePlans) {
+      const selectableServices = getSelectableServicesForPackagePlan(packagePlan);
+      const option = document.createElement('option');
+      option.value = packagePlan.id;
+      option.disabled = selectableServices.length === 0;
+      option.textContent =
+        `${packagePlan.name}` +
+        `${packagePlan.priceLabel ? ` - ${packagePlan.priceLabel}` : ''}` +
+        `${packagePlan.totalUses ? ` (${packagePlan.totalUses} use${packagePlan.totalUses === 1 ? '' : 's'})` : ''}` +
+        `${packagePlan.expiresAt ? ` - ${formatPackagePlanExpiryLabel(packagePlan.expiresAt)}` : ''}`;
+      packagePlanSelect.append(option);
+    }
+
+    packagePlanSelect.value = selectedPublishedPackagePlanId || '';
+  };
+
+  const getSelectableServicesForPackagePlan = (packagePlan) => {
+    const rawIncludedValues = Array.isArray(packagePlan?.includedServiceIds)
+      ? packagePlan.includedServiceIds.filter((serviceId) => typeof serviceId === 'string' && serviceId.trim())
+      : [];
+    const resolvedServices = [];
+    const seenServiceIds = new Set();
+
+    for (const rawValue of rawIncludedValues) {
+      const normalizedValue = rawValue.trim();
+      const matchedService =
+        servicesById.get(normalizedValue) ??
+        servicesByName.get(normalizedValue) ??
+        [...servicesByName.values()].find((service) => service.name === normalizedValue);
+
+      if (!matchedService || seenServiceIds.has(matchedService.id)) {
+        continue;
+      }
+
+      seenServiceIds.add(matchedService.id);
+      resolvedServices.push(matchedService);
+    }
+
+    return resolvedServices;
+  };
+
+  const renderPackagePlanPreview = () => {
+    const selectedPackagePlan = getSelectedPublishedPackagePlan();
+
+    if (!selectedPackagePlan) {
+      packagePlanPreview.classList.add('is-hidden');
+      packagePlanPreviewTitle.textContent = '';
+      packagePlanPreviewBadge.textContent = '';
+      packagePlanPreviewCopy.textContent = '';
+      packagePlanPreviewServices.textContent = '';
+      return;
+    }
+
+    const selectableServices = getSelectableServicesForPackagePlan(selectedPackagePlan);
+    const includedServiceNames =
+      selectableServices.length > 0
+        ? selectableServices.map((service) => service.name)
+        : Array.isArray(selectedPackagePlan.includedServiceNames)
+          ? selectedPackagePlan.includedServiceNames.filter(Boolean)
+          : [];
+    const selectedService = servicesByName.get(serviceSelect.value);
+
+    packagePlanPreview.classList.remove('is-hidden');
+    packagePlanPreviewTitle.textContent = selectedPackagePlan.name || 'Selected package';
+    packagePlanPreviewBadge.textContent =
+      selectedPackagePlan.priceLabel || `${selectedPackagePlan.totalUses || 0} uses`;
+    packagePlanPreviewCopy.textContent =
+      `${selectedPackagePlan.totalUses || 0} use${selectedPackagePlan.totalUses === 1 ? '' : 's'} included.` +
+      `${selectedService?.name ? ` ${selectedService.name} is selected automatically for this package.` : ''}` +
+      `${selectedPackagePlan.expiresAt ? ` ${formatPackagePlanExpiryLabel(selectedPackagePlan.expiresAt)}.` : ''}`;
+    packagePlanPreviewServices.textContent =
+      includedServiceNames.length > 0
+        ? `Included services: ${includedServiceNames.join(', ')}.`
+        : 'Included services will appear here when available.';
+  };
 
   const buildWaitlistClaimQuery = () => {
     if (!currentWaitlistClaim.waitlistEntryId || !currentWaitlistClaim.waitlistOfferToken) {
@@ -11740,6 +12111,89 @@ const initPublicBooking = () => {
   };
 
   const getSelectedBenefit = () => benefitOptionsByValue.get(benefitSelect.value) ?? null;
+  const getSelectedPublishedPackagePlan = () =>
+    publishedPackagePlansById.get(selectedPublishedPackagePlanId) ?? null;
+  const syncServiceSelectionLockState = () => {
+    const isServiceLockedByPackage = Boolean(getSelectedPublishedPackagePlan());
+    serviceSelect.disabled = isServiceLockedByPackage || !isPublicBookingEnabled;
+    serviceSelect.setAttribute('aria-disabled', isServiceLockedByPackage ? 'true' : 'false');
+  };
+  const clearSelectedPublishedPackagePlan = () => {
+    selectedPublishedPackagePlanId = '';
+    renderPublishedPackagePlanSelection();
+    renderPackagePlanPreview();
+    syncServiceSelectionLockState();
+  };
+
+  const renderPublishedPackagePlanSelection = () => {
+    for (const button of packagePlansList.querySelectorAll('.booking-package-plan-button')) {
+      if (!(button instanceof HTMLButtonElement)) {
+        continue;
+      }
+
+      const isSelected = button.dataset.packagePlanId === selectedPublishedPackagePlanId;
+      button.classList.toggle('is-selected', isSelected);
+      button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+    }
+
+    packagePlanSelect.value = selectedPublishedPackagePlanId || '';
+    renderPackagePlanPreview();
+  };
+
+  const syncSelectedPublishedPackagePlanWithService = () => {
+    const selectedPackagePlan = getSelectedPublishedPackagePlan();
+
+    if (!selectedPackagePlan) {
+      renderPublishedPackagePlanSelection();
+      syncServiceSelectionLockState();
+      return;
+    }
+
+    const selectedService = servicesByName.get(serviceSelect.value);
+    const selectableServices = getSelectableServicesForPackagePlan(selectedPackagePlan);
+    const selectableServiceIds = selectableServices.map((service) => service.id);
+
+    if (!selectedService || !selectableServiceIds.includes(selectedService.id)) {
+      selectedPublishedPackagePlanId = '';
+    }
+
+    renderPublishedPackagePlanSelection();
+    syncServiceSelectionLockState();
+  };
+
+  const selectPublishedPackagePlan = async (packagePlanId) => {
+    if (selectedPublishedPackagePlanId === packagePlanId) {
+      clearSelectedPublishedPackagePlan();
+      updateBookingSummary();
+      return;
+    }
+
+    const packagePlan = publishedPackagePlansById.get(packagePlanId);
+
+    if (!packagePlan) {
+      return;
+    }
+
+    const selectableServices = getSelectableServicesForPackagePlan(packagePlan);
+    const selectedService = servicesByName.get(serviceSelect.value);
+    const nextService =
+      selectedService &&
+      selectableServices.some((service) => service.id === selectedService.id)
+        ? selectedService
+        : selectableServices.find((service) => service && typeof service.name === 'string');
+
+    if (!nextService) {
+      safeAlert('This package does not have an active service linked right now.');
+      return;
+    }
+
+    selectedPublishedPackagePlanId = packagePlan.id;
+    serviceSelect.value = nextService.name;
+    renderPublishedPackagePlanSelection();
+    syncServiceSelectionLockState();
+    updateBookingSummary();
+    await populateSlots();
+  };
 
   const renderBenefits = async (phoneValue) => {
     const normalizedPhone = normalizePhoneForLookup(phoneValue);
@@ -11811,10 +12265,42 @@ const initPublicBooking = () => {
     }
   };
 
+  const renderPublishedPackagePlans = (packagePlans) => {
+    packagePlansList.replaceChildren();
+    packagePlansList.classList.add('is-hidden');
+    publishedPackagePlansById.clear();
+    selectedPublishedPackagePlanId = '';
+
+    if (!Array.isArray(packagePlans) || packagePlans.length === 0) {
+      packagePlansPanel.classList.add('is-hidden');
+      syncPackagePlanSelectOptions();
+      syncPackagePlanDateOptions();
+      renderPackagePlanPreview();
+      return;
+    }
+
+    packagePlansPanel.classList.remove('is-hidden');
+    for (const packagePlan of packagePlans) {
+      publishedPackagePlansById.set(packagePlan.id, packagePlan);
+    }
+
+    syncPackagePlanSelectOptions(packagePlans);
+    syncPackagePlanDateOptions();
+    renderPackagePlanPreview();
+  };
+
   const updateBookingSummary = () => {
+    if (!isPublicBookingEnabled) {
+      summaryTitle.textContent = 'Booking unavailable';
+      summaryCopy.textContent =
+        bookingDisabledReason || 'Bookings are temporarily unavailable for this business.';
+      return;
+    }
+
     const selectedService = servicesByName.get(serviceSelect.value);
     const selectedTeamMember = teamMembersById.get(teamMemberSelect.value);
     const selectedBenefit = getSelectedBenefit();
+    const selectedPublishedPackagePlan = getSelectedPublishedPackagePlan();
     const serviceLabel = selectedService?.name || '';
     const teamMemberLabel = selectedTeamMember?.name || '';
     const salonLabel = currentBusinessName;
@@ -11831,6 +12317,9 @@ const initPublicBooking = () => {
         : selectedBookingLocationLabel
           ? `${selectedBookingLocationLabel}. `
           : '';
+    const packageSummary = selectedPublishedPackagePlan
+      ? `Package selected: ${selectedPublishedPackagePlan.name}${selectedPublishedPackagePlan.totalUses ? ` (${selectedPublishedPackagePlan.totalUses} use${selectedPublishedPackagePlan.totalUses === 1 ? '' : 's'})` : ''}${selectedPublishedPackagePlan.priceLabel ? ` for ${selectedPublishedPackagePlan.priceLabel}` : ''}. `
+      : '';
 
     if (!serviceLabel && !formattedDateTime) {
       summaryTitle.textContent = 'Choose a service to begin';
@@ -11846,7 +12335,7 @@ const initPublicBooking = () => {
         summaryTitle.textContent = `${serviceLabel} at ${salonSummaryLabel}${summaryPriceLabel ? ` | ${summaryPriceLabel}` : ''}`.trim();
       }
       summaryCopy.textContent = selectedService
-        ? `${selectedService.durationMinutes} min service${teamMemberLabel ? ` with ${teamMemberLabel}` : ''}${salonSummaryLabel ? ` at ${salonSummaryLabel}` : ''}. ${bookingLocationSummary}${selectedBenefit ? `Benefit selected: ${selectedBenefit.title}. ` : ''}Now choose the best day and time for your appointment.`
+        ? `${selectedService.durationMinutes} min service${teamMemberLabel ? ` with ${teamMemberLabel}` : ''}${salonSummaryLabel ? ` at ${salonSummaryLabel}` : ''}. ${bookingLocationSummary}${packageSummary}${selectedBenefit ? `Benefit selected: ${selectedBenefit.title}. ` : ''}Now choose the best day and time for your appointment.`
         : 'Now choose the best day and time for your appointment.';
       return;
     }
@@ -11859,7 +12348,7 @@ const initPublicBooking = () => {
       summaryTitle.textContent = `${serviceLabel} at ${salonSummaryLabel}${selectedService?.priceLabel ? ` | ${selectedService.priceLabel}` : ''}`.trim();
     }
     summaryCopy.textContent = formattedDateTime
-      ? `${selectedService?.durationMinutes ? `${selectedService.durationMinutes} min service${teamMemberLabel ? ` with ${teamMemberLabel}` : ''}${salonSummaryLabel ? ` at ${salonSummaryLabel}` : ''}. ` : ''}${bookingLocationSummary}${selectedBenefit ? `${selectedBenefit.title} will be applied. ` : ''}Your booking is planned for ${formattedDateTime}.`
+      ? `${selectedService?.durationMinutes ? `${selectedService.durationMinutes} min service${teamMemberLabel ? ` with ${teamMemberLabel}` : ''}${salonSummaryLabel ? ` at ${salonSummaryLabel}` : ''}. ` : ''}${bookingLocationSummary}${packageSummary}${selectedBenefit ? `${selectedBenefit.title} will be applied. ` : ''}Your booking is planned for ${formattedDateTime}.`
       : 'Choose the best available time for your appointment.';
   };
 
@@ -11994,11 +12483,22 @@ const initPublicBooking = () => {
 
       for (const service of payload.services) {
         servicesByName.set(service.name, service);
+        servicesById.set(service.id, service);
         const option = document.createElement('option');
         option.value = service.name;
-        option.textContent = `${service.name} - ${service.durationMinutes} min - ${service.priceLabel}`;
+        const highlightedPackageNames = Array.isArray(service.highlightedPackageNames)
+          ? service.highlightedPackageNames.filter(Boolean)
+          : [];
+        const packageLabel =
+          highlightedPackageNames.length > 0
+            ? ` - Package${highlightedPackageNames.length === 1 ? '' : 's'}: ${highlightedPackageNames.join(', ')}`
+            : '';
+        option.textContent = `${service.name} - ${service.durationMinutes} min - ${service.priceLabel}${packageLabel}`;
         serviceSelect.append(option);
       }
+
+      renderPublishedPackagePlans(payload.packagePlans);
+      announceNewPublishedPackage(payload.packagePlans);
 
       if (payload.services.length > 0) {
         serviceSelect.value = payload.services[0].name;
@@ -12009,16 +12509,41 @@ const initPublicBooking = () => {
       if (activeWaitlistOffer) {
         serviceSelect.value = activeWaitlistOffer.serviceName;
         dateInput.value = activeWaitlistOffer.appointmentDate;
+        syncPackagePlanDateOptions();
 
         if (activeWaitlistOffer.teamMemberId) {
           teamMemberSelect.value = activeWaitlistOffer.teamMemberId;
         }
       }
 
-      await populateSlots();
+      isPublicBookingEnabled = payload.isBookingEnabled !== false;
+      bookingDisabledReason =
+        typeof payload.bookingDisabledReason === 'string' ? payload.bookingDisabledReason.trim() : '';
 
-      if (activeWaitlistOffer?.appointmentTime) {
-        timeSelect.value = activeWaitlistOffer.appointmentTime;
+      if (!isPublicBookingEnabled) {
+        setBookingFormDisabled(true);
+        syncServiceSelectionLockState();
+        summaryTitle.textContent = 'Booking unavailable';
+        summaryCopy.textContent =
+          bookingDisabledReason || 'Bookings are temporarily unavailable for this business.';
+        waitlistPanel.classList.add('is-hidden');
+      } else {
+        setBookingFormDisabled(false);
+        syncServiceSelectionLockState();
+      }
+
+      if (!isPublicBookingEnabled) {
+        timeSelect.replaceChildren();
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Booking unavailable';
+        timeSelect.append(placeholder);
+      } else {
+        await populateSlots();
+
+        if (activeWaitlistOffer?.appointmentTime) {
+          timeSelect.value = activeWaitlistOffer.appointmentTime;
+        }
       }
 
       updateBookingSummary();
@@ -12042,7 +12567,32 @@ const initPublicBooking = () => {
   };
 
   dateInput.addEventListener('change', async () => {
+    syncPackagePlanDateOptions();
     await populateSlots();
+  });
+
+  packagePlanDateSelect.addEventListener('change', async () => {
+    if (!packagePlanDateSelect.value || packagePlanDateSelect.value === dateInput.value) {
+      return;
+    }
+
+    dateInput.value = packagePlanDateSelect.value;
+    syncPackagePlanDateOptions();
+    await populateSlots();
+  });
+
+  packageToastClose.addEventListener('click', () => {
+    hidePackageToast();
+  });
+
+  packagePlanSelect.addEventListener('change', async () => {
+    if (!packagePlanSelect.value) {
+      clearSelectedPublishedPackagePlan();
+      updateBookingSummary();
+      return;
+    }
+
+    await selectPublishedPackagePlan(packagePlanSelect.value);
   });
 
   customerPhoneCountryCodeInput.addEventListener('input', refreshBookingPhoneDetails);
@@ -12052,6 +12602,8 @@ const initPublicBooking = () => {
   });
 
   serviceSelect.addEventListener('change', async () => {
+    syncSelectedPublishedPackagePlanWithService();
+
     try {
       await populateSlots();
     } catch (error) {
@@ -12162,6 +12714,7 @@ const initPublicBooking = () => {
           customerPhone: customerPhoneValue,
           customerEmail: customerEmailInput.value.trim(),
           source: currentBookingSource,
+          packagePlanId: selectedPublishedPackagePlanId,
           packagePurchaseId: selectedBenefit?.type === 'package' ? selectedBenefit.id : '',
           loyaltyRewardId: selectedBenefit?.type === 'loyalty' ? selectedBenefit.id : '',
           waitlistEntryId: currentWaitlistClaim.waitlistEntryId,
@@ -12172,11 +12725,12 @@ const initPublicBooking = () => {
       successPanel.classList.remove('is-hidden');
       latestAppointmentReference = payload.appointment.id;
       reviewReferenceInput.value = latestAppointmentReference;
-      successCopy.textContent = `Booked ${payload.appointment.serviceName}${payload.appointment.teamMemberName ? ` with ${payload.appointment.teamMemberName}` : ''} for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}.${payload.appointment.serviceLocation ? ` Service location: ${getSelectedBookingLocationLabel()}${payload.appointment.customerAddress ? ` (${payload.appointment.customerAddress})` : ''}.` : ''}${payload.appointment.packageName ? ` Package used: ${payload.appointment.packageName}.` : ''}${payload.appointment.loyaltyRewardLabel ? ` Reward used: ${payload.appointment.loyaltyRewardLabel}.` : ''} Reference: ${payload.appointment.id.slice(0, 8)}. Source: ${formatBookingSourceLabel(payload.appointment.source)}. SMS status: ${payload.notifications.map((entry) => `${entry.recipient} ${entry.status}`).join(', ')}.`;
+      successCopy.textContent = `Booked ${payload.appointment.serviceName}${payload.appointment.teamMemberName ? ` with ${payload.appointment.teamMemberName}` : ''} for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}.${payload.appointment.serviceLocation ? ` Service location: ${getSelectedBookingLocationLabel()}${payload.appointment.customerAddress ? ` (${payload.appointment.customerAddress})` : ''}.` : ''}${payload.appointment.packageName ? ` Package: ${payload.appointment.packageName}${payload.appointment.packageTotalUses ? ` (${payload.appointment.packageTotalUses} use${payload.appointment.packageTotalUses === 1 ? '' : 's'})` : ''}${payload.appointment.packagePriceLabel ? ` - ${payload.appointment.packagePriceLabel}` : ''}.` : ''}${payload.appointment.loyaltyRewardLabel ? ` Reward used: ${payload.appointment.loyaltyRewardLabel}.` : ''}`;
       const bookedPhone = payload.appointment.customerPhone;
       activeWaitlistOffer = null;
       savedWaitlistSignature = '';
       bookingForm.reset();
+      clearSelectedPublishedPackagePlan();
       dateInput.value = today.toISOString().slice(0, 10);
       setBookingCustomerPhoneValue(bookedPhone);
       serviceLocationSelect.value = availableBookingLocations.includes(bookingUiCopy.defaultLocationValue)
@@ -12444,7 +12998,7 @@ const initManageBooking = () => {
     title.textContent = `Manage your appointment at ${payload.appointment.businessName}`;
     copy.textContent = `Booking for ${payload.appointment.customerName}. You can reschedule or cancel it below.`;
     summaryTitle.textContent = `${payload.appointment.serviceName}${payload.appointment.teamMemberName ? ` with ${payload.appointment.teamMemberName}` : ''}`;
-    summaryCopy.textContent = `Currently planned for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}. Reference: ${payload.appointment.id.slice(0, 8)}.`;
+    summaryCopy.textContent = `Currently planned for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}.${payload.appointment.packageName ? ` Package: ${payload.appointment.packageName}${payload.appointment.packageTotalUses ? ` (${payload.appointment.packageTotalUses} use${payload.appointment.packageTotalUses === 1 ? '' : 's'})` : ''}${payload.appointment.packagePriceLabel ? ` - ${payload.appointment.packagePriceLabel}` : ''}.` : ''} Reference: ${payload.appointment.id.slice(0, 8)}.`;
     dateInput.value = payload.appointment.appointmentDate;
     startCountdown();
     await loadSlots(payload.appointment.appointmentTime);
@@ -12493,7 +13047,7 @@ const initManageBooking = () => {
       );
 
       appointmentDetails = payload.appointment;
-      summaryCopy.textContent = `Currently planned for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}. Reference: ${payload.appointment.id.slice(0, 8)}.`;
+      summaryCopy.textContent = `Currently planned for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}.${payload.appointment.packageName ? ` Package: ${payload.appointment.packageName}${payload.appointment.packageTotalUses ? ` (${payload.appointment.packageTotalUses} use${payload.appointment.packageTotalUses === 1 ? '' : 's'})` : ''}${payload.appointment.packagePriceLabel ? ` - ${payload.appointment.packagePriceLabel}` : ''}.` : ''} Reference: ${payload.appointment.id.slice(0, 8)}.`;
       successPanel.classList.remove('is-hidden');
       successCopy.textContent = `Your appointment has been moved to ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}. SMS status: ${Array.isArray(payload.notifications) ? payload.notifications.map((entry) => `${entry.recipient} ${entry.status}`).join(', ') : 'updated'}.`;
       setStatus('Appointment rescheduled successfully.', 'success');
@@ -12523,7 +13077,7 @@ const initManageBooking = () => {
       successPanel.classList.remove('is-hidden');
       successCopy.textContent = 'Your appointment has been cancelled.';
       setStatus('Appointment cancelled.', 'warning');
-      summaryCopy.textContent = `This appointment was cancelled. Reference: ${payload.appointment.id.slice(0, 8)}.`;
+      summaryCopy.textContent = `This appointment was cancelled.${payload.appointment.packageName ? ` Package: ${payload.appointment.packageName}${payload.appointment.packageTotalUses ? ` (${payload.appointment.packageTotalUses} use${payload.appointment.packageTotalUses === 1 ? '' : 's'})` : ''}${payload.appointment.packagePriceLabel ? ` - ${payload.appointment.packagePriceLabel}` : ''}.` : ''} Reference: ${payload.appointment.id.slice(0, 8)}.`;
       syncCountdown();
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to cancel appointment');
@@ -12856,7 +13410,10 @@ const getSubscriptionFeatureLabels = (plan) => {
     labels.push('Prepaid service packages');
   }
 
-  if (featureKeys.includes('team_management')) {
+  if (
+    featureKeys.includes('team_management') ||
+    (Number.isFinite(Number(entitlements.maxTeamMembers)) && Number(entitlements.maxTeamMembers) > 0)
+  ) {
     labels.push('Team calendars');
   }
 
