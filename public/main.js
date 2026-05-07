@@ -1736,6 +1736,114 @@ const formatMoneyValue = (amountValue, currencyCode = '') => {
 const normalizeSearchValue = (value) =>
   typeof value === 'string' ? value.trim().toLowerCase().replace(/\s+/g, ' ') : '';
 
+const locationAdministrativeSuffixPattern =
+  /\b(city tehsil|tehsil|district|division|capital territory|province|state|county|region)\b/gi;
+const locationRoutePattern =
+  /\b(road|rd|street|st|avenue|ave|boulevard|blvd|highway|hwy|motorway|expressway)\b/i;
+
+const splitLocationAddress = (address) =>
+  typeof address === 'string'
+    ? address
+        .split(',')
+        .map((part) => part.trim())
+        .filter(Boolean)
+    : [];
+
+const isPostalCodeLocationPart = (part) => /^\d[\d\s-]*$/.test(part.trim());
+
+const normalizeLocationRoot = (part) =>
+  part
+    .replace(locationAdministrativeSuffixPattern, '')
+    .replace(/\s+/g, ' ')
+    .replace(/^[,.\-\s]+|[,.\-\s]+$/g, '')
+    .trim();
+
+const buildCompactLocationSuggestions = (address) => {
+  const parts = splitLocationAddress(address);
+
+  if (parts.length === 0) {
+    return [];
+  }
+
+  const meaningfulParts = parts.filter((part) => {
+    const normalizedPart = normalizeSearchValue(part);
+
+    if (!normalizedPart || normalizedPart === 'pakistan' || isPostalCodeLocationPart(part)) {
+      return false;
+    }
+
+    return true;
+  });
+  const normalizedMeaningfulParts = meaningfulParts.map((part) => normalizeLocationRoot(part));
+  const regionLabel = normalizedMeaningfulParts[normalizedMeaningfulParts.length - 1] || '';
+  let cityLabel = '';
+  let cityIndex = -1;
+
+  for (let index = normalizedMeaningfulParts.length - 2; index >= 0; index -= 1) {
+    const candidate = normalizedMeaningfulParts[index];
+
+    if (!candidate) {
+      continue;
+    }
+
+    if (locationRoutePattern.test(candidate)) {
+      continue;
+    }
+
+    cityLabel = candidate;
+    cityIndex = index;
+    break;
+  }
+
+  if (!cityLabel) {
+    cityLabel = regionLabel;
+    cityIndex = normalizedMeaningfulParts.length - 1;
+  }
+
+  let neighborhoodLabel = '';
+
+  for (let index = cityIndex - 1; index >= 0; index -= 1) {
+    const candidate = normalizedMeaningfulParts[index];
+
+    if (!candidate) {
+      continue;
+    }
+
+    if (locationRoutePattern.test(candidate)) {
+      continue;
+    }
+
+    if (normalizeSearchValue(candidate) === normalizeSearchValue(cityLabel)) {
+      continue;
+    }
+
+    if (normalizeSearchValue(candidate) === normalizeSearchValue(regionLabel)) {
+      continue;
+    }
+
+    neighborhoodLabel = candidate;
+    break;
+  }
+
+  const suggestions = [
+    cityLabel,
+    cityLabel && regionLabel && normalizeSearchValue(cityLabel) !== normalizeSearchValue(regionLabel)
+      ? `${cityLabel}, ${regionLabel}`
+      : '',
+    neighborhoodLabel && cityLabel ? `${neighborhoodLabel}, ${cityLabel}` : ''
+  ];
+
+  return suggestions.filter((value, index, values) => {
+    if (typeof value !== 'string' || !value.trim()) {
+      return false;
+    }
+
+    return values.findIndex(
+      (entry) => normalizeSearchValue(entry) === normalizeSearchValue(value)
+    ) === index;
+  });
+};
+
 const getSalonServiceSearchValues = (salon) =>
   [
     ...(Array.isArray(salon.serviceTypes) ? salon.serviceTypes : []),
@@ -1840,29 +1948,7 @@ const getSalonLocationSearchValues = (salon) => {
     return [];
   }
 
-  const parts = address
-    .split(',')
-    .map((part) => part.trim())
-    .filter(Boolean);
-  const cityLike = parts.length >= 3 ? parts[parts.length - 3] : '';
-  const regionLike = parts.length >= 4 ? parts[parts.length - 4] : '';
-
-  return [
-    cityLike,
-    regionLike,
-    parts[1],
-    parts[0],
-    parts.slice(0, 2).join(', '),
-    parts.slice(0, 3).join(', ')
-  ].filter((value, index, values) => {
-    if (typeof value !== 'string' || !value.trim()) {
-      return false;
-    }
-
-    return values.findIndex(
-      (entry) => normalizeSearchValue(entry) === normalizeSearchValue(value)
-    ) === index;
-  });
+  return buildCompactLocationSuggestions(address);
 };
 
 const parseTimeValueToMinutes = (timeValue) => {
@@ -2146,18 +2232,21 @@ const initHomeSalonSearch = () => {
       }));
   };
 
-  const getRankedSuggestions = (suggestions, query) => {
-    const normalizedQuery = normalizeSearchValue(query);
+const getRankedSuggestions = (suggestions, query) => {
+  const normalizedQuery = normalizeSearchValue(query);
 
-    return suggestions
+  return suggestions
       .map((suggestion) => {
         const normalizedValue = normalizeSearchValue(suggestion.value);
+        const valueTokens = normalizedValue.split(/[,\s]+/).filter(Boolean);
         let score = 0;
 
         if (!normalizedQuery) {
           score = suggestion.count * 12;
         } else if (normalizedValue === normalizedQuery) {
           score = 140;
+        } else if (valueTokens.some((token) => token.startsWith(normalizedQuery))) {
+          score = 124;
         } else if (normalizedValue.startsWith(normalizedQuery)) {
           score = 110;
         } else if (normalizedValue.includes(normalizedQuery)) {
@@ -2182,14 +2271,17 @@ const initHomeSalonSearch = () => {
           right.count - left.count ||
           left.value.localeCompare(right.value)
       )
-      .slice(0, 6);
+      .slice(0, normalizedQuery ? 10 : 6);
   };
 
   const createSearchDropdownController = ({
     input,
     dropdown,
+    eyebrow,
     title,
     subtitle,
+    variant,
+    requireQuery,
     getSuggestions,
     onSelect,
     onOpen
@@ -2211,10 +2303,27 @@ const initHomeSalonSearch = () => {
 
     const open = () => {
       onOpen?.();
+      const normalizedQuery = normalizeSearchValue(input.value);
+
+      if (requireQuery && !normalizedQuery) {
+        close();
+        return;
+      }
+
+      dropdown.classList.toggle('search-dropdown-list', variant === 'list');
       dropdown.replaceChildren();
 
       const copy = document.createElement('div');
-      copy.className = 'search-dropdown-copy';
+      copy.className =
+        variant === 'list'
+          ? 'search-dropdown-copy search-dropdown-copy-simple'
+          : 'search-dropdown-copy';
+      if (variant !== 'list' && typeof eyebrow === 'string' && eyebrow.trim()) {
+        const label = document.createElement('span');
+        label.className = 'search-dropdown-copy-label';
+        label.textContent = eyebrow.trim();
+        copy.append(label);
+      }
       const heading = document.createElement('strong');
       heading.textContent = title;
       const description = document.createElement('span');
@@ -2227,16 +2336,22 @@ const initHomeSalonSearch = () => {
       if (suggestions.length === 0) {
         const emptyState = document.createElement('p');
         emptyState.className = 'search-dropdown-empty';
-        emptyState.textContent = 'No matching suggestions yet. Keep typing to search all salons.';
+        emptyState.textContent = 'No matching locations found. Continue typing to search all salons.';
         dropdown.append(emptyState);
       } else {
         const options = document.createElement('div');
-        options.className = 'search-dropdown-options';
+        options.className =
+          variant === 'list'
+            ? 'search-dropdown-options search-dropdown-options-list'
+            : 'search-dropdown-options';
 
         for (const suggestion of suggestions) {
           const optionButton = document.createElement('button');
           optionButton.type = 'button';
-          optionButton.className = 'search-dropdown-option';
+          optionButton.className =
+            variant === 'list'
+              ? 'search-dropdown-option search-dropdown-option-list'
+              : 'search-dropdown-option';
           optionButton.setAttribute('role', 'option');
           optionButton.dataset.suggestionValue = suggestion.value;
 
@@ -2244,15 +2359,20 @@ const initHomeSalonSearch = () => {
           optionCopy.className = 'search-dropdown-option-copy';
           const optionTitle = document.createElement('strong');
           optionTitle.textContent = suggestion.value;
-          const optionMeta = document.createElement('span');
-          optionMeta.textContent = suggestion.meta;
-          optionCopy.append(optionTitle, optionMeta);
+          optionCopy.append(optionTitle);
+          if (variant !== 'list') {
+            const optionMeta = document.createElement('span');
+            optionMeta.textContent = suggestion.meta;
+            optionCopy.append(optionMeta);
+          }
 
-          const optionChip = document.createElement('span');
-          optionChip.className = 'search-dropdown-option-chip';
-          optionChip.textContent = suggestion.chipLabel;
-
-          optionButton.append(optionCopy, optionChip);
+          optionButton.append(optionCopy);
+          if (variant !== 'list') {
+            const optionChip = document.createElement('span');
+            optionChip.className = 'search-dropdown-option-chip';
+            optionChip.textContent = suggestion.chipLabel;
+            optionButton.append(optionChip);
+          }
           optionButton.addEventListener('pointerdown', (event) => {
             event.preventDefault();
           });
@@ -2485,8 +2605,11 @@ const initHomeSalonSearch = () => {
   const cityDropdownController = createSearchDropdownController({
     input: cityInput,
     dropdown: cityDropdown,
-    title: 'Venue areas',
-    subtitle: 'Search nearby salons by city, area, or venue address.',
+    eyebrow: 'Location',
+    title: 'Find a salon near you',
+    subtitle: 'Search by city, area, or address.',
+    variant: 'list',
+    requireQuery: true,
     getSuggestions: (query) => getRankedSuggestions(citySuggestions, query),
     onSelect: (value) => {
       if (cityInput instanceof HTMLInputElement) {
@@ -2557,7 +2680,7 @@ const initHomeSalonSearch = () => {
       citySuggestions = buildSuggestionEntries(
         allSalons,
         (salon) => getSalonLocationSearchValues(salon),
-        'Venue',
+        'Location',
         (count) => `${count} salon${count === 1 ? '' : 's'} in this area`
       );
       renderShowcase(allSalons);
@@ -11727,15 +11850,6 @@ const initPublicBooking = () => {
     !(phoneHistoryList instanceof HTMLDivElement) ||
     !(benefitsPanel instanceof HTMLDivElement) ||
     !(benefitsList instanceof HTMLDivElement) ||
-    !(packagePlansPanel instanceof HTMLDivElement) ||
-    !(packagePlansList instanceof HTMLDivElement) ||
-    !(packagePlanSelect instanceof HTMLSelectElement) ||
-    !(packagePlanDateSelect instanceof HTMLSelectElement) ||
-    !(packagePlanPreview instanceof HTMLDivElement) ||
-    !(packagePlanPreviewTitle instanceof HTMLElement) ||
-    !(packagePlanPreviewBadge instanceof HTMLElement) ||
-    !(packagePlanPreviewCopy instanceof HTMLParagraphElement) ||
-    !(packagePlanPreviewServices instanceof HTMLParagraphElement) ||
     !(benefitField instanceof HTMLElement) ||
     !(benefitSelect instanceof HTMLSelectElement) ||
     !(serviceLocationField instanceof HTMLElement) ||
@@ -11813,18 +11927,22 @@ const initPublicBooking = () => {
     }, 7000);
   };
 
-  const announceNewPublishedPackage = (packagePlans = []) => {
+  const getNewestPublishedPackagePlan = (packagePlans = []) => {
     if (!Array.isArray(packagePlans) || packagePlans.length === 0) {
-      return;
+      return null;
     }
 
-    const newestPackagePlan = [...packagePlans]
+    return [...packagePlans]
       .filter((packagePlan) => packagePlan && typeof packagePlan.id === 'string')
       .sort((left, right) =>
         `${right.updatedAt || right.createdAt || ''}`.localeCompare(
           `${left.updatedAt || left.createdAt || ''}`
         )
-      )[0];
+      )[0] ?? null;
+  };
+
+  const announceNewPublishedPackage = (packagePlans = []) => {
+    const newestPackagePlan = getNewestPublishedPackagePlan(packagePlans);
 
     if (!newestPackagePlan) {
       return;
@@ -11853,7 +11971,52 @@ const initPublicBooking = () => {
     );
   };
 
+  const sortServicesForBooking = (services = [], packagePlans = []) => {
+    if (!Array.isArray(services) || services.length === 0) {
+      return [];
+    }
+
+    const newestPackagePlan = getNewestPublishedPackagePlan(packagePlans);
+
+    if (!newestPackagePlan) {
+      return [...services];
+    }
+
+    const serviceRankById = new Map();
+
+    for (const [index, rawServiceId] of (newestPackagePlan.includedServiceIds ?? []).entries()) {
+      if (typeof rawServiceId !== 'string' || !rawServiceId.trim()) {
+        continue;
+      }
+
+      serviceRankById.set(rawServiceId.trim(), index);
+    }
+
+    return [...services].sort((left, right) => {
+      const leftRank = serviceRankById.get(left.id);
+      const rightRank = serviceRankById.get(right.id);
+
+      if (typeof leftRank === 'number' && typeof rightRank === 'number') {
+        return leftRank - rightRank;
+      }
+
+      if (typeof leftRank === 'number') {
+        return -1;
+      }
+
+      if (typeof rightRank === 'number') {
+        return 1;
+      }
+
+      return 0;
+    });
+  };
+
   const syncPackagePlanDateOptions = () => {
+    if (!(packagePlanDateSelect instanceof HTMLSelectElement)) {
+      return;
+    }
+
     packagePlanDateSelect.replaceChildren();
 
     const placeholder = document.createElement('option');
@@ -11894,6 +12057,10 @@ const initPublicBooking = () => {
   };
 
   const syncPackagePlanSelectOptions = (packagePlans = []) => {
+    if (!(packagePlanSelect instanceof HTMLSelectElement)) {
+      return;
+    }
+
     packagePlanSelect.replaceChildren();
 
     const placeholder = document.createElement('option');
@@ -11943,6 +12110,16 @@ const initPublicBooking = () => {
   };
 
   const renderPackagePlanPreview = () => {
+    if (
+      !(packagePlanPreview instanceof HTMLDivElement) ||
+      !(packagePlanPreviewTitle instanceof HTMLElement) ||
+      !(packagePlanPreviewBadge instanceof HTMLElement) ||
+      !(packagePlanPreviewCopy instanceof HTMLParagraphElement) ||
+      !(packagePlanPreviewServices instanceof HTMLParagraphElement)
+    ) {
+      return;
+    }
+
     const selectedPackagePlan = getSelectedPublishedPackagePlan();
 
     if (!selectedPackagePlan) {
@@ -12126,17 +12303,22 @@ const initPublicBooking = () => {
   };
 
   const renderPublishedPackagePlanSelection = () => {
-    for (const button of packagePlansList.querySelectorAll('.booking-package-plan-button')) {
-      if (!(button instanceof HTMLButtonElement)) {
-        continue;
-      }
+    if (packagePlansList instanceof HTMLDivElement) {
+      for (const button of packagePlansList.querySelectorAll('.booking-package-plan-button')) {
+        if (!(button instanceof HTMLButtonElement)) {
+          continue;
+        }
 
-      const isSelected = button.dataset.packagePlanId === selectedPublishedPackagePlanId;
-      button.classList.toggle('is-selected', isSelected);
-      button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+        const isSelected = button.dataset.packagePlanId === selectedPublishedPackagePlanId;
+        button.classList.toggle('is-selected', isSelected);
+        button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+      }
     }
 
-    packagePlanSelect.value = selectedPublishedPackagePlanId || '';
+    if (packagePlanSelect instanceof HTMLSelectElement) {
+      packagePlanSelect.value = selectedPublishedPackagePlanId || '';
+    }
+
     renderPackagePlanPreview();
   };
 
@@ -12266,20 +12448,29 @@ const initPublicBooking = () => {
   };
 
   const renderPublishedPackagePlans = (packagePlans) => {
-    packagePlansList.replaceChildren();
-    packagePlansList.classList.add('is-hidden');
+    if (packagePlansList instanceof HTMLDivElement) {
+      packagePlansList.replaceChildren();
+      packagePlansList.classList.add('is-hidden');
+    }
+
     publishedPackagePlansById.clear();
     selectedPublishedPackagePlanId = '';
 
     if (!Array.isArray(packagePlans) || packagePlans.length === 0) {
-      packagePlansPanel.classList.add('is-hidden');
+      if (packagePlansPanel instanceof HTMLDivElement) {
+        packagePlansPanel.classList.add('is-hidden');
+      }
+
       syncPackagePlanSelectOptions();
       syncPackagePlanDateOptions();
       renderPackagePlanPreview();
       return;
     }
 
-    packagePlansPanel.classList.remove('is-hidden');
+    if (packagePlansPanel instanceof HTMLDivElement) {
+      packagePlansPanel.classList.remove('is-hidden');
+    }
+
     for (const packagePlan of packagePlans) {
       publishedPackagePlansById.set(packagePlan.id, packagePlan);
     }
@@ -12481,7 +12672,9 @@ const initPublicBooking = () => {
       populateBookingLocations(payload.serviceLocations);
       populateTeamMembers(payload.teamMembers);
 
-      for (const service of payload.services) {
+      const sortedServices = sortServicesForBooking(payload.services, payload.packagePlans);
+
+      for (const service of sortedServices) {
         servicesByName.set(service.name, service);
         servicesById.set(service.id, service);
         const option = document.createElement('option');
@@ -12500,8 +12693,8 @@ const initPublicBooking = () => {
       renderPublishedPackagePlans(payload.packagePlans);
       announceNewPublishedPackage(payload.packagePlans);
 
-      if (payload.services.length > 0) {
-        serviceSelect.value = payload.services[0].name;
+      if (sortedServices.length > 0) {
+        serviceSelect.value = sortedServices[0].name;
       }
 
       activeWaitlistOffer = payload.waitlistOffer ?? null;
@@ -12571,29 +12764,33 @@ const initPublicBooking = () => {
     await populateSlots();
   });
 
-  packagePlanDateSelect.addEventListener('change', async () => {
-    if (!packagePlanDateSelect.value || packagePlanDateSelect.value === dateInput.value) {
-      return;
-    }
+  if (packagePlanDateSelect instanceof HTMLSelectElement) {
+    packagePlanDateSelect.addEventListener('change', async () => {
+      if (!packagePlanDateSelect.value || packagePlanDateSelect.value === dateInput.value) {
+        return;
+      }
 
-    dateInput.value = packagePlanDateSelect.value;
-    syncPackagePlanDateOptions();
-    await populateSlots();
-  });
+      dateInput.value = packagePlanDateSelect.value;
+      syncPackagePlanDateOptions();
+      await populateSlots();
+    });
+  }
 
   packageToastClose.addEventListener('click', () => {
     hidePackageToast();
   });
 
-  packagePlanSelect.addEventListener('change', async () => {
-    if (!packagePlanSelect.value) {
-      clearSelectedPublishedPackagePlan();
-      updateBookingSummary();
-      return;
-    }
+  if (packagePlanSelect instanceof HTMLSelectElement) {
+    packagePlanSelect.addEventListener('change', async () => {
+      if (!packagePlanSelect.value) {
+        clearSelectedPublishedPackagePlan();
+        updateBookingSummary();
+        return;
+      }
 
-    await selectPublishedPackagePlan(packagePlanSelect.value);
-  });
+      await selectPublishedPackagePlan(packagePlanSelect.value);
+    });
+  }
 
   customerPhoneCountryCodeInput.addEventListener('input', refreshBookingPhoneDetails);
 

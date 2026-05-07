@@ -269,6 +269,60 @@ const buildPublicPackagePlans = (
   });
 };
 
+const getNewestPublicPackagePlan = (
+  packagePlans: PublicPackagePlanOption[]
+): PublicPackagePlanOption | null => {
+  if (packagePlans.length === 0) {
+    return null;
+  }
+
+  return [...packagePlans].sort((left, right) =>
+    `${right.updatedAt || right.createdAt || ''}`.localeCompare(
+      `${left.updatedAt || left.createdAt || ''}`
+    )
+  )[0] ?? null;
+};
+
+const sortPublicBookingServicesByNewestPackage = (
+  services: AppointmentServiceOption[],
+  packagePlans: PublicPackagePlanOption[]
+): AppointmentServiceOption[] => {
+  if (services.length === 0 || packagePlans.length === 0) {
+    return services;
+  }
+
+  const newestPackagePlan = getNewestPublicPackagePlan(packagePlans);
+
+  if (!newestPackagePlan) {
+    return services;
+  }
+
+  const serviceRankById = new Map<string, number>();
+
+  for (const [index, serviceId] of newestPackagePlan.includedServiceIds.entries()) {
+    serviceRankById.set(serviceId, index);
+  }
+
+  return [...services].sort((left, right) => {
+    const leftRank = serviceRankById.get(left.id);
+    const rightRank = serviceRankById.get(right.id);
+
+    if (typeof leftRank === 'number' && typeof rightRank === 'number') {
+      return leftRank - rightRank;
+    }
+
+    if (typeof leftRank === 'number') {
+      return -1;
+    }
+
+    if (typeof rightRank === 'number') {
+      return 1;
+    }
+
+    return 0;
+  });
+};
+
 const ensurePublicBookingIsEnabled = async (businessId: string): Promise<void> => {
   const bookingAvailability = await billingService.getPublicBookingAvailability(businessId);
 
@@ -1485,6 +1539,7 @@ export const appointmentService = {
     const bookingAvailability = await billingService.getPublicBookingAvailability(businessId);
     const services = await getServiceCatalogForBusiness(businessId);
     const packagePlans = buildPublicPackagePlans(services, business);
+    const sortedServices = sortPublicBookingServicesByNewestPackage(services, packagePlans);
     const reviews = await listBusinessReviews(businessId);
     const teamMembers = getActiveTeamMembersForBusiness(business);
     const waitlistOffer = await getActiveWaitlistClaim(
@@ -1501,7 +1556,7 @@ export const appointmentService = {
       venueAddress: business.venueAddress ?? '',
       serviceTypes: business.serviceTypes,
       serviceLocations: getAvailableBookingServiceLocations(business),
-      services,
+      services: sortedServices,
       packagePlans,
       teamMembers,
       bookingLink: `/book/${business.id}`,

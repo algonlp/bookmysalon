@@ -98,6 +98,84 @@
       "updatedAt": "2026-01-01T00:00:00.000Z"
     }
   ],
-  "businessSubscriptions": [],
-  "billingInvoices": []
+  "businessSubscriptions": [
+    {
+      "id": "c972f72b-0ba0-4613-b160-3d321dca967a",
+      "businessId": "c14d4ac3-b941-41ee-9890-3dfa752eec3f",
+      "planId": "plan_solo",
+      "status": "trialing",
+      "provider": "demo",
+      "providerCustomerId": "demo_customer_c14d4ac3-b941-41ee-9890-3dfa752eec3f",
+      "providerSubscriptionId": "demo_subscription_c281006d-1682-4b7e-a2a3-26ea969aa7f0",
+      "demoCard": {
+        "brand": "unknown",
+        "last4": "1111",
+        "expMonth": 12,
+        "expYear": 2030,
+        "holderName": "maqsood"
+      },
+      "appointmentCreditsGranted": 50,
+      "appointmentCreditsRemaining": 50,
+      "appointmentCreditsUsed": 0,
+      "currentPeriodStart": "2026-05-06T06:31:13.292Z",
+      "currentPeriodEnd": "2026-06-06T06:31:13.292Z",
+      "trialEndsAt": "2026-05-13T06:31:13.292Z",
+      "createdAt": "2026-05-06T06:31:13.292Z",
+      "updatedAt": "2026-05-06T06:31:13.292Z"
+    },
+    {
+      "id": "cc9a06e8-0a45-4e54-987c-6489f21a7ffa",
+      "businessId": "beaab5fd-04fd-42e5-b11f-2aebe20c5ba0",
+      "planId": "plan_solo",
+      "status": "trialing",
+      "provider": "demo",
+      "providerCustomerId": "demo_customer_beaab5fd-04fd-42e5-b11f-2aebe20c5ba0",
+      "providerSubscriptionId": "demo_subscription_6bf015a3-b035-45db-9c97-320f3ea029c3",
+      "demoCard": {
+        "brand": "unknown",
+        "last4": "1111",
+        "expMonth": 12,
+        "expYear": 2030,
+        "holderName": "maqsood"
+      },
+      "appointmentCreditsGranted": 50,
+      "appointmentCreditsRemaining": 50,
+      "appointmentCreditsUsed": 0,
+      "currentPeriodStart": "2026-05-06T06:44:47.196Z",
+      "currentPeriodEnd": "2026-06-06T06:44:47.196Z",
+      "trialEndsAt": "2026-05-13T06:44:47.196Z",
+      "createdAt": "2026-05-06T06:44:47.196Z",
+      "updatedAt": "2026-05-06T06:44:47.196Z"
+    }
+  ],
+  "billingInvoices": [
+    {
+      "id": "1895843d-e4c1-4164-9c33-8dd41a6a965b",
+      "businessId": "c14d4ac3-b941-41ee-9890-3dfa752eec3f",
+      "subscriptionId": "c972f72b-0ba0-4613-b160-3d321dca967a",
+      "planId": "plan_solo",
+      "amountCents": 126000,
+      "currencyCode": "PKR",
+      "status": "paid",
+      "periodStart": "2026-05-06T06:31:13.292Z",
+      "periodEnd": "2026-06-06T06:31:13.292Z",
+      "paidAt": "2026-05-06T06:31:13.292Z",
+      "createdAt": "2026-05-06T06:31:13.292Z",
+      "updatedAt": "2026-05-06T06:31:13.292Z"
+    },
+    {
+      "id": "aa31a2e2-d685-426b-ad77-978edb82a459",
+      "businessId": "beaab5fd-04fd-42e5-b11f-2aebe20c5ba0",
+      "subscriptionId": "cc9a06e8-0a45-4e54-987c-6489f21a7ffa",
+      "planId": "plan_solo",
+      "amountCents": 126000,
+      "currencyCode": "PKR",
+      "status": "paid",
+      "periodStart": "2026-05-06T06:44:47.196Z",
+      "periodEnd": "2026-06-06T06:44:47.196Z",
+      "paidAt": "2026-05-06T06:44:47.196Z",
+      "createdAt": "2026-05-06T06:44:47.196Z",
+      "updatedAt": "2026-05-06T06:44:47.196Z"
+    }
+  ]
 }

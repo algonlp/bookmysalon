@@ -466,7 +466,32 @@
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "d56b9ee2-80d1-4808-8435-0e7ee94bde53",
+          "name": "eidi",
+          "includedServiceIds": [],
+          "totalUses": 5,
+          "priceLabel": "230000",
+          "expiresAt": "2026-06-05",
+          "isActive": false,
+          "createdAt": "2026-05-06T07:11:38.402Z",
+          "updatedAt": "2026-05-06T07:55:22.326Z"
+        },
+        {
+          "id": "af2fede8-a413-4b17-a1ca-f5c34b232327",
+          "name": "eid package",
+          "includedServiceIds": [
+            "hair-salon-blow-dry"
+          ],
+          "totalUses": 2,
+          "priceLabel": "000555",
+          "expiresAt": "2026-06-05",
+          "isActive": true,
+          "createdAt": "2026-05-06T07:55:47.803Z",
+          "updatedAt": "2026-05-06T07:55:47.803Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -497,7 +522,8 @@
       "preferredLanguage": "english",
       "onboardingCompleted": true,
       "createdAt": "2026-04-09T06:28:28.238Z",
-      "updatedAt": "2026-04-09T06:47:52.198Z"
+      "updatedAt": "2026-05-06T07:55:47.803Z",
+      "businessPhoneNumber": ""
     },
     {
       "id": "bf4e74af-0c88-453c-9b8d-cbef93852412",
@@ -2196,6 +2222,408 @@
       "onboardingCompleted": true,
       "createdAt": "2026-04-16T10:34:47.414Z",
       "updatedAt": "2026-04-16T15:27:38.172Z"
+    },
+    {
+      "id": "3765eb45-6291-444f-a3bc-7352bc461657",
+      "adminToken": "d4fcd8d1-b9a9-4784-8be1-cbef29f6552a",
+      "email": "maqsood@gmail.com",
+      "mobileNumber": "",
+      "businessPhoneNumber": "",
+      "provider": "email",
+      "businessName": "123456",
+      "website": "",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Hair salon",
+        "Nails",
+        "Eyebrows & lashes",
+        "Beauty salon",
+        "Medspa",
+        "Barber",
+        "Massage",
+        "Spa & sauna",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "$2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "$1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        },
+        {
+          "id": "nails-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "$1,600",
+          "description": "Nail shaping, cuticle care, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "nails-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Nails",
+          "priceLabel": "$2,100",
+          "description": "Foot soak, nail care, exfoliation, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$900",
+          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-lash-lift",
+          "name": "Lash lift",
+          "durationMinutes": 45,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$1,800",
+          "description": "Lift and curl natural lashes for a brighter eye look.",
+          "isActive": true
+        },
+        {
+          "id": "beauty-salon-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "$2,700",
+          "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
+          "isActive": true
+        },
+        {
+          "id": "medspa-skin-consultation",
+          "name": "Skin consultation",
+          "durationMinutes": 45,
+          "categoryName": "Medspa",
+          "priceLabel": "$2,400",
+          "description": "Professional consultation to recommend the right skin treatments.",
+          "isActive": true
+        },
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "$1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "$800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        },
+        {
+          "id": "massage-deep-tissue-massage",
+          "name": "Deep tissue massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$3,200",
+          "description": "Targeted pressure massage designed for muscle recovery.",
+          "isActive": true
+        },
+        {
+          "id": "massage-relaxation-massage",
+          "name": "Relaxation massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$2,900",
+          "description": "Full-body relaxation massage to reduce stress and tension.",
+          "isActive": true
+        },
+        {
+          "id": "spa-sauna-spa-session",
+          "name": "Spa session",
+          "durationMinutes": 60,
+          "categoryName": "Spa & sauna",
+          "priceLabel": "$3,500",
+          "description": "Unwind with a restorative spa session in a calm setting.",
+          "isActive": true
+        },
+        {
+          "id": "waxing-salon-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "$1,700",
+          "description": "Full arm waxing service for a smooth, polished result.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "USD",
+        "currencyLocale": "en-US",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "University of Agriculture, Faisalabad, University Main Road, Ghaziabad 1, Faisalabad City Tehsil, Faisalabad District, Faisalabad Division, Punjab, 38900, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-06T06:35:28.620Z",
+      "updatedAt": "2026-05-06T06:36:13.107Z"
+    },
+    {
+      "id": "beaab5fd-04fd-42e5-b11f-2aebe20c5ba0",
+      "adminToken": "58930305-9b62-42e1-bd4f-7611f0e0bfb6",
+      "email": "email-692203ab@platform.local",
+      "mobileNumber": "111111111111111111",
+      "businessPhoneNumber": "",
+      "provider": "email",
+      "businessName": "busy life",
+      "website": "",
+      "profileImageUrl": "",
+      "serviceTypes": [
+        "Hair salon",
+        "Nails",
+        "Eyebrows & lashes",
+        "Beauty salon",
+        "Medspa",
+        "Barber",
+        "Massage",
+        "Spa & sauna",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "$2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "$1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        },
+        {
+          "id": "nails-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "$1,600",
+          "description": "Nail shaping, cuticle care, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "nails-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Nails",
+          "priceLabel": "$2,100",
+          "description": "Foot soak, nail care, exfoliation, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$900",
+          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-lash-lift",
+          "name": "Lash lift",
+          "durationMinutes": 45,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$1,800",
+          "description": "Lift and curl natural lashes for a brighter eye look.",
+          "isActive": true
+        },
+        {
+          "id": "beauty-salon-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "$2,700",
+          "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
+          "isActive": true
+        },
+        {
+          "id": "medspa-skin-consultation",
+          "name": "Skin consultation",
+          "durationMinutes": 45,
+          "categoryName": "Medspa",
+          "priceLabel": "$2,400",
+          "description": "Professional consultation to recommend the right skin treatments.",
+          "isActive": true
+        },
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "$1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "$800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        },
+        {
+          "id": "massage-deep-tissue-massage",
+          "name": "Deep tissue massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$3,200",
+          "description": "Targeted pressure massage designed for muscle recovery.",
+          "isActive": true
+        },
+        {
+          "id": "massage-relaxation-massage",
+          "name": "Relaxation massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$2,900",
+          "description": "Full-body relaxation massage to reduce stress and tension.",
+          "isActive": true
+        },
+        {
+          "id": "spa-sauna-spa-session",
+          "name": "Spa session",
+          "durationMinutes": 60,
+          "categoryName": "Spa & sauna",
+          "priceLabel": "$3,500",
+          "description": "Unwind with a restorative spa session in a calm setting.",
+          "isActive": true
+        },
+        {
+          "id": "waxing-salon-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "$1,700",
+          "description": "Full arm waxing service for a smooth, polished result.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [
+        {
+          "id": "d1ca946b-7c46-4f2b-ab59-f6bed3cd39d8",
+          "name": "ok package",
+          "includedServiceIds": [],
+          "totalUses": 5,
+          "priceLabel": "6777",
+          "expiresAt": "2026-06-05",
+          "isActive": true,
+          "createdAt": "2026-05-06T06:45:18.214Z",
+          "updatedAt": "2026-05-06T06:45:18.214Z"
+        },
+        {
+          "id": "206df731-6ba5-47e4-8871-30791cfb9637",
+          "name": "busy life",
+          "includedServiceIds": [],
+          "totalUses": 5,
+          "priceLabel": "4500",
+          "expiresAt": "2026-06-05",
+          "isActive": true,
+          "createdAt": "2026-05-06T06:52:16.456Z",
+          "updatedAt": "2026-05-06T06:52:16.456Z"
+        },
+        {
+          "id": "4d0c0530-cf79-46af-925b-2be64dd0a41c",
+          "name": "eidiii package",
+          "includedServiceIds": [],
+          "totalUses": 5,
+          "priceLabel": "0000000",
+          "expiresAt": "2026-06-05",
+          "isActive": true,
+          "createdAt": "2026-05-06T07:09:34.474Z",
+          "updatedAt": "2026-05-06T07:09:34.474Z"
+        }
+      ],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "USD",
+        "currencyLocale": "en-US",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "University of Agriculture, Faisalabad, University Main Road, Faisalabad City Tehsil, Faisalabad District, Faisalabad Division, Punjab, 38900, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-06T06:43:01.864Z",
+      "updatedAt": "2026-05-06T07:09:34.474Z"
     }
   ]
 }

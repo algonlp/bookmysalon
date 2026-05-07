@@ -2283,6 +2283,76 @@ describe('Client platform API', () => {
     expect(sellExpiredPackageResponse.body.error).toContain('Package plan was not found');
   });
 
+  it('shows the newest catalog package service first on the public booking page', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(Date.UTC(2026, 2, 11, 8, 0, 0)));
+
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'eid-package-order@example.com',
+      provider: 'email'
+    });
+
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/business-profile`)
+      .set('x-admin-token', adminToken)
+      .send({
+        businessName: 'Eid Package House',
+        website: 'eid-package.example'
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-types`)
+      .set('x-admin-token', adminToken)
+      .send({
+        serviceTypes: ['Barber']
+      });
+
+    const oldPackageResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/packages`)
+      .set('x-admin-token', adminToken)
+      .send({
+        name: 'Regular Haircut Package',
+        includedServiceIds: ['barber-haircut'],
+        totalUses: 2,
+        priceLabel: 'PKR 2,000'
+      });
+
+    expect(oldPackageResponse.status).toBe(201);
+
+    vi.setSystemTime(new Date(Date.UTC(2026, 2, 11, 8, 5, 0)));
+
+    const newPackageResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/packages`)
+      .set('x-admin-token', adminToken)
+      .send({
+        name: 'Eid Beard Package',
+        includedServiceIds: ['barber-beard-trim'],
+        totalUses: 3,
+        priceLabel: 'PKR 1,500'
+      });
+
+    expect(newPackageResponse.status).toBe(201);
+
+    const bookingPageResponse = await request(app).get(`/api/public/book/${clientId}`);
+
+    expect(bookingPageResponse.status).toBe(200);
+    expect(bookingPageResponse.body.services.slice(0, 2)).toEqual([
+      expect.objectContaining({
+        id: 'barber-beard-trim',
+        name: 'Beard trim',
+        highlightedPackageNames: ['Eid Beard Package']
+      }),
+      expect.objectContaining({
+        id: 'barber-haircut',
+        name: 'Haircut',
+        highlightedPackageNames: ['Regular Haircut Package']
+      })
+    ]);
+  });
+
   it('automatically completes spent appointments and frees the live calendar slot', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(Date.UTC(2026, 2, 11, 10, 30, 0)));
