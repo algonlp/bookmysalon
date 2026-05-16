@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Salon images</title>
+    <meta
+      name="description"
+      content="Optionally add salon images for the public business profile."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="onboarding-page salon-images-page">
+      <div class="onboarding-shell">
+        <header class="onboarding-header">
+          <div class="onboarding-top-left">
+            <a class="onboarding-back" href="/onboarding/venue-location" aria-label="Go back">
+              <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+                <path d="M15 5l-7 7 7 7"></path>
+              </svg>
+            </a>
+
+            <div class="onboarding-progress">
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+              <span class="progress-bar progress-bar-active"></span>
+            </div>
+          </div>
+        </header>
+
+        <main class="onboarding-main salon-images-main">
+          <section class="onboarding-copy salon-images-copy">
+            <p class="onboarding-eyebrow">Account setup</p>
+            <h1>Add salon images</h1>
+            <p class="onboarding-description">
+              Add a few photos for your public business page. This step is optional and can be
+              updated later from your dashboard.
+            </p>
+          </section>
+
+          <form class="salon-images-layout" id="salon-images-form">
+            <section class="salon-images-panel">
+              <div class="salon-images-field-list">
+                <label class="salon-image-field">
+                  <span>Cover image URL</span>
+                  <input
+                    type="url"
+                    data-salon-image-input
+                    placeholder="https://example.com/salon-cover.jpg"
+                  />
+                </label>
+                <label class="salon-image-field">
+                  <span>Gallery image URL</span>
+                  <input
+                    type="url"
+                    data-salon-image-input
+                    placeholder="https://example.com/interior.jpg"
+                  />
+                </label>
+                <label class="salon-image-field">
+                  <span>Gallery image URL</span>
+                  <input
+                    type="url"
+                    data-salon-image-input
+                    placeholder="https://example.com/service-room.jpg"
+                  />
+                </label>
+              </div>
+
+              <p class="salon-images-status" id="salon-images-status" aria-live="polite">
+                No salon images added yet.
+              </p>
+            </section>
+
+            <section class="salon-images-preview-card" aria-label="Salon image preview">
+              <div class="salon-images-preview-grid" id="salon-images-preview-grid"></div>
+            </section>
+          </form>
+        </main>
+
+        <div class="onboarding-footer">
+          <div class="onboarding-actions">
+            <button class="onboarding-close" id="salon-images-skip" type="button">Skip for now</button>
+            <button class="continue-button onboarding-continue" id="salon-images-continue" type="submit" form="salon-images-form">
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

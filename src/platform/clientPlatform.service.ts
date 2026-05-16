@@ -46,6 +46,7 @@ import type {
   PublicSalonShowcaseItem,
   PreferredLanguage,
   ReportMetadataRecord,
+  SalonImagesInput,
   ServiceLocationInput,
   SellProductInput,
   ServiceTypesInput,
@@ -817,6 +818,15 @@ const normalizeClientEmail = (value: string | undefined): string =>
 const normalizeClientMobileNumber = (value: string | undefined): string =>
   typeof value === 'string' ? value.trim() : '';
 
+const normalizeGalleryImageUrls = (values: unknown): string[] =>
+  Array.isArray(values)
+    ? values
+        .filter((value): value is string => typeof value === 'string')
+        .map((value) => value.trim())
+        .filter((value, index, allValues) => value.length > 0 && allValues.indexOf(value) === index)
+        .slice(0, 6)
+    : [];
+
 const getNextIncompleteOnboardingPath = (
   client: ClientRecord
 ): string | null => {
@@ -1481,6 +1491,7 @@ const toPublicClientRecord = (client: ClientRecord): PublicClientRecord => ({
   businessName: client.businessName,
   website: client.website,
   profileImageUrl: client.profileImageUrl ?? '',
+  galleryImageUrls: normalizeGalleryImageUrls(client.galleryImageUrls),
   serviceTypes: client.serviceTypes,
   services: normalizeBusinessServices(
     client.serviceTypes,
@@ -1502,6 +1513,7 @@ const toPublicClientRecord = (client: ClientRecord): PublicClientRecord => ({
   createdAt: client.createdAt,
   updatedAt: client.updatedAt
 });
+
 
 const formatDashboardDate = (
   date: Date,
@@ -1839,6 +1851,7 @@ const hydrateClientRecord = (client: ClientRecord): ClientRecord => {
     businessPhoneNumber:
       typeof client.businessPhoneNumber === 'string' ? client.businessPhoneNumber.trim() : '',
     businessSettings,
+    galleryImageUrls: normalizeGalleryImageUrls(client.galleryImageUrls),
     serviceLocation: normalizeServiceLocations(client.serviceLocation),
     services: normalizeBusinessServices(
       client.serviceTypes,
@@ -1921,6 +1934,7 @@ const createClientRecord = async (input: CreateClientInput): Promise<ClientRecor
     businessName: '',
     website: '',
     profileImageUrl: '',
+    galleryImageUrls: [],
     serviceTypes: [],
     services: [],
     products: [],
@@ -1946,6 +1960,7 @@ const createClientRecord = async (input: CreateClientInput): Promise<ClientRecor
 export const clientPlatformService = {
   async createClient(input: CreateClientInput): Promise<ClientRecord> {
     return createClientRecord(input);
+
   },
 
   async loginClient(
@@ -2037,16 +2052,21 @@ export const clientPlatformService = {
           serviceTypes: client.serviceTypes,
           serviceLocation: client.serviceLocation,
           venueAddress: client.venueAddress,
+          profileImageUrl: client.profileImageUrl,
+          galleryImageUrls: normalizeGalleryImageUrls(client.galleryImageUrls),
           bookingLink: `/book/${client.id}`,
           openingTime: businessHours.openingTime,
           closingTime: businessHours.closingTime,
           onlineTeamMembersCount: onlineTeamMembers.length,
           onlineTeamMemberNames: onlineTeamMembers.map((teamMember) => teamMember.name),
           reviewSummary: reviews.summary,
-          services: services.slice(0, 3).map((service) => ({
+          services: services.map((service) => ({
+            id: service.id,
             name: service.name,
+            categoryName: service.categoryName,
             durationMinutes: service.durationMinutes,
             priceLabel: service.priceLabel,
+            description: service.description,
             isPackageHighlighted: service.isPackageHighlighted,
             highlightedPackageNames: service.highlightedPackageNames
           }))
@@ -2075,6 +2095,19 @@ export const clientPlatformService = {
       venueAddress: input.venueAddress?.trim() ?? client.venueAddress,
       updatedAt: new Date().toISOString()
     }));
+  },
+
+  updateSalonImages(clientId: string, input: SalonImagesInput): Promise<ClientRecord> {
+    return updateClient(clientId, (client) => {
+      const galleryImageUrls = normalizeGalleryImageUrls(input.galleryImageUrls);
+
+      return {
+        ...client,
+        galleryImageUrls,
+        profileImageUrl: client.profileImageUrl || galleryImageUrls[0] || '',
+        updatedAt: new Date().toISOString()
+      };
+    });
   },
 
   updateServiceTypes(clientId: string, input: ServiceTypesInput): Promise<ClientRecord> {
@@ -2689,5 +2722,3 @@ export const clientPlatformService = {
 
 export const serializeClientForResponse = (client: ClientRecord): PublicClientRecord =>
   toPublicClientRecord(hydrateClientRecord(client));
-
-

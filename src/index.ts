@@ -6,8 +6,10 @@ const isVercelRuntime = process.env.VERCEL === '1' || Boolean(process.env.VERCEL
 
 if (!isVercelRuntime) {
   app.listen(env.PORT, () => {
+    const localUrl = `http://localhost:${env.PORT}`;
+
     logger.info(
-      `Server running on port ${env.PORT} in ${env.APP_ENV} mode using ${env.CLIENT_PLATFORM_STORAGE} client storage`
+      `Server running at ${localUrl} in ${env.APP_ENV} mode using ${env.CLIENT_PLATFORM_STORAGE} client storage`
     );
   });
 }

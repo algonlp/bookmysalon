@@ -106,6 +106,10 @@ app.get('/onboarding/venue-location', requirePlatformAdminPageAccess, (_req, res
   res.sendFile(resolve(publicDir, 'onboarding-venue-location.html'));
 });
 
+app.get('/onboarding/salon-images', requirePlatformAdminPageAccess, (_req, res) => {
+  res.sendFile(resolve(publicDir, 'onboarding-salon-images.html'));
+});
+
 app.get('/onboarding/launch-links', requirePlatformAdminPageAccess, (_req, res) => {
   res.sendFile(resolve(publicDir, 'onboarding-launch-links.html'));
 });
@@ -132,6 +136,10 @@ app.get('/sms-logs', requirePlatformAdminPageAccess, (_req, res) => {
 
 app.get('/book/:clientId', (_req, res) => {
   res.sendFile(resolve(publicDir, 'book.html'));
+});
+
+app.get('/salon/:clientId', (_req, res) => {
+  res.sendFile(resolve(publicDir, 'salon.html'));
 });
 
 app.get('/book/:clientId/manage/:appointmentId', (_req, res) => {

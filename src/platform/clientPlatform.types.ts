@@ -143,6 +143,7 @@ export interface ClientRecord {
   businessName: string;
   website: string;
   profileImageUrl: string;
+  galleryImageUrls: string[];
   serviceTypes: string[];
   services: BusinessService[];
   products: ProductRecord[];
@@ -170,6 +171,7 @@ export interface PublicClientRecord {
   businessName: string;
   website: string;
   profileImageUrl: string;
+  galleryImageUrls: string[];
   serviceTypes: string[];
   services: BusinessService[];
   products: ProductRecord[];
@@ -204,6 +206,10 @@ export interface BusinessProfileInput {
   businessPhoneNumber?: string;
   profileImageUrl?: string;
   venueAddress?: string;
+}
+
+export interface SalonImagesInput {
+  galleryImageUrls: string[];
 }
 
 export interface ServiceTypesInput {
@@ -499,6 +505,8 @@ export interface PublicSalonShowcaseItem {
   serviceTypes: string[];
   serviceLocation: ServiceLocation[];
   venueAddress: string;
+  profileImageUrl: string;
+  galleryImageUrls: string[];
   bookingLink: string;
   openingTime: string;
   closingTime: string;
@@ -509,10 +517,13 @@ export interface PublicSalonShowcaseItem {
     totalReviews: number;
   };
   services: Array<{
+    id: string;
     name: string;
+    categoryName: string;
     durationMinutes: number;
     priceLabel: string;
     isPackageHighlighted?: boolean;
     highlightedPackageNames?: string[];
+    description: string;
   }>;
 }

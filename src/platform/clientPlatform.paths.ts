@@ -7,6 +7,7 @@ export const platformClientPagePaths = {
     accountType: '/onboarding/account-type',
     serviceLocation: '/onboarding/service-location',
     venueLocation: '/onboarding/venue-location',
+    salonImages: '/onboarding/salon-images',
     launchLinks: '/onboarding/launch-links',
     language: '/onboarding/language',
     complete: '/onboarding/complete'

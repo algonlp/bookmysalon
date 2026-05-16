@@ -71,6 +71,18 @@ const businessProfileSchema = z.object({
     .refine((value) => isValidProfileImageValue(value ?? ''), 'Valid image URL or uploaded image is required')
 });
 
+const salonImagesSchema = z.object({
+  galleryImageUrls: z
+    .array(
+      z
+        .string()
+        .trim()
+        .refine((value) => isValidProfileImageValue(value), 'Valid image URL or uploaded image is required')
+    )
+    .max(6)
+    .default([])
+});
+
 const serviceTypesSchema = z.object({
   serviceTypes: z.array(z.string().trim().min(1)).min(1)
 });
@@ -325,6 +337,18 @@ export const clientPlatformController = {
     });
   },
 
+  async updateSalonImages(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const client = await clientPlatformService.updateSalonImages(
+      getClientId(req),
+      salonImagesSchema.parse(req.body)
+    );
+
+    res.status(200).json({
+      client: serializeClientForResponse(client),
+      nextStep: buildPlatformClientPagePath(platformClientPagePaths.onboarding.launchLinks, client.id)
+    });
+  },
+
   async updateServiceTypes(req: Request, res: Response, _next: NextFunction): Promise<void> {
     const client = await clientPlatformService.updateServiceTypes(
       getClientId(req),
@@ -344,7 +368,8 @@ export const clientPlatformController = {
     );
 
     res.status(200).json({
-      client: serializeClientForResponse(client)
+      client: serializeClientForResponse(client),
+      nextStep: buildPlatformClientPagePath(platformClientPagePaths.onboarding.accountType, client.id)
     });
   },
 
@@ -379,7 +404,8 @@ export const clientPlatformController = {
     );
 
     res.status(200).json({
-      client: serializeClientForResponse(client)
+      client: serializeClientForResponse(client),
+      nextStep: buildPlatformClientPagePath(platformClientPagePaths.onboarding.salonImages, client.id)
     });
   },
 

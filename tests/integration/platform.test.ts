@@ -870,6 +870,104 @@ describe('Client platform API', () => {
     expect(loginResponse.body.nextStep).toBe(`/onboarding/business-name?clientId=${clientId}`);
   });
 
+  it('shows newly completed businesses publicly with their full service catalog', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'public-catalog-owner@example.com',
+      provider: 'email'
+    });
+
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/business-profile`)
+      .set('x-admin-token', adminToken)
+      .send({
+        businessName: 'Glow Full Catalog',
+        profileImageUrl: 'https://example.com/glow-full-catalog.jpg'
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-types`)
+      .set('x-admin-token', adminToken)
+      .send({
+        serviceTypes: ['Hair salon', 'Nails', 'Eyebrows & lashes', 'Beauty salon', 'Medspa', 'Barber']
+      });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/account-type`)
+      .set('x-admin-token', adminToken)
+      .send({ accountType: 'team' });
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-location`)
+      .set('x-admin-token', adminToken)
+      .send({ serviceLocation: ['physical'] });
+
+    const venueResponse = await request(app)
+      .patch(`/api/platform/clients/${clientId}/venue-location`)
+      .set('x-admin-token', adminToken)
+      .send({ venueAddress: 'Business Bay, Dubai' });
+
+    expect(venueResponse.body.nextStep).toBe(`/onboarding/salon-images?clientId=${clientId}`);
+
+    const salonImagesResponse = await request(app)
+      .patch(`/api/platform/clients/${clientId}/salon-images`)
+      .set('x-admin-token', adminToken)
+      .send({
+        galleryImageUrls: [
+          'https://example.com/glow-full-catalog-cover.jpg',
+          'https://example.com/glow-full-catalog-room.jpg'
+        ]
+      });
+
+    expect(salonImagesResponse.status).toBe(200);
+    expect(salonImagesResponse.body.nextStep).toBe(`/onboarding/launch-links?clientId=${clientId}`);
+    expect(salonImagesResponse.body.client.galleryImageUrls).toEqual([
+      'https://example.com/glow-full-catalog-cover.jpg',
+      'https://example.com/glow-full-catalog-room.jpg'
+    ]);
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/preferred-language`)
+      .set('x-admin-token', adminToken)
+      .send({ preferredLanguage: 'english' });
+
+    const completeResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/complete`)
+      .set('x-admin-token', adminToken);
+
+    expect(completeResponse.status).toBe(200);
+
+    const publicSalonsResponse = await request(app).get('/api/public/salons');
+    const publicSalon = publicSalonsResponse.body.salons.find(
+      (salon: { clientId: string }) => salon.clientId === clientId
+    );
+
+    expect(publicSalon).toEqual(
+      expect.objectContaining({
+        businessName: 'Glow Full Catalog',
+        profileImageUrl: 'https://example.com/glow-full-catalog.jpg',
+        galleryImageUrls: [
+          'https://example.com/glow-full-catalog-cover.jpg',
+          'https://example.com/glow-full-catalog-room.jpg'
+        ],
+        bookingLink: `/book/${clientId}`
+      })
+    );
+    expect(publicSalon.services).toHaveLength(10);
+    expect(publicSalon.services).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'Cut and style', categoryName: 'Hair salon' }),
+        expect.objectContaining({ name: 'Manicure', categoryName: 'Nails' }),
+        expect.objectContaining({ name: 'Brow shaping', categoryName: 'Eyebrows & lashes' }),
+        expect.objectContaining({ name: 'Facial treatment', categoryName: 'Beauty salon' }),
+        expect.objectContaining({ name: 'Skin consultation', categoryName: 'Medspa' }),
+        expect.objectContaining({ name: 'Haircut', categoryName: 'Barber' })
+      ])
+    );
+  });
+
   it('builds launch links from the configured app origin instead of the request host header', async () => {
     const createResponse = await request(app).post('/api/platform/clients').send({
       email: 'origin-links@example.com',
@@ -1518,7 +1616,8 @@ describe('Client platform API', () => {
       .set('x-admin-token', adminToken)
       .send({
         businessName: 'Trim House',
-        website: 'trimhouse.example'
+        website: 'trimhouse.example',
+        profileImageUrl: 'https://example.com/trim-house.jpg'
       });
 
     await request(app)
@@ -1610,12 +1709,38 @@ describe('Client platform API', () => {
         expect.objectContaining({
           clientId,
           businessName: 'Trim House',
+          profileImageUrl: 'https://example.com/trim-house.jpg',
           bookingLink: `/book/${clientId}`,
           onlineTeamMembersCount: 1,
           onlineTeamMemberNames: ['Asad']
         })
       ])
     );
+    const publicSalon = publicSalonsResponse.body.salons.find(
+      (salon: { clientId: string }) => salon.clientId === clientId
+    );
+    expect(publicSalon.services).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          name: 'Haircut',
+          categoryName: 'Barber',
+          description: expect.stringContaining('Classic barber haircut')
+        }),
+        expect.objectContaining({
+          name: 'Beard trim',
+          categoryName: 'Barber'
+        }),
+        expect.objectContaining({
+          name: 'Cut and style',
+          categoryName: 'Hair salon'
+        }),
+        expect.objectContaining({
+          name: 'Blow dry',
+          categoryName: 'Hair salon'
+        })
+      ])
+    );
+    expect(publicSalon.services).toHaveLength(4);
 
     const slotsResponse = await request(app).get(
       `/api/public/book/${clientId}/slots?date=${bookingDateValue}`

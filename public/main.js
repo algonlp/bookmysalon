@@ -941,6 +941,11 @@ const getBookingClientIdFromPath = () => {
   return match ? decodeURIComponent(match[1]) : null;
 };
 
+const getSalonClientIdFromPath = () => {
+  const match = window.location.pathname.match(/^\/salon\/([^/]+)$/);
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
 const getManagedBookingFromPath = () => {
   const match = window.location.pathname.match(/^\/book\/([^/]+)\/manage\/([^/]+)$/);
 
@@ -1941,6 +1946,51 @@ const getSalonLocationScore = (salon, locationQuery) => {
   return matchedParts > 0 ? matchedParts * 18 : -1;
 };
 
+const toFiniteNumber = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+};
+
+const getDistanceInKilometers = (from, to) => {
+  const fromLatitude = toFiniteNumber(from?.latitude);
+  const fromLongitude = toFiniteNumber(from?.longitude);
+  const toLatitude = toFiniteNumber(to?.latitude);
+  const toLongitude = toFiniteNumber(to?.longitude);
+
+  if (
+    fromLatitude === null ||
+    fromLongitude === null ||
+    toLatitude === null ||
+    toLongitude === null
+  ) {
+    return null;
+  }
+
+  const earthRadiusKilometers = 6371;
+  const toRadians = (degrees) => (degrees * Math.PI) / 180;
+  const latitudeDelta = toRadians(toLatitude - fromLatitude);
+  const longitudeDelta = toRadians(toLongitude - fromLongitude);
+  const firstLatitude = toRadians(fromLatitude);
+  const secondLatitude = toRadians(toLatitude);
+  const haversine =
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(firstLatitude) * Math.cos(secondLatitude) * Math.sin(longitudeDelta / 2) ** 2;
+
+  return earthRadiusKilometers * 2 * Math.atan2(Math.sqrt(haversine), Math.sqrt(1 - haversine));
+};
+
+const formatDistanceLabel = (distanceKilometers) => {
+  const distance = Number(distanceKilometers);
+
+  if (!Number.isFinite(distance)) {
+    return '';
+  }
+
+  return distance < 1
+    ? `${Math.max(1, Math.round(distance * 1000))} m away`
+    : `${distance.toFixed(distance < 10 ? 1 : 0)} km away`;
+};
+
 const getSalonLocationSearchValues = (salon) => {
   const address = typeof salon.venueAddress === 'string' ? salon.venueAddress.trim() : '';
 
@@ -1949,140 +1999,396 @@ const getSalonLocationSearchValues = (salon) => {
   }
 
   return buildCompactLocationSuggestions(address);
+
+  card.append(media, header, details);
+  return card;
 };
 
-const parseTimeValueToMinutes = (timeValue) => {
-  if (typeof timeValue !== 'string' || !/^\d{2}:\d{2}$/.test(timeValue)) {
-    return null;
+const createDetailText = (tagName, className, text) => {
+  const element = document.createElement(tagName);
+  if (className) {
+    element.className = className;
   }
-
-  const [hoursValue, minutesValue] = timeValue.split(':');
-  const hours = Number(hoursValue);
-  const minutes = Number(minutesValue);
-
-  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
-    return null;
-  }
-
-  return hours * 60 + minutes;
+  element.textContent = text;
+  return element;
 };
 
-const getPublicSalonOpenStatus = (salon) => {
-  const openingMinutes = parseTimeValueToMinutes(salon.openingTime);
-  const closingMinutes = parseTimeValueToMinutes(salon.closingTime);
+const getSalonReviewSummaryText = (salon) => {
+  const totalReviews = Number(salon.reviewSummary?.totalReviews) || 0;
+  const averageRating = Number(salon.reviewSummary?.averageRating) || 0;
 
-  if (openingMinutes === null || closingMinutes === null || closingMinutes <= openingMinutes) {
-    return {
-      isOpen: false,
-      label: 'Hours unavailable'
-    };
-  }
-
-  const now = new Date();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const isOpen = currentMinutes >= openingMinutes && currentMinutes < closingMinutes;
-
-  return {
-    isOpen,
-    label: isOpen
-      ? `Open now | Until ${formatTimeForDisplay(salon.closingTime)}`
-      : `Closed now | Opens ${formatTimeForDisplay(salon.openingTime)}`
-  };
+  return totalReviews > 0
+    ? `${averageRating.toFixed(1)} (${totalReviews})`
+    : 'New';
 };
 
-const createSalonShowcaseCard = (salon) => {
-  const card = document.createElement('article');
-  card.className = 'public-salon-card';
+const getSalonAboutText = (salon) => {
+  const serviceTypes = Array.isArray(salon.serviceTypes) && salon.serviceTypes.length > 0
+    ? salon.serviceTypes.join(', ')
+    : 'beauty and wellness services';
+  const location = formatAddressSingleLine(salon.venueAddress) || 'your area';
 
-  const header = document.createElement('div');
-  header.className = 'public-salon-card-header';
+  return `${salon.businessName || 'This business'} offers ${serviceTypes} in ${location}. Browse services, compare prices, and book your appointment online from QR schedule.`;
+};
 
-  const titleBlock = document.createElement('div');
-  titleBlock.className = 'public-salon-card-title-block';
+const getSalonGalleryImages = (salon) => {
+  const imageSource = getSalonImageSource(salon);
+  const imageUrls = [
+    ...(imageSource === '/signup-photo.jpeg' ? [] : [imageSource]),
+    ...(Array.isArray(salon.galleryImageUrls) ? salon.galleryImageUrls : []),
+    ...(Array.isArray(salon.photoUrls) ? salon.photoUrls : []),
+    ...(Array.isArray(salon.galleryImages) ? salon.galleryImages : [])
+  ]
+    .filter((value) => typeof value === 'string' && value.trim().length > 0)
+    .map((value) => value.trim());
+  const uniqueImages = imageUrls.filter((value, index, values) => values.indexOf(value) === index);
 
-  const title = document.createElement('h3');
-  title.textContent = salon.businessName;
+  return uniqueImages.length > 0 ? uniqueImages : ['/signup-photo.jpeg'];
+};
 
-  const location = document.createElement('p');
-  location.className = 'public-salon-card-location';
-  location.textContent = formatAddressSingleLine(salon.venueAddress) || 'Booking available';
+const renderSalonDetailPanel = (salon) => {
+  const panel = document.querySelector('#salon-detail-panel');
+  const main = document.querySelector('#salon-detail-main');
+  const aside = document.querySelector('#salon-detail-card');
 
-  const typeList = document.createElement('div');
-  typeList.className = 'public-salon-type-list';
-
-  const { labels: typeLabels, hiddenCount } = getVisibleSalonServiceTypes(salon.serviceTypes);
-  const visibleTypeLabels = typeLabels.length > 0 ? typeLabels : ['Salon services'];
-
-  visibleTypeLabels.forEach((label) => {
-    const typePill = document.createElement('span');
-    typePill.className = 'public-salon-type-pill';
-    typePill.textContent = label;
-    typeList.append(typePill);
-  });
-
-  if (hiddenCount > 0) {
-    const morePill = document.createElement('span');
-    morePill.className = 'public-salon-type-pill is-muted';
-    morePill.textContent = `+${hiddenCount} more`;
-    typeList.append(morePill);
+  if (!(panel instanceof HTMLElement) || !(main instanceof HTMLElement) || !(aside instanceof HTMLElement)) {
+    return;
   }
 
-  const openStatus = getPublicSalonOpenStatus(salon);
-  const onlineBadge = document.createElement('div');
-  onlineBadge.className = `public-salon-online-badge${openStatus.isOpen ? '' : ' is-offline'}`;
-  onlineBadge.textContent = openStatus.label;
+  main.replaceChildren();
+  aside.replaceChildren();
 
-  titleBlock.append(title, location, typeList, onlineBadge);
+  const businessName = salon.businessName || 'New business';
+  const serviceTypes = Array.isArray(salon.serviceTypes) && salon.serviceTypes.length > 0
+    ? salon.serviceTypes
+    : ['Services'];
+  const locationLabel = formatAddressSingleLine(salon.venueAddress) || 'Business area';
+  const reviewCount = Number(salon.reviewSummary?.totalReviews) || 0;
+  const ratingLabel = getSalonRatingLabel(salon);
 
-  const bookLink = document.createElement('a');
-  bookLink.className = 'public-salon-book-link';
-  bookLink.href = salon.bookingLink;
-  bookLink.textContent = 'Book now';
+  const profileHeader = document.createElement('header');
+  profileHeader.className = 'salon-detail-profile-header';
 
-  header.append(titleBlock, bookLink);
+  const breadcrumb = createDetailText(
+    'p',
+    'salon-detail-breadcrumb',
+    `Home / ${serviceTypes[0]} / ${locationLabel} / ${businessName}`
+  );
 
-  const reviewMeta = document.createElement('div');
-  reviewMeta.className = 'public-salon-review-meta';
-  reviewMeta.textContent =
-    salon.reviewSummary?.totalReviews > 0
-      ? `${salon.reviewSummary.averageRating}/5 | ${salon.reviewSummary.totalReviews} review${salon.reviewSummary.totalReviews === 1 ? '' : 's'}`
-      : 'New salon | No reviews yet';
+  const title = createDetailText('h1', '', businessName);
+  title.id = 'salon-detail-title';
 
-  const services = document.createElement('div');
-  services.className = 'public-salon-services';
+  const meta = createDetailText(
+    'p',
+    'salon-detail-profile-meta',
+    `${ratingLabel} ***** (${reviewCount}) | Open until 11:00PM | ${locationLabel}`
+  );
 
-  for (const service of salon.services ?? []) {
-    const serviceCard = document.createElement('div');
-    const highlightedPackageNames = Array.isArray(service.highlightedPackageNames)
-      ? service.highlightedPackageNames.filter(Boolean)
-      : [];
-    serviceCard.className = highlightedPackageNames.length > 0
-      ? 'public-salon-service-card is-package-highlighted'
-      : 'public-salon-service-card';
+  profileHeader.append(breadcrumb, title, meta);
 
-    const name = document.createElement('strong');
-    name.textContent = service.name;
+  const gallery = document.createElement('div');
+  gallery.className = 'salon-detail-gallery';
+  const galleryImages = getSalonGalleryImages(salon);
+  const gallerySlots = [0, 1, 2];
 
-    const details = document.createElement('span');
-    details.textContent = `${service.durationMinutes} min | ${service.priceLabel}`;
+  gallerySlots.forEach((slot, index) => {
+    const imageWrap = document.createElement('figure');
+    imageWrap.className = index === 0 ? 'salon-detail-gallery-main' : 'salon-detail-gallery-side';
 
-    serviceCard.append(name, details);
+    const image = document.createElement('img');
+    image.src = galleryImages[slot] || galleryImages[0];
+    image.alt = `${businessName} photo ${index + 1}`;
+    image.loading = index === 0 ? 'eager' : 'lazy';
 
-    if (highlightedPackageNames.length > 0) {
-      const badge = document.createElement('span');
-      badge.className = 'public-salon-service-badge';
-      badge.textContent =
-        highlightedPackageNames.length === 1
-          ? `Package: ${highlightedPackageNames[0]}`
-          : `Packages: ${highlightedPackageNames.join(', ')}`;
-      serviceCard.append(badge);
+    imageWrap.append(image);
+
+    if (index === 2) {
+      const allImagesButton = createDetailText('button', 'salon-detail-gallery-all', 'See all images');
+      allImagesButton.type = 'button';
+      imageWrap.append(allImagesButton);
     }
 
-    services.append(serviceCard);
+    gallery.append(imageWrap);
+  });
+
+  const galleryActions = document.createElement('div');
+  galleryActions.className = 'salon-detail-gallery-actions';
+  const shareButton = createDetailText('button', '', 'Share');
+  const saveButton = createDetailText('button', '', 'Save');
+  shareButton.type = 'button';
+  saveButton.type = 'button';
+  galleryActions.append(shareButton, saveButton);
+  gallery.append(galleryActions);
+
+  const servicesSection = document.createElement('section');
+  servicesSection.className = 'salon-detail-section';
+  servicesSection.dataset.detailSection = 'services';
+  servicesSection.append(createDetailText('h3', '', 'Services'));
+
+  const categoryRow = document.createElement('div');
+  categoryRow.className = 'salon-detail-category-row';
+  const services = Array.isArray(salon.services) && salon.services.length > 0 ? salon.services : [];
+  const categoryNames = [
+    'Featured',
+    ...services.map((service) => service.categoryName),
+    ...serviceTypes
+  ].filter((value, index, values) => typeof value === 'string' && value.trim() && values.indexOf(value) === index);
+
+  categoryNames.slice(0, 7).forEach((serviceType, index) => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = index === 0 ? 'is-active' : '';
+    chip.dataset.serviceCategory = serviceType;
+    chip.setAttribute('aria-pressed', index === 0 ? 'true' : 'false');
+    chip.textContent = serviceType;
+    categoryRow.append(chip);
+  });
+  servicesSection.append(categoryRow);
+
+  const serviceList = document.createElement('div');
+  serviceList.className = 'salon-detail-service-list';
+
+  const renderServiceItems = (categoryName = 'Featured') => {
+    serviceList.replaceChildren();
+
+    if (services.length === 0) {
+      serviceList.append(createDetailText('p', 'salon-detail-muted', 'Services will appear here once this business adds them.'));
+      return;
+    }
+
+    const normalizedCategory = normalizeSearchValue(categoryName);
+    const visibleServices =
+      normalizedCategory === normalizeSearchValue('Featured')
+        ? services
+        : services.filter((service) => normalizeSearchValue(service.categoryName) === normalizedCategory);
+
+    if (visibleServices.length === 0) {
+      serviceList.append(createDetailText('p', 'salon-detail-muted', `No services found under ${categoryName} yet.`));
+      return;
+    }
+
+    visibleServices.forEach((service) => {
+      const item = document.createElement('article');
+      item.className = 'salon-detail-service-item';
+
+      const copy = document.createElement('div');
+      copy.append(
+        createDetailText('h4', '', service.name || 'Service'),
+        createDetailText('p', '', `${service.durationMinutes || 30} min`),
+        createDetailText('strong', '', service.priceLabel || 'Price on booking')
+      );
+
+      const book = document.createElement('a');
+      book.href = salon.bookingLink || '#';
+      book.textContent = 'Book';
+
+      item.append(copy, book);
+      serviceList.append(item);
+    });
+  };
+
+  categoryRow.addEventListener('click', (event) => {
+    const selectedButton =
+      event.target instanceof HTMLElement ? event.target.closest('[data-service-category]') : null;
+
+    if (!(selectedButton instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    for (const button of categoryRow.querySelectorAll('[data-service-category]')) {
+      const isActive = button === selectedButton;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    }
+
+    renderServiceItems(selectedButton.dataset.serviceCategory || 'Featured');
+  });
+
+  renderServiceItems();
+  servicesSection.append(serviceList);
+
+  const teamSection = document.createElement('section');
+  teamSection.className = 'salon-detail-section';
+  teamSection.dataset.detailSection = 'team';
+  teamSection.append(createDetailText('h3', '', 'Team'));
+  const teamMembers = Array.isArray(salon.onlineTeamMemberNames) ? salon.onlineTeamMemberNames : [];
+  const teamGrid = document.createElement('div');
+  teamGrid.className = 'salon-detail-team-grid';
+  (teamMembers.length > 0 ? teamMembers : ['Available staff']).slice(0, 4).forEach((name) => {
+    const member = document.createElement('article');
+    member.className = 'salon-detail-team-member';
+    member.append(
+      createDetailText('span', '', String(name).charAt(0).toUpperCase() || 'S'),
+      createDetailText('strong', '', name),
+      createDetailText('p', '', 'Online booking available')
+    );
+    teamGrid.append(member);
+  });
+  teamSection.append(teamGrid);
+
+  const reviewsSection = document.createElement('section');
+  reviewsSection.className = 'salon-detail-section';
+  reviewsSection.dataset.detailSection = 'reviews';
+  reviewsSection.append(
+    createDetailText('h3', '', 'Reviews'),
+    createDetailText('p', 'salon-detail-rating-line', `${getSalonReviewSummaryText(salon)} *****`)
+  );
+  const reviewsGrid = document.createElement('div');
+  reviewsGrid.className = 'salon-detail-review-grid';
+  ['Great service and easy booking.', 'Clean place with friendly staff.', 'Simple online appointment flow.'].forEach((copy, index) => {
+    const review = document.createElement('article');
+    review.className = 'salon-detail-review-item';
+    review.append(
+      createDetailText('span', '', ['A', 'M', 'S'][index]),
+      createDetailText('strong', '', ['Abeer A', 'Marwa A', 'Sreesha S'][index]),
+      createDetailText('p', '', copy)
+    );
+    reviewsGrid.append(review);
+  });
+  reviewsSection.append(reviewsGrid);
+
+  const aboutSection = document.createElement('section');
+  aboutSection.className = 'salon-detail-section';
+  aboutSection.dataset.detailSection = 'about';
+  aboutSection.append(
+    createDetailText('h3', '', 'About'),
+    createDetailText('p', '', getSalonAboutText(salon))
+  );
+
+  const mapCard = document.createElement('div');
+  mapCard.className = 'salon-detail-map';
+  mapCard.append(
+    createDetailText('span', '', getSalonRatingLabel(salon)),
+    createDetailText('p', '', formatAddressSingleLine(salon.venueAddress) || 'Location available on booking')
+  );
+  aboutSection.append(mapCard);
+
+  main.append(profileHeader, gallery, servicesSection, teamSection, reviewsSection, aboutSection);
+
+  const bookNow = document.createElement('a');
+  bookNow.className = 'salon-detail-book-button';
+  bookNow.href = salon.bookingLink || '#';
+  bookNow.textContent = 'Book now';
+
+  const hours = createDetailText('p', 'salon-detail-card-meta', 'Open until 11:00PM');
+  const address = createDetailText(
+    'p',
+    'salon-detail-card-meta',
+    formatAddressSingleLine(salon.venueAddress) || 'Address available on booking'
+  );
+
+  aside.append(
+    bookNow,
+    createDetailText('p', 'salon-detail-card-rating', `${ratingLabel} ***** (${reviewCount})`),
+    hours,
+    address
+  );
+  panel.classList.remove('is-hidden');
+};
+
+const initSalonDetailTabs = () => {
+  const panel = document.querySelector('#salon-detail-panel');
+
+  if (!(panel instanceof HTMLElement)) {
+    return;
   }
 
-  card.append(header, reviewMeta, services);
-  return card;
+  panel.addEventListener('click', (event) => {
+    const tab = event.target instanceof HTMLElement ? event.target.closest('[data-detail-tab]') : null;
+
+    if (!(tab instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    const sectionName = tab.dataset.detailTab;
+    const targetSection = sectionName
+      ? panel.querySelector(`[data-detail-section="${CSS.escape(sectionName)}"]`)
+      : null;
+
+    if (!(targetSection instanceof HTMLElement)) {
+      return;
+    }
+
+    for (const button of panel.querySelectorAll('[data-detail-tab]')) {
+      button.classList.toggle('is-active', button === tab);
+    }
+
+    targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+};
+
+const initSalonProfilePage = async () => {
+  const salonId = getSalonClientIdFromPath();
+  const panel = document.querySelector('#salon-detail-panel');
+  const status = document.querySelector('#salon-profile-status');
+  const headerBookLink = document.querySelector('#salon-header-book-link');
+
+  if (!salonId || !(panel instanceof HTMLElement)) {
+    return;
+  }
+
+  try {
+    const payload = await apiRequest('/api/public/salons');
+    const salons = Array.isArray(payload.salons) ? payload.salons : [];
+    const salon = salons.find((entry) => (entry.clientId ?? entry.id) === salonId);
+
+    if (!salon) {
+      if (status instanceof HTMLElement) {
+        status.textContent = 'This business is not available for public booking yet.';
+      }
+      return;
+    }
+
+    document.title = `${salon.businessName || 'Business'} | QR schedule.com`;
+
+    if (headerBookLink instanceof HTMLAnchorElement) {
+      headerBookLink.href = salon.bookingLink || `/book/${encodeURIComponent(salonId)}`;
+    }
+
+    renderSalonDetailPanel(salon);
+    panel.classList.add('salon-detail-page-ready');
+
+    if (status instanceof HTMLElement) {
+      status.classList.add('is-hidden');
+    }
+  } catch (error) {
+    if (status instanceof HTMLElement) {
+      status.textContent = error instanceof Error ? error.message : 'Unable to load this business.';
+    }
+  }
+};
+
+const createSalonRail = (title, salons) => {
+  const railSection = document.createElement('section');
+  railSection.className = 'public-salon-rail';
+
+  const railHeader = document.createElement('div');
+  railHeader.className = 'public-salon-rail-header';
+
+  const heading = document.createElement('h3');
+  heading.textContent = title;
+
+  const nextButton = document.createElement('button');
+  nextButton.className = 'public-salon-rail-next';
+  nextButton.type = 'button';
+  nextButton.setAttribute('aria-label', `Scroll ${title}`);
+  nextButton.textContent = '→';
+
+  railHeader.append(heading, nextButton);
+
+  const rail = document.createElement('div');
+  rail.className = 'public-salon-rail-list';
+
+  for (const salon of salons) {
+    rail.append(createSalonShowcaseCard(salon));
+  }
+
+  nextButton.addEventListener('click', () => {
+    rail.scrollBy({ left: Math.max(280, rail.clientWidth * 0.75), behavior: 'smooth' });
+  });
+
+  railSection.append(railHeader, rail);
+  return railSection;
 };
 
 const initHomeSalonShowcase = () => {
@@ -2176,6 +2482,7 @@ const initHomeSalonSearch = () => {
   const showcaseStatus = document.querySelector('#public-salon-showcase-status');
   const serviceDropdown = document.querySelector('#service-query-dropdown');
   const cityDropdown = document.querySelector('#city-query-dropdown');
+  const cityAutocomplete = document.querySelector('#city-autocomplete');
   const locationTrigger = document.querySelector('#city-location-trigger');
 
   if (
@@ -2189,6 +2496,8 @@ const initHomeSalonSearch = () => {
   }
 
   const salonsEndpoint = searchPanel.dataset.salonsEndpoint?.trim() || '/api/public/salons';
+  const locationSearchEndpoint =
+    searchPanel.dataset.locationSearchEndpoint?.trim() || '/api/public/locations/search';
   const locationReverseEndpoint =
     searchPanel.dataset.locationReverseEndpoint?.trim() || '/api/public/locations/reverse';
   const defaultTitle = showcaseTitle.textContent ?? 'Newly launched salons ready for booking';
@@ -2198,6 +2507,56 @@ const initHomeSalonSearch = () => {
   let citySuggestions = [];
   let resultsLimit = 3;
   let hasRequestedCurrentLocation = false;
+  let locationAutocomplete = null;
+  let selectedLocationDetails = null;
+  let nearbySearchRequestId = 0;
+  const salonCoordinatesCache = new Map();
+  const cityAreaSuggestionsCache = new Map();
+  const popularLocationCities = ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad'];
+  const cityAreaSeeds = {
+    faisalabad: [
+      'Others',
+      'D Ground',
+      'Ghulam Muhammad Abad',
+      'Jaranwala',
+      'Satiana Road',
+      'Madina Town',
+      'Peoples Colony',
+      'Samanabad',
+      'Susan Road',
+      'Canal Road',
+      'Jinnah Colony',
+      'Civil Lines',
+      'Kohinoor City',
+      'Eden Valley',
+      'Abdullahpur',
+      'Millat Town',
+      'Wapda City',
+      'Raza Abad'
+    ],
+    lahore: [
+      'Gulberg',
+      'DHA',
+      'Johar Town',
+      'Model Town',
+      'Bahria Town',
+      'Garden Town',
+      'Cantt',
+      'Wapda Town'
+    ],
+    karachi: [
+      'Clifton',
+      'DHA',
+      'Gulshan-e-Iqbal',
+      'North Nazimabad',
+      'PECHS',
+      'Saddar',
+      'Bahadurabad',
+      'Gulistan-e-Johar'
+    ],
+    islamabad: ['Blue Area', 'F-7', 'F-8', 'G-9', 'G-10', 'I-8', 'Bahria Town', 'DHA'],
+    rawalpindi: ['Saddar', 'Commercial Market', 'Satellite Town', 'Bahria Town', 'DHA', 'Chaklala']
+  };
 
   const buildSuggestionEntries = (salons, getValues, chipLabel, metaBuilder) => {
     const suggestionMap = new Map();
@@ -2232,8 +2591,8 @@ const initHomeSalonSearch = () => {
       }));
   };
 
-const getRankedSuggestions = (suggestions, query) => {
-  const normalizedQuery = normalizeSearchValue(query);
+  const getRankedSuggestions = (suggestions, query, limit = 6) => {
+    const normalizedQuery = normalizeSearchValue(query);
 
   return suggestions
       .map((suggestion) => {
@@ -2271,7 +2630,7 @@ const getRankedSuggestions = (suggestions, query) => {
           right.count - left.count ||
           left.value.localeCompare(right.value)
       )
-      .slice(0, normalizedQuery ? 10 : 6);
+      .slice(0, normalizedQuery ? Math.max(limit, 10) : limit);
   };
 
   const createSearchDropdownController = ({
@@ -2436,6 +2795,14 @@ const getRankedSuggestions = (suggestions, query) => {
     };
   };
 
+  const applyServiceSuggestion = (value) => {
+    if (serviceInput instanceof HTMLInputElement) {
+      serviceInput.value = value;
+    }
+
+    applyShowcaseFilters({ scrollIntoView: true });
+  };
+
   const renderShowcase = (salons, filters = {}) => {
     const rawLocation = cityInput instanceof HTMLInputElement ? cityInput.value.trim() : '';
     const rawService = serviceInput instanceof HTMLInputElement ? serviceInput.value.trim() : '';
@@ -2484,9 +2851,559 @@ const getRankedSuggestions = (suggestions, query) => {
           ? `Showing ${salons.length} salon${salons.length === 1 ? '' : 's'} for ${serviceQuery}.`
           : defaultStatus;
 
-    for (const salon of salons) {
-      showcaseList.append(createSalonShowcaseCard(salon));
+    const recommendedSalons = [...salons].sort((left, right) => {
+      const leftReviews = Number(left.reviewSummary?.totalReviews) || 0;
+      const rightReviews = Number(right.reviewSummary?.totalReviews) || 0;
+      const leftRating = Number(left.reviewSummary?.averageRating) || 0;
+      const rightRating = Number(right.reviewSummary?.averageRating) || 0;
+
+      return rightRating - leftRating || rightReviews - leftReviews;
+    });
+    const newSalons = [...salons].sort((left, right) =>
+      String(right.updatedAt ?? '').localeCompare(String(left.updatedAt ?? ''))
+    );
+
+    showcaseList.append(createSalonRail(showcaseTitle.textContent || 'Recommended', recommendedSalons));
+
+    if (!locationQuery && !serviceQuery && newSalons.length > 0) {
+      showcaseList.append(createSalonRail('New to QR schedule', newSalons));
     }
+  };
+
+  const getSalonCacheKey = (salon) =>
+    String(salon?.clientId || salon?.bookingLink || salon?.businessName || salon?.venueAddress || '');
+
+  const getSelectedLocationCoordinates = () => {
+    const latitude = toFiniteNumber(selectedLocationDetails?.latitude);
+    const longitude = toFiniteNumber(selectedLocationDetails?.longitude);
+
+    return latitude === null || longitude === null ? null : { latitude, longitude };
+  };
+
+  const buildMapMarkerStyle = (center, coordinates, index, total) => {
+    const centerLatitude = toFiniteNumber(center?.latitude) ?? 0;
+    const centerLongitude = toFiniteNumber(center?.longitude) ?? 0;
+    const latitude = toFiniteNumber(coordinates?.latitude) ?? centerLatitude;
+    const longitude = toFiniteNumber(coordinates?.longitude) ?? centerLongitude;
+    const scale = Math.max(0.012, Math.abs(latitude - centerLatitude), Math.abs(longitude - centerLongitude));
+    const left = 50 + ((longitude - centerLongitude) / scale) * 28;
+    const top = 50 - ((latitude - centerLatitude) / scale) * 28;
+    const fallbackAngle = (index / Math.max(total, 1)) * Math.PI * 2;
+
+    return `left: ${Math.min(88, Math.max(12, Number.isFinite(left) ? left : 50 + Math.cos(fallbackAngle) * 24))}%; top: ${Math.min(84, Math.max(12, Number.isFinite(top) ? top : 50 + Math.sin(fallbackAngle) * 24))}%;`;
+  };
+
+  const createNearbySalonMap = (nearbySalons, center) => {
+    const mapSection = document.createElement('section');
+    mapSection.className = 'nearby-salon-map-section';
+
+    const mapSurface = document.createElement('div');
+    mapSurface.className = 'nearby-salon-map';
+    mapSurface.setAttribute('aria-label', 'Nearby salons map');
+
+    ['a', 'b', 'c', 'd'].forEach((road) => {
+      const roadLine = document.createElement('span');
+      roadLine.className = `nearby-map-road nearby-map-road-${road}`;
+      mapSurface.append(roadLine);
+    });
+
+    const centerPin = document.createElement('span');
+    centerPin.className = 'nearby-map-center-pin';
+    centerPin.textContent = 'You';
+    mapSurface.append(centerPin);
+
+    nearbySalons.forEach((entry, index) => {
+      const marker = document.createElement('a');
+      marker.className = 'nearby-map-salon-pin';
+      marker.href = `/salon/${encodeURIComponent(entry.salon.clientId)}`;
+      marker.style.cssText = buildMapMarkerStyle(center, entry.coordinates, index, nearbySalons.length);
+      marker.setAttribute(
+        'aria-label',
+        `${entry.salon.businessName || 'Salon'} ${formatDistanceLabel(entry.distanceKilometers)}`
+      );
+      marker.textContent = String(index + 1);
+      mapSurface.append(marker);
+    });
+
+    const list = document.createElement('div');
+    list.className = 'nearby-salon-list';
+
+    nearbySalons.forEach((entry, index) => {
+      const card = document.createElement('a');
+      card.className = 'nearby-salon-result';
+      card.href = `/salon/${encodeURIComponent(entry.salon.clientId)}`;
+
+      const marker = document.createElement('span');
+      marker.className = 'nearby-salon-result-marker';
+      marker.textContent = String(index + 1);
+
+      const copy = document.createElement('span');
+      copy.className = 'nearby-salon-result-copy';
+
+      const title = document.createElement('strong');
+      title.textContent = entry.salon.businessName || 'Salon';
+
+      const meta = document.createElement('span');
+      meta.textContent = [
+        formatDistanceLabel(entry.distanceKilometers),
+        formatAddressSingleLine(entry.salon.venueAddress)
+      ]
+        .filter(Boolean)
+        .join(' · ');
+
+      copy.append(title, meta);
+      card.append(marker, copy);
+      list.append(card);
+    });
+
+    mapSection.append(mapSurface, list);
+    return mapSection;
+  };
+
+  const renderNearbySalons = (nearbySalons, locationLabel) => {
+    if (nearbySalons.length === 0) {
+      return;
+    }
+
+    showcaseEmpty.classList.add('is-hidden');
+    showcaseTitle.textContent = `Nearby salons around ${locationLabel}`;
+    showcaseStatus.textContent = `No exact salon found in ${locationLabel}, so showing the closest available salons by distance.`;
+    showcaseList.replaceChildren();
+    showcaseList.append(createNearbySalonMap(nearbySalons, getSelectedLocationCoordinates()));
+    showcaseList.append(createSalonRail('Closest salons you can book', nearbySalons.map((entry) => entry.salon)));
+  };
+
+  const geocodeSalonLocation = async (salon) => {
+    const cacheKey = getSalonCacheKey(salon);
+
+    if (salonCoordinatesCache.has(cacheKey)) {
+      return salonCoordinatesCache.get(cacheKey);
+    }
+
+    const address = typeof salon?.venueAddress === 'string' ? salon.venueAddress.trim() : '';
+
+    if (!address) {
+      salonCoordinatesCache.set(cacheKey, null);
+      return null;
+    }
+
+    try {
+      const params = new URLSearchParams({ q: address });
+      const payload = await apiRequest(`${locationSearchEndpoint}?${params.toString()}`);
+      const suggestion = Array.isArray(payload?.suggestions) ? payload.suggestions[0] : null;
+      const coordinates = {
+        latitude: toFiniteNumber(suggestion?.latitude),
+        longitude: toFiniteNumber(suggestion?.longitude)
+      };
+      const normalizedCoordinates =
+        coordinates.latitude === null || coordinates.longitude === null ? null : coordinates;
+
+      salonCoordinatesCache.set(cacheKey, normalizedCoordinates);
+      return normalizedCoordinates;
+    } catch (_error) {
+      salonCoordinatesCache.set(cacheKey, null);
+      return null;
+    }
+  };
+
+  const renderNearbyFallback = async ({ locationQuery, serviceQuery, requestId }) => {
+    const selectedCoordinates = getSelectedLocationCoordinates();
+
+    if (!selectedCoordinates) {
+      return;
+    }
+
+    showcaseEmpty.classList.remove('is-hidden');
+    showcaseEmpty.textContent = `No exact salon found in ${locationQuery}. Checking nearby salons...`;
+    showcaseStatus.textContent = `Searching closest salons around ${locationQuery}.`;
+
+    const serviceFilteredSalons = serviceQuery
+      ? allSalons.filter((salon) => getSalonServiceScore(salon, serviceQuery) >= 0)
+      : allSalons;
+
+    const entries = await Promise.all(
+      serviceFilteredSalons.map(async (salon) => {
+        const coordinates = await geocodeSalonLocation(salon);
+        const distanceKilometers = getDistanceInKilometers(selectedCoordinates, coordinates);
+
+        return distanceKilometers === null
+          ? null
+          : {
+              salon,
+              coordinates,
+              distanceKilometers
+            };
+      })
+    );
+
+    if (requestId !== nearbySearchRequestId) {
+      return;
+    }
+
+    const nearbySalons = entries
+      .filter(Boolean)
+      .sort((left, right) => left.distanceKilometers - right.distanceKilometers)
+      .slice(0, Math.max(resultsLimit, 3));
+
+    if (nearbySalons.length === 0) {
+      showcaseEmpty.textContent = `No salons found near ${locationQuery} yet. Try another area.`;
+      showcaseStatus.textContent = `No nearby salons matched ${locationQuery}.`;
+      return;
+    }
+
+    renderNearbySalons(nearbySalons, locationQuery);
+  };
+
+  const syncLocationQuery = (value, { updateAutocomplete = false } = {}) => {
+    if (!(cityInput instanceof HTMLInputElement)) {
+      return;
+    }
+
+    const nextValue = typeof value === 'string' ? value.trim() : '';
+
+    if (cityInput.value !== nextValue) {
+      cityInput.value = nextValue;
+    }
+
+    if (updateAutocomplete && locationAutocomplete?.setQuery) {
+      locationAutocomplete.setQuery(nextValue);
+      locationAutocomplete.refresh?.();
+    }
+  };
+
+  const setSelectedLocationDetails = (location) => {
+    const label =
+      location?.kind === 'city' && typeof location?.primaryLabel === 'string' && location.primaryLabel.trim()
+        ? location.primaryLabel.trim()
+        : typeof location?.label === 'string' && location.label.trim()
+        ? location.label.trim()
+        : typeof location?.primaryLabel === 'string'
+          ? location.primaryLabel.trim()
+          : '';
+    const latitude = toFiniteNumber(location?.latitude);
+    const longitude = toFiniteNumber(location?.longitude);
+
+    selectedLocationDetails =
+      label && latitude !== null && longitude !== null
+        ? {
+            label,
+            latitude,
+            longitude
+          }
+        : null;
+  };
+
+  const getLocalLocationSuggestions = (query) =>
+    getRankedSuggestions(citySuggestions, query).map((suggestion) => ({
+      id: `venue-${normalizeSearchValue(suggestion.value)}`,
+      label: suggestion.value,
+      primaryLabel: suggestion.value,
+      secondaryLabel: suggestion.meta,
+      sourceLabel: suggestion.chipLabel
+    }));
+
+  const getCityKeyFromQuery = (query) => {
+    const normalizedQuery = normalizeSearchValue(query);
+
+    return (
+      popularLocationCities
+        .map((city) => ({
+          city,
+          normalizedCity: normalizeSearchValue(city)
+        }))
+        .find(
+          ({ normalizedCity }) =>
+            normalizedQuery === normalizedCity ||
+            normalizedQuery.startsWith(`${normalizedCity} `) ||
+            normalizedQuery.includes(` ${normalizedCity}`)
+        )?.normalizedCity ?? ''
+    );
+  };
+
+  const createPopularCitySuggestions = (query) => {
+    const normalizedQuery = normalizeSearchValue(query);
+
+    return popularLocationCities
+      .filter((city) => {
+        const normalizedCity = normalizeSearchValue(city);
+        return !normalizedQuery || normalizedCity.includes(normalizedQuery);
+      })
+      .map((city) => ({
+        id: `popular-city-${normalizeSearchValue(city)}`,
+        label: city,
+        primaryLabel: city,
+        secondaryLabel: 'Pakistan',
+        sourceLabel: 'Popular',
+        kind: 'city',
+        hasAreas: Boolean(cityAreaSeeds[normalizeSearchValue(city)]?.length)
+      }));
+  };
+
+  const getCityAreaSuggestions = async (city) => {
+    const cityKey = normalizeSearchValue(city);
+    const areaSeeds = cityAreaSeeds[cityKey] ?? [];
+
+    if (areaSeeds.length === 0) {
+      return [];
+    }
+
+    if (cityAreaSuggestionsCache.has(cityKey)) {
+      return cityAreaSuggestionsCache.get(cityKey);
+    }
+
+    const cityLabel = popularLocationCities.find(
+      (popularCity) => normalizeSearchValue(popularCity) === cityKey
+    ) ?? city;
+    const cityLocationResults = await searchLocationSuggestions(`${cityLabel} Pakistan`, {
+      includeAreaSuggestions: false,
+      includePopularCities: false
+    });
+    const cityFallback = cityLocationResults.find(
+      (suggestion) => normalizeSearchValue(suggestion.primaryLabel) === cityKey
+    ) ?? cityLocationResults[0];
+
+    const suggestions = await Promise.all(
+      areaSeeds.map(async (area) => {
+        if (normalizeSearchValue(area) === 'others') {
+          return {
+            id: `area-${cityKey}-others`,
+            label: `Others, ${cityLabel}`,
+            primaryLabel: 'Others',
+            secondaryLabel: cityLabel,
+            latitude: toFiniteNumber(cityFallback?.latitude),
+            longitude: toFiniteNumber(cityFallback?.longitude),
+            sourceLabel: 'Area',
+            kind: 'area'
+          };
+        }
+
+        try {
+          const params = new URLSearchParams({ q: `${area} ${cityLabel}` });
+          const payload = await apiRequest(`${locationSearchEndpoint}?${params.toString()}`);
+          const suggestion = Array.isArray(payload?.suggestions) ? payload.suggestions[0] : null;
+
+          return {
+            id: suggestion?.id || `area-${cityKey}-${normalizeSearchValue(area)}`,
+            label: `${area}, ${cityLabel}`,
+            primaryLabel: area,
+            secondaryLabel:
+              typeof suggestion?.secondaryLabel === 'string' && suggestion.secondaryLabel.trim()
+                ? suggestion.secondaryLabel.trim()
+                : cityLabel,
+            latitude: toFiniteNumber(suggestion?.latitude) ?? toFiniteNumber(cityFallback?.latitude),
+            longitude: toFiniteNumber(suggestion?.longitude) ?? toFiniteNumber(cityFallback?.longitude),
+            sourceLabel: 'Area',
+            kind: 'area'
+          };
+        } catch (_error) {
+          return {
+            id: `area-${cityKey}-${normalizeSearchValue(area)}`,
+            label: `${area}, ${cityLabel}`,
+            primaryLabel: area,
+            secondaryLabel: cityLabel,
+            latitude: toFiniteNumber(cityFallback?.latitude),
+            longitude: toFiniteNumber(cityFallback?.longitude),
+            sourceLabel: 'Area',
+            kind: 'area'
+          };
+        }
+      })
+    );
+
+    cityAreaSuggestionsCache.set(cityKey, suggestions);
+    return suggestions;
+  };
+
+  const searchLocationSuggestions = async (
+    query,
+    { includeAreaSuggestions = true, includePopularCities = true } = {}
+  ) => {
+    const trimmedQuery = typeof query === 'string' ? query.trim() : '';
+
+    if (trimmedQuery.length < 2) {
+      return includePopularCities
+        ? [...createPopularCitySuggestions(trimmedQuery), ...getLocalLocationSuggestions(trimmedQuery)]
+        : getLocalLocationSuggestions(trimmedQuery);
+    }
+
+    const cityKey = includeAreaSuggestions ? getCityKeyFromQuery(trimmedQuery) : '';
+
+    if (cityKey && normalizeSearchValue(trimmedQuery) === cityKey) {
+      const cityAreas = await getCityAreaSuggestions(cityKey);
+      return cityAreas.length > 0 ? cityAreas : createPopularCitySuggestions(trimmedQuery);
+    }
+
+    try {
+      const params = new URLSearchParams({ q: trimmedQuery });
+      const payload = await apiRequest(`${locationSearchEndpoint}?${params.toString()}`);
+      const remoteSuggestions = Array.isArray(payload?.suggestions) ? payload.suggestions : [];
+      const mappedRemoteSuggestions = remoteSuggestions
+        .filter((suggestion) => typeof suggestion?.label === 'string' && suggestion.label.trim())
+        .map((suggestion) => {
+          const primaryLabel =
+            typeof suggestion.primaryLabel === 'string' && suggestion.primaryLabel.trim()
+              ? suggestion.primaryLabel.trim()
+              : suggestion.label.trim();
+          const normalizedPrimary = normalizeSearchValue(primaryLabel);
+
+          return {
+            id: suggestion.id || suggestion.label,
+            label: suggestion.label.trim(),
+            primaryLabel,
+            secondaryLabel:
+              typeof suggestion.secondaryLabel === 'string' ? suggestion.secondaryLabel.trim() : '',
+            latitude: toFiniteNumber(suggestion.latitude),
+            longitude: toFiniteNumber(suggestion.longitude),
+            sourceLabel: popularLocationCities.some(
+              (city) => normalizeSearchValue(city) === normalizedPrimary
+            )
+              ? 'City'
+              : 'Location',
+            kind: popularLocationCities.some((city) => normalizeSearchValue(city) === normalizedPrimary)
+              ? 'city'
+              : 'location',
+            hasAreas: Boolean(cityAreaSeeds[normalizedPrimary]?.length)
+          };
+        });
+
+      if (cityKey) {
+        const matchingAreas = await getCityAreaSuggestions(cityKey);
+        const normalizedQuery = normalizeSearchValue(trimmedQuery);
+        const rankedAreas = matchingAreas.filter((suggestion) =>
+          normalizeSearchValue(`${suggestion.primaryLabel} ${suggestion.label}`).includes(normalizedQuery)
+        );
+
+        return [...rankedAreas, ...mappedRemoteSuggestions].filter(
+          (suggestion, index, suggestions) =>
+            suggestions.findIndex(
+              (entry) => normalizeSearchValue(entry.label) === normalizeSearchValue(suggestion.label)
+            ) === index
+        );
+      }
+
+      return [
+        ...(includePopularCities ? createPopularCitySuggestions(trimmedQuery) : []),
+        ...mappedRemoteSuggestions
+      ].filter(
+        (suggestion, index, suggestions) =>
+          suggestions.findIndex(
+            (entry) => normalizeSearchValue(entry.label) === normalizeSearchValue(suggestion.label)
+          ) === index
+      );
+    } catch (_error) {
+      return includePopularCities
+        ? [...createPopularCitySuggestions(trimmedQuery), ...getLocalLocationSuggestions(trimmedQuery)]
+        : getLocalLocationSuggestions(trimmedQuery);
+    }
+  };
+
+  const setupAlgoliaLocationAutocomplete = () => {
+    const algoliaAutocomplete = window['@algolia/autocomplete-js']?.autocomplete;
+
+    if (
+      typeof algoliaAutocomplete !== 'function' ||
+      !(cityAutocomplete instanceof HTMLElement) ||
+      !(cityInput instanceof HTMLInputElement)
+    ) {
+      return false;
+    }
+
+    const shell = cityAutocomplete.closest('.location-autocomplete-shell');
+
+    if (shell instanceof HTMLElement) {
+      shell.classList.add('is-enhanced');
+    }
+
+    locationAutocomplete = algoliaAutocomplete({
+      container: cityAutocomplete,
+      placeholder: cityInput.placeholder || 'Current location',
+      openOnFocus: true,
+      detachedMediaQuery: 'none',
+      classNames: {
+        panel: 'location-autocomplete-panel'
+      },
+      initialState: {
+        query: cityInput.value
+      },
+      translations: {
+        clearButtonTitle: 'Clear location',
+        submitButtonTitle: 'Search location'
+      },
+      onStateChange({ state }) {
+        if (cityInput.value !== state.query) {
+          cityInput.value = state.query;
+          if (
+            !selectedLocationDetails ||
+            normalizeSearchValue(selectedLocationDetails.label) !== normalizeSearchValue(state.query)
+          ) {
+            selectedLocationDetails = null;
+          }
+          applyShowcaseFilters();
+        }
+      },
+      onSubmit({ state }) {
+        syncLocationQuery(state.query);
+        applyShowcaseFilters({ scrollIntoView: true });
+      },
+      onReset() {
+        syncLocationQuery('');
+        applyShowcaseFilters();
+      },
+      shouldPanelOpen({ state }) {
+        return state.query.trim().length >= 2 || state.collections.some((collection) => collection.items.length > 0);
+      },
+      getSources({ query }) {
+        return [
+          {
+            sourceId: 'locations',
+            getItemInputValue({ item }) {
+              return item.label;
+            },
+            async getItems() {
+              return searchLocationSuggestions(query);
+            },
+            onSelect({ item, setIsOpen, setQuery, refresh }) {
+              const selectedLocation =
+                item.kind === 'city' && item.hasAreas
+                  ? item.primaryLabel || item.label || ''
+                  : item.label || item.primaryLabel || '';
+              setQuery(selectedLocation);
+              setSelectedLocationDetails(item);
+              syncLocationQuery(selectedLocation);
+
+              if (item.kind === 'city' && item.hasAreas) {
+                window.setTimeout(() => {
+                  setIsOpen(true);
+                  refresh?.();
+                }, 0);
+              }
+
+              applyShowcaseFilters({ scrollIntoView: true });
+            },
+            templates: {
+              header({ html }) {
+                return html`<span class="location-autocomplete-heading">Locations</span>`;
+              },
+              item({ item, html }) {
+                return html`<div class="location-autocomplete-option">
+                  <span class="location-autocomplete-pin" aria-hidden="true"></span>
+                  <span class="location-autocomplete-copy">
+                    <strong>${item.label}</strong>
+                  </span>
+                </div>`;
+              },
+              noResults({ state, html }) {
+                return html`<div class="location-autocomplete-empty">
+                  No full location found for "${state.query}". Try a nearby city or area.
+                </div>`;
+              }
+            }
+          }
+        ];
+      }
+    });
+
+    return true;
   };
 
   const detectCurrentLocation = () => {
@@ -2522,7 +3439,12 @@ const getRankedSuggestions = (suggestions, query) => {
             return;
           }
 
-          cityInput.value = detectedLocation;
+          setSelectedLocationDetails({
+            label: detectedLocation,
+            latitude: payload?.location?.latitude,
+            longitude: payload?.location?.longitude
+          });
+          syncLocationQuery(detectedLocation, { updateAutocomplete: true });
           applyShowcaseFilters();
         } catch (_error) {
           hasRequestedCurrentLocation = false;
@@ -2540,6 +3462,7 @@ const getRankedSuggestions = (suggestions, query) => {
   };
 
   const applyShowcaseFilters = ({ scrollIntoView = false } = {}) => {
+    const requestId = ++nearbySearchRequestId;
     const locationQuery = cityInput instanceof HTMLInputElement ? cityInput.value.trim() : '';
     const serviceQuery = serviceInput instanceof HTMLInputElement ? serviceInput.value.trim() : '';
     const shouldLimitResults = Boolean(locationQuery || serviceQuery);
@@ -2581,6 +3504,10 @@ const getRankedSuggestions = (suggestions, query) => {
       limitedCount: Math.min(resultsLimit, salons.length)
     });
 
+    if (salons.length === 0 && locationQuery && getSelectedLocationCoordinates()) {
+      void renderNearbyFallback({ locationQuery, serviceQuery, requestId });
+    }
+
     if (scrollIntoView) {
       const showcaseSection = document.querySelector('.public-salon-showcase');
       showcaseSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2590,15 +3517,11 @@ const getRankedSuggestions = (suggestions, query) => {
   const serviceDropdownController = createSearchDropdownController({
     input: serviceInput,
     dropdown: serviceDropdown,
-    title: 'Treatments and categories',
-    subtitle: 'Choose a popular service to instantly filter salon cards.',
-    getSuggestions: (query) => getRankedSuggestions(serviceSuggestions, query),
+    title: 'Services',
+    subtitle: 'Pick a service or type to search all salon services.',
+    getSuggestions: (query) => getRankedSuggestions(serviceSuggestions, query, 40),
     onSelect: (value) => {
-      if (serviceInput instanceof HTMLInputElement) {
-        serviceInput.value = value;
-      }
-
-      applyShowcaseFilters();
+      applyServiceSuggestion(value);
     }
   });
 
@@ -2623,6 +3546,8 @@ const getRankedSuggestions = (suggestions, query) => {
     }
   });
 
+  const hasAlgoliaLocationAutocomplete = setupAlgoliaLocationAutocomplete();
+
   searchPanel.addEventListener('submit', (event) => {
     event.preventDefault();
     serviceDropdownController.close();
@@ -2640,6 +3565,13 @@ const getRankedSuggestions = (suggestions, query) => {
   if (locationTrigger instanceof HTMLButtonElement) {
     locationTrigger.addEventListener('click', () => {
       detectCurrentLocation();
+
+      if (hasAlgoliaLocationAutocomplete && locationAutocomplete?.setIsOpen) {
+        locationAutocomplete.setIsOpen(true);
+        locationAutocomplete.refresh?.();
+        return;
+      }
+
       cityDropdownController.open();
     });
   }
@@ -2782,6 +3714,7 @@ const guardAdminPages = () => {
     '/onboarding/account-type',
     '/onboarding/service-location',
     '/onboarding/venue-location',
+    '/onboarding/salon-images',
     '/onboarding/launch-links',
     '/onboarding/language',
     '/onboarding/complete',
@@ -3775,12 +4708,12 @@ const initVenueLocation = () => {
     }
 
     try {
-      await apiRequest(`/api/platform/clients/${clientId}/venue-location`, {
+      const payload = await apiRequest(`/api/platform/clients/${clientId}/venue-location`, {
         method: 'PATCH',
         body: JSON.stringify({ venueAddress: selectedVenue })
       });
 
-      redirectTo('/onboarding/launch-links', clientId);
+      window.location.assign(payload.nextStep || buildPathWithClientId('/onboarding/salon-images', clientId));
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to save venue location');
     }
@@ -3818,6 +4751,108 @@ const initVenueLocation = () => {
     })
     .catch((error) => {
       safeAlert(error instanceof Error ? error.message : 'Unable to load venue location');
+    });
+};
+
+const initSalonImages = () => {
+  const form = document.querySelector('#salon-images-form');
+  const inputs = Array.from(document.querySelectorAll('[data-salon-image-input]')).filter(
+    (input) => input instanceof HTMLInputElement
+  );
+  const previewGrid = document.querySelector('#salon-images-preview-grid');
+  const status = document.querySelector('#salon-images-status');
+  const continueButton = document.querySelector('#salon-images-continue');
+  const skipButton = document.querySelector('#salon-images-skip');
+
+  if (
+    !(form instanceof HTMLFormElement) ||
+    inputs.length === 0 ||
+    !(previewGrid instanceof HTMLElement) ||
+    !(status instanceof HTMLElement) ||
+    !(continueButton instanceof HTMLButtonElement) ||
+    !(skipButton instanceof HTMLButtonElement)
+  ) {
+    return;
+  }
+
+  const clientId = requireClientId();
+  if (!clientId) {
+    return;
+  }
+
+  const getImageUrls = () =>
+    inputs
+      .map((input) => input.value.trim())
+      .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index);
+
+  const renderPreviews = () => {
+    const imageUrls = getImageUrls();
+    previewGrid.replaceChildren();
+
+    if (imageUrls.length === 0) {
+      previewGrid.append(createDetailText('p', 'salon-images-empty-preview', 'Images are optional. Your business can launch now and add photos later.'));
+      status.textContent = 'No salon images added yet.';
+      return;
+    }
+
+    status.textContent = `${imageUrls.length} image${imageUrls.length === 1 ? '' : 's'} ready to save.`;
+
+    imageUrls.forEach((imageUrl, index) => {
+      const preview = document.createElement('figure');
+      preview.className = index === 0 ? 'salon-image-preview is-cover' : 'salon-image-preview';
+
+      const image = document.createElement('img');
+      image.src = imageUrl;
+      image.alt = `Salon preview ${index + 1}`;
+      image.loading = 'lazy';
+
+      preview.append(image, createDetailText('figcaption', '', index === 0 ? 'Cover image' : `Gallery ${index + 1}`));
+      previewGrid.append(preview);
+    });
+  };
+
+  const saveSalonImages = async () => {
+    const galleryImageUrls = getImageUrls();
+
+    try {
+      const payload = await apiRequest(`/api/platform/clients/${clientId}/salon-images`, {
+        method: 'PATCH',
+        body: JSON.stringify({ galleryImageUrls })
+      });
+
+      window.location.assign(payload.nextStep || buildPathWithClientId('/onboarding/launch-links', clientId));
+    } catch (error) {
+      safeAlert(error instanceof Error ? error.message : 'Unable to save salon images');
+    }
+  };
+
+  inputs.forEach((input) => {
+    input.addEventListener('input', renderPreviews);
+  });
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    await saveSalonImages();
+  });
+
+  skipButton.addEventListener('click', async () => {
+    await saveSalonImages();
+  });
+
+  apiRequest(`/api/platform/clients/${clientId}`)
+    .then((payload) => {
+      const galleryImageUrls = Array.isArray(payload.client.galleryImageUrls)
+        ? payload.client.galleryImageUrls
+        : [];
+
+      galleryImageUrls.slice(0, inputs.length).forEach((imageUrl, index) => {
+        inputs[index].value = imageUrl;
+      });
+
+      renderPreviews();
+    })
+    .catch(() => {
+      renderPreviews();
     });
 };
 
@@ -11597,12 +12632,22 @@ const initPublicBooking = () => {
   const reviewStars = document.querySelector('#booking-review-stars');
   const reviewSuccessPanel = document.querySelector('#booking-review-success');
   const reviewSuccessCopy = document.querySelector('#booking-review-success-copy');
+  const stepPanels = Array.from(document.querySelectorAll('[data-booking-step]'));
+  const stepLabels = Array.from(document.querySelectorAll('[data-step-label]'));
+  const stepBackButton = document.querySelector('#booking-step-back');
+  const stepContinueButton = document.querySelector('#booking-step-continue');
+  const serviceTabs = document.querySelector('#booking-service-tabs');
+  const serviceCards = document.querySelector('#booking-service-cards');
+  const teamMemberCards = document.querySelector('#booking-team-member-cards');
+  const dateStrip = document.querySelector('#booking-date-strip');
+  const timeList = document.querySelector('#booking-time-list');
   const servicesByName = new Map();
   const servicesById = new Map();
   const teamMembersById = new Map();
   const benefitOptionsByValue = new Map();
   const publishedPackagePlansById = new Map();
   const bookingLocationLabelsByValue = new Map();
+  const bookingStepOrder = ['services', 'professional', 'time', 'confirm'];
   let latestAppointmentReference = '';
   let phoneHistoryRequestCounter = 0;
   let benefitsRequestCounter = 0;
@@ -11615,10 +12660,12 @@ const initPublicBooking = () => {
   let currentBusinessPhoneNumber = '';
   let bookingHeadingFallback = '';
   let availableBookingLocations = [];
+
   let isPublicBookingEnabled = true;
   let bookingDisabledReason = '';
   let selectedPublishedPackagePlanId = '';
   let packageToastTimeoutId = 0;
+
   let bookingUiCopy = {
     locationLabel: '',
     locationLabels: {},
@@ -11882,7 +12929,14 @@ const initPublicBooking = () => {
     !(reviewRatingInput instanceof HTMLInputElement) ||
     !(reviewStars instanceof HTMLDivElement) ||
     !(reviewSuccessPanel instanceof HTMLDivElement) ||
-    !(reviewSuccessCopy instanceof HTMLParagraphElement)
+    !(reviewSuccessCopy instanceof HTMLParagraphElement) ||
+    !(stepBackButton instanceof HTMLButtonElement) ||
+    !(stepContinueButton instanceof HTMLButtonElement) ||
+    !(serviceTabs instanceof HTMLElement) ||
+    !(serviceCards instanceof HTMLElement) ||
+    !(teamMemberCards instanceof HTMLElement) ||
+    !(dateStrip instanceof HTMLElement) ||
+    !(timeList instanceof HTMLElement)
   ) {
     return;
   }
@@ -11899,6 +12953,7 @@ const initPublicBooking = () => {
   const today = new Date();
   dateInput.value = today.toISOString().slice(0, 10);
   dateInput.min = today.toISOString().slice(0, 10);
+
 
   const getBookingPackageAnnouncementStorageKey = () =>
     `${BOOKING_PACKAGE_ANNOUNCEMENT_STORAGE_KEY_PREFIX}:${businessId}`;
@@ -12152,6 +13207,7 @@ const initPublicBooking = () => {
       includedServiceNames.length > 0
         ? `Included services: ${includedServiceNames.join(', ')}.`
         : 'Included services will appear here when available.';
+
   };
 
   const buildWaitlistClaimQuery = () => {
@@ -12205,6 +13261,137 @@ const initPublicBooking = () => {
     }
 
     teamMemberSelect.value = '';
+  };
+
+  const renderServiceTabs = (services) => {
+    serviceTabs.replaceChildren();
+    const categories = [
+      ...new Set(
+        services
+          .map((service) => service.categoryName || service.category || '')
+          .filter((category) => typeof category === 'string' && category.trim().length > 0)
+      )
+    ];
+
+    const visibleCategories = categories.length > 0 ? categories : ['Services'];
+
+    visibleCategories.slice(0, 8).forEach((category, index) => {
+      const tab = document.createElement('button');
+      tab.type = 'button';
+      tab.className = index === 0 ? 'is-active' : '';
+      tab.textContent = category;
+      serviceTabs.append(tab);
+    });
+  };
+
+  const renderServiceCards = () => {
+    serviceCards.replaceChildren();
+
+    for (const service of servicesByName.values()) {
+      const isSelected = serviceSelect.value === service.name;
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = `booking-choice-card booking-service-choice${isSelected ? ' is-selected' : ''}`;
+      card.dataset.serviceName = service.name;
+
+      const copy = document.createElement('span');
+      copy.className = 'booking-choice-copy';
+
+      const title = document.createElement('strong');
+      title.textContent = service.name;
+
+      const meta = document.createElement('span');
+      meta.textContent = `${service.durationMinutes} min`;
+
+      const price = document.createElement('b');
+      price.textContent = service.priceLabel || 'Price on booking';
+
+      copy.append(title, meta, price);
+
+      const marker = document.createElement('span');
+      marker.className = 'booking-choice-marker';
+      marker.textContent = isSelected ? '✓' : '+';
+
+      card.append(copy, marker);
+      serviceCards.append(card);
+    }
+  };
+
+  const renderTeamMemberCards = () => {
+    teamMemberCards.replaceChildren();
+
+    const noPreference = document.createElement('button');
+    noPreference.type = 'button';
+    noPreference.className = `booking-choice-card booking-team-choice${teamMemberSelect.value ? '' : ' is-selected'}`;
+    noPreference.dataset.teamMemberId = '';
+    noPreference.innerHTML = `
+      <span class="booking-choice-avatar" aria-hidden="true">↔</span>
+      <span class="booking-choice-copy">
+        <strong>No preference</strong>
+        <span>Maximum availability</span>
+      </span>
+      <span class="booking-choice-marker">Select</span>
+    `;
+    teamMemberCards.append(noPreference);
+
+    for (const teamMember of teamMembersById.values()) {
+      const isSelected = teamMemberSelect.value === teamMember.id;
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = `booking-choice-card booking-team-choice${isSelected ? ' is-selected' : ''}`;
+      card.dataset.teamMemberId = teamMember.id;
+
+      const avatar = document.createElement('span');
+      avatar.className = 'booking-choice-avatar';
+      avatar.setAttribute('aria-hidden', 'true');
+      avatar.textContent = (teamMember.name || 'P').charAt(0).toUpperCase();
+
+      const copy = document.createElement('span');
+      copy.className = 'booking-choice-copy';
+
+      const name = document.createElement('strong');
+      name.textContent = teamMember.name;
+
+      const role = document.createElement('span');
+      role.textContent = teamMember.role || 'Professional';
+
+      const rating = document.createElement('b');
+      rating.textContent = '★ 4.9';
+
+      copy.append(name, role, rating);
+
+      const marker = document.createElement('span');
+      marker.className = 'booking-choice-marker';
+      marker.textContent = 'Select';
+
+      card.append(avatar, copy, marker);
+      teamMemberCards.append(card);
+    }
+  };
+
+  const renderTimeButtons = (slots = []) => {
+    timeList.replaceChildren();
+    lastLoadedSlots = slots;
+
+    if (slots.length === 0) {
+      const emptyState = document.createElement('div');
+      emptyState.className = 'booking-empty-slots';
+      emptyState.innerHTML = `
+        <strong>Fully booked on this date</strong>
+        <span>Try the next available date or join the waitlist.</span>
+      `;
+      timeList.append(emptyState);
+      return;
+    }
+
+    for (const slot of slots) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `booking-time-button${timeSelect.value === slot ? ' is-selected' : ''}`;
+      button.dataset.timeValue = slot;
+      button.textContent = formatTimeForDisplay(slot);
+      timeList.append(button);
+    }
   };
 
   const applyCustomerHistoryAutofill = (normalizedPhone, latestHistoryItem) => {
@@ -12632,6 +13819,7 @@ const initPublicBooking = () => {
         timeSelect.value = payload.slots[0];
       }
 
+      renderTimeButtons(payload.slots);
       renderWaitlistPanel(payload.slots);
       updateBookingSummary();
     } catch (error) {
@@ -12671,6 +13859,7 @@ const initPublicBooking = () => {
         payload.serviceTypes.length > 0 ? payload.serviceTypes.join(' | ') : 'Salon services';
       populateBookingLocations(payload.serviceLocations);
       populateTeamMembers(payload.teamMembers);
+      renderTeamMemberCards();
 
       const sortedServices = sortServicesForBooking(payload.services, payload.packagePlans);
 
@@ -12697,6 +13886,9 @@ const initPublicBooking = () => {
         serviceSelect.value = sortedServices[0].name;
       }
 
+      renderServiceTabs(payload.services);
+      renderServiceCards();
+      renderDateStrip();
       activeWaitlistOffer = payload.waitlistOffer ?? null;
 
       if (activeWaitlistOffer) {
@@ -12709,9 +13901,11 @@ const initPublicBooking = () => {
         }
       }
 
+
       isPublicBookingEnabled = payload.isBookingEnabled !== false;
       bookingDisabledReason =
         typeof payload.bookingDisabledReason === 'string' ? payload.bookingDisabledReason.trim() : '';
+
 
       if (!isPublicBookingEnabled) {
         setBookingFormDisabled(true);
@@ -12759,8 +13953,81 @@ const initPublicBooking = () => {
     );
   };
 
+  serviceCards.addEventListener('click', async (event) => {
+    const card = event.target instanceof Element ? event.target.closest('[data-service-name]') : null;
+
+    if (!(card instanceof HTMLElement)) {
+      return;
+    }
+
+    serviceSelect.value = card.dataset.serviceName ?? '';
+    renderServiceCards();
+    await populateSlots();
+    updateBookingSummary();
+  });
+
+  teamMemberCards.addEventListener('click', async (event) => {
+    const card = event.target instanceof Element ? event.target.closest('[data-team-member-id]') : null;
+
+    if (!(card instanceof HTMLElement)) {
+      return;
+    }
+
+    teamMemberSelect.value = card.dataset.teamMemberId ?? '';
+    renderTeamMemberCards();
+    await populateSlots();
+    updateBookingSummary();
+  });
+
+  dateStrip.addEventListener('click', async (event) => {
+    const card = event.target instanceof Element ? event.target.closest('[data-date-value]') : null;
+
+    if (!(card instanceof HTMLElement)) {
+      return;
+    }
+
+    dateInput.value = card.dataset.dateValue ?? dateInput.value;
+    renderDateStrip();
+    await populateSlots();
+  });
+
+  timeList.addEventListener('click', (event) => {
+    const button = event.target instanceof Element ? event.target.closest('[data-time-value]') : null;
+
+    if (!(button instanceof HTMLElement)) {
+      return;
+    }
+
+    timeSelect.value = button.dataset.timeValue ?? '';
+    renderTimeButtons(lastLoadedSlots);
+    renderWaitlistPanel(lastLoadedSlots);
+    updateBookingSummary();
+  });
+
+  stepBackButton.addEventListener('click', () => {
+    const previousIndex = Math.max(0, getStepIndex(currentBookingStep) - 1);
+    setBookingStep(bookingStepOrder[previousIndex]);
+  });
+
+  stepContinueButton.addEventListener('click', () => {
+    if (currentBookingStep === 'services' && !serviceSelect.value) {
+      safeAlert('Please select a service first');
+      return;
+    }
+
+    if (currentBookingStep === 'time' && !timeSelect.value) {
+      safeAlert('Please select an available time');
+      return;
+    }
+
+    const nextIndex = Math.min(bookingStepOrder.length - 1, getStepIndex(currentBookingStep) + 1);
+    setBookingStep(bookingStepOrder[nextIndex]);
+  });
+
   dateInput.addEventListener('change', async () => {
+
     syncPackagePlanDateOptions();
+
     await populateSlots();
   });
 
@@ -12802,6 +14069,7 @@ const initPublicBooking = () => {
     syncSelectedPublishedPackagePlanWithService();
 
     try {
+      renderServiceCards();
       await populateSlots();
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to load available slots');
@@ -12810,6 +14078,7 @@ const initPublicBooking = () => {
 
   teamMemberSelect.addEventListener('change', async () => {
     try {
+      renderTeamMemberCards();
       await populateSlots();
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to load available slots');
@@ -12826,6 +14095,7 @@ const initPublicBooking = () => {
   });
 
   timeSelect.addEventListener('change', () => {
+    renderTimeButtons(lastLoadedSlots);
     renderWaitlistPanel(
       [...timeSelect.options]
         .map((option) => option.value)
@@ -12993,6 +14263,8 @@ const initPublicBooking = () => {
       safeAlert(error instanceof Error ? error.message : 'Unable to submit review');
     }
   });
+
+  setBookingStep('services');
 };
 
 const initManageBooking = () => {
@@ -14044,6 +15316,7 @@ if (guardAdminPages()) {
   initAccountType();
   initServiceLocation();
   initVenueLocation();
+  initSalonImages();
   initCalendar();
   initSetupGuide();
   initOnboardingLaunchLinks().catch((error) => {
@@ -14056,5 +15329,9 @@ if (guardAdminPages()) {
 initPricingPage();
 initSmsLogs();
 initHomeSalonSearch();
+initSalonDetailTabs();
+initSalonProfilePage().catch((error) => {
+  safeAlert(error instanceof Error ? error.message : 'Unable to load business details');
+});
 initPublicBooking();
 initManageBooking();

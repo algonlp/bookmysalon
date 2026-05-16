@@ -56,6 +56,11 @@ clientPlatformRouter.patch(
   asyncHandler(clientPlatformController.updateVenueLocation)
 );
 clientPlatformRouter.patch(
+  '/platform/clients/:clientId/salon-images',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.updateSalonImages)
+);
+clientPlatformRouter.patch(
   '/platform/clients/:clientId/preferred-language',
   asyncHandler(requirePlatformAdminAccess),
   asyncHandler(clientPlatformController.updatePreferredLanguage)

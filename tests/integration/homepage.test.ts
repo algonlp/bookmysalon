@@ -32,10 +32,11 @@ describe('GET /', () => {
     expect(response.text).toContain('List your business');
     expect(response.text).toContain('href="/login"');
     expect(response.text).toContain('href="/for-businesses"');
+    expect(response.text).toContain('id="service-query"');
     expect(response.text).toContain('id="service-query-dropdown"');
     expect(response.text).toContain('id="city-location-trigger"');
     expect(response.text).toContain('id="time-query" name="time" type="date"');
-    expect(response.text).toContain('Showing all salons ready for booking.');
+    expect(response.text).toContain('Showing recently launched businesses ready for booking.');
     expect(response.text).toContain('For customers');
     expect(response.text).toContain('For businesses');
   });
@@ -202,6 +203,20 @@ describe('GET /', () => {
     expect(response.text).toContain('Client-facing location');
   });
 
+  it('serves the optional onboarding salon images page', async () => {
+    const { clientId, adminCookie } = await createAdminSession();
+    const response = await request(app)
+      .get(`/onboarding/salon-images?clientId=${clientId}`)
+      .set('Cookie', adminCookie);
+
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toContain('text/html');
+    expect(response.text).toContain('Add salon images');
+    expect(response.text).toContain('This step is optional');
+    expect(response.text).toContain('data-salon-image-input');
+    expect(response.text).toContain('Skip for now');
+  });
+
   it('serves the onboarding launch links page', async () => {
     const { clientId, adminCookie } = await createAdminSession();
     const response = await request(app)
@@ -302,6 +317,17 @@ describe('GET /', () => {
     expect(response.text).toContain('id="booking-service-location-field"');
     expect(response.text).toContain('id="booking-customer-address-field"');
     expect(response.text).not.toContain('placeholder="+92 300 1234567"');
+  });
+
+  it('serves the public business details page', async () => {
+    const response = await request(app).get('/salon/demo-salon');
+
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toContain('text/html');
+    expect(response.text).toContain('QR schedule.com | Business details');
+    expect(response.text).toContain('id="salon-detail-panel"');
+    expect(response.text).toContain('id="salon-detail-main"');
+    expect(response.text).toContain('id="salon-detail-card"');
   });
 
   it('does not expose removed client preview routes', async () => {

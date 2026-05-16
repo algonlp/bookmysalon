@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Business details</title>
+    <meta
+      name="description"
+      content="Review services, ratings, team, and location before booking a local selfcare appointment."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page salon-profile-page">
+      <header class="site-header">
+        <a class="brand" href="/" aria-label="QR schedule.com home">QR schedule.com</a>
+
+        <div class="header-actions">
+          <a class="login-link" href="/">Explore</a>
+          <a class="pill-button fill" id="salon-header-book-link" href="/">Book now</a>
+        </div>
+      </header>
+
+      <main class="salon-profile-shell">
+        <p class="salon-profile-status" id="salon-profile-status">Loading business details...</p>
+
+        <section
+          class="salon-detail-panel salon-detail-page-panel is-hidden"
+          id="salon-detail-panel"
+          aria-live="polite"
+          aria-labelledby="salon-detail-title"
+        >
+          <div class="salon-detail-tabs" aria-label="Business detail sections">
+            <button class="is-active" type="button" data-detail-tab="services">Services</button>
+            <button type="button" data-detail-tab="team">Team</button>
+            <button type="button" data-detail-tab="reviews">Reviews</button>
+            <button type="button" data-detail-tab="about">About</button>
+          </div>
+
+          <div class="salon-detail-layout">
+            <div class="salon-detail-main" id="salon-detail-main"></div>
+            <aside class="salon-detail-card" id="salon-detail-card"></aside>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

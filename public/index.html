@@ -14,6 +14,12 @@
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@algolia/autocomplete-theme-classic@1.19.8/dist/theme.min.css"
+      integrity="sha256-+wPakQpBDsooGErNRfnbwny+oool43RRIOPbgnxycpQ="
+      crossorigin="anonymous"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -92,6 +98,7 @@
             class="search-bar"
             id="search-panel"
             data-salons-endpoint="/api/public/salons"
+            data-location-search-endpoint="/api/public/locations/search"
             data-location-reverse-endpoint="/api/public/locations/reverse"
           >
             <label class="search-item">
@@ -130,15 +137,22 @@
                   <circle cx="12" cy="10" r="2.5"></circle>
                 </svg>
               </button>
-              <input
-                id="city-query"
-                name="city"
-                type="text"
-                autocomplete="address-level2"
-                placeholder="Current location"
-                aria-controls="city-query-dropdown"
-                aria-expanded="false"
-              />
+              <span class="location-autocomplete-shell">
+                <span
+                  class="city-autocomplete"
+                  id="city-autocomplete"
+                  aria-label="Search location"
+                ></span>
+                <input
+                  id="city-query"
+                  name="city"
+                  type="text"
+                  autocomplete="address-level2"
+                  placeholder="Current location"
+                  aria-controls="city-query-dropdown"
+                  aria-expanded="false"
+                />
+              </span>
               <div
                 class="search-dropdown is-hidden"
                 id="city-query-dropdown"
@@ -164,28 +178,79 @@
 
         <section class="public-salon-showcase" aria-labelledby="public-salon-showcase-title">
           <div class="public-salon-showcase-copy">
-            <p class="public-salon-showcase-eyebrow">Book real salons</p>
-            <h2 id="public-salon-showcase-title">Newly launched salons ready for booking</h2>
-            <p>
-              When a business completes setup, it appears here for customers to review services,
-              compare prices, and book appointments online.
-            </p>
+            <h2 id="public-salon-showcase-title">Recommended</h2>
             <p
               class="public-salon-showcase-status"
               id="public-salon-showcase-status"
               aria-live="polite"
             >
-              Showing all salons ready for booking.
+              Showing recently launched businesses ready for booking.
             </p>
           </div>
 
           <div class="public-salon-showcase-list" id="public-salon-showcase-list"></div>
           <p class="public-salon-showcase-empty is-hidden" id="public-salon-showcase-empty">
-            No salons have completed setup yet.
+            No businesses have completed setup yet.
           </p>
 
+          <section
+            class="salon-detail-panel is-hidden"
+            id="salon-detail-panel"
+            aria-live="polite"
+            aria-labelledby="salon-detail-title"
+          >
+            <div class="salon-detail-tabs" aria-label="Business detail sections">
+              <button class="is-active" type="button" data-detail-tab="services">Services</button>
+              <button type="button" data-detail-tab="team">Team</button>
+              <button type="button" data-detail-tab="reviews">Reviews</button>
+              <button type="button" data-detail-tab="about">About</button>
+            </div>
+
+            <div class="salon-detail-layout">
+              <div class="salon-detail-main" id="salon-detail-main"></div>
+              <aside class="salon-detail-card" id="salon-detail-card"></aside>
+            </div>
+          </section>
+
           <div class="public-salon-showcase-metrics" aria-label="Platform trust signals">
-            <p class="booking-count"><strong>450,904</strong> appointments booked today</p>
+            <section class="home-review-section" aria-labelledby="home-review-title">
+              <h2 id="home-review-title">Reviews</h2>
+              <div class="home-review-rail">
+                <article class="home-review-card">
+                  <p class="home-review-stars" aria-label="5 stars">*****</p>
+                  <h3>The best booking system</h3>
+                  <p>Great experience, easy to book. Paying for treatments is convenient and fast.</p>
+                  <div>
+                    <strong>Lucy</strong>
+                    <span>London, UK</span>
+                  </div>
+                </article>
+                <article class="home-review-card">
+                  <p class="home-review-stars" aria-label="5 stars">*****</p>
+                  <h3>Easy to use and explore</h3>
+                  <p>Reminders make life easier, and finding nearby selfcare places feels simple.</p>
+                  <div>
+                    <strong>Dan</strong>
+                    <span>New York, USA</span>
+                  </div>
+                </article>
+                <article class="home-review-card">
+                  <p class="home-review-stars" aria-label="5 stars">*****</p>
+                  <h3>Great for finding barbers</h3>
+                  <p>I found a few good barbershops that I did not know existed.</p>
+                  <div>
+                    <strong>Dale</strong>
+                    <span>Sydney, Australia</span>
+                  </div>
+                </article>
+              </div>
+            </section>
+
+            <div class="home-stats-section">
+              <h2>The top-rated destination for selfcare</h2>
+              <p>One solution, one software. Trusted by growing beauty and wellness businesses.</p>
+              <p class="booking-count"><strong>450,904</strong> appointments booked today</p>
+            </div>
 
             <div class="hero-highlight-grid">
               <article class="hero-highlight-card">
@@ -215,6 +280,11 @@
       </main>
     </div>
 
+    <script
+      src="https://cdn.jsdelivr.net/npm/@algolia/autocomplete-js@1.19.8/dist/umd/index.production.js"
+      integrity="sha256-1XbjKeJ+FqQiRi8KgTUgGmjarD6uoHqoCCCZwaoqdqU="
+      crossorigin="anonymous"
+    ></script>
     <script src="/main.js"></script>
     <script src="/home-footer.js"></script>
   </body>

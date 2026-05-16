@@ -64,17 +64,84 @@
           </footer>
         </section>
 
-        <section class="booking-card">
-          <div class="booking-summary-card" id="booking-summary-card">
-            <p class="booking-summary-business-name is-hidden" id="booking-summary-business-name"></p>
-            <p class="booking-summary-eyebrow">Booking summary</p>
-            <strong id="booking-summary-title">Choose a service to begin</strong>
-            <p id="booking-summary-copy">
-              Select a service, day, and time to see your appointment details here.
-            </p>
+        <section class="booking-card booking-wizard-card">
+          <div class="booking-wizard-topbar">
+            <a class="booking-back-link" href="/" aria-label="Back to salons">
+              <span aria-hidden="true">←</span>
+            </a>
+            <div class="booking-step-trail" aria-label="Booking steps">
+              <span class="is-active" data-step-label="services">Services</span>
+              <span data-step-label="professional">Professional</span>
+              <span data-step-label="time">Time</span>
+              <span data-step-label="confirm">Confirm</span>
+            </div>
           </div>
 
-          <form class="booking-form" id="public-booking-form">
+          <div class="booking-wizard-layout">
+            <form class="booking-form booking-wizard-form" id="public-booking-form">
+              <section class="booking-step-panel is-active" data-booking-step="services">
+                <h1>Select services</h1>
+                <p class="booking-step-copy">Choose one service from this business. Prices and duration update automatically.</p>
+                <div class="booking-service-tabs" id="booking-service-tabs"></div>
+                <div class="booking-choice-list" id="booking-service-cards"></div>
+                <label class="booking-field booking-native-field">
+                  <span>Service</span>
+                  <select id="booking-service-select" required>
+                    <option value="">Select a service</option>
+                  </select>
+                </label>
+              </section>
+
+              <section class="booking-step-panel" data-booking-step="professional">
+                <h1>Select professional</h1>
+                <p class="booking-step-copy">Pick a team member or keep no preference for the earliest availability.</p>
+                <div class="booking-choice-list" id="booking-team-member-cards"></div>
+                <label class="booking-field booking-native-field is-hidden" id="booking-team-member-field">
+                  <span>Professional</span>
+                  <select id="booking-team-member-select">
+                    <option value="">No preference</option>
+                  </select>
+                  <small>You can choose no preference for maximum availability.</small>
+                </label>
+              </section>
+
+              <section class="booking-step-panel" data-booking-step="time">
+                <h1>Select date and time</h1>
+                <p class="booking-step-copy">Choose a date, then select one of the available appointment times.</p>
+                <div class="booking-date-toolbar">
+                  <button class="booking-mini-select" type="button" id="booking-no-preference">
+                    No preference
+                  </button>
+                  <label class="booking-calendar-trigger">
+                    <span aria-hidden="true">□</span>
+                    <input id="booking-date-input" type="date" required />
+                  </label>
+                </div>
+                <p class="booking-choice-label">Select a date</p>
+                <div class="booking-date-strip" id="booking-date-strip"></div>
+                <p class="booking-choice-label">Pick a time</p>
+                <div class="booking-time-list" id="booking-time-list"></div>
+                <label class="booking-field booking-native-field">
+                  <span>Time</span>
+                  <select id="booking-time-select" required>
+                    <option value="">Select a time</option>
+                  </select>
+                </label>
+
+                <div class="booking-history-panel is-hidden" id="booking-waitlist-panel">
+                  <strong>Fully booked on this date</strong>
+                  <p id="booking-waitlist-copy">
+                    If no slot works for you, join the waitlist and we will text you when one opens.
+                  </p>
+                  <button class="continue-button booking-submit" id="booking-waitlist-button" type="button">
+                    Join waitlist
+                  </button>
+                </div>
+              </section>
+
+              <section class="booking-step-panel" data-booking-step="confirm">
+                <h1>Confirm booking</h1>
+                <p class="booking-step-copy">Add your details so the business can confirm your appointment.</p>
             <label class="booking-field">
               <span id="booking-customer-phone-label">Phone number</span>
               <div class="booking-phone-inputs">
@@ -115,40 +182,6 @@
               <small>Use an active package balance or an available loyalty reward on this visit.</small>
             </label>
 
-            <label class="booking-field is-hidden" id="booking-team-member-field">
-              <span>Barber</span>
-              <select id="booking-team-member-select">
-                <option value="">Select a barber</option>
-              </select>
-              <small>You can change this, or keep the first barber selected by default.</small>
-            </label>
-
-            <div class="booking-field-row">
-              <label class="booking-field">
-                <span>Date</span>
-                <input id="booking-date-input" type="date" required />
-                <small>Pick the day you want to visit the salon.</small>
-              </label>
-
-              <label class="booking-field">
-                <span>Time</span>
-                <select id="booking-time-select" required>
-                  <option value="">Select a time</option>
-                </select>
-                <small>Available times are shown in local salon time.</small>
-              </label>
-            </div>
-
-            <div class="booking-history-panel is-hidden" id="booking-waitlist-panel">
-              <strong>Waitlist</strong>
-              <p id="booking-waitlist-copy">
-                If no slot works for you, join the waitlist and we will text you when one opens.
-              </p>
-              <button class="continue-button booking-submit" id="booking-waitlist-button" type="button">
-                Join waitlist
-              </button>
-            </div>
-
             <label class="booking-field">
               <span>Full name</span>
               <input id="booking-customer-name" type="text" placeholder="Customer name" required />
@@ -171,14 +204,6 @@
 
             <div class="booking-field-row">
               <label class="booking-field">
-                <span>Service</span>
-                <select id="booking-service-select" required>
-                  <option value="">Select a service</option>
-                </select>
-                <small>Choose the service you want to book.</small>
-              </label>
-
-              <label class="booking-field">
                 <span>Email (optional)</span>
                 <input id="booking-customer-email" type="email" placeholder="name@example.com" />
                 <small>Add email if you also want a written contact reference.</small>
@@ -188,7 +213,23 @@
             <button class="continue-button booking-submit" type="submit">
               Confirm appointment
             </button>
+              </section>
+
+              <div class="booking-wizard-actions">
+                <button class="booking-secondary-action" id="booking-step-back" type="button">Back</button>
+                <button class="continue-button" id="booking-step-continue" type="button">Continue →</button>
+              </div>
           </form>
+
+            <aside class="booking-summary-card booking-sticky-summary" id="booking-summary-card">
+              <p class="booking-summary-business-name is-hidden" id="booking-summary-business-name"></p>
+              <p class="booking-summary-eyebrow">Booking summary</p>
+              <strong id="booking-summary-title">Choose a service to begin</strong>
+              <p id="booking-summary-copy">
+                Select a service, professional, day, and time to see your appointment details here.
+              </p>
+            </aside>
+          </div>
 
           <div class="booking-success is-hidden" id="booking-success">
             <strong>Appointment confirmed</strong>
