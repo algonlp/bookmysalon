@@ -1999,8 +1999,111 @@ const getSalonLocationSearchValues = (salon) => {
   }
 
   return buildCompactLocationSuggestions(address);
+};
 
-  card.append(media, header, details);
+const getSalonImageSource = (salon) => {
+  const imageCandidates = [
+    salon?.profileImageUrl,
+    ...(Array.isArray(salon?.galleryImageUrls) ? salon.galleryImageUrls : []),
+    ...(Array.isArray(salon?.photoUrls) ? salon.photoUrls : []),
+    ...(Array.isArray(salon?.galleryImages) ? salon.galleryImages : [])
+  ];
+
+  return (
+    imageCandidates.find((value) => typeof value === 'string' && value.trim().length > 0)?.trim() ||
+    '/signup-photo.jpeg'
+  );
+};
+
+const getSalonRatingLabel = (salon) => {
+  const totalReviews = Number(salon?.reviewSummary?.totalReviews) || 0;
+  const averageRating = Number(salon?.reviewSummary?.averageRating) || 0;
+
+  return totalReviews > 0 && averageRating > 0 ? averageRating.toFixed(1) : 'New';
+};
+
+const createSalonShowcaseCard = (salon) => {
+  const card = document.createElement('a');
+  card.className = 'public-salon-card';
+  card.href = `/salon/${encodeURIComponent(salon?.clientId ?? salon?.id ?? '')}`;
+
+  const businessName = salon?.businessName || 'New salon';
+  const locationLabel = formatAddressSingleLine(salon?.venueAddress) || 'Booking available';
+  const visibleTypes = getVisibleSalonServiceTypes(salon?.serviceTypes, 3);
+  const activeServices = Array.isArray(salon?.services)
+    ? salon.services.filter((service) => service?.isActive !== false).slice(0, 2)
+    : [];
+
+  const media = document.createElement('div');
+  media.className = 'public-salon-card-media';
+
+  const image = document.createElement('img');
+  image.src = getSalonImageSource(salon);
+  image.alt = `${businessName} photo`;
+  image.loading = 'lazy';
+
+  const tag = document.createElement('span');
+  tag.className = 'public-salon-card-tag';
+  tag.textContent = getSalonRatingLabel(salon);
+
+  const heart = document.createElement('span');
+  heart.className = 'public-salon-card-heart';
+  heart.setAttribute('aria-hidden', 'true');
+  heart.textContent = '<3';
+
+  media.append(image, tag, heart);
+
+  const header = document.createElement('div');
+  header.className = 'public-salon-card-header';
+
+  const titleBlock = document.createElement('div');
+  titleBlock.className = 'public-salon-card-title-block';
+
+  const title = document.createElement('h3');
+  title.textContent = businessName;
+
+  const location = document.createElement('p');
+  location.className = 'public-salon-card-location';
+  location.textContent = locationLabel;
+
+  titleBlock.append(title, location);
+
+  const reviewMeta = document.createElement('p');
+  reviewMeta.className = 'public-salon-review-meta';
+  reviewMeta.textContent =
+    Number(salon?.reviewSummary?.totalReviews) > 0
+      ? `${getSalonRatingLabel(salon)} (${salon.reviewSummary.totalReviews})`
+      : 'New';
+
+  header.append(titleBlock, reviewMeta);
+
+  const typeList = document.createElement('div');
+  typeList.className = 'public-salon-type-list';
+
+  for (const label of visibleTypes.labels) {
+    const pill = document.createElement('span');
+    pill.className = 'public-salon-type-pill';
+    pill.textContent = label;
+    typeList.append(pill);
+  }
+
+  if (visibleTypes.hiddenCount > 0) {
+    const morePill = document.createElement('span');
+    morePill.className = 'public-salon-type-pill is-muted';
+    morePill.textContent = `+${visibleTypes.hiddenCount}`;
+    typeList.append(morePill);
+  }
+
+  const details = document.createElement('p');
+  details.className = 'public-salon-card-details';
+  details.textContent =
+    activeServices.length > 0
+      ? activeServices
+          .map((service) => [service.name, service.priceLabel].filter(Boolean).join(' - '))
+          .join(' | ')
+      : 'Online booking available';
+
+  card.append(media, header, typeList, details);
   return card;
 };
 
