@@ -1,0 +1,17 @@
+{
+  "smsLogs": [
+    {
+      "id": "7f372fc5-968b-4c3a-9e46-03eb188b333b",
+      "businessId": "3765eb45-6291-444f-a3bc-7352bc461657",
+      "appointmentId": "052b9e85-9407-4f79-8d6c-0a3e562c0995",
+      "recipient": "customer",
+      "channel": "sms",
+      "destination": "+923337167515",
+      "status": "sent",
+      "source": "appointment_confirmation",
+      "body": "Your appointment at 123456 is confirmed for 2026-05-19 at 10:00. Service: Cut and style. Ref: 052b9e85. Open your live booking link for the countdown and updates: http://localhost:8002/book/3765eb45-6291-444f-a3bc-7352bc461657/manage/052b9e85-9407-4f79-8d6c-0a3e562c0995?accessToken=d47c4ce0-4e46-4b7e-b78e-4be0aa17fe6e",
+      "messageId": "SM418027fda84eafdc3012be8c2bfeb9f3",
+      "createdAt": "2026-05-18T05:15:27.779Z"
+    }
+  ]
+}

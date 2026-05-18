@@ -37,6 +37,11 @@ describe('GET /', () => {
     expect(response.text).toContain('id="city-location-trigger"');
     expect(response.text).toContain('id="time-query" name="time" type="date"');
     expect(response.text).toContain('Showing recently launched businesses ready for booking.');
+    expect(response.text).toContain('Browse by City');
+    expect(response.text).toContain('data-footer-country="australia"');
+    expect(response.text).toContain('data-footer-country="greece"');
+    expect(response.text).toContain('Hair Salons in Sydney');
+    expect(response.text).toContain('Gold Coast');
     expect(response.text).toContain('For customers');
     expect(response.text).toContain('For businesses');
   });
@@ -213,6 +218,8 @@ describe('GET /', () => {
     expect(response.headers['content-type']).toContain('text/html');
     expect(response.text).toContain('Add salon images');
     expect(response.text).toContain('This step is optional');
+    expect(response.text).toContain('Select from gallery');
+    expect(response.text).toContain('id="salon-images-file-input"');
     expect(response.text).toContain('data-salon-image-input');
     expect(response.text).toContain('Skip for now');
   });

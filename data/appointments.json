@@ -381,6 +381,31 @@
       "source": "direct",
       "createdAt": "2026-04-16T10:37:29.489Z",
       "updatedAt": "2026-04-16T15:27:38.165Z"
+    },
+    {
+      "id": "052b9e85-9407-4f79-8d6c-0a3e562c0995",
+      "businessId": "3765eb45-6291-444f-a3bc-7352bc461657",
+      "businessName": "123456",
+      "publicAccessToken": "d47c4ce0-4e46-4b7e-b78e-4be0aa17fe6e",
+      "serviceId": "hair-salon-cut-and-style",
+      "categoryName": "Hair salon",
+      "serviceName": "Cut and style",
+      "customerName": "algonlp",
+      "customerPhone": "+923337167515",
+      "customerEmail": "infoalgonlp@gmail.com",
+      "serviceLocation": "physical",
+      "customerAddress": "",
+      "appointmentDate": "2026-05-19",
+      "appointmentTime": "10:00",
+      "servicePriceLabel": "$2,200",
+      "serviceAmountValue": 2200,
+      "currencyCode": "",
+      "startAt": "2026-05-19T10:00:00.000Z",
+      "endAt": "2026-05-19T11:00:00.000Z",
+      "status": "booked",
+      "source": "direct",
+      "createdAt": "2026-05-18T05:15:26.513Z",
+      "updatedAt": "2026-05-18T05:15:26.513Z"
     }
   ],
   "paymentRecords": [

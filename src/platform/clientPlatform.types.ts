@@ -510,6 +510,14 @@ export interface PublicSalonShowcaseItem {
   bookingLink: string;
   openingTime: string;
   closingTime: string;
+  openingHours: Array<{
+    weekday: WeekdayId;
+    label: string;
+    openingTime: string;
+    closingTime: string;
+    isClosed: boolean;
+  }>;
+  additionalInformation: string[];
   onlineTeamMembersCount: number;
   onlineTeamMemberNames: string[];
   reviewSummary: {

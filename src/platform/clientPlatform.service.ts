@@ -1000,6 +1000,74 @@ const getDefaultTeamMemberTimeRange = (
   return { openingTime, closingTime };
 };
 
+const formatWeekdayLabel = (weekdayId: WeekdayId): string =>
+  weekdayId.charAt(0).toUpperCase() + weekdayId.slice(1);
+
+const getBusinessOpeningHours = (
+  teamMembers: TeamMemberRecord[],
+  businessSettings: BusinessSettingsRecord | null | undefined
+): PublicSalonShowcaseItem['openingHours'] => {
+  const defaultTimeRange = getDefaultTeamMemberTimeRange(businessSettings);
+  const activeTeamMembers = teamMembers.filter((teamMember) => teamMember.isActive !== false);
+
+  return WEEKDAY_IDS.map((weekday) => {
+    if (activeTeamMembers.length === 0) {
+      return {
+        weekday,
+        label: formatWeekdayLabel(weekday),
+        openingTime: defaultTimeRange.openingTime,
+        closingTime: defaultTimeRange.closingTime,
+        isClosed: false
+      };
+    }
+
+    const availableTeamMembers = activeTeamMembers.filter(
+      (teamMember) => !teamMember.offDays.includes(weekday)
+    );
+
+    if (availableTeamMembers.length === 0) {
+      return {
+        weekday,
+        label: formatWeekdayLabel(weekday),
+        openingTime: '',
+        closingTime: '',
+        isClosed: true
+      };
+    }
+
+    const openingMinutes = Math.min(
+      ...availableTeamMembers.map((teamMember) => parseTimeToMinutes(teamMember.openingTime))
+    );
+    const closingMinutes = Math.max(
+      ...availableTeamMembers.map((teamMember) => parseTimeToMinutes(teamMember.closingTime))
+    );
+
+    return {
+      weekday,
+      label: formatWeekdayLabel(weekday),
+      openingTime: formatMinutesAsTime(openingMinutes),
+      closingTime: formatMinutesAsTime(closingMinutes),
+      isClosed: false
+    };
+  });
+};
+
+const getPublicSalonAdditionalInformation = (
+  services: PublicSalonShowcaseItem['services']
+): string[] => {
+  const labels: string[] = [];
+
+  if (services.length > 0) {
+    labels.push('Instant confirmation');
+  }
+
+  if (services.some((service) => service.priceLabel.trim().length > 0)) {
+    labels.push('Pay at venue');
+  }
+
+  return labels;
+};
+
 const normalizeTeamMemberOffDays = (value: unknown): WeekdayId[] => {
   const offDays = Array.isArray(value) ? value : [];
   const uniqueOffDays = new Set<WeekdayId>();
@@ -2045,6 +2113,17 @@ export const clientPlatformService = {
           client.businessSettings
         ).filter((teamMember) => teamMember.isActive !== false);
         const businessHours = getDefaultTeamMemberTimeRange(client.businessSettings);
+        const openingHours = getBusinessOpeningHours(onlineTeamMembers, client.businessSettings);
+        const publicServices = services.map((service) => ({
+          id: service.id,
+          name: service.name,
+          categoryName: service.categoryName,
+          durationMinutes: service.durationMinutes,
+          priceLabel: service.priceLabel,
+          description: service.description,
+          isPackageHighlighted: service.isPackageHighlighted,
+          highlightedPackageNames: service.highlightedPackageNames
+        }));
 
         return {
           clientId: client.id,
@@ -2057,19 +2136,12 @@ export const clientPlatformService = {
           bookingLink: `/book/${client.id}`,
           openingTime: businessHours.openingTime,
           closingTime: businessHours.closingTime,
+          openingHours,
+          additionalInformation: getPublicSalonAdditionalInformation(publicServices),
           onlineTeamMembersCount: onlineTeamMembers.length,
           onlineTeamMemberNames: onlineTeamMembers.map((teamMember) => teamMember.name),
           reviewSummary: reviews.summary,
-          services: services.map((service) => ({
-            id: service.id,
-            name: service.name,
-            categoryName: service.categoryName,
-            durationMinutes: service.durationMinutes,
-            priceLabel: service.priceLabel,
-            description: service.description,
-            isPackageHighlighted: service.isPackageHighlighted,
-            highlightedPackageNames: service.highlightedPackageNames
-          }))
+          services: publicServices
         };
       })
     );

@@ -2134,6 +2134,48 @@ const getSalonAboutText = (salon) => {
   return `${salon.businessName || 'This business'} offers ${serviceTypes} in ${location}. Browse services, compare prices, and book your appointment online from QR schedule.`;
 };
 
+const getSalonMapQuery = (salon) => {
+  const address = formatAddressSingleLine(salon?.venueAddress);
+  const businessName = typeof salon?.businessName === 'string' ? salon.businessName.trim() : '';
+  return [businessName, address].filter(Boolean).join(', ') || address || businessName;
+};
+
+const buildGoogleMapEmbedUrl = (query) =>
+  `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed`;
+
+const buildGoogleMapSearchUrl = (query) =>
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+
+const getSalonOpeningHours = (salon) => {
+  const openingHours = Array.isArray(salon?.openingHours) ? salon.openingHours : [];
+  const weekdayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+  if (openingHours.length > 0) {
+    return [...openingHours].sort(
+      (left, right) =>
+        (weekdayOrder.indexOf(left.weekday) < 0 ? 99 : weekdayOrder.indexOf(left.weekday)) -
+        (weekdayOrder.indexOf(right.weekday) < 0 ? 99 : weekdayOrder.indexOf(right.weekday))
+    );
+  }
+
+  if (typeof salon?.openingTime === 'string' && typeof salon?.closingTime === 'string') {
+    return weekdayOrder.map((weekday) => ({
+      weekday,
+      label: weekday.charAt(0).toUpperCase() + weekday.slice(1),
+      openingTime: salon.openingTime,
+      closingTime: salon.closingTime,
+      isClosed: false
+    }));
+  }
+
+  return [];
+};
+
+const getSalonAdditionalInformation = (salon) =>
+  Array.isArray(salon?.additionalInformation)
+    ? salon.additionalInformation.filter((value) => typeof value === 'string' && value.trim())
+    : [];
+
 const getSalonGalleryImages = (salon) => {
   const imageSource = getSalonImageSource(salon);
   const imageUrls = [
@@ -2275,6 +2317,7 @@ const renderSalonDetailPanel = (salon) => {
       item.className = 'salon-detail-service-item';
 
       const copy = document.createElement('div');
+      copy.className = 'salon-detail-service-copy';
       copy.append(
         createDetailText('h4', '', service.name || 'Service'),
         createDetailText('p', '', `${service.durationMinutes || 30} min`),
@@ -2320,10 +2363,11 @@ const renderSalonDetailPanel = (salon) => {
   (teamMembers.length > 0 ? teamMembers : ['Available staff']).slice(0, 4).forEach((name) => {
     const member = document.createElement('article');
     member.className = 'salon-detail-team-member';
+    const status = createDetailText('small', '', 'Online booking available');
     member.append(
       createDetailText('span', '', String(name).charAt(0).toUpperCase() || 'S'),
       createDetailText('strong', '', name),
-      createDetailText('p', '', 'Online booking available')
+      status
     );
     teamGrid.append(member);
   });
@@ -2344,6 +2388,7 @@ const renderSalonDetailPanel = (salon) => {
     review.append(
       createDetailText('span', '', ['A', 'M', 'S'][index]),
       createDetailText('strong', '', ['Abeer A', 'Marwa A', 'Sreesha S'][index]),
+      createDetailText('small', '', 'Verified booking'),
       createDetailText('p', '', copy)
     );
     reviewsGrid.append(review);
@@ -2360,11 +2405,93 @@ const renderSalonDetailPanel = (salon) => {
 
   const mapCard = document.createElement('div');
   mapCard.className = 'salon-detail-map';
-  mapCard.append(
-    createDetailText('span', '', getSalonRatingLabel(salon)),
-    createDetailText('p', '', formatAddressSingleLine(salon.venueAddress) || 'Location available on booking')
-  );
+  const mapQuery = getSalonMapQuery(salon);
+  const mapAddress = formatAddressSingleLine(salon.venueAddress) || 'Location available on booking';
+
+  if (mapQuery) {
+    const mapFrame = document.createElement('iframe');
+    mapFrame.title = `${businessName} map`;
+    mapFrame.src = buildGoogleMapEmbedUrl(mapQuery);
+    mapFrame.loading = 'lazy';
+    mapFrame.referrerPolicy = 'no-referrer-when-downgrade';
+    mapFrame.allowFullscreen = true;
+
+    const mapCopy = document.createElement('div');
+    mapCopy.className = 'salon-detail-map-copy';
+    mapCopy.append(
+      createDetailText('strong', '', mapAddress),
+      createDetailText('p', '', 'Use the map to find the salon location before booking.')
+    );
+
+    const mapLink = document.createElement('a');
+    mapLink.href = buildGoogleMapSearchUrl(mapQuery);
+    mapLink.target = '_blank';
+    mapLink.rel = 'noreferrer';
+    mapLink.textContent = 'Open in Google Maps';
+
+    mapCopy.append(mapLink);
+    mapCard.append(mapFrame, mapCopy);
+  } else {
+    mapCard.append(createDetailText('p', 'salon-detail-muted', 'Location available on booking.'));
+  }
   aboutSection.append(mapCard);
+
+  const openingHours = getSalonOpeningHours(salon);
+  const additionalInformation = getSalonAdditionalInformation(salon);
+
+  if (openingHours.length > 0 || additionalInformation.length > 0) {
+    const infoGrid = document.createElement('div');
+    infoGrid.className = 'salon-detail-info-grid';
+
+    if (openingHours.length > 0) {
+      const hoursSection = document.createElement('section');
+      hoursSection.className = 'salon-detail-info-section';
+      hoursSection.append(createDetailText('h4', '', 'Opening times'));
+
+      const hoursList = document.createElement('div');
+      hoursList.className = 'salon-detail-hours-list';
+
+      openingHours.forEach((entry) => {
+        const row = document.createElement('div');
+        row.className = `salon-detail-hours-row${entry.isClosed ? ' is-closed' : ' is-open'}`;
+
+        const day = createDetailText('span', '', entry.label || entry.weekday || 'Day');
+        const value = createDetailText(
+          'strong',
+          '',
+          entry.isClosed
+            ? 'Closed'
+            : `${formatTimeForDisplay(entry.openingTime)} - ${formatTimeForDisplay(entry.closingTime)}`
+        );
+
+        row.append(day, value);
+        hoursList.append(row);
+      });
+
+      hoursSection.append(hoursList);
+      infoGrid.append(hoursSection);
+    }
+
+    if (additionalInformation.length > 0) {
+      const extraSection = document.createElement('section');
+      extraSection.className = 'salon-detail-info-section';
+      extraSection.append(createDetailText('h4', '', 'Additional information'));
+
+      const extraList = document.createElement('div');
+      extraList.className = 'salon-detail-extra-list';
+
+      additionalInformation.forEach((label) => {
+        const item = createDetailText('span', '', label);
+        item.className = 'salon-detail-extra-pill';
+        extraList.append(item);
+      });
+
+      extraSection.append(extraList);
+      infoGrid.append(extraSection);
+    }
+
+    aboutSection.append(infoGrid);
+  }
 
   main.append(profileHeader, gallery, servicesSection, teamSection, reviewsSection, aboutSection);
 
@@ -4866,6 +4993,8 @@ const initSalonImages = () => {
   const status = document.querySelector('#salon-images-status');
   const continueButton = document.querySelector('#salon-images-continue');
   const skipButton = document.querySelector('#salon-images-skip');
+  const uploadButton = document.querySelector('#salon-images-upload-button');
+  const fileInput = document.querySelector('#salon-images-file-input');
 
   if (
     !(form instanceof HTMLFormElement) ||
@@ -4873,7 +5002,9 @@ const initSalonImages = () => {
     !(previewGrid instanceof HTMLElement) ||
     !(status instanceof HTMLElement) ||
     !(continueButton instanceof HTMLButtonElement) ||
-    !(skipButton instanceof HTMLButtonElement)
+    !(skipButton instanceof HTMLButtonElement) ||
+    !(uploadButton instanceof HTMLButtonElement) ||
+    !(fileInput instanceof HTMLInputElement)
   ) {
     return;
   }
@@ -4887,6 +5018,61 @@ const initSalonImages = () => {
     inputs
       .map((input) => input.value.trim())
       .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index);
+
+  const setImagesFromFiles = async (files) => {
+    const imageFiles = Array.from(files).filter((file) => file.type.startsWith('image/'));
+
+    if (imageFiles.length === 0) {
+      safeAlert('Please choose image files from your gallery.');
+      return;
+    }
+
+    if (imageFiles.some((file) => file.size > 4 * 1024 * 1024)) {
+      safeAlert('Please choose images smaller than 4 MB.');
+      fileInput.value = '';
+      return;
+    }
+
+    if (imageFiles.reduce((totalSize, file) => totalSize + file.size, 0) > 5 * 1024 * 1024) {
+      safeAlert('Please choose images under 5 MB total.');
+      fileInput.value = '';
+      return;
+    }
+
+    const availableInputs = inputs.filter((input) => !input.value.trim());
+    const targetInputs = availableInputs.length > 0 ? availableInputs : inputs;
+    const selectedFiles = imageFiles.slice(0, targetInputs.length);
+
+    try {
+      const imageDataUrls = await Promise.all(
+        selectedFiles.map(
+          (file) =>
+            new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.addEventListener('load', () => {
+                resolve(typeof reader.result === 'string' ? reader.result : '');
+              });
+              reader.addEventListener('error', () => {
+                reject(new Error('Unable to read selected image.'));
+              });
+              reader.readAsDataURL(file);
+            })
+        )
+      );
+
+      imageDataUrls
+        .filter((imageDataUrl) => imageDataUrl)
+        .forEach((imageDataUrl, index) => {
+          targetInputs[index].value = imageDataUrl;
+        });
+
+      renderPreviews();
+    } catch (error) {
+      safeAlert(error instanceof Error ? error.message : 'Unable to read selected images.');
+    } finally {
+      fileInput.value = '';
+    }
+  };
 
   const renderPreviews = () => {
     const imageUrls = getImageUrls();
@@ -4931,6 +5117,14 @@ const initSalonImages = () => {
 
   inputs.forEach((input) => {
     input.addEventListener('input', renderPreviews);
+  });
+
+  uploadButton.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', () => {
+    void setImagesFromFiles(fileInput.files ?? []);
   });
 
   form.addEventListener('submit', async (event) => {
@@ -9403,6 +9597,47 @@ const createTrendCard = (
     imageActions.append(uploadButton, removeImageButton);
     imageField.append(imagePreview, imageActions, imagePickerInput);
 
+    const galleryField = document.createElement('div');
+    galleryField.className = 'calendar-tool-field calendar-tool-gallery-field';
+    const galleryLabel = document.createElement('span');
+    galleryLabel.textContent = 'Salon gallery';
+    const galleryHelp = document.createElement('p');
+    galleryHelp.className = 'calendar-tool-help';
+    galleryHelp.textContent = 'Add up to 6 photos for your public salon page.';
+
+    const galleryInputs = Array.from({ length: 6 }, (_value, index) => {
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.placeholder = index === 0 ? 'Cover image URL' : `Gallery image ${index + 1} URL`;
+      input.value = dashboardPayload?.client?.galleryImageUrls?.[index] ?? '';
+      return input;
+    });
+
+    const galleryPreview = document.createElement('div');
+    galleryPreview.className = 'calendar-tool-gallery-preview';
+
+    const galleryPickerInput = document.createElement('input');
+    galleryPickerInput.type = 'file';
+    galleryPickerInput.accept = 'image/*';
+    galleryPickerInput.multiple = true;
+    galleryPickerInput.className = 'calendar-tool-file-input';
+
+    const galleryActions = document.createElement('div');
+    galleryActions.className = 'calendar-tool-inline-actions';
+
+    const galleryUploadButton = document.createElement('button');
+    galleryUploadButton.className = 'calendar-tool-action';
+    galleryUploadButton.type = 'button';
+    galleryUploadButton.textContent = 'Choose from gallery';
+
+    const clearGalleryButton = document.createElement('button');
+    clearGalleryButton.className = 'calendar-tool-action';
+    clearGalleryButton.type = 'button';
+    clearGalleryButton.textContent = 'Clear gallery';
+
+    galleryActions.append(galleryUploadButton, clearGalleryButton);
+    galleryField.append(galleryLabel, galleryHelp, galleryPreview, galleryActions, galleryPickerInput, ...galleryInputs);
+
     const submitButton = document.createElement('button');
     submitButton.className = 'calendar-tool-action calendar-tool-submit';
     submitButton.type = 'submit';
@@ -9426,7 +9661,16 @@ const createTrendCard = (
       }
     });
 
-    form.append(businessField, websiteField, phoneField, addressField, imageField, submitButton, logoutButton);
+    form.append(
+      businessField,
+      websiteField,
+      phoneField,
+      addressField,
+      imageField,
+      galleryField,
+      submitButton,
+      logoutButton
+    );
 
     const syncProfilePreview = () => {
       renderCalendarAvatar(
@@ -9448,6 +9692,114 @@ const createTrendCard = (
 
     imageInput.addEventListener('input', syncProfilePreview);
     businessInput.addEventListener('input', syncProfilePreview);
+
+    const getGalleryImageUrls = () =>
+      galleryInputs
+        .map((input) => input.value.trim())
+        .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index);
+
+    const syncGalleryPreview = () => {
+      const galleryImageUrls = getGalleryImageUrls();
+      galleryPreview.replaceChildren();
+
+      if (galleryImageUrls.length === 0) {
+        const emptyPreview = document.createElement('p');
+        emptyPreview.textContent = 'No gallery photos yet.';
+        galleryPreview.append(emptyPreview);
+        return;
+      }
+
+      galleryImageUrls.forEach((imageUrl, index) => {
+        const figure = document.createElement('figure');
+        figure.className = index === 0 ? 'is-cover' : '';
+
+        const image = document.createElement('img');
+        image.src = imageUrl;
+        image.alt = `Salon gallery photo ${index + 1}`;
+        image.loading = 'lazy';
+
+        const caption = document.createElement('figcaption');
+        caption.textContent = index === 0 ? 'Cover' : `Gallery ${index + 1}`;
+
+        figure.append(image, caption);
+        galleryPreview.append(figure);
+      });
+    };
+
+    const setGalleryImagesFromFiles = async (files) => {
+      const imageFiles = Array.from(files).filter((file) => file.type.startsWith('image/'));
+
+      if (imageFiles.length === 0) {
+        safeAlert('Please choose image files from your gallery.');
+        return;
+      }
+
+      if (imageFiles.some((file) => file.size > 4 * 1024 * 1024)) {
+        safeAlert('Please choose images smaller than 4 MB.');
+        galleryPickerInput.value = '';
+        return;
+      }
+
+      if (imageFiles.reduce((totalSize, file) => totalSize + file.size, 0) > 5 * 1024 * 1024) {
+        safeAlert('Please choose images under 5 MB total.');
+        galleryPickerInput.value = '';
+        return;
+      }
+
+      const availableInputs = galleryInputs.filter((input) => !input.value.trim());
+      const targetInputs = availableInputs.length > 0 ? availableInputs : galleryInputs;
+      const selectedFiles = imageFiles.slice(0, targetInputs.length);
+
+      try {
+        const imageDataUrls = await Promise.all(
+          selectedFiles.map(
+            (file) =>
+              new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.addEventListener('load', () => {
+                  resolve(typeof reader.result === 'string' ? reader.result : '');
+                });
+                reader.addEventListener('error', () => {
+                  reject(new Error('Unable to read selected image.'));
+                });
+                reader.readAsDataURL(file);
+              })
+          )
+        );
+
+        imageDataUrls
+          .filter((imageDataUrl) => imageDataUrl)
+          .forEach((imageDataUrl, index) => {
+            targetInputs[index].value = imageDataUrl;
+          });
+
+        syncGalleryPreview();
+      } catch (error) {
+        safeAlert(error instanceof Error ? error.message : 'Unable to read selected images.');
+      } finally {
+        galleryPickerInput.value = '';
+      }
+    };
+
+    galleryInputs.forEach((input) => {
+      input.addEventListener('input', syncGalleryPreview);
+    });
+
+    galleryUploadButton.addEventListener('click', () => {
+      galleryPickerInput.click();
+    });
+
+    clearGalleryButton.addEventListener('click', () => {
+      galleryInputs.forEach((input) => {
+        input.value = '';
+      });
+      galleryPickerInput.value = '';
+      syncGalleryPreview();
+    });
+
+    galleryPickerInput.addEventListener('change', () => {
+      void setGalleryImagesFromFiles(galleryPickerInput.files ?? []);
+    });
 
     imagePickerInput.addEventListener('change', () => {
       const file = imagePickerInput.files?.[0];
@@ -9505,6 +9857,13 @@ const createTrendCard = (
           })
         });
 
+        await apiRequest(`/api/platform/clients/${clientId}/salon-images`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            galleryImageUrls: getGalleryImageUrls()
+          })
+        });
+
         await loadDashboard();
         closeToolModal();
       } catch (error) {
@@ -9515,6 +9874,7 @@ const createTrendCard = (
     });
 
     syncProfilePreview();
+    syncGalleryPreview();
 
     openToolModal({
       eyebrow: 'Profile',
@@ -12751,6 +13111,8 @@ const initPublicBooking = () => {
   const publishedPackagePlansById = new Map();
   const bookingLocationLabelsByValue = new Map();
   const bookingStepOrder = ['services', 'professional', 'time', 'confirm'];
+  let currentBookingStep = bookingStepOrder[0];
+  let lastLoadedSlots = [];
   let latestAppointmentReference = '';
   let phoneHistoryRequestCounter = 0;
   let benefitsRequestCounter = 0;
@@ -12783,6 +13145,36 @@ const initPublicBooking = () => {
     phoneCountryCodeLabel: '',
     phoneCountryCode: '',
     phoneNumberPlaceholder: ''
+  };
+
+  const getStepIndex = (stepName) => {
+    const stepIndex = bookingStepOrder.indexOf(stepName);
+    return stepIndex >= 0 ? stepIndex : 0;
+  };
+
+  const setBookingStep = (stepName) => {
+    currentBookingStep = bookingStepOrder.includes(stepName) ? stepName : bookingStepOrder[0];
+    const currentStepIndex = getStepIndex(currentBookingStep);
+
+    stepPanels.forEach((panel) => {
+      const isActive = panel instanceof HTMLElement && panel.dataset.bookingStep === currentBookingStep;
+      panel.classList.toggle('is-active', isActive);
+    });
+
+    stepLabels.forEach((label) => {
+      if (!(label instanceof HTMLElement)) {
+        return;
+      }
+
+      const labelStepIndex = getStepIndex(label.dataset.stepLabel ?? '');
+      label.classList.toggle('is-active', label.dataset.stepLabel === currentBookingStep);
+      label.classList.toggle('is-complete', labelStepIndex < currentStepIndex);
+    });
+
+    stepBackButton.disabled = currentStepIndex === 0;
+    stepContinueButton.textContent =
+      currentStepIndex === bookingStepOrder.length - 1 ? 'Review booking' : 'Continue ->';
+    stepContinueButton.classList.toggle('is-hidden', currentBookingStep === 'confirm');
   };
 
   const syncBookingHero = () => {
@@ -13425,24 +13817,38 @@ const initPublicBooking = () => {
 
     const noPreference = document.createElement('button');
     noPreference.type = 'button';
-    noPreference.className = `booking-choice-card booking-team-choice${teamMemberSelect.value ? '' : ' is-selected'}`;
+    noPreference.className = `booking-choice-card booking-team-choice booking-professional-choice${teamMemberSelect.value ? '' : ' is-selected'}`;
     noPreference.dataset.teamMemberId = '';
-    noPreference.innerHTML = `
-      <span class="booking-choice-avatar" aria-hidden="true">↔</span>
-      <span class="booking-choice-copy">
-        <strong>No preference</strong>
-        <span>Maximum availability</span>
-      </span>
-      <span class="booking-choice-marker">Select</span>
-    `;
+    noPreference.setAttribute('aria-pressed', teamMemberSelect.value ? 'false' : 'true');
+    const noPreferenceAvatar = document.createElement('span');
+    noPreferenceAvatar.className = 'booking-choice-avatar booking-no-preference-icon';
+    noPreferenceAvatar.setAttribute('aria-hidden', 'true');
+
+    const noPreferenceCopy = document.createElement('span');
+    noPreferenceCopy.className = 'booking-choice-copy';
+
+    const noPreferenceTitle = document.createElement('strong');
+    noPreferenceTitle.textContent = 'No preference';
+
+    const noPreferenceMeta = document.createElement('span');
+    noPreferenceMeta.textContent = 'Maximum availability';
+
+    noPreferenceCopy.append(noPreferenceTitle, noPreferenceMeta);
+
+    const noPreferenceMarker = document.createElement('span');
+    noPreferenceMarker.className = 'booking-choice-marker';
+    noPreferenceMarker.textContent = teamMemberSelect.value ? 'Select' : 'Selected';
+
+    noPreference.replaceChildren(noPreferenceAvatar, noPreferenceCopy, noPreferenceMarker);
     teamMemberCards.append(noPreference);
 
     for (const teamMember of teamMembersById.values()) {
       const isSelected = teamMemberSelect.value === teamMember.id;
       const card = document.createElement('button');
       card.type = 'button';
-      card.className = `booking-choice-card booking-team-choice${isSelected ? ' is-selected' : ''}`;
+      card.className = `booking-choice-card booking-team-choice booking-professional-choice${isSelected ? ' is-selected' : ''}`;
       card.dataset.teamMemberId = teamMember.id;
+      card.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
 
       const avatar = document.createElement('span');
       avatar.className = 'booking-choice-avatar';
@@ -13458,17 +13864,81 @@ const initPublicBooking = () => {
       const role = document.createElement('span');
       role.textContent = teamMember.role || 'Professional';
 
-      const rating = document.createElement('b');
-      rating.textContent = '★ 4.9';
+      const status = document.createElement('b');
+      status.className = 'booking-choice-status';
+      status.textContent = 'Available for online booking';
 
-      copy.append(name, role, rating);
+      copy.append(name, role, status);
 
       const marker = document.createElement('span');
       marker.className = 'booking-choice-marker';
-      marker.textContent = 'Select';
+      marker.textContent = isSelected ? 'Selected' : 'Select';
 
       card.append(avatar, copy, marker);
       teamMemberCards.append(card);
+    }
+  };
+
+  const renderDateStrip = () => {
+    dateStrip.replaceChildren();
+
+    const baseDateValue = dateInput.min || new Date().toISOString().slice(0, 10);
+    const baseDate = new Date(`${baseDateValue}T00:00:00`);
+    const selectedDateValue = dateInput.value || baseDateValue;
+
+    if (Number.isNaN(baseDate.getTime())) {
+      return;
+    }
+
+    const visibleDateValues = new Set();
+
+    for (let offset = 0; offset < 14; offset += 1) {
+      const date = new Date(baseDate);
+      date.setDate(baseDate.getDate() + offset);
+      const dateValue = date.toISOString().slice(0, 10);
+      visibleDateValues.add(dateValue);
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `booking-date-card${selectedDateValue === dateValue ? ' is-active' : ''}`;
+      button.dataset.dateValue = dateValue;
+      button.setAttribute('aria-pressed', selectedDateValue === dateValue ? 'true' : 'false');
+
+      const dayLabel = document.createElement('span');
+      dayLabel.textContent = new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(date);
+
+      const dateLabel = document.createElement('strong');
+      dateLabel.textContent = new Intl.DateTimeFormat(undefined, { day: 'numeric' }).format(date);
+
+      const monthLabel = document.createElement('span');
+      monthLabel.textContent = new Intl.DateTimeFormat(undefined, { month: 'short' }).format(date);
+
+      button.append(dayLabel, dateLabel, monthLabel);
+      dateStrip.append(button);
+    }
+
+    if (selectedDateValue && !visibleDateValues.has(selectedDateValue)) {
+      const selectedDate = new Date(`${selectedDateValue}T00:00:00`);
+
+      if (!Number.isNaN(selectedDate.getTime())) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'booking-date-card is-active';
+        button.dataset.dateValue = selectedDateValue;
+        button.setAttribute('aria-pressed', 'true');
+
+        const dayLabel = document.createElement('span');
+        dayLabel.textContent = new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(selectedDate);
+
+        const dateLabel = document.createElement('strong');
+        dateLabel.textContent = new Intl.DateTimeFormat(undefined, { day: 'numeric' }).format(selectedDate);
+
+        const monthLabel = document.createElement('span');
+        monthLabel.textContent = new Intl.DateTimeFormat(undefined, { month: 'short' }).format(selectedDate);
+
+        button.append(dayLabel, dateLabel, monthLabel);
+        dateStrip.prepend(button);
+      }
     }
   };
 
@@ -14129,6 +14599,7 @@ const initPublicBooking = () => {
 
   dateInput.addEventListener('change', async () => {
 
+    renderDateStrip();
     syncPackagePlanDateOptions();
 
     await populateSlots();

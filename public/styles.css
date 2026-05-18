@@ -1752,23 +1752,57 @@ textarea:focus-visible {
 
 .salon-detail-service-list {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .salon-detail-service-item {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  min-height: 86px;
-  padding: 18px 0;
-  border-bottom: 1px solid rgba(31, 26, 23, 0.1);
-  background: transparent;
+  min-height: 96px;
+  padding: 18px 18px 18px 22px;
+  border: 1px solid rgba(31, 26, 23, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 12px 26px rgba(31, 26, 23, 0.06);
+  overflow: hidden;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.salon-detail-service-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 18px;
+  bottom: 18px;
+  width: 4px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #6c4cf5, #14b86f);
+  opacity: 0.9;
+}
+
+.salon-detail-service-item:hover {
+  transform: translateY(-3px);
+  border-color: rgba(108, 76, 245, 0.18);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 20px 38px rgba(31, 26, 23, 0.1);
 }
 
 .salon-detail-service-item h4,
 .salon-detail-service-item p {
   margin: 0;
+}
+
+.salon-detail-service-copy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
 }
 
 .salon-detail-service-item h4 {
@@ -1783,7 +1817,9 @@ textarea:focus-visible {
 
 .salon-detail-service-item strong {
   display: block;
-  margin-top: 8px;
+  margin-top: 4px;
+  color: #171411;
+  font-size: 1.04rem;
 }
 
 .salon-detail-service-item a,
@@ -1798,6 +1834,18 @@ textarea:focus-visible {
   color: #ffffff;
   font-weight: 800;
   white-space: nowrap;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.salon-detail-service-item a:hover,
+.salon-detail-service-item a:focus-visible,
+.salon-detail-book-button:hover,
+.salon-detail-book-button:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 26px rgba(17, 17, 17, 0.2);
 }
 
 .salon-detail-team-grid,
@@ -1809,11 +1857,28 @@ textarea:focus-visible {
 
 .salon-detail-team-member,
 .salon-detail-review-item {
+  position: relative;
   display: grid;
-  gap: 8px;
+  gap: 10px;
   padding: 20px;
+  border: 1px solid rgba(31, 26, 23, 0.08);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 12px 26px rgba(31, 26, 23, 0.06);
+  overflow: hidden;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.salon-detail-team-member:hover,
+.salon-detail-review-item:hover {
+  transform: translateY(-3px);
+  border-color: rgba(108, 76, 245, 0.16);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 20px 38px rgba(31, 26, 23, 0.1);
 }
 
 .salon-detail-team-member span,
@@ -1826,6 +1891,8 @@ textarea:focus-visible {
   background: #dce3ff;
   color: #233177;
   font-weight: 900;
+  box-shadow: 0 0 0 0 rgba(108, 76, 245, 0.2);
+  animation: salon-avatar-pulse 2.4s ease-out infinite;
 }
 
 .salon-detail-team-member p,
@@ -1836,6 +1903,28 @@ textarea:focus-visible {
   line-height: 1.5;
 }
 
+.salon-detail-team-member small,
+.salon-detail-review-item small {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  color: #123b29;
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.salon-detail-team-member small::before,
+.salon-detail-review-item small::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #14b86f;
+  box-shadow: 0 0 0 0 rgba(20, 184, 111, 0.28);
+  animation: salon-status-pulse 1.9s ease-out infinite;
+}
+
 .salon-detail-rating-line {
   color: #f5a623 !important;
   font-weight: 900;
@@ -1843,34 +1932,195 @@ textarea:focus-visible {
 
 .salon-detail-map {
   display: grid;
-  place-items: center;
-  min-height: 280px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(240px, 0.65fr);
+  min-height: 320px;
   overflow: hidden;
+  border: 1px solid rgba(31, 26, 23, 0.1);
   border-radius: 8px;
-  background:
-    linear-gradient(90deg, rgba(45, 109, 173, 0.18) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(45, 109, 173, 0.18) 1px, transparent 1px),
-    linear-gradient(135deg, #bce5dc, #e8d8a7 42%, #b8d6ed);
-  background-size: 38px 38px, 38px 38px, auto;
+  background: #fffdf8;
   color: #17202d;
-  text-align: center;
+  box-shadow: 0 18px 34px rgba(31, 26, 23, 0.08);
 }
 
-.salon-detail-map span {
-  display: inline-grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: #17202d;
+.salon-detail-map iframe {
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  border: 0;
+  display: block;
+}
+
+.salon-detail-map-copy {
+  display: grid;
+  align-content: center;
+  gap: 12px;
+  padding: 24px;
+}
+
+.salon-detail-map-copy strong,
+.salon-detail-map-copy p {
+  margin: 0;
+}
+
+.salon-detail-map-copy strong {
+  color: #171411;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.salon-detail-map-copy p {
+  color: #625c56;
+  line-height: 1.55;
+}
+
+.salon-detail-map-copy a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: #111111;
   color: #ffffff;
+  font-size: 0.84rem;
   font-weight: 900;
 }
 
-.salon-detail-map p {
-  max-width: 460px;
-  margin: 10px 20px 0;
+.salon-detail-info-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 28px;
+  margin-top: 4px;
+}
+
+.salon-detail-info-section {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid rgba(31, 26, 23, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: 0 16px 34px rgba(31, 26, 23, 0.07);
+}
+
+.salon-detail-info-section h4 {
+  margin: 0;
+  color: #171411;
+  font-size: clamp(1.15rem, 1.6vw, 1.35rem);
+  letter-spacing: -0.03em;
+}
+
+.salon-detail-hours-list {
+  display: grid;
+  gap: 10px;
+  max-width: 520px;
+}
+
+.salon-detail-hours-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.55fr) auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 253, 248, 0.72);
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.salon-detail-hours-row:hover {
+  transform: translateX(3px);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 12px 24px rgba(31, 26, 23, 0.07);
+}
+
+.salon-detail-hours-row::before,
+.salon-detail-extra-pill::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #14b86f;
+  box-shadow: 0 0 0 0 rgba(20, 184, 111, 0.32);
+  animation: salon-status-pulse 1.9s ease-out infinite;
+}
+
+.salon-detail-hours-row.is-closed::before {
+  background: #c96b4c;
+  box-shadow: 0 0 0 0 rgba(201, 107, 76, 0.28);
+  animation-name: salon-status-pulse-warm;
+}
+
+.salon-detail-hours-row span {
+  color: #171411;
   font-weight: 800;
+}
+
+.salon-detail-hours-row strong {
+  color: #3d3731;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.salon-detail-extra-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.salon-detail-extra-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgba(20, 184, 111, 0.16);
+  border-radius: 999px;
+  background: rgba(20, 184, 111, 0.08);
+  color: #123b29;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+@keyframes salon-status-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(20, 184, 111, 0.32);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(20, 184, 111, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(20, 184, 111, 0);
+  }
+}
+
+@keyframes salon-status-pulse-warm {
+  0% {
+    box-shadow: 0 0 0 0 rgba(201, 107, 76, 0.3);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(201, 107, 76, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(201, 107, 76, 0);
+  }
+}
+
+@keyframes salon-avatar-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(108, 76, 245, 0.2);
+  }
+  70% {
+    box-shadow: 0 0 0 9px rgba(108, 76, 245, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(108, 76, 245, 0);
+  }
 }
 
 .salon-detail-card {
@@ -2020,15 +2270,96 @@ textarea:focus-visible {
 
 .site-footer {
   width: min(1120px, 100%);
-  margin: 38px auto 0;
-  padding: 22px 0 8px;
+  margin: 64px auto 0;
+  padding: 34px 0 8px;
   border-top: 1px solid rgba(44, 28, 21, 0.1);
+}
+
+.footer-city-browser {
+  display: grid;
+  gap: 28px;
+  padding-bottom: 44px;
+}
+
+.footer-city-browser h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.1vw, 2rem);
+  letter-spacing: -0.04em;
+}
+
+.footer-country-tabs {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.footer-country-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.footer-country-tabs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid rgba(31, 26, 23, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #2f2924;
+  font-size: 0.86rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.footer-country-tabs a.is-active,
+.footer-country-tabs a:hover,
+.footer-country-tabs a:focus-visible {
+  background: #171411;
+  color: #ffffff;
+}
+
+.footer-city-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 34px;
+}
+
+.footer-city-column {
+  display: grid;
+  align-content: start;
+  gap: 13px;
+  min-width: 0;
+}
+
+.footer-city-column h3 {
+  margin: 0 0 4px;
+  color: #171411;
+  font-size: 0.96rem;
+  font-weight: 900;
+}
+
+.footer-city-column a {
+  color: #2f2924;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.footer-city-column a:hover,
+.footer-city-column a:focus-visible {
+  color: #4f46d8;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .site-footer-copy {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(44, 28, 21, 0.08);
   margin: 0;
   color: #5c4b41;
   font-size: 0.95rem;
@@ -4028,6 +4359,41 @@ textarea:focus-visible {
   display: grid;
   gap: 18px;
   padding: 24px;
+}
+
+.salon-images-upload {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px dashed rgba(31, 26, 23, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 253, 248, 0.78);
+}
+
+.salon-images-file-input {
+  display: none;
+}
+
+.salon-images-upload-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background: #171411;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.salon-images-upload span {
+  color: #625c56;
+  font-size: 0.88rem;
+  line-height: 1.45;
 }
 
 .salon-images-field-list {
@@ -6815,6 +7181,14 @@ button.calendar-reports-summary-card {
   font-size: 0.92rem;
 }
 
+.calendar-tool-help {
+  margin: 0;
+  color: #655f59;
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
 .calendar-tool-field input,
 .calendar-tool-field select {
   width: 100%;
@@ -6994,6 +7368,63 @@ button.calendar-reports-summary-card {
 
 .calendar-tool-file-input {
   display: none;
+}
+
+.calendar-tool-gallery-field {
+  padding-top: 4px;
+}
+
+.calendar-tool-gallery-preview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.calendar-tool-gallery-preview p {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 16px;
+  border: 1px dashed rgba(18, 18, 18, 0.14);
+  border-radius: 16px;
+  color: #655f59;
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.calendar-tool-gallery-preview figure {
+  position: relative;
+  min-height: 82px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 16px;
+  background: rgba(247, 237, 230, 0.95);
+}
+
+.calendar-tool-gallery-preview figure.is-cover {
+  grid-column: span 2;
+}
+
+.calendar-tool-gallery-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 82px;
+  object-fit: cover;
+}
+
+.calendar-tool-gallery-preview figcaption {
+  position: absolute;
+  left: 7px;
+  bottom: 7px;
+  min-height: 24px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #171411;
+  font-size: 0.72rem;
+  font-weight: 900;
 }
 
 .calendar-tool-submit {
@@ -7778,6 +8209,91 @@ button.calendar-reports-summary-card {
   color: #ffffff;
 }
 
+.booking-professional-panel.is-active {
+  position: relative;
+  max-width: 680px;
+  margin: 0 auto;
+  padding: clamp(22px, 4vw, 34px);
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(85, 76, 255, 0.1), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(255, 253, 248, 0.94));
+  box-shadow: 0 28px 80px rgba(31, 25, 19, 0.14);
+}
+
+.booking-professional-panel h1 {
+  font-size: clamp(1.65rem, 3vw, 2.2rem);
+  letter-spacing: -0.03em;
+}
+
+.booking-professional-panel .booking-step-copy {
+  max-width: 520px;
+  margin-bottom: 8px;
+}
+
+.booking-professional-panel .booking-choice-list {
+  gap: 14px;
+}
+
+.booking-professional-panel.is-active ~ .booking-wizard-actions {
+  width: min(680px, 100%);
+  margin: 0 auto;
+}
+
+.booking-professional-choice {
+  position: relative;
+  min-height: 86px;
+  padding: 14px 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 12px 34px rgba(30, 24, 18, 0.06);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.booking-professional-choice::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, #554cff, #20c997);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.booking-professional-choice:hover {
+  transform: translateY(-2px);
+  border-color: rgba(85, 76, 255, 0.34);
+  box-shadow: 0 18px 42px rgba(30, 24, 18, 0.1);
+}
+
+.booking-professional-choice.is-selected {
+  border-color: #554cff;
+  background: #fffefb;
+  box-shadow:
+    0 0 0 1px #554cff inset,
+    0 18px 44px rgba(85, 76, 255, 0.16);
+}
+
+.booking-professional-choice.is-selected::before {
+  opacity: 1;
+}
+
+.booking-professional-choice.is-selected .booking-choice-marker {
+  min-width: 34px;
+  padding: 0;
+  font-size: 0;
+}
+
+.booking-professional-choice.is-selected .booking-choice-marker::before {
+  content: '\2713';
+  font-size: 0.95rem;
+}
+
 .booking-team-choice {
   grid-template-columns: auto minmax(0, 1fr) auto;
 }
@@ -7791,6 +8307,29 @@ button.calendar-reports-summary-card {
   background: #ebeaff;
   color: #554cff;
   font-weight: 900;
+}
+
+.booking-no-preference-icon::before {
+  content: '\2194';
+  font-size: 1.35rem;
+}
+
+.booking-choice-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #1d7f53;
+  font-size: 0.82rem;
+}
+
+.booking-choice-status::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #20c997;
+  box-shadow: 0 0 0 0 rgba(32, 201, 151, 0.34);
+  animation: salon-status-pulse 1.7s ease-out infinite;
 }
 
 .booking-date-toolbar {
@@ -9440,8 +9979,10 @@ button.calendar-reports-summary-card {
   .public-salon-showcase-copy,
   .nearby-salon-map-section,
   .salon-detail-layout,
+  .salon-detail-map,
   .salon-detail-team-grid,
   .salon-detail-review-grid,
+  .footer-city-grid,
   .home-review-rail {
     grid-template-columns: 1fr;
   }
@@ -9733,6 +10274,22 @@ button.calendar-reports-summary-card {
 }
 
 @media (max-width: 640px) {
+  .site-footer {
+    margin-top: 46px;
+  }
+
+  .footer-city-browser {
+    gap: 22px;
+  }
+
+  .footer-city-grid {
+    gap: 30px;
+  }
+
+  .footer-city-column {
+    gap: 11px;
+  }
+
   .calendar-client-directory-metrics,
   .calendar-client-directory-results {
     grid-template-columns: minmax(0, 1fr);

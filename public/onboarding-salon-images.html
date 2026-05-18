@@ -50,11 +50,25 @@
 
           <form class="salon-images-layout" id="salon-images-form">
             <section class="salon-images-panel">
+              <div class="salon-images-upload">
+                <input
+                  class="salon-images-file-input"
+                  id="salon-images-file-input"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                />
+                <button class="salon-images-upload-button" id="salon-images-upload-button" type="button">
+                  Select from gallery
+                </button>
+                <span>Choose up to 6 images from your device, or paste image URLs below.</span>
+              </div>
+
               <div class="salon-images-field-list">
                 <label class="salon-image-field">
                   <span>Cover image URL</span>
                   <input
-                    type="url"
+                    type="text"
                     data-salon-image-input
                     placeholder="https://example.com/salon-cover.jpg"
                   />
@@ -62,7 +76,7 @@
                 <label class="salon-image-field">
                   <span>Gallery image URL</span>
                   <input
-                    type="url"
+                    type="text"
                     data-salon-image-input
                     placeholder="https://example.com/interior.jpg"
                   />
@@ -70,9 +84,33 @@
                 <label class="salon-image-field">
                   <span>Gallery image URL</span>
                   <input
-                    type="url"
+                    type="text"
+                    data-salon-image-input
+                    placeholder="https://example.com/gallery-3.jpg"
+                  />
+                </label>
+                <label class="salon-image-field">
+                  <span>Gallery image URL</span>
+                  <input
+                    type="text"
+                    data-salon-image-input
+                    placeholder="https://example.com/gallery-4.jpg"
+                  />
+                </label>
+                <label class="salon-image-field">
+                  <span>Gallery image URL</span>
+                  <input
+                    type="text"
                     data-salon-image-input
                     placeholder="https://example.com/service-room.jpg"
+                  />
+                </label>
+                <label class="salon-image-field">
+                  <span>Gallery image URL</span>
+                  <input
+                    type="text"
+                    data-salon-image-input
+                    placeholder="https://example.com/styling-chair.jpg"
                   />
                 </label>
               </div>
