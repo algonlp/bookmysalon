@@ -2811,6 +2811,4872 @@
       "onboardingCompleted": true,
       "createdAt": "2026-05-18T05:16:58.783Z",
       "updatedAt": "2026-05-18T05:22:29.281Z"
+    },
+    {
+      "id": "test-pk-karachi-001",
+      "adminToken": "test-admin-pk-karachi-001",
+      "email": "pk.salon.001@bookmysalon.test",
+      "mobileNumber": "+923107000000",
+      "businessPhoneNumber": "+923218000000",
+      "provider": "email",
+      "businessName": "Karachi Glow Studio 001",
+      "website": "https://pk-karachi-001.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-karachi-001-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-karachi-001-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-karachi-001-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-karachi-001-team-1",
+          "name": "Areeba",
+          "role": "Stylist",
+          "phone": "+923009000000",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Clifton Block 5, Karachi, Sindh, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-lahore-002",
+      "adminToken": "test-admin-pk-lahore-002",
+      "email": "pk.salon.002@bookmysalon.test",
+      "mobileNumber": "+923107000001",
+      "businessPhoneNumber": "+923218000001",
+      "provider": "email",
+      "businessName": "Lahore Glow Studio 002",
+      "website": "https://pk-lahore-002.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-lahore-002-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-lahore-002-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-lahore-002-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-lahore-002-team-1",
+          "name": "Hina",
+          "role": "Barber",
+          "phone": "+923009000001",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "MM Alam Road Gulberg, Lahore, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-islamabad-003",
+      "adminToken": "test-admin-pk-islamabad-003",
+      "email": "pk.salon.003@bookmysalon.test",
+      "mobileNumber": "+923107000002",
+      "businessPhoneNumber": "+923218000002",
+      "provider": "email",
+      "businessName": "Islamabad Glow Studio 003",
+      "website": "https://pk-islamabad-003.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "pk-islamabad-003-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-islamabad-003-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Clean brow shaping with a natural finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-islamabad-003-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Smooth full arm waxing service.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-islamabad-003-team-1",
+          "name": "Sana",
+          "role": "Stylist",
+          "phone": "+923009000002",
+          "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "F-7 Markaz, Islamabad, Islamabad Capital Territory, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-rawalpindi-004",
+      "adminToken": "test-admin-pk-rawalpindi-004",
+      "email": "pk.salon.004@bookmysalon.test",
+      "mobileNumber": "+923107000003",
+      "businessPhoneNumber": "+923218000003",
+      "provider": "email",
+      "businessName": "Rawalpindi Glow Studio 004",
+      "website": "https://pk-rawalpindi-004.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-rawalpindi-004-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-rawalpindi-004-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-rawalpindi-004-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-rawalpindi-004-team-1",
+          "name": "Maham",
+          "role": "Stylist",
+          "phone": "+923009000003",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Saddar, Rawalpindi, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-faisalabad-005",
+      "adminToken": "test-admin-pk-faisalabad-005",
+      "email": "pk.salon.005@bookmysalon.test",
+      "mobileNumber": "+923107000004",
+      "businessPhoneNumber": "+923218000004",
+      "provider": "email",
+      "businessName": "Faisalabad Glow Studio 005",
+      "website": "https://pk-faisalabad-005.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-faisalabad-005-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-faisalabad-005-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-faisalabad-005-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-faisalabad-005-team-1",
+          "name": "Zainab",
+          "role": "Barber",
+          "phone": "+923009000004",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "D Ground, Faisalabad, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-multan-006",
+      "adminToken": "test-admin-pk-multan-006",
+      "email": "pk.salon.006@bookmysalon.test",
+      "mobileNumber": "+923107000005",
+      "businessPhoneNumber": "+923218000005",
+      "provider": "email",
+      "businessName": "Multan Glow Studio 006",
+      "website": "https://pk-multan-006.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "pk-multan-006-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-multan-006-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Clean brow shaping with a natural finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-multan-006-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Smooth full arm waxing service.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-multan-006-team-1",
+          "name": "Nida",
+          "role": "Stylist",
+          "phone": "+923009000005",
+          "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Gulgasht Colony, Multan, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-peshawar-007",
+      "adminToken": "test-admin-pk-peshawar-007",
+      "email": "pk.salon.007@bookmysalon.test",
+      "mobileNumber": "+923107000006",
+      "businessPhoneNumber": "+923218000006",
+      "provider": "email",
+      "businessName": "Peshawar Glow Studio 007",
+      "website": "https://pk-peshawar-007.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-peshawar-007-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-peshawar-007-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-peshawar-007-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-peshawar-007-team-1",
+          "name": "Iqra",
+          "role": "Stylist",
+          "phone": "+923009000006",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "University Road, Peshawar, Khyber Pakhtunkhwa, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-quetta-008",
+      "adminToken": "test-admin-pk-quetta-008",
+      "email": "pk.salon.008@bookmysalon.test",
+      "mobileNumber": "+923107000007",
+      "businessPhoneNumber": "+923218000007",
+      "provider": "email",
+      "businessName": "Quetta Glow Studio 008",
+      "website": "https://pk-quetta-008.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-quetta-008-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-quetta-008-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-quetta-008-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-quetta-008-team-1",
+          "name": "Laiba",
+          "role": "Barber",
+          "phone": "+923009000007",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Jinnah Road, Quetta, Balochistan, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-sialkot-009",
+      "adminToken": "test-admin-pk-sialkot-009",
+      "email": "pk.salon.009@bookmysalon.test",
+      "mobileNumber": "+923107000008",
+      "businessPhoneNumber": "+923218000008",
+      "provider": "email",
+      "businessName": "Sialkot Glow Studio 009",
+      "website": "https://pk-sialkot-009.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "pk-sialkot-009-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-sialkot-009-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Clean brow shaping with a natural finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-sialkot-009-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Smooth full arm waxing service.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-sialkot-009-team-1",
+          "name": "Kiran",
+          "role": "Stylist",
+          "phone": "+923009000008",
+          "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Cantt, Sialkot, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-gujranwala-010",
+      "adminToken": "test-admin-pk-gujranwala-010",
+      "email": "pk.salon.010@bookmysalon.test",
+      "mobileNumber": "+923107000009",
+      "businessPhoneNumber": "+923218000009",
+      "provider": "email",
+      "businessName": "Gujranwala Glow Studio 010",
+      "website": "https://pk-gujranwala-010.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-gujranwala-010-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-gujranwala-010-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-gujranwala-010-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-gujranwala-010-team-1",
+          "name": "Mina",
+          "role": "Stylist",
+          "phone": "+923009000009",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Satellite Town, Gujranwala, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-hyderabad-011",
+      "adminToken": "test-admin-pk-hyderabad-011",
+      "email": "pk.salon.011@bookmysalon.test",
+      "mobileNumber": "+923107000010",
+      "businessPhoneNumber": "+923218000010",
+      "provider": "email",
+      "businessName": "Hyderabad Glow Studio 011",
+      "website": "https://pk-hyderabad-011.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-hyderabad-011-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-hyderabad-011-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-hyderabad-011-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-hyderabad-011-team-1",
+          "name": "Ali",
+          "role": "Barber",
+          "phone": "+923009000010",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Latifabad, Hyderabad, Sindh, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-sukkur-012",
+      "adminToken": "test-admin-pk-sukkur-012",
+      "email": "pk.salon.012@bookmysalon.test",
+      "mobileNumber": "+923107000011",
+      "businessPhoneNumber": "+923218000011",
+      "provider": "email",
+      "businessName": "Sukkur Glow Studio 012",
+      "website": "https://pk-sukkur-012.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "pk-sukkur-012-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-sukkur-012-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Clean brow shaping with a natural finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-sukkur-012-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Smooth full arm waxing service.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-sukkur-012-team-1",
+          "name": "Hamza",
+          "role": "Stylist",
+          "phone": "+923009000011",
+          "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Military Road, Sukkur, Sindh, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-bahawalpur-013",
+      "adminToken": "test-admin-pk-bahawalpur-013",
+      "email": "pk.salon.013@bookmysalon.test",
+      "mobileNumber": "+923107000012",
+      "businessPhoneNumber": "+923218000012",
+      "provider": "email",
+      "businessName": "Bahawalpur Glow Studio 013",
+      "website": "https://pk-bahawalpur-013.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-bahawalpur-013-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-bahawalpur-013-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-bahawalpur-013-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-bahawalpur-013-team-1",
+          "name": "Usman",
+          "role": "Stylist",
+          "phone": "+923009000012",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Model Town A, Bahawalpur, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-sargodha-014",
+      "adminToken": "test-admin-pk-sargodha-014",
+      "email": "pk.salon.014@bookmysalon.test",
+      "mobileNumber": "+923107000013",
+      "businessPhoneNumber": "+923218000013",
+      "provider": "email",
+      "businessName": "Sargodha Glow Studio 014",
+      "website": "https://pk-sargodha-014.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-sargodha-014-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-sargodha-014-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-sargodha-014-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-sargodha-014-team-1",
+          "name": "Bilal",
+          "role": "Barber",
+          "phone": "+923009000013",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "University Road, Sargodha, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-abbottabad-015",
+      "adminToken": "test-admin-pk-abbottabad-015",
+      "email": "pk.salon.015@bookmysalon.test",
+      "mobileNumber": "+923107000014",
+      "businessPhoneNumber": "+923218000014",
+      "provider": "email",
+      "businessName": "Abbottabad Glow Studio 015",
+      "website": "https://pk-abbottabad-015.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "pk-abbottabad-015-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-abbottabad-015-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Clean brow shaping with a natural finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-abbottabad-015-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Smooth full arm waxing service.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-abbottabad-015-team-1",
+          "name": "Danish",
+          "role": "Stylist",
+          "phone": "+923009000014",
+          "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Jinnahabad, Abbottabad, Khyber Pakhtunkhwa, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-mardan-016",
+      "adminToken": "test-admin-pk-mardan-016",
+      "email": "pk.salon.016@bookmysalon.test",
+      "mobileNumber": "+923107000015",
+      "businessPhoneNumber": "+923218000015",
+      "provider": "email",
+      "businessName": "Mardan Glow Studio 016",
+      "website": "https://pk-mardan-016.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-mardan-016-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mardan-016-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mardan-016-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-mardan-016-team-1",
+          "name": "Tariq",
+          "role": "Stylist",
+          "phone": "+923009000015",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Bank Road, Mardan, Khyber Pakhtunkhwa, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-rahim-yar-khan-017",
+      "adminToken": "test-admin-pk-rahim-yar-khan-017",
+      "email": "pk.salon.017@bookmysalon.test",
+      "mobileNumber": "+923107000016",
+      "businessPhoneNumber": "+923218000016",
+      "provider": "email",
+      "businessName": "Rahim Yar Khan Glow Studio 017",
+      "website": "https://pk-rahim-yar-khan-017.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-rahim-yar-khan-017-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-rahim-yar-khan-017-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-rahim-yar-khan-017-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-rahim-yar-khan-017-team-1",
+          "name": "Sara",
+          "role": "Barber",
+          "phone": "+923009000016",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "City Centre, Rahim Yar Khan, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-okara-018",
+      "adminToken": "test-admin-pk-okara-018",
+      "email": "pk.salon.018@bookmysalon.test",
+      "mobileNumber": "+923107000017",
+      "businessPhoneNumber": "+923218000017",
+      "provider": "email",
+      "businessName": "Okara Glow Studio 018",
+      "website": "https://pk-okara-018.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "pk-okara-018-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-okara-018-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Clean brow shaping with a natural finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-okara-018-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Smooth full arm waxing service.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-okara-018-team-1",
+          "name": "Mariam",
+          "role": "Stylist",
+          "phone": "+923009000017",
+          "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "M.A. Jinnah Road, Okara, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-sahiwal-019",
+      "adminToken": "test-admin-pk-sahiwal-019",
+      "email": "pk.salon.019@bookmysalon.test",
+      "mobileNumber": "+923107000018",
+      "businessPhoneNumber": "+923218000018",
+      "provider": "email",
+      "businessName": "Sahiwal Glow Studio 019",
+      "website": "https://pk-sahiwal-019.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-sahiwal-019-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-sahiwal-019-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-sahiwal-019-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-sahiwal-019-team-1",
+          "name": "Noor",
+          "role": "Stylist",
+          "phone": "+923009000018",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "High Street, Sahiwal, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-gujrat-020",
+      "adminToken": "test-admin-pk-gujrat-020",
+      "email": "pk.salon.020@bookmysalon.test",
+      "mobileNumber": "+923107000019",
+      "businessPhoneNumber": "+923218000019",
+      "provider": "email",
+      "businessName": "Gujrat Glow Studio 020",
+      "website": "https://pk-gujrat-020.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-gujrat-020-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-gujrat-020-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-gujrat-020-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-gujrat-020-team-1",
+          "name": "Ayesha",
+          "role": "Barber",
+          "phone": "+923009000019",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Service Mor, Gujrat, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-jhelum-021",
+      "adminToken": "test-admin-pk-jhelum-021",
+      "email": "pk.salon.021@bookmysalon.test",
+      "mobileNumber": "+923107000020",
+      "businessPhoneNumber": "+923218000020",
+      "provider": "email",
+      "businessName": "Jhelum Glow Studio 021",
+      "website": "https://pk-jhelum-021.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "pk-jhelum-021-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-jhelum-021-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Clean brow shaping with a natural finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-jhelum-021-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Smooth full arm waxing service.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-jhelum-021-team-1",
+          "name": "Areeba",
+          "role": "Stylist",
+          "phone": "+923009000020",
+          "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Civil Lines, Jhelum, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-mingora-022",
+      "adminToken": "test-admin-pk-mingora-022",
+      "email": "pk.salon.022@bookmysalon.test",
+      "mobileNumber": "+923107000021",
+      "businessPhoneNumber": "+923218000021",
+      "provider": "email",
+      "businessName": "Mingora Glow Studio 022",
+      "website": "https://pk-mingora-022.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-mingora-022-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mingora-022-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mingora-022-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-mingora-022-team-1",
+          "name": "Hina",
+          "role": "Stylist",
+          "phone": "+923009000021",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Saidu Sharif Road, Mingora, Khyber Pakhtunkhwa, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-nawabshah-023",
+      "adminToken": "test-admin-pk-nawabshah-023",
+      "email": "pk.salon.023@bookmysalon.test",
+      "mobileNumber": "+923107000022",
+      "businessPhoneNumber": "+923218000022",
+      "provider": "email",
+      "businessName": "Nawabshah Glow Studio 023",
+      "website": "https://pk-nawabshah-023.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-nawabshah-023-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-nawabshah-023-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-nawabshah-023-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-nawabshah-023-team-1",
+          "name": "Sana",
+          "role": "Barber",
+          "phone": "+923009000022",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Masjid Road, Nawabshah, Sindh, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-larkana-024",
+      "adminToken": "test-admin-pk-larkana-024",
+      "email": "pk.salon.024@bookmysalon.test",
+      "mobileNumber": "+923107000023",
+      "businessPhoneNumber": "+923218000023",
+      "provider": "email",
+      "businessName": "Larkana Glow Studio 024",
+      "website": "https://pk-larkana-024.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "pk-larkana-024-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-larkana-024-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Clean brow shaping with a natural finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-larkana-024-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Smooth full arm waxing service.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-larkana-024-team-1",
+          "name": "Maham",
+          "role": "Stylist",
+          "phone": "+923009000023",
+          "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Station Road, Larkana, Sindh, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-mirpur-khas-025",
+      "adminToken": "test-admin-pk-mirpur-khas-025",
+      "email": "pk.salon.025@bookmysalon.test",
+      "mobileNumber": "+923107000024",
+      "businessPhoneNumber": "+923218000024",
+      "provider": "email",
+      "businessName": "Mirpur Khas Glow Studio 025",
+      "website": "https://pk-mirpur-khas-025.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-mirpur-khas-025-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mirpur-khas-025-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mirpur-khas-025-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-mirpur-khas-025-team-1",
+          "name": "Zainab",
+          "role": "Stylist",
+          "phone": "+923009000024",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Hyderabad Road, Mirpur Khas, Sindh, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-kasur-026",
+      "adminToken": "test-admin-pk-kasur-026",
+      "email": "pk.salon.026@bookmysalon.test",
+      "mobileNumber": "+923107000025",
+      "businessPhoneNumber": "+923218000025",
+      "provider": "email",
+      "businessName": "Kasur Glow Studio 026",
+      "website": "https://pk-kasur-026.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-kasur-026-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-kasur-026-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-kasur-026-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-kasur-026-team-1",
+          "name": "Nida",
+          "role": "Barber",
+          "phone": "+923009000025",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Kot Murad Khan, Kasur, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-sheikhupura-027",
+      "adminToken": "test-admin-pk-sheikhupura-027",
+      "email": "pk.salon.027@bookmysalon.test",
+      "mobileNumber": "+923107000026",
+      "businessPhoneNumber": "+923218000026",
+      "provider": "email",
+      "businessName": "Sheikhupura Glow Studio 027",
+      "website": "https://pk-sheikhupura-027.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "pk-sheikhupura-027-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-sheikhupura-027-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Clean brow shaping with a natural finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-sheikhupura-027-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Smooth full arm waxing service.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-sheikhupura-027-team-1",
+          "name": "Iqra",
+          "role": "Stylist",
+          "phone": "+923009000026",
+          "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Lahore Road, Sheikhupura, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-mandi-bahauddin-028",
+      "adminToken": "test-admin-pk-mandi-bahauddin-028",
+      "email": "pk.salon.028@bookmysalon.test",
+      "mobileNumber": "+923107000027",
+      "businessPhoneNumber": "+923218000027",
+      "provider": "email",
+      "businessName": "Mandi Bahauddin Glow Studio 028",
+      "website": "https://pk-mandi-bahauddin-028.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-mandi-bahauddin-028-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mandi-bahauddin-028-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mandi-bahauddin-028-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-mandi-bahauddin-028-team-1",
+          "name": "Laiba",
+          "role": "Stylist",
+          "phone": "+923009000027",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Phalia Road, Mandi Bahauddin, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-dera-ghazi-khan-029",
+      "adminToken": "test-admin-pk-dera-ghazi-khan-029",
+      "email": "pk.salon.029@bookmysalon.test",
+      "mobileNumber": "+923107000028",
+      "businessPhoneNumber": "+923218000028",
+      "provider": "email",
+      "businessName": "Dera Ghazi Khan Glow Studio 029",
+      "website": "https://pk-dera-ghazi-khan-029.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-dera-ghazi-khan-029-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-dera-ghazi-khan-029-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-dera-ghazi-khan-029-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-dera-ghazi-khan-029-team-1",
+          "name": "Kiran",
+          "role": "Barber",
+          "phone": "+923009000028",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Block 17, Dera Ghazi Khan, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-muzaffargarh-030",
+      "adminToken": "test-admin-pk-muzaffargarh-030",
+      "email": "pk.salon.030@bookmysalon.test",
+      "mobileNumber": "+923107000029",
+      "businessPhoneNumber": "+923218000029",
+      "provider": "email",
+      "businessName": "Muzaffargarh Glow Studio 030",
+      "website": "https://pk-muzaffargarh-030.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "pk-muzaffargarh-030-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-muzaffargarh-030-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Clean brow shaping with a natural finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-muzaffargarh-030-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Smooth full arm waxing service.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-muzaffargarh-030-team-1",
+          "name": "Mina",
+          "role": "Stylist",
+          "phone": "+923009000029",
+          "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Main Bazaar, Muzaffargarh, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-chiniot-031",
+      "adminToken": "test-admin-pk-chiniot-031",
+      "email": "pk.salon.031@bookmysalon.test",
+      "mobileNumber": "+923107000030",
+      "businessPhoneNumber": "+923218000030",
+      "provider": "email",
+      "businessName": "Chiniot Glow Studio 031",
+      "website": "https://pk-chiniot-031.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-chiniot-031-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-chiniot-031-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-chiniot-031-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-chiniot-031-team-1",
+          "name": "Ali",
+          "role": "Stylist",
+          "phone": "+923009000030",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Sargodha Road, Chiniot, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-jhang-032",
+      "adminToken": "test-admin-pk-jhang-032",
+      "email": "pk.salon.032@bookmysalon.test",
+      "mobileNumber": "+923107000031",
+      "businessPhoneNumber": "+923218000031",
+      "provider": "email",
+      "businessName": "Jhang Glow Studio 032",
+      "website": "https://pk-jhang-032.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-jhang-032-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-jhang-032-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-jhang-032-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-jhang-032-team-1",
+          "name": "Hamza",
+          "role": "Barber",
+          "phone": "+923009000031",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Civil Lines, Jhang, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-vehari-033",
+      "adminToken": "test-admin-pk-vehari-033",
+      "email": "pk.salon.033@bookmysalon.test",
+      "mobileNumber": "+923107000032",
+      "businessPhoneNumber": "+923218000032",
+      "provider": "email",
+      "businessName": "Vehari Glow Studio 033",
+      "website": "https://pk-vehari-033.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "pk-vehari-033-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-vehari-033-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Clean brow shaping with a natural finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-vehari-033-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Smooth full arm waxing service.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-vehari-033-team-1",
+          "name": "Usman",
+          "role": "Stylist",
+          "phone": "+923009000032",
+          "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Club Road, Vehari, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-khanewal-034",
+      "adminToken": "test-admin-pk-khanewal-034",
+      "email": "pk.salon.034@bookmysalon.test",
+      "mobileNumber": "+923107000033",
+      "businessPhoneNumber": "+923218000033",
+      "provider": "email",
+      "businessName": "Khanewal Glow Studio 034",
+      "website": "https://pk-khanewal-034.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-khanewal-034-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-khanewal-034-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-khanewal-034-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-khanewal-034-team-1",
+          "name": "Bilal",
+          "role": "Stylist",
+          "phone": "+923009000033",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Railway Road, Khanewal, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-haripur-035",
+      "adminToken": "test-admin-pk-haripur-035",
+      "email": "pk.salon.035@bookmysalon.test",
+      "mobileNumber": "+923107000034",
+      "businessPhoneNumber": "+923218000034",
+      "provider": "email",
+      "businessName": "Haripur Glow Studio 035",
+      "website": "https://pk-haripur-035.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-haripur-035-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-haripur-035-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-haripur-035-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-haripur-035-team-1",
+          "name": "Danish",
+          "role": "Barber",
+          "phone": "+923009000034",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "GT Road, Haripur, Khyber Pakhtunkhwa, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-mansehra-036",
+      "adminToken": "test-admin-pk-mansehra-036",
+      "email": "pk.salon.036@bookmysalon.test",
+      "mobileNumber": "+923107000035",
+      "businessPhoneNumber": "+923218000035",
+      "provider": "email",
+      "businessName": "Mansehra Glow Studio 036",
+      "website": "https://pk-mansehra-036.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "pk-mansehra-036-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mansehra-036-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Clean brow shaping with a natural finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mansehra-036-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Smooth full arm waxing service.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-mansehra-036-team-1",
+          "name": "Tariq",
+          "role": "Stylist",
+          "phone": "+923009000035",
+          "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Karakoram Highway, Mansehra, Khyber Pakhtunkhwa, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-swabi-037",
+      "adminToken": "test-admin-pk-swabi-037",
+      "email": "pk.salon.037@bookmysalon.test",
+      "mobileNumber": "+923107000036",
+      "businessPhoneNumber": "+923218000036",
+      "provider": "email",
+      "businessName": "Swabi Glow Studio 037",
+      "website": "https://pk-swabi-037.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-swabi-037-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-swabi-037-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-swabi-037-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-swabi-037-team-1",
+          "name": "Sara",
+          "role": "Stylist",
+          "phone": "+923009000036",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Topi Road, Swabi, Khyber Pakhtunkhwa, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-kohat-038",
+      "adminToken": "test-admin-pk-kohat-038",
+      "email": "pk.salon.038@bookmysalon.test",
+      "mobileNumber": "+923107000037",
+      "businessPhoneNumber": "+923218000037",
+      "provider": "email",
+      "businessName": "Kohat Glow Studio 038",
+      "website": "https://pk-kohat-038.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-kohat-038-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-kohat-038-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-kohat-038-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-kohat-038-team-1",
+          "name": "Mariam",
+          "role": "Barber",
+          "phone": "+923009000037",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "KDA Town, Kohat, Khyber Pakhtunkhwa, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-bannu-039",
+      "adminToken": "test-admin-pk-bannu-039",
+      "email": "pk.salon.039@bookmysalon.test",
+      "mobileNumber": "+923107000038",
+      "businessPhoneNumber": "+923218000038",
+      "provider": "email",
+      "businessName": "Bannu Glow Studio 039",
+      "website": "https://pk-bannu-039.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "pk-bannu-039-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-bannu-039-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Clean brow shaping with a natural finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-bannu-039-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Smooth full arm waxing service.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-bannu-039-team-1",
+          "name": "Noor",
+          "role": "Stylist",
+          "phone": "+923009000038",
+          "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Circular Road, Bannu, Khyber Pakhtunkhwa, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-gwadar-040",
+      "adminToken": "test-admin-pk-gwadar-040",
+      "email": "pk.salon.040@bookmysalon.test",
+      "mobileNumber": "+923107000039",
+      "businessPhoneNumber": "+923218000039",
+      "provider": "email",
+      "businessName": "Gwadar Glow Studio 040",
+      "website": "https://pk-gwadar-040.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-gwadar-040-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-gwadar-040-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-gwadar-040-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-gwadar-040-team-1",
+          "name": "Ayesha",
+          "role": "Stylist",
+          "phone": "+923009000039",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Marine Drive, Gwadar, Balochistan, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-turbat-041",
+      "adminToken": "test-admin-pk-turbat-041",
+      "email": "pk.salon.041@bookmysalon.test",
+      "mobileNumber": "+923107000040",
+      "businessPhoneNumber": "+923218000040",
+      "provider": "email",
+      "businessName": "Turbat Glow Studio 041",
+      "website": "https://pk-turbat-041.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-turbat-041-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-turbat-041-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-turbat-041-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-turbat-041-team-1",
+          "name": "Areeba",
+          "role": "Barber",
+          "phone": "+923009000040",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Airport Road, Turbat, Balochistan, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-khuzdar-042",
+      "adminToken": "test-admin-pk-khuzdar-042",
+      "email": "pk.salon.042@bookmysalon.test",
+      "mobileNumber": "+923107000041",
+      "businessPhoneNumber": "+923218000041",
+      "provider": "email",
+      "businessName": "Khuzdar Glow Studio 042",
+      "website": "https://pk-khuzdar-042.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "pk-khuzdar-042-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-khuzdar-042-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Clean brow shaping with a natural finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-khuzdar-042-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Smooth full arm waxing service.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-khuzdar-042-team-1",
+          "name": "Hina",
+          "role": "Stylist",
+          "phone": "+923009000041",
+          "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Jinnah Road, Khuzdar, Balochistan, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-gilgit-043",
+      "adminToken": "test-admin-pk-gilgit-043",
+      "email": "pk.salon.043@bookmysalon.test",
+      "mobileNumber": "+923107000042",
+      "businessPhoneNumber": "+923218000042",
+      "provider": "email",
+      "businessName": "Gilgit Glow Studio 043",
+      "website": "https://pk-gilgit-043.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-gilgit-043-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-gilgit-043-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-gilgit-043-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-gilgit-043-team-1",
+          "name": "Sana",
+          "role": "Stylist",
+          "phone": "+923009000042",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "River View Road, Gilgit, Gilgit-Baltistan, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-skardu-044",
+      "adminToken": "test-admin-pk-skardu-044",
+      "email": "pk.salon.044@bookmysalon.test",
+      "mobileNumber": "+923107000043",
+      "businessPhoneNumber": "+923218000043",
+      "provider": "email",
+      "businessName": "Skardu Glow Studio 044",
+      "website": "https://pk-skardu-044.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-skardu-044-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-skardu-044-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-skardu-044-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-skardu-044-team-1",
+          "name": "Maham",
+          "role": "Barber",
+          "phone": "+923009000043",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Hussainabad Road, Skardu, Gilgit-Baltistan, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-muzaffarabad-045",
+      "adminToken": "test-admin-pk-muzaffarabad-045",
+      "email": "pk.salon.045@bookmysalon.test",
+      "mobileNumber": "+923107000044",
+      "businessPhoneNumber": "+923218000044",
+      "provider": "email",
+      "businessName": "Muzaffarabad Glow Studio 045",
+      "website": "https://pk-muzaffarabad-045.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "pk-muzaffarabad-045-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-muzaffarabad-045-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Clean brow shaping with a natural finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-muzaffarabad-045-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Smooth full arm waxing service.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-muzaffarabad-045-team-1",
+          "name": "Zainab",
+          "role": "Stylist",
+          "phone": "+923009000044",
+          "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Upper Adda, Muzaffarabad, Azad Kashmir, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-mirpur-046",
+      "adminToken": "test-admin-pk-mirpur-046",
+      "email": "pk.salon.046@bookmysalon.test",
+      "mobileNumber": "+923107000045",
+      "businessPhoneNumber": "+923218000045",
+      "provider": "email",
+      "businessName": "Mirpur Glow Studio 046",
+      "website": "https://pk-mirpur-046.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-mirpur-046-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mirpur-046-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mirpur-046-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-mirpur-046-team-1",
+          "name": "Nida",
+          "role": "Stylist",
+          "phone": "+923009000045",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Allama Iqbal Road, Mirpur, Azad Kashmir, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-kotli-047",
+      "adminToken": "test-admin-pk-kotli-047",
+      "email": "pk.salon.047@bookmysalon.test",
+      "mobileNumber": "+923107000046",
+      "businessPhoneNumber": "+923218000046",
+      "provider": "email",
+      "businessName": "Kotli Glow Studio 047",
+      "website": "https://pk-kotli-047.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-kotli-047-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-kotli-047-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-kotli-047-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-kotli-047-team-1",
+          "name": "Iqra",
+          "role": "Barber",
+          "phone": "+923009000046",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Main Kotli Road, Kotli, Azad Kashmir, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-attock-048",
+      "adminToken": "test-admin-pk-attock-048",
+      "email": "pk.salon.048@bookmysalon.test",
+      "mobileNumber": "+923107000047",
+      "businessPhoneNumber": "+923218000047",
+      "provider": "email",
+      "businessName": "Attock Glow Studio 048",
+      "website": "https://pk-attock-048.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1600334129128-685c5582fd35?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "pk-attock-048-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "Rs 1,600",
+          "description": "Nail shaping, cuticle care, and polish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-attock-048-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "Rs 900",
+          "description": "Clean brow shaping with a natural finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-attock-048-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "Rs 1,700",
+          "description": "Smooth full arm waxing service.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-attock-048-team-1",
+          "name": "Laiba",
+          "role": "Stylist",
+          "phone": "+923009000047",
+          "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Kamra Road, Attock, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-wah-cantt-049",
+      "adminToken": "test-admin-pk-wah-cantt-049",
+      "email": "pk.salon.049@bookmysalon.test",
+      "mobileNumber": "+923107000048",
+      "businessPhoneNumber": "+923218000048",
+      "provider": "email",
+      "businessName": "Wah Cantt Glow Studio 049",
+      "website": "https://pk-wah-cantt-049.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1516975080664-ed2fc6a32937?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Hair salon",
+        "Beauty salon"
+      ],
+      "services": [
+        {
+          "id": "pk-wah-cantt-049-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 2,200",
+          "description": "Signature haircut with wash, blow-dry, and styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-wah-cantt-049-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,500",
+          "description": "Smooth professional blow-dry for everyday or event styling.",
+          "isActive": true
+        },
+        {
+          "id": "pk-wah-cantt-049-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "Rs 2,700",
+          "description": "Glow facial with cleanse, exfoliation, and mask.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-wah-cantt-049-team-1",
+          "name": "Kiran",
+          "role": "Stylist",
+          "phone": "+923009000048",
+          "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "The Mall, Wah Cantt, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "test-pk-taxila-050",
+      "adminToken": "test-admin-pk-taxila-050",
+      "email": "pk.salon.050@bookmysalon.test",
+      "mobileNumber": "+923107000049",
+      "businessPhoneNumber": "+923218000049",
+      "provider": "email",
+      "businessName": "Taxila Glow Studio 050",
+      "website": "https://pk-taxila-050.example.com",
+      "profileImageUrl": "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+      "galleryImageUrls": [
+        "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1580618672591-eb180b1a973f?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "serviceTypes": [
+        "Barber",
+        "Hair salon"
+      ],
+      "services": [
+        {
+          "id": "pk-taxila-050-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-taxila-050-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
+        },
+        {
+          "id": "pk-taxila-050-hair-wash-style",
+          "name": "Hair wash and style",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "Rs 1,400",
+          "description": "Wash and quick style for a fresh look.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "PKR",
+        "currencyLocale": "en-PK",
+        "slotTimes": [
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00",
+          "18:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [
+        {
+          "id": "pk-taxila-050-team-1",
+          "name": "Mina",
+          "role": "Barber",
+          "phone": "+923009000049",
+          "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Museum Road, Taxila, Punjab, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-05-18T07:45:00.000Z",
+      "updatedAt": "2026-05-18T07:45:00.000Z"
     }
   ]
 }
