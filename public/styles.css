@@ -2276,9 +2276,45 @@ textarea:focus-visible {
 }
 
 .footer-city-browser {
+  position: relative;
   display: grid;
   gap: 28px;
-  padding-bottom: 44px;
+  padding-bottom: 52px;
+}
+
+.footer-city-browser::after,
+.footer-link-panel::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(31, 26, 23, 0.1) 12%,
+      rgba(79, 70, 216, 0.34) 50%,
+      rgba(31, 26, 23, 0.1) 88%,
+      transparent
+    );
+}
+
+.footer-city-browser::before,
+.footer-link-panel::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #4f46d8;
+  box-shadow:
+    0 0 0 5px rgba(79, 70, 216, 0.08),
+    0 0 22px rgba(79, 70, 216, 0.36);
+  transform: translateX(-50%);
 }
 
 .footer-city-browser h2 {
@@ -2354,17 +2390,121 @@ textarea:focus-visible {
   text-underline-offset: 3px;
 }
 
+.footer-link-panel {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.2fr repeat(4, minmax(0, 1fr));
+  gap: clamp(26px, 5vw, 66px);
+  padding: 48px 0 54px;
+}
+
+.footer-brand-block,
+.footer-link-column {
+  display: grid;
+  align-content: start;
+}
+
+.footer-brand-block {
+  gap: 26px;
+}
+
+.footer-brand {
+  color: #171411;
+  font-size: 1.45rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.footer-app-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: start;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid rgba(31, 26, 23, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #171411;
+  box-shadow: 0 12px 26px rgba(31, 26, 23, 0.06);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.footer-app-button strong {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #171411;
+  color: #ffffff;
+  font-size: 0.68rem;
+}
+
+.footer-link-column {
+  gap: 12px;
+}
+
+.footer-link-column h3 {
+  margin: 0 0 4px;
+  color: #171411;
+  font-size: 0.95rem;
+  font-weight: 900;
+}
+
+.footer-link-column a {
+  color: #2f2924;
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.footer-link-column a:hover,
+.footer-link-column a:focus-visible {
+  color: #4f46d8;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.footer-social-column a::before {
+  content: '\2197';
+  margin-right: 9px;
+  color: #171411;
+  font-weight: 900;
+}
+
+.footer-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 26px 0 22px;
+}
+
+.footer-language {
+  color: #4f46d8;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.footer-language::before {
+  content: '\25CE';
+  margin-right: 7px;
+}
+
 .site-footer-copy {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(44, 28, 21, 0.08);
   margin: 0;
   color: #5c4b41;
-  font-size: 0.95rem;
+  font-size: 0.78rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .app-badge {
@@ -9982,6 +10122,7 @@ button.calendar-reports-summary-card {
   .salon-detail-map,
   .salon-detail-team-grid,
   .salon-detail-review-grid,
+  .footer-link-panel,
   .footer-city-grid,
   .home-review-rail {
     grid-template-columns: 1fr;
@@ -10288,6 +10429,20 @@ button.calendar-reports-summary-card {
 
   .footer-city-column {
     gap: 11px;
+  }
+
+  .footer-link-panel {
+    gap: 28px;
+    padding: 40px 0 44px;
+  }
+
+  .footer-bottom-bar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .site-footer-copy {
+    justify-content: flex-start;
   }
 
   .calendar-client-directory-metrics,
