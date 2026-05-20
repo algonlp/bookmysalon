@@ -2498,10 +2498,10 @@ textarea:focus-visible {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
   color: #5c4b41;
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -8288,6 +8288,16 @@ button.calendar-reports-summary-card {
 .booking-choice-list {
   display: grid;
   gap: 12px;
+}
+
+.booking-empty-category {
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed rgba(18, 18, 18, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #655f59;
+  font-weight: 800;
 }
 
 .booking-choice-card {

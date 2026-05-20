@@ -55,4 +55,4 @@ Use these email addresses on the business login/signup page. No password is requ
 | 49 | Wah Cantt | Wah Cantt Glow Studio 049 | pk.salon.049@bookmysalon.test |
 | 50 | Taxila | Taxila Glow Studio 050 | pk.salon.050@bookmysalon.test |
 
-Each account includes a Pakistan address, business phone, services, one active team member, and three salon image URLs.
+Each account includes a Pakistan address, business phone, services, barber services, two active team members, two package plans, and three salon image URLs.

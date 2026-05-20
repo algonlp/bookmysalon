@@ -102,6 +102,11 @@ const serviceTemplates = [
   }
 ];
 
+const barberServices = [
+  ['barber-haircut', 'Haircut', 'Barber', 45, 'Rs 1,200', 'Classic barber haircut with clipper and scissor finishing.'],
+  ['barber-beard-trim', 'Beard trim', 'Barber', 30, 'Rs 800', 'Beard shape, line-up, and tidy finish.']
+];
+
 const names = [
   'Areeba', 'Hina', 'Sana', 'Maham', 'Zainab', 'Nida', 'Iqra', 'Laiba', 'Kiran', 'Mina',
   'Ali', 'Hamza', 'Usman', 'Bilal', 'Danish', 'Tariq', 'Sara', 'Mariam', 'Noor', 'Ayesha'
@@ -112,9 +117,25 @@ const now = '2026-05-18T07:45:00.000Z';
 const buildClient = ([city, province, area], index) => {
   const number = String(index + 1).padStart(3, '0');
   const template = serviceTemplates[index % serviceTemplates.length];
+  const serviceTypes = [...new Set([...template.serviceTypes, 'Barber'])];
   const galleryImageUrls = imageSets[index % imageSets.length];
   const businessSlug = `pk-${city.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${number}`;
   const ownerName = names[index % names.length];
+  const barberName = names[(index + 10) % names.length];
+  const services = [
+    ...template.services,
+    ...barberServices.filter(([barberServiceId]) => !template.services.some(([serviceId]) => serviceId === barberServiceId))
+  ].map(([id, name, categoryName, durationMinutes, priceLabel, description]) => ({
+    id: `${businessSlug}-${id}`,
+    name,
+    durationMinutes,
+    categoryName,
+    priceLabel,
+    description,
+    isActive: true
+  }));
+  const haircutServiceId = `${businessSlug}-barber-haircut`;
+  const beardTrimServiceId = `${businessSlug}-barber-beard-trim`;
 
   return {
     id: `test-${businessSlug}`,
@@ -127,19 +148,32 @@ const buildClient = ([city, province, area], index) => {
     website: `https://${businessSlug}.example.com`,
     profileImageUrl: galleryImageUrls[0],
     galleryImageUrls,
-    serviceTypes: template.serviceTypes,
-    services: template.services.map(([id, name, categoryName, durationMinutes, priceLabel, description]) => ({
-      id: `${businessSlug}-${id}`,
-      name,
-      durationMinutes,
-      categoryName,
-      priceLabel,
-      description,
-      isActive: true
-    })),
+    serviceTypes,
+    services,
     products: [],
     productSales: [],
-    packagePlans: [],
+    packagePlans: [
+      {
+        id: `${businessSlug}-package-haircut-duo`,
+        name: 'Haircut Duo',
+        includedServiceIds: [haircutServiceId],
+        totalUses: 2,
+        priceLabel: 'Rs 2,000',
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
+      },
+      {
+        id: `${businessSlug}-package-beard-refresh`,
+        name: 'Beard Refresh Pack',
+        includedServiceIds: [beardTrimServiceId],
+        totalUses: 3,
+        priceLabel: 'Rs 2,100',
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
+      }
+    ],
     loyaltyProgram: null,
     businessSettings: {
       currencyCode: 'PKR',
@@ -156,9 +190,22 @@ const buildClient = ([city, province, area], index) => {
       {
         id: `${businessSlug}-team-1`,
         name: ownerName,
-        role: template.serviceTypes.includes('Barber') ? 'Barber' : 'Stylist',
+        role: template.serviceTypes.includes('Barber') ? 'Lead Barber' : 'Stylist',
         phone: `+92300${String(9000000 + index).padStart(7, '0')}`,
         expertise: template.serviceTypes[0],
+        openingTime: '10:30',
+        closingTime: '22:00',
+        offDays: [],
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
+      },
+      {
+        id: `${businessSlug}-team-barber`,
+        name: barberName,
+        role: 'Barber',
+        phone: `+92302${String(9100000 + index).padStart(7, '0')}`,
+        expertise: 'Haircut and beard grooming',
         openingTime: '10:30',
         closingTime: '22:00',
         offDays: [],

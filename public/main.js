@@ -13112,6 +13112,7 @@ const initPublicBooking = () => {
   const bookingLocationLabelsByValue = new Map();
   const bookingStepOrder = ['services', 'professional', 'time', 'confirm'];
   let currentBookingStep = bookingStepOrder[0];
+  let activeBookingServiceCategory = '';
   let lastLoadedSlots = [];
   let latestAppointmentReference = '';
   let phoneHistoryRequestCounter = 0;
@@ -13769,20 +13770,47 @@ const initPublicBooking = () => {
     ];
 
     const visibleCategories = categories.length > 0 ? categories : ['Services'];
+    activeBookingServiceCategory = visibleCategories.includes(activeBookingServiceCategory)
+      ? activeBookingServiceCategory
+      : visibleCategories[0] || '';
 
     visibleCategories.slice(0, 8).forEach((category, index) => {
       const tab = document.createElement('button');
       tab.type = 'button';
-      tab.className = index === 0 ? 'is-active' : '';
+      tab.className = category === activeBookingServiceCategory ? 'is-active' : '';
       tab.textContent = category;
+      tab.dataset.serviceCategory = category;
       serviceTabs.append(tab);
+    });
+  };
+
+  const getServicesForActiveCategory = () => {
+    const services = [...servicesByName.values()];
+    const activeCategory = activeBookingServiceCategory.trim().toLowerCase();
+
+    if (!activeCategory) {
+      return services;
+    }
+
+    return services.filter((service) => {
+      const categoryName = service.categoryName || service.category || '';
+      return typeof categoryName === 'string' && categoryName.trim().toLowerCase() === activeCategory;
     });
   };
 
   const renderServiceCards = () => {
     serviceCards.replaceChildren();
+    const visibleServices = getServicesForActiveCategory();
 
-    for (const service of servicesByName.values()) {
+    if (visibleServices.length === 0) {
+      const emptyState = document.createElement('p');
+      emptyState.className = 'booking-empty-category';
+      emptyState.textContent = 'No services found in this category yet.';
+      serviceCards.append(emptyState);
+      return;
+    }
+
+    for (const service of visibleServices) {
       const isSelected = serviceSelect.value === service.name;
       const card = document.createElement('button');
       card.type = 'button';
@@ -14536,6 +14564,38 @@ const initPublicBooking = () => {
     serviceSelect.value = card.dataset.serviceName ?? '';
     renderServiceCards();
     await populateSlots();
+    updateBookingSummary();
+  });
+
+  serviceTabs.addEventListener('click', async (event) => {
+    const tab = event.target instanceof Element ? event.target.closest('[data-service-category]') : null;
+
+    if (!(tab instanceof HTMLElement)) {
+      return;
+    }
+
+    activeBookingServiceCategory = tab.dataset.serviceCategory ?? '';
+
+    for (const button of serviceTabs.querySelectorAll('[data-service-category]')) {
+      button.classList.toggle('is-active', button === tab);
+    }
+
+    const visibleServices = getServicesForActiveCategory();
+    const selectedService = servicesByName.get(serviceSelect.value);
+    const selectedServiceCategory =
+      selectedService && typeof selectedService.categoryName === 'string'
+        ? selectedService.categoryName.trim().toLowerCase()
+        : '';
+
+    if (
+      visibleServices.length > 0 &&
+      selectedServiceCategory !== activeBookingServiceCategory.trim().toLowerCase()
+    ) {
+      serviceSelect.value = visibleServices[0].name;
+      await populateSlots();
+    }
+
+    renderServiceCards();
     updateBookingSummary();
   });
 

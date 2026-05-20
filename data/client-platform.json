@@ -2829,7 +2829,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -2858,11 +2859,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-karachi-001-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-karachi-001-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-karachi-001-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-karachi-001-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-karachi-001-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-karachi-001-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -2891,6 +2935,19 @@
           "role": "Stylist",
           "phone": "+923009000000",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-karachi-001-team-barber",
+          "name": "Ali",
+          "role": "Barber",
+          "phone": "+923029100000",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -2955,11 +3012,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-lahore-002-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-lahore-002-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-lahore-002-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-lahore-002-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-lahore-002-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-lahore-002-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -2985,9 +3085,22 @@
         {
           "id": "pk-lahore-002-team-1",
           "name": "Hina",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000001",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-lahore-002-team-barber",
+          "name": "Hamza",
+          "role": "Barber",
+          "phone": "+923029100001",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -3024,7 +3137,8 @@
       "serviceTypes": [
         "Nails",
         "Eyebrows & lashes",
-        "Waxing salon"
+        "Waxing salon",
+        "Barber"
       ],
       "services": [
         {
@@ -3053,11 +3167,54 @@
           "priceLabel": "Rs 1,700",
           "description": "Smooth full arm waxing service.",
           "isActive": true
+        },
+        {
+          "id": "pk-islamabad-003-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-islamabad-003-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-islamabad-003-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-islamabad-003-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-islamabad-003-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-islamabad-003-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -3086,6 +3243,19 @@
           "role": "Stylist",
           "phone": "+923009000002",
           "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-islamabad-003-team-barber",
+          "name": "Usman",
+          "role": "Barber",
+          "phone": "+923029100002",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -3121,7 +3291,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -3150,11 +3321,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-rawalpindi-004-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-rawalpindi-004-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-rawalpindi-004-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-rawalpindi-004-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-rawalpindi-004-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-rawalpindi-004-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -3183,6 +3397,19 @@
           "role": "Stylist",
           "phone": "+923009000003",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-rawalpindi-004-team-barber",
+          "name": "Bilal",
+          "role": "Barber",
+          "phone": "+923029100003",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -3247,11 +3474,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-faisalabad-005-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-faisalabad-005-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-faisalabad-005-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-faisalabad-005-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-faisalabad-005-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-faisalabad-005-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -3277,9 +3547,22 @@
         {
           "id": "pk-faisalabad-005-team-1",
           "name": "Zainab",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000004",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-faisalabad-005-team-barber",
+          "name": "Danish",
+          "role": "Barber",
+          "phone": "+923029100004",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -3316,7 +3599,8 @@
       "serviceTypes": [
         "Nails",
         "Eyebrows & lashes",
-        "Waxing salon"
+        "Waxing salon",
+        "Barber"
       ],
       "services": [
         {
@@ -3345,11 +3629,54 @@
           "priceLabel": "Rs 1,700",
           "description": "Smooth full arm waxing service.",
           "isActive": true
+        },
+        {
+          "id": "pk-multan-006-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-multan-006-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-multan-006-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-multan-006-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-multan-006-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-multan-006-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -3378,6 +3705,19 @@
           "role": "Stylist",
           "phone": "+923009000005",
           "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-multan-006-team-barber",
+          "name": "Tariq",
+          "role": "Barber",
+          "phone": "+923029100005",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -3413,7 +3753,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -3442,11 +3783,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-peshawar-007-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-peshawar-007-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-peshawar-007-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-peshawar-007-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-peshawar-007-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-peshawar-007-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -3475,6 +3859,19 @@
           "role": "Stylist",
           "phone": "+923009000006",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-peshawar-007-team-barber",
+          "name": "Sara",
+          "role": "Barber",
+          "phone": "+923029100006",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -3539,11 +3936,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-quetta-008-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-quetta-008-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-quetta-008-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-quetta-008-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-quetta-008-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-quetta-008-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -3569,9 +4009,22 @@
         {
           "id": "pk-quetta-008-team-1",
           "name": "Laiba",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000007",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-quetta-008-team-barber",
+          "name": "Mariam",
+          "role": "Barber",
+          "phone": "+923029100007",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -3608,7 +4061,8 @@
       "serviceTypes": [
         "Nails",
         "Eyebrows & lashes",
-        "Waxing salon"
+        "Waxing salon",
+        "Barber"
       ],
       "services": [
         {
@@ -3637,11 +4091,54 @@
           "priceLabel": "Rs 1,700",
           "description": "Smooth full arm waxing service.",
           "isActive": true
+        },
+        {
+          "id": "pk-sialkot-009-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-sialkot-009-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-sialkot-009-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-sialkot-009-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-sialkot-009-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-sialkot-009-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -3670,6 +4167,19 @@
           "role": "Stylist",
           "phone": "+923009000008",
           "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-sialkot-009-team-barber",
+          "name": "Noor",
+          "role": "Barber",
+          "phone": "+923029100008",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -3705,7 +4215,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -3734,11 +4245,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-gujranwala-010-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-gujranwala-010-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-gujranwala-010-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-gujranwala-010-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-gujranwala-010-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-gujranwala-010-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -3767,6 +4321,19 @@
           "role": "Stylist",
           "phone": "+923009000009",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-gujranwala-010-team-barber",
+          "name": "Ayesha",
+          "role": "Barber",
+          "phone": "+923029100009",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -3831,11 +4398,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-hyderabad-011-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-hyderabad-011-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-hyderabad-011-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-hyderabad-011-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-hyderabad-011-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-hyderabad-011-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -3861,9 +4471,22 @@
         {
           "id": "pk-hyderabad-011-team-1",
           "name": "Ali",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000010",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-hyderabad-011-team-barber",
+          "name": "Areeba",
+          "role": "Barber",
+          "phone": "+923029100010",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -3900,7 +4523,8 @@
       "serviceTypes": [
         "Nails",
         "Eyebrows & lashes",
-        "Waxing salon"
+        "Waxing salon",
+        "Barber"
       ],
       "services": [
         {
@@ -3929,11 +4553,54 @@
           "priceLabel": "Rs 1,700",
           "description": "Smooth full arm waxing service.",
           "isActive": true
+        },
+        {
+          "id": "pk-sukkur-012-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-sukkur-012-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-sukkur-012-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-sukkur-012-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-sukkur-012-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-sukkur-012-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -3962,6 +4629,19 @@
           "role": "Stylist",
           "phone": "+923009000011",
           "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-sukkur-012-team-barber",
+          "name": "Hina",
+          "role": "Barber",
+          "phone": "+923029100011",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -3997,7 +4677,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -4026,11 +4707,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-bahawalpur-013-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-bahawalpur-013-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-bahawalpur-013-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-bahawalpur-013-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-bahawalpur-013-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-bahawalpur-013-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -4059,6 +4783,19 @@
           "role": "Stylist",
           "phone": "+923009000012",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-bahawalpur-013-team-barber",
+          "name": "Sana",
+          "role": "Barber",
+          "phone": "+923029100012",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -4123,11 +4860,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-sargodha-014-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-sargodha-014-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-sargodha-014-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-sargodha-014-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-sargodha-014-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-sargodha-014-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -4153,9 +4933,22 @@
         {
           "id": "pk-sargodha-014-team-1",
           "name": "Bilal",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000013",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-sargodha-014-team-barber",
+          "name": "Maham",
+          "role": "Barber",
+          "phone": "+923029100013",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -4192,7 +4985,8 @@
       "serviceTypes": [
         "Nails",
         "Eyebrows & lashes",
-        "Waxing salon"
+        "Waxing salon",
+        "Barber"
       ],
       "services": [
         {
@@ -4221,11 +5015,54 @@
           "priceLabel": "Rs 1,700",
           "description": "Smooth full arm waxing service.",
           "isActive": true
+        },
+        {
+          "id": "pk-abbottabad-015-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-abbottabad-015-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-abbottabad-015-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-abbottabad-015-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-abbottabad-015-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-abbottabad-015-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -4254,6 +5091,19 @@
           "role": "Stylist",
           "phone": "+923009000014",
           "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-abbottabad-015-team-barber",
+          "name": "Zainab",
+          "role": "Barber",
+          "phone": "+923029100014",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -4289,7 +5139,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -4318,11 +5169,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-mardan-016-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mardan-016-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-mardan-016-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-mardan-016-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-mardan-016-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-mardan-016-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -4351,6 +5245,19 @@
           "role": "Stylist",
           "phone": "+923009000015",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-mardan-016-team-barber",
+          "name": "Nida",
+          "role": "Barber",
+          "phone": "+923029100015",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -4415,11 +5322,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-rahim-yar-khan-017-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-rahim-yar-khan-017-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-rahim-yar-khan-017-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-rahim-yar-khan-017-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-rahim-yar-khan-017-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-rahim-yar-khan-017-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -4445,9 +5395,22 @@
         {
           "id": "pk-rahim-yar-khan-017-team-1",
           "name": "Sara",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000016",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-rahim-yar-khan-017-team-barber",
+          "name": "Iqra",
+          "role": "Barber",
+          "phone": "+923029100016",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -4484,7 +5447,8 @@
       "serviceTypes": [
         "Nails",
         "Eyebrows & lashes",
-        "Waxing salon"
+        "Waxing salon",
+        "Barber"
       ],
       "services": [
         {
@@ -4513,11 +5477,54 @@
           "priceLabel": "Rs 1,700",
           "description": "Smooth full arm waxing service.",
           "isActive": true
+        },
+        {
+          "id": "pk-okara-018-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-okara-018-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-okara-018-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-okara-018-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-okara-018-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-okara-018-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -4546,6 +5553,19 @@
           "role": "Stylist",
           "phone": "+923009000017",
           "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-okara-018-team-barber",
+          "name": "Laiba",
+          "role": "Barber",
+          "phone": "+923029100017",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -4581,7 +5601,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -4610,11 +5631,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-sahiwal-019-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-sahiwal-019-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-sahiwal-019-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-sahiwal-019-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-sahiwal-019-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-sahiwal-019-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -4643,6 +5707,19 @@
           "role": "Stylist",
           "phone": "+923009000018",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-sahiwal-019-team-barber",
+          "name": "Kiran",
+          "role": "Barber",
+          "phone": "+923029100018",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -4707,11 +5784,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-gujrat-020-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-gujrat-020-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-gujrat-020-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-gujrat-020-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-gujrat-020-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-gujrat-020-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -4737,9 +5857,22 @@
         {
           "id": "pk-gujrat-020-team-1",
           "name": "Ayesha",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000019",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-gujrat-020-team-barber",
+          "name": "Mina",
+          "role": "Barber",
+          "phone": "+923029100019",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -4776,7 +5909,8 @@
       "serviceTypes": [
         "Nails",
         "Eyebrows & lashes",
-        "Waxing salon"
+        "Waxing salon",
+        "Barber"
       ],
       "services": [
         {
@@ -4805,11 +5939,54 @@
           "priceLabel": "Rs 1,700",
           "description": "Smooth full arm waxing service.",
           "isActive": true
+        },
+        {
+          "id": "pk-jhelum-021-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-jhelum-021-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-jhelum-021-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-jhelum-021-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-jhelum-021-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-jhelum-021-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -4838,6 +6015,19 @@
           "role": "Stylist",
           "phone": "+923009000020",
           "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-jhelum-021-team-barber",
+          "name": "Ali",
+          "role": "Barber",
+          "phone": "+923029100020",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -4873,7 +6063,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -4902,11 +6093,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-mingora-022-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mingora-022-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-mingora-022-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-mingora-022-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-mingora-022-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-mingora-022-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -4935,6 +6169,19 @@
           "role": "Stylist",
           "phone": "+923009000021",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-mingora-022-team-barber",
+          "name": "Hamza",
+          "role": "Barber",
+          "phone": "+923029100021",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -4999,11 +6246,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-nawabshah-023-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-nawabshah-023-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-nawabshah-023-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-nawabshah-023-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-nawabshah-023-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-nawabshah-023-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -5029,9 +6319,22 @@
         {
           "id": "pk-nawabshah-023-team-1",
           "name": "Sana",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000022",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-nawabshah-023-team-barber",
+          "name": "Usman",
+          "role": "Barber",
+          "phone": "+923029100022",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -5068,7 +6371,8 @@
       "serviceTypes": [
         "Nails",
         "Eyebrows & lashes",
-        "Waxing salon"
+        "Waxing salon",
+        "Barber"
       ],
       "services": [
         {
@@ -5097,11 +6401,54 @@
           "priceLabel": "Rs 1,700",
           "description": "Smooth full arm waxing service.",
           "isActive": true
+        },
+        {
+          "id": "pk-larkana-024-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-larkana-024-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-larkana-024-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-larkana-024-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-larkana-024-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-larkana-024-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -5130,6 +6477,19 @@
           "role": "Stylist",
           "phone": "+923009000023",
           "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-larkana-024-team-barber",
+          "name": "Bilal",
+          "role": "Barber",
+          "phone": "+923029100023",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -5165,7 +6525,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -5194,11 +6555,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-mirpur-khas-025-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mirpur-khas-025-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-mirpur-khas-025-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-mirpur-khas-025-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-mirpur-khas-025-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-mirpur-khas-025-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -5227,6 +6631,19 @@
           "role": "Stylist",
           "phone": "+923009000024",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-mirpur-khas-025-team-barber",
+          "name": "Danish",
+          "role": "Barber",
+          "phone": "+923029100024",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -5291,11 +6708,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-kasur-026-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-kasur-026-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-kasur-026-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-kasur-026-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-kasur-026-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-kasur-026-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -5321,9 +6781,22 @@
         {
           "id": "pk-kasur-026-team-1",
           "name": "Nida",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000025",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-kasur-026-team-barber",
+          "name": "Tariq",
+          "role": "Barber",
+          "phone": "+923029100025",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -5360,7 +6833,8 @@
       "serviceTypes": [
         "Nails",
         "Eyebrows & lashes",
-        "Waxing salon"
+        "Waxing salon",
+        "Barber"
       ],
       "services": [
         {
@@ -5389,11 +6863,54 @@
           "priceLabel": "Rs 1,700",
           "description": "Smooth full arm waxing service.",
           "isActive": true
+        },
+        {
+          "id": "pk-sheikhupura-027-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-sheikhupura-027-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-sheikhupura-027-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-sheikhupura-027-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-sheikhupura-027-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-sheikhupura-027-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -5422,6 +6939,19 @@
           "role": "Stylist",
           "phone": "+923009000026",
           "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-sheikhupura-027-team-barber",
+          "name": "Sara",
+          "role": "Barber",
+          "phone": "+923029100026",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -5457,7 +6987,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -5486,11 +7017,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-mandi-bahauddin-028-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mandi-bahauddin-028-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-mandi-bahauddin-028-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-mandi-bahauddin-028-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-mandi-bahauddin-028-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-mandi-bahauddin-028-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -5519,6 +7093,19 @@
           "role": "Stylist",
           "phone": "+923009000027",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-mandi-bahauddin-028-team-barber",
+          "name": "Mariam",
+          "role": "Barber",
+          "phone": "+923029100027",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -5583,11 +7170,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-dera-ghazi-khan-029-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-dera-ghazi-khan-029-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-dera-ghazi-khan-029-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-dera-ghazi-khan-029-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-dera-ghazi-khan-029-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-dera-ghazi-khan-029-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -5613,9 +7243,22 @@
         {
           "id": "pk-dera-ghazi-khan-029-team-1",
           "name": "Kiran",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000028",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-dera-ghazi-khan-029-team-barber",
+          "name": "Noor",
+          "role": "Barber",
+          "phone": "+923029100028",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -5652,7 +7295,8 @@
       "serviceTypes": [
         "Nails",
         "Eyebrows & lashes",
-        "Waxing salon"
+        "Waxing salon",
+        "Barber"
       ],
       "services": [
         {
@@ -5681,11 +7325,54 @@
           "priceLabel": "Rs 1,700",
           "description": "Smooth full arm waxing service.",
           "isActive": true
+        },
+        {
+          "id": "pk-muzaffargarh-030-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-muzaffargarh-030-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-muzaffargarh-030-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-muzaffargarh-030-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-muzaffargarh-030-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-muzaffargarh-030-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -5714,6 +7401,19 @@
           "role": "Stylist",
           "phone": "+923009000029",
           "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-muzaffargarh-030-team-barber",
+          "name": "Ayesha",
+          "role": "Barber",
+          "phone": "+923029100029",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -5749,7 +7449,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -5778,11 +7479,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-chiniot-031-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-chiniot-031-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-chiniot-031-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-chiniot-031-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-chiniot-031-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-chiniot-031-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -5811,6 +7555,19 @@
           "role": "Stylist",
           "phone": "+923009000030",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-chiniot-031-team-barber",
+          "name": "Areeba",
+          "role": "Barber",
+          "phone": "+923029100030",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -5875,11 +7632,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-jhang-032-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-jhang-032-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-jhang-032-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-jhang-032-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-jhang-032-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-jhang-032-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -5905,9 +7705,22 @@
         {
           "id": "pk-jhang-032-team-1",
           "name": "Hamza",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000031",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-jhang-032-team-barber",
+          "name": "Hina",
+          "role": "Barber",
+          "phone": "+923029100031",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -5944,7 +7757,8 @@
       "serviceTypes": [
         "Nails",
         "Eyebrows & lashes",
-        "Waxing salon"
+        "Waxing salon",
+        "Barber"
       ],
       "services": [
         {
@@ -5973,11 +7787,54 @@
           "priceLabel": "Rs 1,700",
           "description": "Smooth full arm waxing service.",
           "isActive": true
+        },
+        {
+          "id": "pk-vehari-033-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-vehari-033-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-vehari-033-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-vehari-033-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-vehari-033-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-vehari-033-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -6006,6 +7863,19 @@
           "role": "Stylist",
           "phone": "+923009000032",
           "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-vehari-033-team-barber",
+          "name": "Sana",
+          "role": "Barber",
+          "phone": "+923029100032",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -6041,7 +7911,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -6070,11 +7941,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-khanewal-034-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-khanewal-034-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-khanewal-034-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-khanewal-034-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-khanewal-034-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-khanewal-034-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -6103,6 +8017,19 @@
           "role": "Stylist",
           "phone": "+923009000033",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-khanewal-034-team-barber",
+          "name": "Maham",
+          "role": "Barber",
+          "phone": "+923029100033",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -6167,11 +8094,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-haripur-035-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-haripur-035-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-haripur-035-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-haripur-035-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-haripur-035-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-haripur-035-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -6197,9 +8167,22 @@
         {
           "id": "pk-haripur-035-team-1",
           "name": "Danish",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000034",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-haripur-035-team-barber",
+          "name": "Zainab",
+          "role": "Barber",
+          "phone": "+923029100034",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -6236,7 +8219,8 @@
       "serviceTypes": [
         "Nails",
         "Eyebrows & lashes",
-        "Waxing salon"
+        "Waxing salon",
+        "Barber"
       ],
       "services": [
         {
@@ -6265,11 +8249,54 @@
           "priceLabel": "Rs 1,700",
           "description": "Smooth full arm waxing service.",
           "isActive": true
+        },
+        {
+          "id": "pk-mansehra-036-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mansehra-036-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-mansehra-036-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-mansehra-036-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-mansehra-036-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-mansehra-036-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -6298,6 +8325,19 @@
           "role": "Stylist",
           "phone": "+923009000035",
           "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-mansehra-036-team-barber",
+          "name": "Nida",
+          "role": "Barber",
+          "phone": "+923029100035",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -6333,7 +8373,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -6362,11 +8403,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-swabi-037-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-swabi-037-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-swabi-037-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-swabi-037-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-swabi-037-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-swabi-037-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -6395,6 +8479,19 @@
           "role": "Stylist",
           "phone": "+923009000036",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-swabi-037-team-barber",
+          "name": "Iqra",
+          "role": "Barber",
+          "phone": "+923029100036",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -6459,11 +8556,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-kohat-038-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-kohat-038-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-kohat-038-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-kohat-038-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-kohat-038-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-kohat-038-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -6489,9 +8629,22 @@
         {
           "id": "pk-kohat-038-team-1",
           "name": "Mariam",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000037",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-kohat-038-team-barber",
+          "name": "Laiba",
+          "role": "Barber",
+          "phone": "+923029100037",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -6528,7 +8681,8 @@
       "serviceTypes": [
         "Nails",
         "Eyebrows & lashes",
-        "Waxing salon"
+        "Waxing salon",
+        "Barber"
       ],
       "services": [
         {
@@ -6557,11 +8711,54 @@
           "priceLabel": "Rs 1,700",
           "description": "Smooth full arm waxing service.",
           "isActive": true
+        },
+        {
+          "id": "pk-bannu-039-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-bannu-039-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-bannu-039-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-bannu-039-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-bannu-039-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-bannu-039-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -6590,6 +8787,19 @@
           "role": "Stylist",
           "phone": "+923009000038",
           "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-bannu-039-team-barber",
+          "name": "Kiran",
+          "role": "Barber",
+          "phone": "+923029100038",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -6625,7 +8835,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -6654,11 +8865,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-gwadar-040-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-gwadar-040-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-gwadar-040-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-gwadar-040-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-gwadar-040-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-gwadar-040-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -6687,6 +8941,19 @@
           "role": "Stylist",
           "phone": "+923009000039",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-gwadar-040-team-barber",
+          "name": "Mina",
+          "role": "Barber",
+          "phone": "+923029100039",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -6751,11 +9018,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-turbat-041-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-turbat-041-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-turbat-041-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-turbat-041-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-turbat-041-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-turbat-041-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -6781,9 +9091,22 @@
         {
           "id": "pk-turbat-041-team-1",
           "name": "Areeba",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000040",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-turbat-041-team-barber",
+          "name": "Ali",
+          "role": "Barber",
+          "phone": "+923029100040",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -6820,7 +9143,8 @@
       "serviceTypes": [
         "Nails",
         "Eyebrows & lashes",
-        "Waxing salon"
+        "Waxing salon",
+        "Barber"
       ],
       "services": [
         {
@@ -6849,11 +9173,54 @@
           "priceLabel": "Rs 1,700",
           "description": "Smooth full arm waxing service.",
           "isActive": true
+        },
+        {
+          "id": "pk-khuzdar-042-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-khuzdar-042-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-khuzdar-042-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-khuzdar-042-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-khuzdar-042-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-khuzdar-042-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -6882,6 +9249,19 @@
           "role": "Stylist",
           "phone": "+923009000041",
           "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-khuzdar-042-team-barber",
+          "name": "Hamza",
+          "role": "Barber",
+          "phone": "+923029100041",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -6917,7 +9297,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -6946,11 +9327,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-gilgit-043-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-gilgit-043-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-gilgit-043-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-gilgit-043-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-gilgit-043-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-gilgit-043-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -6979,6 +9403,19 @@
           "role": "Stylist",
           "phone": "+923009000042",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-gilgit-043-team-barber",
+          "name": "Usman",
+          "role": "Barber",
+          "phone": "+923029100042",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -7043,11 +9480,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-skardu-044-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-skardu-044-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-skardu-044-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-skardu-044-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-skardu-044-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-skardu-044-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -7073,9 +9553,22 @@
         {
           "id": "pk-skardu-044-team-1",
           "name": "Maham",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000043",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-skardu-044-team-barber",
+          "name": "Bilal",
+          "role": "Barber",
+          "phone": "+923029100043",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -7112,7 +9605,8 @@
       "serviceTypes": [
         "Nails",
         "Eyebrows & lashes",
-        "Waxing salon"
+        "Waxing salon",
+        "Barber"
       ],
       "services": [
         {
@@ -7141,11 +9635,54 @@
           "priceLabel": "Rs 1,700",
           "description": "Smooth full arm waxing service.",
           "isActive": true
+        },
+        {
+          "id": "pk-muzaffarabad-045-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-muzaffarabad-045-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-muzaffarabad-045-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-muzaffarabad-045-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-muzaffarabad-045-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-muzaffarabad-045-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -7174,6 +9711,19 @@
           "role": "Stylist",
           "phone": "+923009000044",
           "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-muzaffarabad-045-team-barber",
+          "name": "Danish",
+          "role": "Barber",
+          "phone": "+923029100044",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -7209,7 +9759,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -7238,11 +9789,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-mirpur-046-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-mirpur-046-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-mirpur-046-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-mirpur-046-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-mirpur-046-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-mirpur-046-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -7271,6 +9865,19 @@
           "role": "Stylist",
           "phone": "+923009000045",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-mirpur-046-team-barber",
+          "name": "Tariq",
+          "role": "Barber",
+          "phone": "+923029100045",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -7335,11 +9942,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-kotli-047-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-kotli-047-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-kotli-047-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-kotli-047-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-kotli-047-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-kotli-047-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -7365,9 +10015,22 @@
         {
           "id": "pk-kotli-047-team-1",
           "name": "Iqra",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000046",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-kotli-047-team-barber",
+          "name": "Sara",
+          "role": "Barber",
+          "phone": "+923029100046",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -7404,7 +10067,8 @@
       "serviceTypes": [
         "Nails",
         "Eyebrows & lashes",
-        "Waxing salon"
+        "Waxing salon",
+        "Barber"
       ],
       "services": [
         {
@@ -7433,11 +10097,54 @@
           "priceLabel": "Rs 1,700",
           "description": "Smooth full arm waxing service.",
           "isActive": true
+        },
+        {
+          "id": "pk-attock-048-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-attock-048-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-attock-048-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-attock-048-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-attock-048-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-attock-048-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -7466,6 +10173,19 @@
           "role": "Stylist",
           "phone": "+923009000047",
           "expertise": "Nails",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-attock-048-team-barber",
+          "name": "Mariam",
+          "role": "Barber",
+          "phone": "+923029100047",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -7501,7 +10221,8 @@
       ],
       "serviceTypes": [
         "Hair salon",
-        "Beauty salon"
+        "Beauty salon",
+        "Barber"
       ],
       "services": [
         {
@@ -7530,11 +10251,54 @@
           "priceLabel": "Rs 2,700",
           "description": "Glow facial with cleanse, exfoliation, and mask.",
           "isActive": true
+        },
+        {
+          "id": "pk-wah-cantt-049-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-wah-cantt-049-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-wah-cantt-049-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-wah-cantt-049-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-wah-cantt-049-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-wah-cantt-049-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -7563,6 +10327,19 @@
           "role": "Stylist",
           "phone": "+923009000048",
           "expertise": "Hair salon",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-wah-cantt-049-team-barber",
+          "name": "Noor",
+          "role": "Barber",
+          "phone": "+923029100048",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
@@ -7627,11 +10404,54 @@
           "priceLabel": "Rs 1,400",
           "description": "Wash and quick style for a fresh look.",
           "isActive": true
+        },
+        {
+          "id": "pk-taxila-050-barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "pk-taxila-050-barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "Rs 800",
+          "description": "Beard shape, line-up, and tidy finish.",
+          "isActive": true
         }
       ],
       "products": [],
       "productSales": [],
-      "packagePlans": [],
+      "packagePlans": [
+        {
+          "id": "pk-taxila-050-package-haircut-duo",
+          "name": "Haircut Duo",
+          "includedServiceIds": [
+            "pk-taxila-050-barber-haircut"
+          ],
+          "totalUses": 2,
+          "priceLabel": "Rs 2,000",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-taxila-050-package-beard-refresh",
+          "name": "Beard Refresh Pack",
+          "includedServiceIds": [
+            "pk-taxila-050-barber-beard-trim"
+          ],
+          "totalUses": 3,
+          "priceLabel": "Rs 2,100",
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        }
+      ],
       "loyaltyProgram": null,
       "businessSettings": {
         "currencyCode": "PKR",
@@ -7657,9 +10477,22 @@
         {
           "id": "pk-taxila-050-team-1",
           "name": "Mina",
-          "role": "Barber",
+          "role": "Lead Barber",
           "phone": "+923009000049",
           "expertise": "Barber",
+          "openingTime": "10:30",
+          "closingTime": "22:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-05-18T07:45:00.000Z",
+          "updatedAt": "2026-05-18T07:45:00.000Z"
+        },
+        {
+          "id": "pk-taxila-050-team-barber",
+          "name": "Ayesha",
+          "role": "Barber",
+          "phone": "+923029100049",
+          "expertise": "Haircut and beard grooming",
           "openingTime": "10:30",
           "closingTime": "22:00",
           "offDays": [],
