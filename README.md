@@ -115,15 +115,41 @@ npm run lint
 ## Deployment Notes
 
 - Set `PUBLIC_BASE_URL` in deployed environments so generated booking, QR, and waitlist links use your real domain.
+
+### Stripe Connect for salon payments
+
+Each salon must complete its own Stripe Connect onboarding before online package checkout is enabled.
+Configure the platform credentials and default connected-account country:
+
+```env
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_PUBLISHABLE_KEY=pk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+STRIPE_CONNECT_COUNTRY_CODE=GB
+STRIPE_CHARGE_CURRENCY_CODE=GBP
+STRIPE_PACKAGE_PAYMENT_APPLICATION_FEE_CENTS=0
+STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE=false
+```
+
+Register `https://your-domain.example/api/stripe/webhook` in Stripe and enable events for
+connected accounts. Salon owners can open Calendar Settings and select **Set up online payments**.
+Stripe hosts collection of identity and payout-bank details; the app stores only the connected
+account ID and operational readiness status.
+
+For local Checkout testing with an `sk_test_...` key and no connected salon account, set
+`STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE=true`. This test-only mode sends package
+payments to the platform Stripe account and is ignored when a live secret key is configured.
+The app refuses to start if this test-only bypass is enabled with a live Stripe secret key or if
+the secret and publishable keys use different modes.
 - If the app runs behind a reverse proxy, set `TRUST_PROXY=true`.
 - Use `CLIENT_PLATFORM_STORAGE=file` for local persistence or `memory` for ephemeral environments.
-- Use `CLIENT_PLATFORM_STORAGE=supabase` after creating the tables in [supabase/schema.sql](</d:/algo nlp/fresha project algonlp/supabase/schema.sql>) and syncing current JSON data with `npm run sync:supabase`.
+- Use `CLIENT_PLATFORM_STORAGE=supabase` after creating the tables in [supabase/schema.sql](</d:/algo nlp/bookmysalon/supabase/schema.sql>) and syncing current JSON data with `npm run sync:supabase`.
 
 ## Supabase Migration
 
 To preserve the existing local JSON data while moving to Supabase:
 
-1. Copy [supabase/schema.sql](</d:/algo nlp/fresha project algonlp/supabase/schema.sql>) into the Supabase SQL editor and run it.
+1. Copy [supabase/schema.sql](</d:/algo nlp/bookmysalon/supabase/schema.sql>) into the Supabase SQL editor and run it.
 2. Add `SUPABASE_URL` plus either `SUPABASE_SERVICE_ROLE_KEY` or `SUPABASE_PUBLISHABLE_KEY` to `.env`.
 3. Run `npm run sync:supabase` to upload `data/appointments.json` and `data/client-platform.json`.
 4. Change `CLIENT_PLATFORM_STORAGE` from `file` to `supabase`.
@@ -132,7 +158,7 @@ The migration keeps the current record shapes intact by storing each record as J
 
 ## Supabase Relational Schema
 
-The canonical Supabase SQL file is [supabase/schema.sql](</d:/algo nlp/fresha project algonlp/supabase/schema.sql>). It already includes the normalized relational tables too. [supabase/relational-schema.sql](</d:/algo nlp/fresha project algonlp/supabase/relational-schema.sql>) is kept as a mirror copy.
+The canonical Supabase SQL file is [supabase/schema.sql](</d:/algo nlp/bookmysalon/supabase/schema.sql>). It already includes the normalized relational tables too. [supabase/relational-schema.sql](</d:/algo nlp/bookmysalon/supabase/relational-schema.sql>) is kept as a mirror copy.
 
 The normalized relational section creates dedicated tables for:
 - businesses
@@ -150,13 +176,13 @@ The normalized relational section creates dedicated tables for:
 - waitlist entries
 
 Important:
-- The current running app still reads and writes the JSONB sync tables in [supabase/schema.sql](</d:/algo nlp/fresha project algonlp/supabase/schema.sql>).
+- The current running app still reads and writes the JSONB sync tables in [supabase/schema.sql](</d:/algo nlp/bookmysalon/supabase/schema.sql>).
 - The normalized relational tables are created in the same file and are filled by the relational mirror sync.
 - Run `schema.sql` as the single setup file in Supabase.
 
 To backfill the current live Supabase JSONB data into the normalized relational tables:
 
-1. Run [supabase/schema.sql](</d:/algo nlp/fresha project algonlp/supabase/schema.sql>) in the Supabase SQL editor.
+1. Run [supabase/schema.sql](</d:/algo nlp/bookmysalon/supabase/schema.sql>) in the Supabase SQL editor.
 2. Make sure your environment still points at the same Supabase project.
 3. Run:
 

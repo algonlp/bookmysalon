@@ -299,6 +299,33 @@ const getAppointmentServiceSummary = (appointment) =>
     ? `${appointment.serviceName} with ${appointment.teamMemberName}`
     : appointment.serviceName;
 
+const SERVICE_LOCATION_LABELS = {
+  physical: 'Salon visit',
+  mobile: 'At-home service',
+  virtual: 'Online service'
+};
+
+const formatAppointmentServiceLocation = (appointment) => {
+  const serviceLocation = appointment?.serviceLocation;
+
+  if (!serviceLocation) {
+    return '';
+  }
+
+  const label = SERVICE_LOCATION_LABELS[serviceLocation] ?? serviceLocation;
+  return appointment.customerAddress ? `${label}: ${appointment.customerAddress}` : label;
+};
+
+const getAppointmentSummaryDetails = (appointment) =>
+  [
+    appointment.customerPhone,
+    appointment.customerEmail,
+    appointment.servicePriceLabel,
+    appointment.packageName ? `Package: ${appointment.packageName}` : '',
+    appointment.loyaltyRewardLabel ? `Reward: ${appointment.loyaltyRewardLabel}` : '',
+    formatAppointmentServiceLocation(appointment)
+  ].filter((value) => typeof value === 'string' && value.trim().length > 0);
+
 const formatPaymentMethodLabel = (methodValue) =>
   PAYMENT_METHOD_LABELS[typeof methodValue === 'string' ? methodValue.trim() : ''] ?? 'Other';
 
@@ -1274,7 +1301,7 @@ const renderReportsView = (reportsView, elements) => {
 const renderDashboardAppointments = (
   appointments,
   container,
-  { onEdit, onRunningLate, onComplete, onCancel } = {}
+  { onDetails, onEdit, onRunningLate, onComplete, onCancel } = {}
 ) => {
   if (!(container instanceof HTMLElement)) {
     return;
@@ -1324,6 +1351,16 @@ const renderDashboardAppointments = (
     service.className = 'calendar-appointment-service';
     service.textContent = getAppointmentServiceSummary(appointment);
 
+    const detailValues = getAppointmentSummaryDetails(appointment);
+    const details = document.createElement('div');
+    details.className = 'calendar-appointment-details';
+
+    for (const detailValue of detailValues.slice(0, 4)) {
+      const detail = document.createElement('span');
+      detail.textContent = detailValue;
+      details.append(detail);
+    }
+
     const meta = document.createElement('p');
     meta.className = 'calendar-appointment-meta';
     meta.textContent = formatDateTimeForDisplay(
@@ -1344,9 +1381,24 @@ const renderDashboardAppointments = (
 
     footer.append(meta, source);
 
+    const createDetailsButton = () => {
+      if (typeof onDetails !== 'function') {
+        return null;
+      }
+
+      return createToolActionButton('Details', () => {
+        onDetails(appointment);
+      });
+    };
+
     if (appointment.status === 'booked') {
       const actions = document.createElement('div');
       actions.className = 'calendar-appointment-actions';
+      const detailsButton = createDetailsButton();
+
+      if (detailsButton) {
+        actions.append(detailsButton);
+      }
 
       const actionHandlers = {
         onEdit,
@@ -1377,12 +1429,28 @@ const renderDashboardAppointments = (
         actions.append(actionButton);
       }
 
-      card.append(topRow, service, footer, actions);
+      card.append(topRow, service);
+      if (details.childElementCount > 0) {
+        card.append(details);
+      }
+      card.append(footer, actions);
       container.append(card);
       continue;
     }
 
-    card.append(topRow, service, footer);
+    const detailsButton = createDetailsButton();
+
+    card.append(topRow, service);
+    if (details.childElementCount > 0) {
+      card.append(details);
+    }
+    card.append(footer);
+    if (detailsButton) {
+      const actions = document.createElement('div');
+      actions.className = 'calendar-appointment-actions';
+      actions.append(detailsButton);
+      card.append(actions);
+    }
     container.append(card);
   }
 };
@@ -2103,6 +2171,16 @@ const createSalonShowcaseCard = (salon) => {
           .join(' | ')
       : 'Online booking available';
 
+  const distanceLabel = formatDistanceLabel(salon?.distanceKilometers);
+
+  if (distanceLabel) {
+    const distance = document.createElement('p');
+    distance.className = 'public-salon-card-distance';
+    distance.textContent = distanceLabel;
+    card.append(media, header, distance, typeList, details);
+    return card;
+  }
+
   card.append(media, header, typeList, details);
   return card;
 };
@@ -2145,6 +2223,22 @@ const buildGoogleMapEmbedUrl = (query) =>
 
 const buildGoogleMapSearchUrl = (query) =>
   `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+
+const buildGoogleDirectionsUrl = ({ destination, origin }) => {
+  const params = new URLSearchParams({
+    api: '1',
+    destination
+  });
+
+  const originLatitude = toFiniteNumber(origin?.latitude);
+  const originLongitude = toFiniteNumber(origin?.longitude);
+
+  if (originLatitude !== null && originLongitude !== null) {
+    params.set('origin', `${originLatitude},${originLongitude}`);
+  }
+
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
+};
 
 const getSalonOpeningHours = (salon) => {
   const openingHours = Array.isArray(salon?.openingHours) ? salon.openingHours : [];
@@ -3143,9 +3237,10 @@ const initHomeSalonSearch = () => {
     mapSurface.append(centerPin);
 
     nearbySalons.forEach((entry, index) => {
+      const salonUrl = `/salon/${encodeURIComponent(entry.salon.clientId)}`;
       const marker = document.createElement('a');
       marker.className = 'nearby-map-salon-pin';
-      marker.href = `/salon/${encodeURIComponent(entry.salon.clientId)}`;
+      marker.href = salonUrl;
       marker.style.cssText = buildMapMarkerStyle(center, entry.coordinates, index, nearbySalons.length);
       marker.setAttribute(
         'aria-label',
@@ -3159,9 +3254,14 @@ const initHomeSalonSearch = () => {
     list.className = 'nearby-salon-list';
 
     nearbySalons.forEach((entry, index) => {
-      const card = document.createElement('a');
+      const salonUrl = `/salon/${encodeURIComponent(entry.salon.clientId)}`;
+      const destination =
+        entry.coordinates?.latitude && entry.coordinates?.longitude
+          ? `${entry.coordinates.latitude},${entry.coordinates.longitude}`
+          : getSalonMapQuery(entry.salon);
+      const distanceLabel = formatDistanceLabel(entry.distanceKilometers);
+      const card = document.createElement('article');
       card.className = 'nearby-salon-result';
-      card.href = `/salon/${encodeURIComponent(entry.salon.clientId)}`;
 
       const marker = document.createElement('span');
       marker.className = 'nearby-salon-result-marker';
@@ -3174,15 +3274,29 @@ const initHomeSalonSearch = () => {
       title.textContent = entry.salon.businessName || 'Salon';
 
       const meta = document.createElement('span');
-      meta.textContent = [
-        formatDistanceLabel(entry.distanceKilometers),
-        formatAddressSingleLine(entry.salon.venueAddress)
-      ]
+      meta.textContent = [distanceLabel, formatAddressSingleLine(entry.salon.venueAddress)]
         .filter(Boolean)
-        .join(' · ');
+        .join(' - ');
 
       copy.append(title, meta);
-      card.append(marker, copy);
+
+      const actions = document.createElement('span');
+      actions.className = 'nearby-salon-result-actions';
+
+      const salonLink = document.createElement('a');
+      salonLink.className = 'nearby-salon-result-link';
+      salonLink.href = salonUrl;
+      salonLink.textContent = 'Open salon';
+
+      const directionsLink = document.createElement('a');
+      directionsLink.className = 'nearby-salon-result-directions';
+      directionsLink.href = buildGoogleDirectionsUrl({ destination, origin: center });
+      directionsLink.target = '_blank';
+      directionsLink.rel = 'noopener';
+      directionsLink.textContent = 'Directions';
+
+      actions.append(salonLink, directionsLink);
+      card.append(marker, copy, actions);
       list.append(card);
     });
 
@@ -3190,17 +3304,29 @@ const initHomeSalonSearch = () => {
     return mapSection;
   };
 
-  const renderNearbySalons = (nearbySalons, locationLabel) => {
+  const renderNearbySalons = (nearbySalons, locationLabel, { serviceQuery = '', isFallback = false } = {}) => {
     if (nearbySalons.length === 0) {
       return;
     }
 
     showcaseEmpty.classList.add('is-hidden');
-    showcaseTitle.textContent = `Nearby salons around ${locationLabel}`;
-    showcaseStatus.textContent = `No exact salon found in ${locationLabel}, so showing the closest available salons by distance.`;
+    showcaseTitle.textContent = serviceQuery
+      ? `${serviceQuery} near ${locationLabel}`
+      : `Nearby salons around ${locationLabel}`;
+    showcaseStatus.textContent = isFallback
+      ? `No exact salon found in ${locationLabel}, so showing the closest available salons by distance.`
+      : `Showing ${nearbySalons.length} salon${nearbySalons.length === 1 ? '' : 's'} around ${locationLabel}, sorted by distance. Select a salon or open directions from the map list.`;
     showcaseList.replaceChildren();
     showcaseList.append(createNearbySalonMap(nearbySalons, getSelectedLocationCoordinates()));
-    showcaseList.append(createSalonRail('Closest salons you can book', nearbySalons.map((entry) => entry.salon)));
+    showcaseList.append(
+      createSalonRail(
+        'Closest salons you can book',
+        nearbySalons.map((entry) => ({
+          ...entry.salon,
+          distanceKilometers: entry.distanceKilometers
+        }))
+      )
+    );
   };
 
   const geocodeSalonLocation = async (salon) => {
@@ -3281,7 +3407,65 @@ const initHomeSalonSearch = () => {
       return;
     }
 
-    renderNearbySalons(nearbySalons, locationQuery);
+    renderNearbySalons(nearbySalons, locationQuery, { serviceQuery, isFallback: true });
+  };
+
+  const renderDistanceSortedLocationResults = async ({ locationQuery, serviceQuery, requestId }) => {
+    const selectedCoordinates = getSelectedLocationCoordinates();
+
+    if (!selectedCoordinates || !locationQuery) {
+      return false;
+    }
+
+    const sourceSalons = serviceQuery
+      ? allSalons.filter((salon) => getSalonServiceScore(salon, serviceQuery) >= 0)
+      : allSalons;
+
+    if (sourceSalons.length === 0) {
+      return false;
+    }
+
+    showcaseEmpty.classList.add('is-hidden');
+    showcaseStatus.textContent = `Checking distance for salons around ${locationQuery}.`;
+
+    const entries = await Promise.all(
+      sourceSalons.map(async (salon) => {
+        const coordinates = await geocodeSalonLocation(salon);
+        const distanceKilometers = getDistanceInKilometers(selectedCoordinates, coordinates);
+
+        return distanceKilometers === null
+          ? null
+          : {
+              salon,
+              coordinates,
+              distanceKilometers
+            };
+      })
+    );
+
+    if (requestId !== nearbySearchRequestId) {
+      return true;
+    }
+
+    const nearbySalons = entries
+      .filter(Boolean)
+      .sort(
+        (left, right) =>
+          left.distanceKilometers - right.distanceKilometers ||
+          String(left.salon.businessName || '').localeCompare(String(right.salon.businessName || ''))
+      )
+      .slice(0, Math.max(resultsLimit, 6));
+
+    if (nearbySalons.length === 0) {
+      showcaseEmpty.classList.remove('is-hidden');
+      showcaseEmpty.textContent = `No salons with map-ready addresses were found near ${locationQuery} yet. Try another area.`;
+      showcaseStatus.textContent = `No mapped salons matched ${locationQuery}.`;
+      showcaseList.replaceChildren();
+      return true;
+    }
+
+    renderNearbySalons(nearbySalons, locationQuery, { serviceQuery });
+    return true;
   };
 
   const syncLocationQuery = (value, { updateAutocomplete = false } = {}) => {
@@ -3734,8 +3918,8 @@ const initHomeSalonSearch = () => {
       limitedCount: Math.min(resultsLimit, salons.length)
     });
 
-    if (salons.length === 0 && locationQuery && getSelectedLocationCoordinates()) {
-      void renderNearbyFallback({ locationQuery, serviceQuery, requestId });
+    if (locationQuery && getSelectedLocationCoordinates()) {
+      void renderDistanceSortedLocationResults({ locationQuery, serviceQuery, requestId });
     }
 
     if (scrollIntoView) {
@@ -5479,6 +5663,59 @@ const initCalendar = () => {
     toolDialog.classList.toggle('calendar-tool-dialog-wide', dialogClassName === 'wide');
     toolModal.classList.remove('is-hidden');
     toolModal.setAttribute('aria-hidden', 'false');
+  };
+
+  const openStripeConnectModal = async () => {
+    openToolModal({
+      eyebrow: 'Online payments',
+      title: 'Checking Stripe Connect',
+      description: 'Loading this salon payment and payout status.'
+    });
+
+    try {
+      const payload = await apiRequest(
+        `/api/platform/clients/${encodeURIComponent(clientId)}/stripe-connect/status`
+      );
+      const account = payload?.stripeConnectAccount;
+      const isReady = Boolean(account?.chargesEnabled && account?.payoutsEnabled);
+      const requirementsDue = Array.isArray(account?.requirementsDue)
+        ? account.requirementsDue.length
+        : 0;
+      const actions = [
+        createToolActionButton(
+          account ? 'Continue Stripe setup' : 'Connect Stripe account',
+          async () => {
+            try {
+              const onboardingPayload = await apiRequest(
+                `/api/platform/clients/${encodeURIComponent(clientId)}/stripe-connect/onboarding`,
+                { method: 'POST' }
+              );
+              window.location.assign(onboardingPayload.onboardingUrl);
+            } catch (error) {
+              safeAlert(error instanceof Error ? error.message : 'Unable to start Stripe onboarding');
+            }
+          }
+        ),
+        createToolActionButton('Refresh Stripe status', () => {
+          void openStripeConnectModal();
+        })
+      ];
+
+      openToolModal({
+        eyebrow: 'Online payments',
+        title: isReady ? 'Stripe payments are ready' : 'Connect this salon to Stripe',
+        description: account
+          ? `Charges: ${account.chargesEnabled ? 'enabled' : 'disabled'}. Payouts: ${account.payoutsEnabled ? 'enabled' : 'disabled'}. ${requirementsDue} requirement${requirementsDue === 1 ? '' : 's'} remaining.`
+          : 'Complete Stripe-hosted onboarding before this salon can accept online package payments.',
+        actions
+      });
+    } catch (error) {
+      openToolModal({
+        eyebrow: 'Online payments',
+        title: 'Stripe status unavailable',
+        description: error instanceof Error ? error.message : 'Unable to load Stripe Connect status.'
+      });
+    }
   };
 
   const getDashboardAppointments = () => {
@@ -8111,7 +8348,7 @@ const createTrendCard = (
       return;
     }
 
-    await apiRequest(`/api/platform/clients/${clientId}/package-sales`, {
+    const response = await apiRequest(`/api/platform/clients/${clientId}/package-sales/checkout`, {
       method: 'POST',
       body: JSON.stringify({
         packagePlanId,
@@ -8120,6 +8357,11 @@ const createTrendCard = (
         customerEmail: customerEmail.trim()
       })
     });
+
+    if (response?.checkoutUrl) {
+      window.location.href = response.checkoutUrl;
+      return;
+    }
 
     await loadDashboard();
   };
@@ -11149,6 +11391,78 @@ const createTrendCard = (
     );
   };
 
+  const openAppointmentDetailsModal = (appointment) => {
+    const statusMeta = getAppointmentStatusMeta(appointment.status);
+    const contactDetails = [
+      appointment.customerPhone || 'No phone saved',
+      appointment.customerEmail || 'No email saved'
+    ].join(' | ');
+    const bookingDetails = [
+      formatDateTimeForDisplay(appointment.appointmentDate, appointment.appointmentTime),
+      statusMeta.label,
+      formatBookingSourceLabel(appointment.source)
+    ].join(' | ');
+    const benefitDetails = [
+      appointment.servicePriceLabel ? `Price: ${appointment.servicePriceLabel}` : '',
+      appointment.packageName ? `Package: ${appointment.packageName}` : '',
+      appointment.loyaltyRewardLabel ? `Reward: ${appointment.loyaltyRewardLabel}` : ''
+    ].filter(Boolean);
+    const locationDetails = formatAppointmentServiceLocation(appointment);
+    const actions = [
+      createToolInfoCard('Booking', bookingDetails),
+      createToolInfoCard('Service', getAppointmentServiceSummary(appointment)),
+      createToolInfoCard('Customer contact', contactDetails)
+    ];
+
+    if (locationDetails) {
+      actions.push(createToolInfoCard('Service location', locationDetails));
+    }
+
+    if (benefitDetails.length > 0) {
+      actions.push(createToolInfoCard('Payment and benefits', benefitDetails.join(' | ')));
+    }
+
+    if (appointment.status === 'booked') {
+      actions.push(
+        createToolActionButton('Edit booking', () => {
+          closeToolModal();
+          openEditAppointmentModal(appointment);
+        }),
+        createToolActionButton('Send running-late update', () => {
+          closeToolModal();
+          openRunningLateModal(appointment);
+        }),
+        createToolActionButton('Record payment', () => {
+          if (!guardBillingFeature('payments')) {
+            return;
+          }
+          closeToolModal();
+          openRecordPaymentModal(appointment.id);
+        }),
+        createToolActionButton('Mark complete', () => {
+          markDashboardAppointmentComplete(appointment).catch((error) => {
+            safeAlert(error instanceof Error ? error.message : 'Unable to complete appointment');
+          });
+        })
+      );
+
+      const cancelButton = createToolActionButton('Cancel booking', () => {
+        cancelDashboardAppointment(appointment).catch((error) => {
+          safeAlert(error instanceof Error ? error.message : 'Unable to cancel appointment');
+        });
+      });
+      cancelButton.classList.add('calendar-tool-action-danger');
+      actions.push(cancelButton);
+    }
+
+    openToolModal({
+      eyebrow: 'Appointment details',
+      title: appointment.customerName || 'Appointment',
+      description: `Reference ${appointment.id.slice(0, 8)}`,
+      actions
+    });
+  };
+
   const openEditAppointmentModal = (appointment) => {
     if (!clientId || appointment.status !== 'booked') {
       return;
@@ -11612,6 +11926,7 @@ const createTrendCard = (
   const syncAppointmentsUi = () => {
     const appointments = getFilteredAppointments();
     renderDashboardAppointments(appointments, appointmentsList, {
+      onDetails: openAppointmentDetailsModal,
       onEdit: openEditAppointmentModal,
       onRunningLate: openRunningLateModal,
       onComplete: (appointment) => {
@@ -12576,6 +12891,9 @@ const createTrendCard = (
             closeToolModal();
             window.location.assign(buildPathWithClientId('/sms-logs', clientId));
           }),
+          createToolActionButton('Set up online payments', () => {
+            void openStripeConnectModal();
+          }),
           createToolActionButton('Open team panel', () => {
             closeToolModal();
             setMainView('calendar');
@@ -12973,7 +13291,22 @@ const createTrendCard = (
 
   setFilterBarVisibility(false);
 
-  loadDashboard()
+  const searchParams = new URLSearchParams(window.location.search);
+  const subscriptionCheckoutStatus = searchParams.get('subscriptionCheckout');
+  const checkoutSessionId = searchParams.get('session_id');
+  const confirmReturnedSubscriptionCheckout = async () => {
+    if (subscriptionCheckoutStatus !== 'success' || !checkoutSessionId) {
+      return;
+    }
+
+    await apiRequest(`/api/platform/clients/${encodeURIComponent(clientId)}/billing/checkout/confirm`, {
+      method: 'POST',
+      body: JSON.stringify({ checkoutSessionId })
+    });
+  };
+
+  confirmReturnedSubscriptionCheckout()
+    .then(() => loadDashboard())
     .catch((error) => {
       safeAlert(error instanceof Error ? error.message : 'Unable to load dashboard');
     });
@@ -13062,6 +13395,7 @@ const initPublicBooking = () => {
   const packagePlanPreviewBadge = document.querySelector('#booking-package-plan-preview-badge');
   const packagePlanPreviewCopy = document.querySelector('#booking-package-plan-preview-copy');
   const packagePlanPreviewServices = document.querySelector('#booking-package-plan-preview-services');
+  const packagePlanBuyButton = document.querySelector('#booking-package-buy-button');
   const benefitField = document.querySelector('#booking-benefit-field');
   const benefitSelect = document.querySelector('#booking-benefit-select');
   const serviceLocationField = document.querySelector('#booking-service-location-field');
@@ -13446,9 +13780,48 @@ const initPublicBooking = () => {
 
   const currentBookingSource = getPublicBookingSource();
   const currentWaitlistClaim = getPublicWaitlistClaim();
+  const packageCheckoutStatus = new URLSearchParams(window.location.search).get('packageCheckout');
+  const packageCheckoutStorageKey = `qr-booking-package-checkout:${businessId}`;
   const today = new Date();
   dateInput.value = today.toISOString().slice(0, 10);
   dateInput.min = today.toISOString().slice(0, 10);
+
+  const rememberPackageCheckoutCustomer = (customer) => {
+    try {
+      window.localStorage.setItem(packageCheckoutStorageKey, JSON.stringify(customer));
+    } catch {
+      // Best-effort only; checkout still works without local restore.
+    }
+  };
+
+  const restorePackageCheckoutCustomer = () => {
+    if (packageCheckoutStatus !== 'success') {
+      return;
+    }
+
+    try {
+      const rawValue = window.localStorage.getItem(packageCheckoutStorageKey);
+      const customer = rawValue ? JSON.parse(rawValue) : null;
+
+      if (!customer || typeof customer !== 'object') {
+        return;
+      }
+
+      if (typeof customer.customerName === 'string' && !customerNameInput.value.trim()) {
+        customerNameInput.value = customer.customerName;
+      }
+
+      if (typeof customer.customerPhone === 'string') {
+        setBookingCustomerPhoneValue(customer.customerPhone);
+      }
+
+      if (typeof customer.customerEmail === 'string' && !customerEmailInput.value.trim()) {
+        customerEmailInput.value = customer.customerEmail;
+      }
+    } catch {
+      // Ignore malformed local data.
+    }
+  };
 
 
   const getBookingPackageAnnouncementStorageKey = () =>
@@ -13679,6 +14052,9 @@ const initPublicBooking = () => {
       packagePlanPreviewBadge.textContent = '';
       packagePlanPreviewCopy.textContent = '';
       packagePlanPreviewServices.textContent = '';
+      if (packagePlanBuyButton instanceof HTMLButtonElement) {
+        packagePlanBuyButton.disabled = true;
+      }
       return;
     }
 
@@ -13703,6 +14079,11 @@ const initPublicBooking = () => {
       includedServiceNames.length > 0
         ? `Included services: ${includedServiceNames.join(', ')}.`
         : 'Included services will appear here when available.';
+
+    if (packagePlanBuyButton instanceof HTMLButtonElement) {
+      packagePlanBuyButton.disabled = false;
+      packagePlanBuyButton.textContent = `Buy ${selectedPackagePlan.priceLabel || 'package'}`;
+    }
 
   };
 
@@ -14235,6 +14616,65 @@ const initPublicBooking = () => {
     }
   };
 
+  const createPublicPackageCheckout = async () => {
+    const selectedPackagePlan = getSelectedPublishedPackagePlan();
+
+    if (!selectedPackagePlan) {
+      safeAlert('Select a package before checkout.');
+      return;
+    }
+
+    const customerName = customerNameInput.value.trim();
+    const customerPhone = getBookingCustomerPhoneValue();
+    const customerEmail = customerEmailInput.value.trim();
+
+    if (customerName.length < 2) {
+      safeAlert('Enter your full name before buying a package.');
+      setBookingStep('confirm');
+      customerNameInput.focus();
+      return;
+    }
+
+    if (!normalizePhoneForLookup(customerPhone)) {
+      safeAlert('Enter your phone number before buying a package.');
+      setBookingStep('confirm');
+      customerPhoneInput.focus();
+      return;
+    }
+
+    if (packagePlanBuyButton instanceof HTMLButtonElement) {
+      packagePlanBuyButton.disabled = true;
+      packagePlanBuyButton.textContent = 'Opening checkout...';
+    }
+
+    try {
+      const response = await apiRequest(`/api/public/book/${businessId}/package-sales/checkout`, {
+        method: 'POST',
+        body: JSON.stringify({
+          packagePlanId: selectedPackagePlan.id,
+          customerName,
+          customerPhone,
+          customerEmail
+        })
+      });
+
+      if (response?.checkoutUrl) {
+        rememberPackageCheckoutCustomer({ customerName, customerPhone, customerEmail });
+        window.location.href = response.checkoutUrl;
+        return;
+      }
+
+      safeAlert('Stripe checkout did not return a checkout link.');
+    } catch (error) {
+      if (packagePlanBuyButton instanceof HTMLButtonElement) {
+        packagePlanBuyButton.disabled = false;
+        packagePlanBuyButton.textContent = `Buy ${selectedPackagePlan.priceLabel || 'package'}`;
+      }
+
+      safeAlert(error instanceof Error ? error.message : 'Unable to start package checkout');
+    }
+  };
+
   const renderPublishedPackagePlans = (packagePlans) => {
     if (packagePlansList instanceof HTMLDivElement) {
       packagePlansList.replaceChildren();
@@ -14261,6 +14701,32 @@ const initPublicBooking = () => {
 
     for (const packagePlan of packagePlans) {
       publishedPackagePlansById.set(packagePlan.id, packagePlan);
+
+      if (packagePlansList instanceof HTMLDivElement) {
+        const selectableServices = getSelectableServicesForPackagePlan(packagePlan);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'booking-history-item booking-package-plan-button';
+        button.dataset.packagePlanId = packagePlan.id;
+        button.setAttribute('aria-pressed', 'false');
+        button.disabled = selectableServices.length === 0;
+
+        const title = document.createElement('strong');
+        title.textContent = packagePlan.name || 'Package';
+
+        const meta = document.createElement('p');
+        meta.textContent =
+          `${packagePlan.priceLabel || 'Price on checkout'} | ` +
+          `${packagePlan.totalUses || 0} use${packagePlan.totalUses === 1 ? '' : 's'}` +
+          `${packagePlan.expiresAt ? ` | ${formatPackagePlanExpiryLabel(packagePlan.expiresAt)}` : ''}`;
+
+        button.append(title, meta);
+        packagePlansList.append(button);
+      }
+    }
+
+    if (packagePlansList instanceof HTMLDivElement && packagePlansList.children.length > 0) {
+      packagePlansList.classList.remove('is-hidden');
     }
 
     syncPackagePlanSelectOptions(packagePlans);
@@ -14461,6 +14927,7 @@ const initPublicBooking = () => {
       populateBookingLocations(payload.serviceLocations);
       populateTeamMembers(payload.teamMembers);
       renderTeamMemberCards();
+      restorePackageCheckoutCustomer();
 
       const sortedServices = sortServicesForBooking(payload.services, payload.packagePlans);
 
@@ -14538,6 +15005,15 @@ const initPublicBooking = () => {
       setReviewRating(0);
       await renderPhoneHistory(getBookingCustomerPhoneValue());
       await renderBenefits(getBookingCustomerPhoneValue());
+
+      if (packageCheckoutStatus === 'success') {
+        showPackageToast(
+          'Payment received',
+          'Your package will appear below when Stripe confirms the payment. You can use it on your next eligible booking.'
+        );
+      } else if (packageCheckoutStatus === 'cancelled') {
+        showPackageToast('Checkout cancelled', 'No package was added because payment was not completed.');
+      }
     })
     .catch((error) => {
       safeAlert(error instanceof Error ? error.message : 'Unable to load booking page');
@@ -14690,6 +15166,26 @@ const initPublicBooking = () => {
       }
 
       await selectPublishedPackagePlan(packagePlanSelect.value);
+    });
+  }
+
+  if (packagePlansList instanceof HTMLDivElement) {
+    packagePlansList.addEventListener('click', async (event) => {
+      const button = event.target instanceof Element
+        ? event.target.closest('.booking-package-plan-button')
+        : null;
+
+      if (!(button instanceof HTMLButtonElement) || !button.dataset.packagePlanId) {
+        return;
+      }
+
+      await selectPublishedPackagePlan(button.dataset.packagePlanId);
+    });
+  }
+
+  if (packagePlanBuyButton instanceof HTMLButtonElement) {
+    packagePlanBuyButton.addEventListener('click', () => {
+      void createPublicPackageCheckout();
     });
   }
 
@@ -15545,12 +16041,10 @@ const initPricingPage = () => {
   let selectedPlan = null;
   let billingOverview = null;
   const upgradeReason = window.sessionStorage.getItem('qr-platform-upgrade-reason') || '';
+  const pricingSearchParams = new URLSearchParams(window.location.search);
+  const subscriptionCheckoutStatus = pricingSearchParams.get('subscriptionCheckout');
+  const checkoutSessionId = pricingSearchParams.get('session_id');
   window.sessionStorage.removeItem('qr-platform-upgrade-reason');
-
-  const getCheckoutInputValue = (selector) => {
-    const element = pricingCheckout.querySelector(selector);
-    return element instanceof HTMLInputElement ? element.value : '';
-  };
 
   const renderStatus = () => {
     const currentPlan = billingOverview?.currentPlan;
@@ -15561,7 +16055,7 @@ const initPricingPage = () => {
       pricingStatus.innerHTML = `
         <p class="pricing-label">Subscription setup</p>
         <h1>Choose a plan for your business workspace</h1>
-        <p>Sign up first, then come back here to attach demo card details and activate a plan.</p>
+        <p>Sign up first, then come back here to activate a plan with secure Stripe Checkout.</p>
       `;
       return;
     }
@@ -15570,7 +16064,13 @@ const initPricingPage = () => {
       <p class="pricing-label">Subscription setup</p>
       <h1>${currentPlan ? `Using ${escapeHtml(currentPlan.name)}` : 'No plan selected'}</h1>
       <p>${
-        upgradeReason
+        subscriptionCheckoutStatus === 'success'
+          ? currentPlan
+            ? `${escapeHtml(currentPlan.name)} is active. Appointment credits: ${credits.remaining} of ${credits.granted} remaining.`
+            : 'Payment was received. Your plan will appear here as soon as Stripe confirms the webhook.'
+          : subscriptionCheckoutStatus === 'cancelled'
+            ? 'Checkout was cancelled. Choose a plan below when you are ready.'
+            : upgradeReason
           ? escapeHtml(upgradeReason)
           : currentPlan
             ? `Status: ${escapeHtml(subscription?.status ?? 'active')}. Appointment credits: ${credits.remaining} of ${credits.granted} remaining. Select another plan below to add more credits.`
@@ -15588,39 +16088,15 @@ const initPricingPage = () => {
 
     pricingCheckout.classList.remove('is-hidden');
     pricingCheckout.innerHTML = `
-      <h2>Demo checkout for ${escapeHtml(selectedPlan.name)}</h2>
+      <h2>Checkout for ${escapeHtml(selectedPlan.name)}</h2>
       <p>
-        Use any test card number, for example 4242 4242 4242 4242. This demo stores only
-        brand, last four digits, holder name, and expiry.
+        You will be redirected to Stripe to enter payment details securely. We never store full card
+        numbers or CVC values on this system.
       </p>
       <form class="pricing-checkout-form" id="pricing-checkout-form">
-        <label class="is-wide">
-          <span>Cardholder name</span>
-          <input id="pricing-cardholder-name" type="text" value="" required />
-        </label>
-        <label class="is-wide">
-          <span>Card number</span>
-          <input id="pricing-card-number" type="text" inputmode="numeric" placeholder="4242 4242 4242 4242" required />
-        </label>
-        <label>
-          <span>Expiry month</span>
-          <input id="pricing-exp-month" type="number" min="1" max="12" value="12" required />
-        </label>
-        <label>
-          <span>Expiry year</span>
-          <input id="pricing-exp-year" type="number" min="2026" max="2100" value="2030" required />
-        </label>
-        <label>
-          <span>CVC</span>
-          <input id="pricing-cvc" type="password" inputmode="numeric" maxlength="4" placeholder="123" required />
-        </label>
-        <label>
-          <span>Billing email</span>
-          <input id="pricing-billing-email" type="email" placeholder="owner@example.com" />
-        </label>
         <div class="pricing-checkout-actions">
-          <button class="pricing-cta" type="submit">Activate demo plan</button>
-          <span class="pricing-note">No real payment is processed.</span>
+          <button class="pricing-cta" type="submit">Continue to Stripe</button>
+          <span class="pricing-note">${escapeHtml(formatSubscriptionPlanPrice(selectedPlan))} per ${escapeHtml(selectedPlan.billingInterval)}.</span>
         </div>
       </form>
     `;
@@ -15643,45 +16119,33 @@ const initPricingPage = () => {
 
       if (submitButton instanceof HTMLButtonElement) {
         submitButton.disabled = true;
-        submitButton.textContent = 'Activating...';
+        submitButton.textContent = 'Opening Stripe...';
       }
 
       try {
         const payload = await apiRequest(
-          `/api/platform/clients/${encodeURIComponent(clientId)}/billing/demo-checkout`,
+          `/api/platform/clients/${encodeURIComponent(clientId)}/billing/checkout`,
           {
             method: 'POST',
             body: JSON.stringify({
-              planId: selectedPlan.id,
-              cardholderName: getCheckoutInputValue('#pricing-cardholder-name'),
-              cardNumber: getCheckoutInputValue('#pricing-card-number'),
-              expMonth: getCheckoutInputValue('#pricing-exp-month'),
-              expYear: getCheckoutInputValue('#pricing-exp-year'),
-              cvc: getCheckoutInputValue('#pricing-cvc'),
-              billingEmail: getCheckoutInputValue('#pricing-billing-email')
+              planId: selectedPlan.id
             })
           }
         );
 
-        billingOverview = payload.overview;
-        selectedPlan = null;
-        renderStatus();
-        renderPlans();
-        pricingCheckout.classList.remove('is-hidden');
-        pricingCheckout.innerHTML = `
-          <h2>Plan activated</h2>
-          <p>${escapeHtml(payload.overview.currentPlan?.name ?? 'Selected plan')} is now active for this demo workspace. Invoice ${escapeHtml(payload.invoice.id.slice(0, 8))} was stored.</p>
-          <div class="pricing-checkout-actions">
-            <a class="pricing-cta" href="${escapeHtml(buildPathWithClientId('/calendar', clientId))}">Return to dashboard</a>
-          </div>
-        `;
+        if (payload?.checkoutUrl) {
+          window.location.href = payload.checkoutUrl;
+          return;
+        }
+
+        safeAlert('Stripe checkout did not return a checkout link.');
       } catch (error) {
         if (submitButton instanceof HTMLButtonElement) {
           submitButton.disabled = false;
-          submitButton.textContent = 'Activate demo plan';
+          submitButton.textContent = 'Continue to Stripe';
         }
 
-        safeAlert(error instanceof Error ? error.message : 'Unable to activate plan');
+        safeAlert(error instanceof Error ? error.message : 'Unable to start Stripe checkout');
       }
     });
 
@@ -15752,12 +16216,25 @@ const initPricingPage = () => {
     pricingGrid.replaceChildren(...cards);
   };
 
-  Promise.all([
+  const recoverCompletedCheckout = async () => {
+    if (subscriptionCheckoutStatus !== 'success' || !clientId || !checkoutSessionId) {
+      return;
+    }
+
+    await apiRequest(`/api/platform/clients/${encodeURIComponent(clientId)}/billing/checkout/confirm`, {
+      method: 'POST',
+      body: JSON.stringify({ checkoutSessionId })
+    });
+    window.location.replace(buildPathWithClientId('/calendar', clientId));
+  };
+
+  recoverCompletedCheckout()
+    .then(() => Promise.all([
     apiRequest('/api/billing/subscription-plans'),
     clientId
       ? apiRequest(`/api/platform/clients/${encodeURIComponent(clientId)}/billing`).catch(() => null)
       : Promise.resolve(null)
-  ])
+    ]))
     .then(([plansPayload, overviewPayload]) => {
       plans = Array.isArray(plansPayload?.plans) ? plansPayload.plans : [];
       billingOverview = overviewPayload;

@@ -131,6 +131,21 @@ clientPlatformRouter.put(
   asyncHandler(clientPlatformController.updateLoyaltyProgram)
 );
 clientPlatformRouter.post(
+  '/platform/clients/:clientId/stripe-connect/onboarding',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.createStripeConnectOnboarding)
+);
+clientPlatformRouter.get(
+  '/platform/clients/:clientId/stripe-connect/status',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.getStripeConnectStatus)
+);
+clientPlatformRouter.post(
+  '/platform/clients/:clientId/package-sales/checkout',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.createPackageCheckout)
+);
+clientPlatformRouter.post(
   '/platform/clients/:clientId/package-sales',
   asyncHandler(requirePlatformAdminAccess),
   asyncHandler(clientPlatformController.sellPackage)

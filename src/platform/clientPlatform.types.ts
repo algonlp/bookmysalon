@@ -49,6 +49,19 @@ export interface BusinessSettingsRecord {
   reportMetadata: ReportMetadataRecord;
 }
 
+export interface StripeConnectAccountRecord {
+  accountId: string;
+  chargesEnabled: boolean;
+  payoutsEnabled: boolean;
+  detailsSubmitted: boolean;
+  requirementsDue: string[];
+  disabledReason?: string;
+  country?: string;
+  defaultCurrency?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface TeamMemberRecord {
   id: string;
   name: string;
@@ -98,6 +111,8 @@ export interface PackagePlanRecord {
   includedServiceIds: string[];
   totalUses: number;
   priceLabel: string;
+  amountCents?: number;
+  currencyCode?: string;
   expiresAt?: string;
   isActive: boolean;
   createdAt: string;
@@ -150,6 +165,7 @@ export interface ClientRecord {
   productSales: ProductSaleRecord[];
   packagePlans: PackagePlanRecord[];
   loyaltyProgram: LoyaltyProgramRecord | null;
+  stripeConnectAccount?: StripeConnectAccountRecord;
   businessSettings: BusinessSettingsRecord;
   customerProfiles: CustomerProfileRecord[];
   teamMembers: TeamMemberRecord[];
@@ -301,6 +317,8 @@ export interface CreatePackagePlanInput {
   includedServiceIds?: string[];
   totalUses: number;
   priceLabel: string;
+  amountCents?: number;
+  currencyCode?: string;
   expiresAt?: string;
 }
 
@@ -309,6 +327,8 @@ export interface UpdatePackagePlanInput {
   includedServiceIds?: string[];
   totalUses: number;
   priceLabel: string;
+  amountCents?: number;
+  currencyCode?: string;
   expiresAt?: string;
 }
 
@@ -446,8 +466,15 @@ export interface DashboardReportsView {
 export interface DashboardAppointmentViewModel {
   id: string;
   customerName: string;
+  customerPhone: string;
+  customerEmail: string;
   serviceName: string;
   teamMemberName?: string;
+  serviceLocation?: ServiceLocation;
+  customerAddress?: string;
+  servicePriceLabel?: string;
+  packageName?: string;
+  loyaltyRewardLabel?: string;
   appointmentDate: string;
   appointmentTime: string;
   status: 'booked' | 'cancelled' | 'completed';

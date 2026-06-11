@@ -2395,7 +2395,25 @@
           "pageSubtitle": "Access all of your business reports in one workspace."
         }
       },
-      "customerProfiles": [],
+      "customerProfiles": [
+        {
+          "id": "phone:+923337167515",
+          "customerName": "algonlp",
+          "customerPhone": "+923337167515",
+          "customerEmail": "infoalgonlp@gmail.com",
+          "totalVisits": 1,
+          "bookedVisits": 0,
+          "completedVisits": 1,
+          "cancelledVisits": 0,
+          "lastService": "Cut and style",
+          "lastAppointmentDate": "2026-05-19",
+          "lastAppointmentTime": "10:00",
+          "firstSeenAt": "2026-05-18T05:15:26.513Z",
+          "lastSeenAt": "2026-06-11T06:27:26.088Z",
+          "createdAt": "2026-05-18T05:15:26.513Z",
+          "updatedAt": "2026-06-11T06:27:26.088Z"
+        }
+      ],
       "teamMembers": [],
       "accountType": "independent",
       "serviceLocation": [
@@ -2405,7 +2423,8 @@
       "preferredLanguage": "english",
       "onboardingCompleted": true,
       "createdAt": "2026-05-06T06:35:28.620Z",
-      "updatedAt": "2026-05-06T06:36:13.107Z"
+      "updatedAt": "2026-06-11T06:27:26.114Z",
+      "galleryImageUrls": []
     },
     {
       "id": "beaab5fd-04fd-42e5-b11f-2aebe20c5ba0",
@@ -10510,6 +10529,1577 @@
       "onboardingCompleted": true,
       "createdAt": "2026-05-18T07:45:00.000Z",
       "updatedAt": "2026-05-18T07:45:00.000Z"
+    },
+    {
+      "id": "c0311c5f-6d6d-4e6d-911c-8ec717bd96da",
+      "adminToken": "1eb1b55f-cdcb-4ea5-a644-465211fe7f08",
+      "email": "opp@gmail.com",
+      "mobileNumber": "",
+      "businessPhoneNumber": "",
+      "provider": "email",
+      "businessName": "mk salon",
+      "website": "",
+      "profileImageUrl": "",
+      "galleryImageUrls": [],
+      "serviceTypes": [
+        "Hair salon",
+        "Nails",
+        "Eyebrows & lashes",
+        "Beauty salon",
+        "Medspa",
+        "Barber",
+        "Massage",
+        "Spa & sauna",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "$2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "$1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        },
+        {
+          "id": "nails-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "$1,600",
+          "description": "Nail shaping, cuticle care, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "nails-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Nails",
+          "priceLabel": "$2,100",
+          "description": "Foot soak, nail care, exfoliation, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$900",
+          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-lash-lift",
+          "name": "Lash lift",
+          "durationMinutes": 45,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$1,800",
+          "description": "Lift and curl natural lashes for a brighter eye look.",
+          "isActive": true
+        },
+        {
+          "id": "beauty-salon-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "$2,700",
+          "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
+          "isActive": true
+        },
+        {
+          "id": "medspa-skin-consultation",
+          "name": "Skin consultation",
+          "durationMinutes": 45,
+          "categoryName": "Medspa",
+          "priceLabel": "$2,400",
+          "description": "Professional consultation to recommend the right skin treatments.",
+          "isActive": true
+        },
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "$1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "$800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        },
+        {
+          "id": "massage-deep-tissue-massage",
+          "name": "Deep tissue massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$3,200",
+          "description": "Targeted pressure massage designed for muscle recovery.",
+          "isActive": true
+        },
+        {
+          "id": "massage-relaxation-massage",
+          "name": "Relaxation massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$2,900",
+          "description": "Full-body relaxation massage to reduce stress and tension.",
+          "isActive": true
+        },
+        {
+          "id": "spa-sauna-spa-session",
+          "name": "Spa session",
+          "durationMinutes": 60,
+          "categoryName": "Spa & sauna",
+          "priceLabel": "$3,500",
+          "description": "Unwind with a restorative spa session in a calm setting.",
+          "isActive": true
+        },
+        {
+          "id": "waxing-salon-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "$1,700",
+          "description": "Full arm waxing service for a smooth, polished result.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "USD",
+        "currencyLocale": "en-US",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "faisalabad",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-06-02T08:55:03.086Z",
+      "updatedAt": "2026-06-02T08:55:50.091Z"
+    },
+    {
+      "id": "a3ce2dd5-82a8-4ac9-91cd-6f7ec79eedb9",
+      "adminToken": "07a2b387-0e91-40f2-9ab4-644cd0d6ac0f",
+      "email": "opk@gmail.com",
+      "mobileNumber": "",
+      "businessPhoneNumber": "",
+      "provider": "email",
+      "businessName": "xyz",
+      "website": "",
+      "profileImageUrl": "",
+      "galleryImageUrls": [],
+      "serviceTypes": [
+        "Hair salon",
+        "Nails",
+        "Eyebrows & lashes",
+        "Beauty salon",
+        "Medspa",
+        "Barber",
+        "Massage",
+        "Spa & sauna",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "$2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "$1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        },
+        {
+          "id": "nails-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "$1,600",
+          "description": "Nail shaping, cuticle care, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "nails-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Nails",
+          "priceLabel": "$2,100",
+          "description": "Foot soak, nail care, exfoliation, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$900",
+          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-lash-lift",
+          "name": "Lash lift",
+          "durationMinutes": 45,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$1,800",
+          "description": "Lift and curl natural lashes for a brighter eye look.",
+          "isActive": true
+        },
+        {
+          "id": "beauty-salon-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "$2,700",
+          "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
+          "isActive": true
+        },
+        {
+          "id": "medspa-skin-consultation",
+          "name": "Skin consultation",
+          "durationMinutes": 45,
+          "categoryName": "Medspa",
+          "priceLabel": "$2,400",
+          "description": "Professional consultation to recommend the right skin treatments.",
+          "isActive": true
+        },
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "$1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "$800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        },
+        {
+          "id": "massage-deep-tissue-massage",
+          "name": "Deep tissue massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$3,200",
+          "description": "Targeted pressure massage designed for muscle recovery.",
+          "isActive": true
+        },
+        {
+          "id": "massage-relaxation-massage",
+          "name": "Relaxation massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$2,900",
+          "description": "Full-body relaxation massage to reduce stress and tension.",
+          "isActive": true
+        },
+        {
+          "id": "spa-sauna-spa-session",
+          "name": "Spa session",
+          "durationMinutes": 60,
+          "categoryName": "Spa & sauna",
+          "priceLabel": "$3,500",
+          "description": "Unwind with a restorative spa session in a calm setting.",
+          "isActive": true
+        },
+        {
+          "id": "waxing-salon-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "$1,700",
+          "description": "Full arm waxing service for a smooth, polished result.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "USD",
+        "currencyLocale": "en-US",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "faisalabad",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-06-02T09:31:29.756Z",
+      "updatedAt": "2026-06-02T09:32:36.180Z"
+    },
+    {
+      "id": "3227be25-a4ef-410e-88bc-de4c8c7ae72b",
+      "adminToken": "61d4ab1e-e22c-4682-85cc-f56aa6051521",
+      "email": "ok@gmail.com",
+      "mobileNumber": "",
+      "businessPhoneNumber": "",
+      "provider": "email",
+      "businessName": "aaa",
+      "website": "",
+      "profileImageUrl": "",
+      "galleryImageUrls": [],
+      "serviceTypes": [
+        "Hair salon",
+        "Nails",
+        "Eyebrows & lashes",
+        "Beauty salon",
+        "Medspa",
+        "Barber",
+        "Massage",
+        "Spa & sauna",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "$2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "$1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        },
+        {
+          "id": "nails-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "$1,600",
+          "description": "Nail shaping, cuticle care, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "nails-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Nails",
+          "priceLabel": "$2,100",
+          "description": "Foot soak, nail care, exfoliation, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$900",
+          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-lash-lift",
+          "name": "Lash lift",
+          "durationMinutes": 45,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$1,800",
+          "description": "Lift and curl natural lashes for a brighter eye look.",
+          "isActive": true
+        },
+        {
+          "id": "beauty-salon-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "$2,700",
+          "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
+          "isActive": true
+        },
+        {
+          "id": "medspa-skin-consultation",
+          "name": "Skin consultation",
+          "durationMinutes": 45,
+          "categoryName": "Medspa",
+          "priceLabel": "$2,400",
+          "description": "Professional consultation to recommend the right skin treatments.",
+          "isActive": true
+        },
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "$1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "$800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        },
+        {
+          "id": "massage-deep-tissue-massage",
+          "name": "Deep tissue massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$3,200",
+          "description": "Targeted pressure massage designed for muscle recovery.",
+          "isActive": true
+        },
+        {
+          "id": "massage-relaxation-massage",
+          "name": "Relaxation massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$2,900",
+          "description": "Full-body relaxation massage to reduce stress and tension.",
+          "isActive": true
+        },
+        {
+          "id": "spa-sauna-spa-session",
+          "name": "Spa session",
+          "durationMinutes": 60,
+          "categoryName": "Spa & sauna",
+          "priceLabel": "$3,500",
+          "description": "Unwind with a restorative spa session in a calm setting.",
+          "isActive": true
+        },
+        {
+          "id": "waxing-salon-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "$1,700",
+          "description": "Full arm waxing service for a smooth, polished result.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "USD",
+        "currencyLocale": "en-US",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "lahore",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-06-02T09:47:21.489Z",
+      "updatedAt": "2026-06-02T09:48:09.471Z"
+    },
+    {
+      "id": "23ba1c75-3a90-4f93-95e2-e9ccdb4f6426",
+      "adminToken": "be52414c-7e5d-4050-a9a0-54f11c58d3bb",
+      "email": "npl@gmail.com",
+      "mobileNumber": "",
+      "businessPhoneNumber": "",
+      "provider": "email",
+      "businessName": "mk",
+      "website": "",
+      "profileImageUrl": "",
+      "galleryImageUrls": [],
+      "serviceTypes": [
+        "Hair salon",
+        "Nails",
+        "Eyebrows & lashes",
+        "Beauty salon",
+        "Medspa",
+        "Barber",
+        "Massage",
+        "Spa & sauna",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "$2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "$1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        },
+        {
+          "id": "nails-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "$1,600",
+          "description": "Nail shaping, cuticle care, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "nails-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Nails",
+          "priceLabel": "$2,100",
+          "description": "Foot soak, nail care, exfoliation, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$900",
+          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-lash-lift",
+          "name": "Lash lift",
+          "durationMinutes": 45,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$1,800",
+          "description": "Lift and curl natural lashes for a brighter eye look.",
+          "isActive": true
+        },
+        {
+          "id": "beauty-salon-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "$2,700",
+          "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
+          "isActive": true
+        },
+        {
+          "id": "medspa-skin-consultation",
+          "name": "Skin consultation",
+          "durationMinutes": 45,
+          "categoryName": "Medspa",
+          "priceLabel": "$2,400",
+          "description": "Professional consultation to recommend the right skin treatments.",
+          "isActive": true
+        },
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "$1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "$800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        },
+        {
+          "id": "massage-deep-tissue-massage",
+          "name": "Deep tissue massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$3,200",
+          "description": "Targeted pressure massage designed for muscle recovery.",
+          "isActive": true
+        },
+        {
+          "id": "massage-relaxation-massage",
+          "name": "Relaxation massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$2,900",
+          "description": "Full-body relaxation massage to reduce stress and tension.",
+          "isActive": true
+        },
+        {
+          "id": "spa-sauna-spa-session",
+          "name": "Spa session",
+          "durationMinutes": 60,
+          "categoryName": "Spa & sauna",
+          "priceLabel": "$3,500",
+          "description": "Unwind with a restorative spa session in a calm setting.",
+          "isActive": true
+        },
+        {
+          "id": "waxing-salon-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "$1,700",
+          "description": "Full arm waxing service for a smooth, polished result.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "USD",
+        "currencyLocale": "en-US",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": "independent",
+      "serviceLocation": [
+        "mobile"
+      ],
+      "venueAddress": "karcii",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-06-03T05:29:35.745Z",
+      "updatedAt": "2026-06-03T05:30:12.362Z"
+    },
+    {
+      "id": "a6a2a0e6-e3ad-45ec-8382-2a15dbfadd5b",
+      "adminToken": "db1838db-a279-41e2-8d19-6faf77174dbf",
+      "email": "nlp@gmail.com",
+      "mobileNumber": "",
+      "businessPhoneNumber": "",
+      "provider": "email",
+      "businessName": "xyz",
+      "website": "",
+      "profileImageUrl": "",
+      "galleryImageUrls": [],
+      "serviceTypes": [
+        "Hair salon",
+        "Nails",
+        "Eyebrows & lashes",
+        "Beauty salon",
+        "Medspa",
+        "Barber",
+        "Massage",
+        "Spa & sauna",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "$2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "$1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        },
+        {
+          "id": "nails-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "$1,600",
+          "description": "Nail shaping, cuticle care, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "nails-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Nails",
+          "priceLabel": "$2,100",
+          "description": "Foot soak, nail care, exfoliation, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$900",
+          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-lash-lift",
+          "name": "Lash lift",
+          "durationMinutes": 45,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$1,800",
+          "description": "Lift and curl natural lashes for a brighter eye look.",
+          "isActive": true
+        },
+        {
+          "id": "beauty-salon-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "$2,700",
+          "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
+          "isActive": true
+        },
+        {
+          "id": "medspa-skin-consultation",
+          "name": "Skin consultation",
+          "durationMinutes": 45,
+          "categoryName": "Medspa",
+          "priceLabel": "$2,400",
+          "description": "Professional consultation to recommend the right skin treatments.",
+          "isActive": true
+        },
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "$1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "$800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        },
+        {
+          "id": "massage-deep-tissue-massage",
+          "name": "Deep tissue massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$3,200",
+          "description": "Targeted pressure massage designed for muscle recovery.",
+          "isActive": true
+        },
+        {
+          "id": "massage-relaxation-massage",
+          "name": "Relaxation massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$2,900",
+          "description": "Full-body relaxation massage to reduce stress and tension.",
+          "isActive": true
+        },
+        {
+          "id": "spa-sauna-spa-session",
+          "name": "Spa session",
+          "durationMinutes": 60,
+          "categoryName": "Spa & sauna",
+          "priceLabel": "$3,500",
+          "description": "Unwind with a restorative spa session in a calm setting.",
+          "isActive": true
+        },
+        {
+          "id": "waxing-salon-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "$1,700",
+          "description": "Full arm waxing service for a smooth, polished result.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "USD",
+        "currencyLocale": "en-US",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [
+        {
+          "id": "phone:+923337167515",
+          "customerName": "sir",
+          "customerPhone": "+923337167515",
+          "customerEmail": "",
+          "totalVisits": 1,
+          "bookedVisits": 0,
+          "completedVisits": 1,
+          "cancelledVisits": 0,
+          "lastService": "Cut and style",
+          "lastAppointmentDate": "2026-06-03",
+          "lastAppointmentTime": "09:00",
+          "firstSeenAt": "2026-06-03T05:33:13.722Z",
+          "lastSeenAt": "2026-06-03T10:00:45.935Z",
+          "createdAt": "2026-06-03T05:33:13.722Z",
+          "updatedAt": "2026-06-03T10:00:45.935Z"
+        }
+      ],
+      "teamMembers": [],
+      "accountType": "team",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "karachi",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-06-03T05:31:33.999Z",
+      "updatedAt": "2026-06-03T10:00:45.950Z"
+    },
+    {
+      "id": "ea78e46e-0f54-4b11-ad06-3fc4e9c45848",
+      "adminToken": "4016d87d-9df4-4a1b-82df-32d98f4294c7",
+      "email": "abcaww@gmail.com",
+      "mobileNumber": "",
+      "businessPhoneNumber": "",
+      "provider": "email",
+      "businessName": "alkks",
+      "website": "",
+      "profileImageUrl": "",
+      "galleryImageUrls": [],
+      "serviceTypes": [
+        "Hair salon",
+        "Nails",
+        "Eyebrows & lashes",
+        "Beauty salon",
+        "Medspa",
+        "Barber",
+        "Massage",
+        "Spa & sauna",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "$2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "$1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        },
+        {
+          "id": "nails-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "$1,600",
+          "description": "Nail shaping, cuticle care, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "nails-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Nails",
+          "priceLabel": "$2,100",
+          "description": "Foot soak, nail care, exfoliation, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$900",
+          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-lash-lift",
+          "name": "Lash lift",
+          "durationMinutes": 45,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$1,800",
+          "description": "Lift and curl natural lashes for a brighter eye look.",
+          "isActive": true
+        },
+        {
+          "id": "beauty-salon-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "$2,700",
+          "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
+          "isActive": true
+        },
+        {
+          "id": "medspa-skin-consultation",
+          "name": "Skin consultation",
+          "durationMinutes": 45,
+          "categoryName": "Medspa",
+          "priceLabel": "$2,400",
+          "description": "Professional consultation to recommend the right skin treatments.",
+          "isActive": true
+        },
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "$1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "$800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        },
+        {
+          "id": "massage-deep-tissue-massage",
+          "name": "Deep tissue massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$3,200",
+          "description": "Targeted pressure massage designed for muscle recovery.",
+          "isActive": true
+        },
+        {
+          "id": "massage-relaxation-massage",
+          "name": "Relaxation massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$2,900",
+          "description": "Full-body relaxation massage to reduce stress and tension.",
+          "isActive": true
+        },
+        {
+          "id": "spa-sauna-spa-session",
+          "name": "Spa session",
+          "durationMinutes": 60,
+          "categoryName": "Spa & sauna",
+          "priceLabel": "$3,500",
+          "description": "Unwind with a restorative spa session in a calm setting.",
+          "isActive": true
+        },
+        {
+          "id": "waxing-salon-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "$1,700",
+          "description": "Full arm waxing service for a smooth, polished result.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "USD",
+        "currencyLocale": "en-US",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "laHORE",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-06-11T06:54:31.203Z",
+      "updatedAt": "2026-06-11T06:55:40.003Z"
+    },
+    {
+      "id": "49857fcb-3083-46d3-b004-880a3e0b7bc8",
+      "adminToken": "6b88f5c0-0814-4e4f-bdce-d44ea9e2fc4f",
+      "email": "redirect-verify-50e1bec2@example.com",
+      "mobileNumber": "",
+      "businessPhoneNumber": "",
+      "provider": "email",
+      "businessName": "",
+      "website": "",
+      "profileImageUrl": "",
+      "galleryImageUrls": [],
+      "serviceTypes": [],
+      "services": [],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "USD",
+        "currencyLocale": "en-US",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": null,
+      "serviceLocation": [],
+      "venueAddress": "",
+      "preferredLanguage": null,
+      "onboardingCompleted": false,
+      "createdAt": "2026-06-11T07:12:04.997Z",
+      "updatedAt": "2026-06-11T07:12:04.997Z"
+    },
+    {
+      "id": "818ddf47-2e11-4d6a-8a50-387347f4c20e",
+      "adminToken": "3cdaabc7-48b8-4322-ab99-b8cf9cf2a8b4",
+      "email": "abc@gmail.com",
+      "mobileNumber": "",
+      "businessPhoneNumber": "",
+      "provider": "email",
+      "businessName": "alhda",
+      "website": "",
+      "profileImageUrl": "",
+      "galleryImageUrls": [],
+      "serviceTypes": [
+        "Hair salon",
+        "Nails",
+        "Eyebrows & lashes",
+        "Beauty salon",
+        "Medspa",
+        "Barber",
+        "Massage",
+        "Spa & sauna",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "$2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "$1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        },
+        {
+          "id": "nails-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "$1,600",
+          "description": "Nail shaping, cuticle care, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "nails-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Nails",
+          "priceLabel": "$2,100",
+          "description": "Foot soak, nail care, exfoliation, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$900",
+          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-lash-lift",
+          "name": "Lash lift",
+          "durationMinutes": 45,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$1,800",
+          "description": "Lift and curl natural lashes for a brighter eye look.",
+          "isActive": true
+        },
+        {
+          "id": "beauty-salon-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "$2,700",
+          "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
+          "isActive": true
+        },
+        {
+          "id": "medspa-skin-consultation",
+          "name": "Skin consultation",
+          "durationMinutes": 45,
+          "categoryName": "Medspa",
+          "priceLabel": "$2,400",
+          "description": "Professional consultation to recommend the right skin treatments.",
+          "isActive": true
+        },
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "$1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "$800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        },
+        {
+          "id": "massage-deep-tissue-massage",
+          "name": "Deep tissue massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$3,200",
+          "description": "Targeted pressure massage designed for muscle recovery.",
+          "isActive": true
+        },
+        {
+          "id": "massage-relaxation-massage",
+          "name": "Relaxation massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$2,900",
+          "description": "Full-body relaxation massage to reduce stress and tension.",
+          "isActive": true
+        },
+        {
+          "id": "spa-sauna-spa-session",
+          "name": "Spa session",
+          "durationMinutes": 60,
+          "categoryName": "Spa & sauna",
+          "priceLabel": "$3,500",
+          "description": "Unwind with a restorative spa session in a calm setting.",
+          "isActive": true
+        },
+        {
+          "id": "waxing-salon-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "$1,700",
+          "description": "Full arm waxing service for a smooth, polished result.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "USD",
+        "currencyLocale": "en-US",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "FSD, Lützner Straße, Grünau-Nord, West, Leipzig, Saxony, 04205, Germany",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-06-11T07:22:00.673Z",
+      "updatedAt": "2026-06-11T07:22:56.571Z"
+    },
+    {
+      "id": "d22826d9-81e6-48c3-b574-4404b12d1087",
+      "adminToken": "95938191-1147-4be2-b344-6ab97ec55c7b",
+      "email": "mkp@gmail.com",
+      "mobileNumber": "",
+      "businessPhoneNumber": "",
+      "provider": "email",
+      "businessName": "",
+      "website": "",
+      "profileImageUrl": "",
+      "galleryImageUrls": [],
+      "serviceTypes": [],
+      "services": [],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "USD",
+        "currencyLocale": "en-US",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": null,
+      "serviceLocation": [],
+      "venueAddress": "",
+      "preferredLanguage": null,
+      "onboardingCompleted": false,
+      "createdAt": "2026-06-11T07:41:56.159Z",
+      "updatedAt": "2026-06-11T07:41:56.159Z"
+    },
+    {
+      "id": "a6d78f74-9993-41cd-afe5-d7741d7143f5",
+      "adminToken": "ff24fdfc-6605-44c0-9b7c-480348604d68",
+      "email": "maq@gmail.com",
+      "mobileNumber": "",
+      "businessPhoneNumber": "",
+      "provider": "email",
+      "businessName": "sdfghjkl",
+      "website": "",
+      "profileImageUrl": "",
+      "galleryImageUrls": [],
+      "serviceTypes": [
+        "Nails",
+        "Eyebrows & lashes",
+        "Beauty salon",
+        "Medspa",
+        "Barber",
+        "Massage",
+        "Spa & sauna",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "nails-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "$1,600",
+          "description": "Nail shaping, cuticle care, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "nails-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Nails",
+          "priceLabel": "$2,100",
+          "description": "Foot soak, nail care, exfoliation, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$900",
+          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-lash-lift",
+          "name": "Lash lift",
+          "durationMinutes": 45,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$1,800",
+          "description": "Lift and curl natural lashes for a brighter eye look.",
+          "isActive": true
+        },
+        {
+          "id": "beauty-salon-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "$2,700",
+          "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
+          "isActive": true
+        },
+        {
+          "id": "medspa-skin-consultation",
+          "name": "Skin consultation",
+          "durationMinutes": 45,
+          "categoryName": "Medspa",
+          "priceLabel": "$2,400",
+          "description": "Professional consultation to recommend the right skin treatments.",
+          "isActive": true
+        },
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "$1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "$800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        },
+        {
+          "id": "massage-deep-tissue-massage",
+          "name": "Deep tissue massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$3,200",
+          "description": "Targeted pressure massage designed for muscle recovery.",
+          "isActive": true
+        },
+        {
+          "id": "massage-relaxation-massage",
+          "name": "Relaxation massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$2,900",
+          "description": "Full-body relaxation massage to reduce stress and tension.",
+          "isActive": true
+        },
+        {
+          "id": "spa-sauna-spa-session",
+          "name": "Spa session",
+          "durationMinutes": 60,
+          "categoryName": "Spa & sauna",
+          "priceLabel": "$3,500",
+          "description": "Unwind with a restorative spa session in a calm setting.",
+          "isActive": true
+        },
+        {
+          "id": "waxing-salon-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "$1,700",
+          "description": "Full arm waxing service for a smooth, polished result.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "USD",
+        "currencyLocale": "en-US",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": "independent",
+      "serviceLocation": [
+        "physical"
+      ],
+      "venueAddress": "Lahore, Lahore City Tehsil, Lahore District, Lahore Division, Punjab, 54100, Pakistan",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-06-11T07:50:39.800Z",
+      "updatedAt": "2026-06-11T07:51:15.549Z"
     }
   ]
 }

@@ -10,12 +10,15 @@ import type {
   BillingOverview,
   BusinessSubscription,
   BusinessSubscriptionStatus,
+  CreateSubscriptionCheckoutInput,
   DemoBillingCard,
   DemoCheckoutInput,
   SubscriptionPlan
 } from './billing.types';
 import { clientPlatformRepository } from '../platform/clientPlatform.repository';
 import { HttpError } from '../shared/errors/httpError';
+import { stripePaymentService } from '../payments/stripePayment.service';
+import { env } from '../config/env';
 
 const activeSubscriptionStatuses: BusinessSubscriptionStatus[] = ['active', 'trialing'];
 const appointmentCreditsFinishedMessage =
@@ -323,6 +326,209 @@ export const billingService = {
       subscription,
       invoice,
       overview: await billingService.getBillingOverview(businessId)
+    };
+  },
+
+  async createStripeSubscriptionCheckout(
+    businessId: string,
+    input: CreateSubscriptionCheckoutInput,
+    origin: string
+  ): Promise<{ checkoutUrl: string; checkoutSessionId: string }> {
+    await getBusinessOrThrow(businessId);
+    const plans = await listNormalizedSubscriptionPlans();
+    const plan = plans.find((entry) => entry.id === input.planId);
+
+    if (!plan) {
+      throw new HttpError(404, 'Subscription plan was not found');
+    }
+
+    if (!env.STRIPE_SECRET_KEY) {
+      throw new HttpError(503, 'Stripe is not configured');
+    }
+
+    const checkoutSession = await stripePaymentService.createSubscriptionCheckoutSession({
+      businessId,
+      plan,
+      successUrl: `${origin}/api/billing/stripe-return?session_id={CHECKOUT_SESSION_ID}`,
+      cancelUrl: `${origin}/calendar?clientId=${encodeURIComponent(businessId)}&subscriptionCheckout=cancelled`
+    });
+
+    if (!checkoutSession.url) {
+      throw new HttpError(502, 'Stripe checkout session did not return a checkout URL');
+    }
+
+    return {
+      checkoutUrl: checkoutSession.url,
+      checkoutSessionId: checkoutSession.id
+    };
+  },
+
+  async confirmStripeSubscriptionCheckout(
+    businessId: string,
+    checkoutSessionId: string
+  ): Promise<{ subscription: BusinessSubscription; invoice: BillingInvoice; overview: BillingOverview }> {
+    await getBusinessOrThrow(businessId);
+    const session = await stripePaymentService.retrieveCheckoutSession(checkoutSessionId);
+    const subscriptionId =
+      typeof session.subscription === 'string' ? session.subscription : session.subscription?.id;
+    const customerId =
+      typeof session.customer === 'string' ? session.customer : session.customer?.id;
+
+    if (
+      session.status !== 'complete' ||
+      session.payment_status !== 'paid' ||
+      session.metadata?.kind !== 'subscription_checkout' ||
+      session.metadata.businessId !== businessId ||
+      !session.metadata.planId ||
+      !subscriptionId
+    ) {
+      throw new HttpError(409, 'Stripe subscription checkout is not complete');
+    }
+
+    return billingService.activateStripeSubscriptionCheckout({
+      businessId,
+      planId: session.metadata.planId,
+      providerCustomerId: customerId,
+      providerSubscriptionId: subscriptionId
+    });
+  },
+
+  async confirmStripeSubscriptionReturn(
+    checkoutSessionId: string
+  ): Promise<{
+    businessId: string;
+    subscription: BusinessSubscription;
+    invoice: BillingInvoice;
+    overview: BillingOverview;
+  }> {
+    const session = await stripePaymentService.retrieveCheckoutSession(checkoutSessionId);
+    const businessId = session.metadata?.businessId;
+
+    if (!businessId) {
+      throw new HttpError(409, 'Stripe subscription checkout has no business');
+    }
+
+    return {
+      businessId,
+      ...(await billingService.confirmStripeSubscriptionCheckout(businessId, checkoutSessionId))
+    };
+  },
+
+  async activateStripeSubscriptionCheckout(input: {
+    businessId: string;
+    planId: string;
+    providerCustomerId?: string;
+    providerSubscriptionId?: string;
+  }): Promise<{ subscription: BusinessSubscription; invoice: BillingInvoice; overview: BillingOverview }> {
+    await getBusinessOrThrow(input.businessId);
+    const plans = await listNormalizedSubscriptionPlans();
+    const plan = plans.find((entry) => entry.id === input.planId);
+
+    if (!plan) {
+      throw new HttpError(404, 'Subscription plan was not found');
+    }
+
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const periodEnd = addMonths(now, plan.billingInterval === 'year' ? 12 : 1).toISOString();
+    const trialEndsAt =
+      plan.trialDays > 0
+        ? new Date(now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000).toISOString()
+        : undefined;
+    const existingSubscriptions = (await billingRepository.listBusinessSubscriptions()).filter(
+      (subscription) =>
+        subscription.businessId === input.businessId &&
+        activeSubscriptionStatuses.includes(subscription.status)
+    );
+    const existingCreditRemainder = existingSubscriptions.reduce((sum, subscription) => {
+      const subscriptionPlan = plans.find((entry) => entry.id === subscription.planId);
+      return sum + hydrateSubscriptionCredits(subscription, subscriptionPlan).appointmentCreditsRemaining;
+    }, 0);
+    const includedCredits = getPlanIncludedCredits(plan);
+    const appointmentCreditsGranted = existingCreditRemainder + includedCredits;
+
+    const duplicateSubscription = (await billingRepository.listBusinessSubscriptions()).find(
+      (subscription) =>
+        subscription.provider === 'stripe' &&
+        subscription.providerSubscriptionId === input.providerSubscriptionId
+    );
+
+    if (duplicateSubscription) {
+      const invoice =
+        (await billingRepository.listBillingInvoices()).find(
+          (entry) => entry.subscriptionId === duplicateSubscription.id
+        ) ?? {
+          id: randomUUID(),
+          businessId: input.businessId,
+          subscriptionId: duplicateSubscription.id,
+          planId: plan.id,
+          amountCents: plan.amountCents,
+          currencyCode: plan.currencyCode,
+          status: 'paid',
+          periodStart: duplicateSubscription.currentPeriodStart,
+          periodEnd: duplicateSubscription.currentPeriodEnd,
+          paidAt: duplicateSubscription.createdAt,
+          createdAt: duplicateSubscription.createdAt,
+          updatedAt: duplicateSubscription.updatedAt
+        };
+
+      return {
+        subscription: duplicateSubscription,
+        invoice,
+        overview: await billingService.getBillingOverview(input.businessId)
+      };
+    }
+
+    const subscription: BusinessSubscription = {
+      id: randomUUID(),
+      businessId: input.businessId,
+      planId: plan.id,
+      status: plan.trialDays > 0 ? 'trialing' : 'active',
+      provider: 'stripe',
+      providerCustomerId: input.providerCustomerId ?? '',
+      providerSubscriptionId: input.providerSubscriptionId ?? '',
+      appointmentCreditsGranted,
+      appointmentCreditsRemaining: appointmentCreditsGranted,
+      appointmentCreditsUsed: 0,
+      currentPeriodStart: nowIso,
+      currentPeriodEnd: periodEnd,
+      trialEndsAt,
+      createdAt: nowIso,
+      updatedAt: nowIso
+    };
+
+    const invoice: BillingInvoice = {
+      id: randomUUID(),
+      businessId: input.businessId,
+      subscriptionId: subscription.id,
+      planId: plan.id,
+      amountCents: plan.amountCents,
+      currencyCode: plan.currencyCode,
+      status: 'paid',
+      periodStart: nowIso,
+      periodEnd,
+      paidAt: nowIso,
+      createdAt: nowIso,
+      updatedAt: nowIso
+    };
+
+    await Promise.all(
+      existingSubscriptions.map((existingSubscription) =>
+        billingRepository.saveBusinessSubscription({
+          ...existingSubscription,
+          status: 'cancelled',
+          cancelledAt: nowIso,
+          updatedAt: nowIso
+        })
+      )
+    );
+    await billingRepository.saveBusinessSubscription(subscription);
+    await billingRepository.saveBillingInvoice(invoice);
+
+    return {
+      subscription,
+      invoice,
+      overview: await billingService.getBillingOverview(input.businessId)
     };
   },
 

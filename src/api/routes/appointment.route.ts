@@ -34,6 +34,10 @@ appointmentRouter.post(
   asyncHandler(appointmentController.createAppointment)
 );
 appointmentRouter.post(
+  '/public/book/:clientId/package-sales/checkout',
+  asyncHandler(appointmentController.createPublicPackageCheckout)
+);
+appointmentRouter.post(
   '/public/book/:clientId/waitlist',
   asyncHandler(appointmentController.createWaitlistEntry)
 );

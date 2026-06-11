@@ -21,6 +21,7 @@ import { preferredLanguageValues } from './clientPlatform.types';
 import type { AppointmentRecord } from '../appointments/appointment.types';
 import { normalizeBusinessServices, syncBusinessServicesWithTypes } from './businessServices';
 import { formatInTimeZone } from '../shared/time';
+import { stripePaymentService } from '../payments/stripePayment.service';
 import type {
   AccountTypeInput,
   AuthenticateGoogleClientInput,
@@ -50,6 +51,7 @@ import type {
   ServiceLocationInput,
   SellProductInput,
   ServiceTypesInput,
+  StripeConnectAccountRecord,
   TeamMemberRecord,
   UpdateTeamMemberInput,
   UpdateBusinessSettingsInput,
@@ -1191,6 +1193,7 @@ const sanitizePackagePlan = (
 
   const timestamp = new Date().toISOString();
   const totalUses = Number(packagePlan.totalUses);
+  const amountCents = Number(packagePlan.amountCents);
   const expiresAt =
     typeof packagePlan.expiresAt === 'string' && packagePlan.expiresAt.trim().length > 0
       ? packagePlan.expiresAt.trim()
@@ -1210,6 +1213,11 @@ const sanitizePackagePlan = (
       : [],
     totalUses: Number.isFinite(totalUses) && totalUses > 0 ? Math.floor(totalUses) : 1,
     priceLabel: typeof packagePlan.priceLabel === 'string' ? packagePlan.priceLabel.trim() : '',
+    amountCents: Number.isFinite(amountCents) && amountCents > 0 ? Math.round(amountCents) : undefined,
+    currencyCode:
+      typeof packagePlan.currencyCode === 'string' && packagePlan.currencyCode.trim().length === 3
+        ? packagePlan.currencyCode.trim().toUpperCase()
+        : undefined,
     expiresAt,
     isActive: packagePlan.isActive !== false,
     createdAt:
@@ -1761,7 +1769,7 @@ const buildDashboardViewModel = (
 ): DashboardViewModel => {
   const uiCopy = getDashboardUiCopyForLanguage(client.preferredLanguage, DASHBOARD_UI_COPY_BY_LANGUAGE);
   const dashboardContent = getDashboardContentForLanguage(client.preferredLanguage);
-  const businessName = client.businessName || 'fresha';
+  const businessName = client.businessName || 'QR Schedule';
   const ownerName = client.businessName || formatOwnerName(client.email) || dashboardContent.ownerFallback;
   const businessSettings = normalizeBusinessSettings(client.businessSettings);
   const now = new Date();
@@ -1936,6 +1944,19 @@ const hydrateClientRecord = (client: ClientRecord): ClientRecord => {
   };
 };
 
+const buildStripeConnectAccountRecord = (
+  status: ReturnType<typeof stripePaymentService.toConnectAccountStatus>,
+  previous?: StripeConnectAccountRecord
+): StripeConnectAccountRecord => {
+  const now = new Date().toISOString();
+
+  return {
+    ...status,
+    createdAt: previous?.createdAt ?? now,
+    updatedAt: now
+  };
+};
+
 const updateClient = async (
   clientId: string,
   updater: (client: ClientRecord) => ClientRecord
@@ -2095,6 +2116,88 @@ export const clientPlatformService = {
 
   getClient(clientId: string): Promise<ClientRecord> {
     return getClientOrThrow(clientId);
+  },
+
+  async createStripeConnectOnboarding(
+    clientId: string,
+    origin: string,
+    countryCode?: string
+  ): Promise<{ onboardingUrl: string; stripeConnectAccount: StripeConnectAccountRecord }> {
+    if (!env.STRIPE_SECRET_KEY) {
+      throw new HttpError(503, 'Stripe is not configured');
+    }
+
+    const client = await getClientOrThrow(clientId);
+    const account = client.stripeConnectAccount?.accountId
+      ? await stripePaymentService.retrieveConnectAccount(client.stripeConnectAccount.accountId)
+      : await stripePaymentService.createConnectAccount({
+          email: client.email,
+          businessName: client.businessName,
+          countryCode
+        });
+    const stripeConnectAccount = buildStripeConnectAccountRecord(
+      stripePaymentService.toConnectAccountStatus(account),
+      client.stripeConnectAccount
+    );
+
+    await clientPlatformRepository.saveClient({
+      ...client,
+      stripeConnectAccount,
+      updatedAt: new Date().toISOString()
+    });
+
+    const accountLink = await stripePaymentService.createConnectAccountLink({
+      accountId: stripeConnectAccount.accountId,
+      refreshUrl: `${origin}/calendar?stripeConnect=refresh&clientId=${encodeURIComponent(clientId)}`,
+      returnUrl: `${origin}/calendar?stripeConnect=return&clientId=${encodeURIComponent(clientId)}`
+    });
+
+    return {
+      onboardingUrl: accountLink.url,
+      stripeConnectAccount
+    };
+  },
+
+  async refreshStripeConnectAccount(clientId: string): Promise<StripeConnectAccountRecord | null> {
+    const client = await getClientOrThrow(clientId);
+
+    if (!client.stripeConnectAccount?.accountId) {
+      return null;
+    }
+
+    const account = await stripePaymentService.retrieveConnectAccount(
+      client.stripeConnectAccount.accountId
+    );
+    const stripeConnectAccount = buildStripeConnectAccountRecord(
+      stripePaymentService.toConnectAccountStatus(account),
+      client.stripeConnectAccount
+    );
+
+    await clientPlatformRepository.saveClient({
+      ...client,
+      stripeConnectAccount,
+      updatedAt: new Date().toISOString()
+    });
+
+    return stripeConnectAccount;
+  },
+
+  async syncStripeConnectAccount(
+    status: ReturnType<typeof stripePaymentService.toConnectAccountStatus>
+  ): Promise<void> {
+    const client = (await clientPlatformRepository.listClients()).find(
+      (entry) => entry.stripeConnectAccount?.accountId === status.accountId
+    );
+
+    if (!client) {
+      return;
+    }
+
+    await clientPlatformRepository.saveClient({
+      ...client,
+      stripeConnectAccount: buildStripeConnectAccountRecord(status, client.stripeConnectAccount),
+      updatedAt: new Date().toISOString()
+    });
   },
 
   async getPublicSalons(): Promise<PublicSalonShowcaseItem[]> {
@@ -2621,6 +2724,8 @@ export const clientPlatformService = {
             includedServiceIds: input.includedServiceIds ?? [],
             totalUses: input.totalUses,
             priceLabel: input.priceLabel.trim(),
+            amountCents: input.amountCents,
+            currencyCode: input.currencyCode,
             expiresAt: input.expiresAt?.trim() || undefined,
             isActive: true,
             createdAt: now,
@@ -2655,6 +2760,8 @@ export const clientPlatformService = {
                   includedServiceIds: input.includedServiceIds ?? [],
                   totalUses: input.totalUses,
                   priceLabel: input.priceLabel.trim(),
+                  amountCents: input.amountCents,
+                  currencyCode: input.currencyCode,
                   expiresAt: input.expiresAt?.trim() || undefined,
                   isActive: packagePlan.isActive !== false,
                   updatedAt: new Date().toISOString()
@@ -2767,8 +2874,15 @@ export const clientPlatformService = {
       (appointment) => ({
         id: appointment.id,
         customerName: appointment.customerName,
+        customerPhone: appointment.customerPhone,
+        customerEmail: appointment.customerEmail,
         serviceName: appointment.serviceName,
         teamMemberName: appointment.teamMemberName,
+        serviceLocation: appointment.serviceLocation,
+        customerAddress: appointment.customerAddress,
+        servicePriceLabel: appointment.servicePriceLabel,
+        packageName: appointment.packageName,
+        loyaltyRewardLabel: appointment.loyaltyRewardLabel,
         appointmentDate: appointment.appointmentDate,
         appointmentTime: appointment.appointmentTime,
         status: appointment.status,

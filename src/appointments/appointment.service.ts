@@ -8,6 +8,7 @@ import type {
   AppointmentSource,
   AppointmentTeamMemberOption,
   CreateAppointmentPaymentInput,
+  CreatePackageCheckoutInput,
   CreateReviewInput,
   CreateAppointmentInput,
   CreateWaitlistInput,
@@ -32,6 +33,7 @@ import { clientPlatformRepository } from '../platform/clientPlatform.repository'
 import { HttpError } from '../shared/errors/httpError';
 import { twilioSmsService } from '../notifications/twilioSms.service';
 import type { DashboardCommerceViewModel } from '../platform/clientPlatform.types';
+import type { PackagePlanRecord } from '../platform/clientPlatform.types';
 import {
   createUtcDateFromTimeZone,
   formatDateValueInTimeZone,
@@ -51,6 +53,7 @@ import {
 } from '../platform/serviceLocation.constants';
 import { env } from '../config/env';
 import { billingService } from '../billing/billing.service';
+import { stripePaymentService } from '../payments/stripePayment.service';
 
 const DEFAULT_SLOT_TIMES = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
 const WEEKDAY_IDS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
@@ -84,6 +87,50 @@ const getBusinessOrThrow = async (businessId: string) => {
 
   return business;
 };
+
+const parseAmountCentsFromPriceLabel = (priceLabel: string): number | undefined => {
+  const normalizedPrice = priceLabel.replace(/,/g, '').match(/\d+(?:\.\d{1,2})?/);
+
+  if (!normalizedPrice) {
+    return undefined;
+  }
+
+  const amount = Number(normalizedPrice[0]);
+  return Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : undefined;
+};
+
+const getPackagePaymentAmountCents = (packagePlan: PackagePlanRecord): number => {
+  const configuredAmount = Number(packagePlan.amountCents);
+  const parsedAmount = parseAmountCentsFromPriceLabel(packagePlan.priceLabel);
+  const amountCents =
+    Number.isFinite(configuredAmount) && configuredAmount > 0
+      ? Math.round(configuredAmount)
+      : parsedAmount;
+
+  if (!amountCents || amountCents <= 0) {
+    throw new HttpError(
+      400,
+      'Package price must include a numeric amount before Stripe checkout can be created'
+    );
+  }
+
+  return amountCents;
+};
+
+const getPackagePaymentCurrencyCode = (
+  packagePlan: PackagePlanRecord,
+  businessCurrencyCode?: string
+): string =>
+  (
+    packagePlan.currencyCode ||
+    businessCurrencyCode ||
+    env.STRIPE_PACKAGE_PAYMENT_CURRENCY_CODE ||
+    env.DEFAULT_BUSINESS_CURRENCY_CODE
+  ).toUpperCase();
+
+const allowPlatformPackagePaymentsInStripeTestMode = (): boolean =>
+  env.STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE &&
+  env.STRIPE_SECRET_KEY?.startsWith('sk_test_') === true;
 
 const getBusinessDisplayName = (
   business: Awaited<ReturnType<typeof getBusinessOrThrow>>
@@ -479,6 +526,10 @@ const normalizePackagePurchaseStatus = (
   packagePurchase: PackagePurchaseRecord,
   now = new Date()
 ): PackagePurchaseRecord => {
+  if (['pending_payment', 'payment_failed'].includes(packagePurchase.status)) {
+    return packagePurchase;
+  }
+
   const nowIso = now.toISOString();
   const isExpired =
     Boolean(packagePurchase.expiresAt) &&
@@ -2515,8 +2566,12 @@ export const appointmentService = {
       totalUses: packagePlan.totalUses,
       remainingUses: packagePlan.totalUses,
       priceLabel: packagePlan.priceLabel,
+      amountCents: packagePlan.amountCents ?? parseAmountCentsFromPriceLabel(packagePlan.priceLabel),
+      currencyCode: getPackagePaymentCurrencyCode(packagePlan, business.businessSettings?.currencyCode),
+      paymentProvider: 'manual',
       status: 'active',
       purchasedAt: nowIso,
+      expiresAt: packagePlan.expiresAt,
       createdAt: nowIso,
       updatedAt: nowIso
     }, now);
@@ -2526,6 +2581,191 @@ export const appointmentService = {
     return {
       packagePurchase
     };
+  },
+
+  async createPackageCheckoutSession(
+    businessId: string,
+    input: CreatePackageCheckoutInput,
+    origin: string,
+    successPath = '/calendar?packageCheckout=success',
+    cancelPath = '/calendar?packageCheckout=cancelled'
+  ): Promise<{ checkoutUrl: string; checkoutSessionId: string; packagePurchase: PackagePurchaseRecord }> {
+    const business = await getBusinessOrThrow(businessId);
+    const services = await getServiceCatalogForBusiness(businessId);
+    const packagePlan = getActivePackagePlansForBusiness(business).find(
+      (entry) => entry.id === input.packagePlanId
+    );
+
+    if (!packagePlan) {
+      throw new HttpError(404, 'Package plan was not found');
+    }
+
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const customerPhone = input.customerPhone.trim();
+    const customerEmail = input.customerEmail?.trim() ?? '';
+    const customerKey = buildCustomerKey(customerPhone, customerEmail);
+
+    if (!customerKey) {
+      throw new HttpError(400, 'Customer phone or email is required');
+    }
+
+    const amountCents = getPackagePaymentAmountCents(packagePlan);
+    const currencyCode = getPackagePaymentCurrencyCode(
+      packagePlan,
+      business.businessSettings?.currencyCode
+    );
+
+    if (!env.STRIPE_SECRET_KEY) {
+      throw new HttpError(503, 'Stripe is not configured');
+    }
+
+    const stripeConnectAccount = business.stripeConnectAccount;
+    let destinationAccountId: string | undefined;
+
+    if (stripeConnectAccount?.accountId) {
+      const liveStripeAccount = stripePaymentService.toConnectAccountStatus(
+        await stripePaymentService.retrieveConnectAccount(stripeConnectAccount.accountId)
+      );
+
+      if (!liveStripeAccount.chargesEnabled || !liveStripeAccount.payoutsEnabled) {
+        throw new HttpError(
+          409,
+          'This salon must complete Stripe Connect onboarding before accepting online payments'
+        );
+      }
+
+      destinationAccountId = liveStripeAccount.accountId;
+      const stripeStatusUpdatedAt = new Date().toISOString();
+      await clientPlatformRepository.saveClient({
+        ...business,
+        stripeConnectAccount: {
+          ...liveStripeAccount,
+          createdAt: stripeConnectAccount.createdAt,
+          updatedAt: stripeStatusUpdatedAt
+        },
+        updatedAt: stripeStatusUpdatedAt
+      });
+    } else if (!allowPlatformPackagePaymentsInStripeTestMode()) {
+      throw new HttpError(
+        409,
+        'This salon must complete Stripe Connect onboarding before accepting online payments'
+      );
+    }
+
+    const packagePurchase: PackagePurchaseRecord = {
+      id: randomUUID(),
+      businessId,
+      packagePlanId: packagePlan.id,
+      packageName: packagePlan.name,
+      includedServiceIds: resolvePackagePlanIncludedServices(packagePlan, services).map(
+        (service) => service.id
+      ),
+      customerKey,
+      customerName: input.customerName.trim(),
+      customerPhone,
+      customerEmail,
+      totalUses: packagePlan.totalUses,
+      remainingUses: packagePlan.totalUses,
+      priceLabel: packagePlan.priceLabel,
+      amountCents,
+      currencyCode,
+      paymentProvider: 'stripe',
+      status: 'pending_payment',
+      purchasedAt: nowIso,
+      expiresAt: packagePlan.expiresAt,
+      createdAt: nowIso,
+      updatedAt: nowIso
+    };
+
+    await appointmentRepository.savePackagePurchase(packagePurchase);
+
+    const checkoutSession = await stripePaymentService
+      .createPackageCheckoutSession({
+        packagePurchase,
+        amountCents,
+        currencyCode,
+        destinationAccountId,
+        successUrl: `${origin}${successPath}${successPath.includes('?') ? '&' : '?'}session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${origin}${cancelPath}`
+      })
+      .catch(async (error: unknown) => {
+        await appointmentRepository.savePackagePurchase({
+          ...packagePurchase,
+          status: 'payment_failed',
+          updatedAt: new Date().toISOString()
+        });
+        throw error;
+      });
+
+    const updatedPackagePurchase: PackagePurchaseRecord = {
+      ...packagePurchase,
+      providerCheckoutSessionId: checkoutSession.id,
+      updatedAt: new Date().toISOString()
+    };
+
+    await appointmentRepository.savePackagePurchase(updatedPackagePurchase);
+
+    if (!checkoutSession.url) {
+      throw new HttpError(502, 'Stripe checkout session did not return a checkout URL');
+    }
+
+    return {
+      checkoutUrl: checkoutSession.url,
+      checkoutSessionId: checkoutSession.id,
+      packagePurchase: updatedPackagePurchase
+    };
+  },
+
+  async activateStripePackagePurchase(
+    checkoutSessionId: string,
+    paymentIntentId?: string
+  ): Promise<{ packagePurchase: PackagePurchaseRecord | null }> {
+    const packagePurchase = (await appointmentRepository.listPackagePurchases()).find(
+      (entry) => entry.providerCheckoutSessionId === checkoutSessionId
+    );
+
+    if (!packagePurchase) {
+      return { packagePurchase: null };
+    }
+
+    if (packagePurchase.status === 'active') {
+      return { packagePurchase };
+    }
+
+    const updatedPackagePurchase = normalizePackagePurchaseStatus(
+      {
+        ...packagePurchase,
+        providerPaymentIntentId: paymentIntentId || packagePurchase.providerPaymentIntentId,
+        status: 'active',
+        updatedAt: new Date().toISOString()
+      },
+      new Date()
+    );
+
+    await appointmentRepository.savePackagePurchase(updatedPackagePurchase);
+    return { packagePurchase: updatedPackagePurchase };
+  },
+
+  async markStripePackagePurchasePaymentFailed(
+    checkoutSessionId: string
+  ): Promise<{ packagePurchase: PackagePurchaseRecord | null }> {
+    const packagePurchase = (await appointmentRepository.listPackagePurchases()).find(
+      (entry) => entry.providerCheckoutSessionId === checkoutSessionId
+    );
+
+    if (!packagePurchase || packagePurchase.status === 'active') {
+      return { packagePurchase: packagePurchase ?? null };
+    }
+
+    const updatedPackagePurchase: PackagePurchaseRecord = {
+      ...packagePurchase,
+      status: 'payment_failed',
+      updatedAt: new Date().toISOString()
+    };
+
+    await appointmentRepository.savePackagePurchase(updatedPackagePurchase);
+    return { packagePurchase: updatedPackagePurchase };
   },
 
   async getDashboardCommerce(businessId: string): Promise<DashboardCommerceViewModel> {

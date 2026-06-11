@@ -6,8 +6,13 @@ import { resetAppointmentRepositoryForTests } from '../../src/appointments/appoi
 import { billingRepository } from '../../src/billing/billing.repository';
 import { env } from '../../src/config/env';
 import { resetSmsLogRepositoryForTests, smsLogRepository } from '../../src/notifications/smsLog.repository';
-import { resetClientPlatformRepositoryForTests } from '../../src/platform/clientPlatform.repository';
+import {
+  clientPlatformRepository,
+  resetClientPlatformRepositoryForTests
+} from '../../src/platform/clientPlatform.repository';
 import { resetBillingRepositoryForTests } from '../../src/billing/billing.repository';
+import { stripePaymentService } from '../../src/payments/stripePayment.service';
+import { appointmentService } from '../../src/appointments/appointment.service';
 
 describe('Client platform API', () => {
   const uploadedProfileImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB';
@@ -18,6 +23,9 @@ describe('Client platform API', () => {
   const originalTwilioAccountSid = env.TWILIO_ACCOUNT_SID;
   const originalTwilioAuthToken = env.TWILIO_AUTH_TOKEN;
   const originalTwilioPhoneNumber = env.TWILIO_PHONE_NUMBER;
+  const originalStripeSecretKey = env.STRIPE_SECRET_KEY;
+  const originalAllowPlatformPackagePaymentsInTestMode =
+    env.STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE;
 
   beforeEach(async () => {
     vi.useRealTimers();
@@ -27,10 +35,360 @@ describe('Client platform API', () => {
     env.TWILIO_ACCOUNT_SID = originalTwilioAccountSid;
     env.TWILIO_AUTH_TOKEN = originalTwilioAuthToken;
     env.TWILIO_PHONE_NUMBER = originalTwilioPhoneNumber;
+    env.STRIPE_SECRET_KEY = originalStripeSecretKey;
+    env.STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE =
+      originalAllowPlatformPackagePaymentsInTestMode;
     await resetClientPlatformRepositoryForTests();
     await resetAppointmentRepositoryForTests();
     await resetBillingRepositoryForTests();
     await resetSmsLogRepositoryForTests();
+  });
+
+  it('blocks online package checkout until the salon completes Stripe Connect onboarding', async () => {
+    env.STRIPE_SECRET_KEY = 'sk_test_platform';
+    env.STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE = false;
+
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'stripe-connect-required@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-types`)
+      .set('x-admin-token', adminToken)
+      .send({ serviceTypes: ['Barber'] });
+
+    const packageResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/packages`)
+      .set('x-admin-token', adminToken)
+      .send({
+        name: 'Online Haircut Package',
+        includedServiceIds: ['barber-haircut'],
+        totalUses: 2,
+        priceLabel: 'GBP 20'
+      });
+    const packagePlanId = packageResponse.body.client.packagePlans[0].id as string;
+
+    const checkoutResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/package-sales/checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        packagePlanId,
+        customerName: 'Stripe Customer',
+        customerPhone: '+447700900123',
+        customerEmail: 'stripe-customer@example.com'
+      });
+
+    expect(checkoutResponse.status).toBe(409);
+    expect(checkoutResponse.body.error).toContain('complete Stripe Connect onboarding');
+    expect(await appointmentRepository.listPackagePurchases()).toHaveLength(0);
+  });
+
+  it('creates and persists a separate Stripe Connect account for a salon', async () => {
+    env.STRIPE_SECRET_KEY = 'sk_test_platform';
+    const stripeAccount = {
+      id: 'acct_salon_one',
+      charges_enabled: false,
+      payouts_enabled: false,
+      details_submitted: false,
+      requirements: {
+        currently_due: ['business_profile.url'],
+        past_due: [],
+        disabled_reason: 'requirements.past_due'
+      },
+      country: 'GB',
+      default_currency: 'gbp'
+    };
+
+    vi.spyOn(stripePaymentService, 'createConnectAccount').mockResolvedValue(stripeAccount as never);
+    vi.spyOn(stripePaymentService, 'createConnectAccountLink').mockResolvedValue({
+      url: 'https://connect.stripe.test/onboarding'
+    } as never);
+
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'stripe-salon-one@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    const onboardingResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/stripe-connect/onboarding`)
+      .set('x-admin-token', adminToken)
+      .send({ countryCode: 'GB' });
+
+    expect(onboardingResponse.status).toBe(201);
+    expect(onboardingResponse.body.onboardingUrl).toBe('https://connect.stripe.test/onboarding');
+    expect(onboardingResponse.body.stripeConnectAccount).toEqual(
+      expect.objectContaining({
+        accountId: 'acct_salon_one',
+        chargesEnabled: false,
+        payoutsEnabled: false,
+        requirementsDue: ['business_profile.url']
+      })
+    );
+
+    const persistedClient = await request(app)
+      .get(`/api/platform/clients/${clientId}`)
+      .set('x-admin-token', adminToken);
+
+    expect(persistedClient.body.client.stripeConnectAccount).toBeUndefined();
+  });
+
+  it('allows platform package checkout only when explicitly enabled with a Stripe test key', async () => {
+    env.STRIPE_SECRET_KEY = 'sk_test_platform';
+    env.STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE = true;
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'stripe-platform-test-checkout@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-types`)
+      .set('x-admin-token', adminToken)
+      .send({ serviceTypes: ['Barber'] });
+    const packageResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/packages`)
+      .set('x-admin-token', adminToken)
+      .send({
+        name: 'Platform Test Package',
+        includedServiceIds: ['barber-haircut'],
+        totalUses: 2,
+        priceLabel: 'GBP 20'
+      });
+    const checkoutSpy = vi
+      .spyOn(stripePaymentService, 'createPackageCheckoutSession')
+      .mockResolvedValue({
+        id: 'cs_platform_test',
+        url: 'https://checkout.stripe.test/platform'
+      } as never);
+
+    const checkoutResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/package-sales/checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        packagePlanId: packageResponse.body.client.packagePlans[0].id,
+        customerName: 'Platform Test Customer',
+        customerPhone: '+447700900999',
+        customerEmail: 'platform-test-customer@example.com'
+      });
+
+    expect(checkoutResponse.status).toBe(201);
+    expect(checkoutSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ destinationAccountId: undefined })
+    );
+  });
+
+  it('routes online package checkout to the current salon Stripe account', async () => {
+    env.STRIPE_SECRET_KEY = 'sk_test_platform';
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'stripe-routed-salon@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    await request(app)
+      .patch(`/api/platform/clients/${clientId}/service-types`)
+      .set('x-admin-token', adminToken)
+      .send({ serviceTypes: ['Barber'] });
+    const packageResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/packages`)
+      .set('x-admin-token', adminToken)
+      .send({
+        name: 'Connected Haircut Package',
+        includedServiceIds: ['barber-haircut'],
+        totalUses: 2,
+        priceLabel: 'GBP 20'
+      });
+    const client = await clientPlatformRepository.getClientById(clientId);
+    const now = new Date().toISOString();
+
+    await clientPlatformRepository.saveClient({
+      ...client!,
+      stripeConnectAccount: {
+        accountId: 'acct_routed_salon',
+        chargesEnabled: true,
+        payoutsEnabled: true,
+        detailsSubmitted: true,
+        requirementsDue: [],
+        country: 'GB',
+        defaultCurrency: 'gbp',
+        createdAt: now,
+        updatedAt: now
+      }
+    });
+
+    vi.spyOn(stripePaymentService, 'retrieveConnectAccount').mockResolvedValue({
+      id: 'acct_routed_salon',
+      charges_enabled: true,
+      payouts_enabled: true,
+      details_submitted: true,
+      requirements: { currently_due: [], past_due: [] },
+      country: 'GB',
+      default_currency: 'gbp'
+    } as never);
+    const checkoutSpy = vi
+      .spyOn(stripePaymentService, 'createPackageCheckoutSession')
+      .mockResolvedValue({
+        id: 'cs_routed_salon',
+        url: 'https://checkout.stripe.test/routed-salon'
+      } as never);
+
+    const checkoutResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/package-sales/checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        packagePlanId: packageResponse.body.client.packagePlans[0].id,
+        customerName: 'Connected Customer',
+        customerPhone: '+447700900456',
+        customerEmail: 'connected-customer@example.com'
+      });
+
+    expect(checkoutResponse.status).toBe(201);
+    expect(checkoutSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        destinationAccountId: 'acct_routed_salon',
+        successUrl: expect.stringContaining(
+          `/calendar?clientId=${clientId}&packageCheckout=success`
+        ),
+        cancelUrl: expect.stringContaining(
+          `/calendar?clientId=${clientId}&packageCheckout=cancelled`
+        )
+      })
+    );
+  });
+
+  it('returns Stripe subscription checkout to the business dashboard', async () => {
+    env.STRIPE_SECRET_KEY = 'sk_test_platform';
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'stripe-subscription-dashboard@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+    const plansResponse = await request(app).get('/api/billing/subscription-plans');
+    const planId = plansResponse.body.plans[0].id as string;
+    const checkoutSpy = vi
+      .spyOn(stripePaymentService, 'createSubscriptionCheckoutSession')
+      .mockResolvedValue({
+        id: 'cs_subscription_dashboard',
+        url: 'https://checkout.stripe.test/subscription-dashboard'
+      } as never);
+
+    const checkoutResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/checkout`)
+      .set('x-admin-token', adminToken)
+      .send({ planId });
+
+    expect(checkoutResponse.status).toBe(201);
+    expect(checkoutSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        successUrl: expect.stringContaining(
+          '/api/billing/stripe-return?session_id={CHECKOUT_SESSION_ID}'
+        ),
+        cancelUrl: expect.stringContaining(
+          `/calendar?clientId=${clientId}&subscriptionCheckout=cancelled`
+        )
+      })
+    );
+  });
+
+  it('restores admin access when Stripe returns without an existing browser cookie', async () => {
+    env.STRIPE_SECRET_KEY = 'sk_test_platform';
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'stripe-return-cookie@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+
+    vi.spyOn(stripePaymentService, 'retrieveCheckoutSession').mockResolvedValue({
+      id: 'cs_subscription_return_cookie',
+      status: 'complete',
+      payment_status: 'paid',
+      customer: 'cus_subscription_return_cookie',
+      subscription: 'sub_subscription_return_cookie',
+      metadata: {
+        kind: 'subscription_checkout',
+        businessId: clientId,
+        planId: 'plan_single'
+      }
+    } as never);
+
+    const returnResponse = await request(app)
+      .get('/api/billing/stripe-return')
+      .query({ session_id: 'cs_subscription_return_cookie' });
+
+    expect(returnResponse.status).toBe(303);
+    expect(returnResponse.headers.location).toBe(
+      `/calendar?clientId=${clientId}&subscriptionCheckout=success`
+    );
+    expect(returnResponse.headers['set-cookie']).toEqual(
+      expect.arrayContaining([expect.stringContaining('Path=/')])
+    );
+  });
+
+  it('confirms a completed Stripe subscription checkout and unlocks dashboard features', async () => {
+    env.STRIPE_SECRET_KEY = 'sk_test_platform';
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'stripe-subscription-confirm@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    vi.spyOn(stripePaymentService, 'retrieveCheckoutSession').mockResolvedValue({
+      id: 'cs_subscription_confirmed',
+      status: 'complete',
+      payment_status: 'paid',
+      customer: 'cus_subscription_confirmed',
+      subscription: 'sub_subscription_confirmed',
+      metadata: {
+        kind: 'subscription_checkout',
+        businessId: clientId,
+        planId: 'plan_single'
+      }
+    } as never);
+
+    const confirmResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/checkout/confirm`)
+      .set('x-admin-token', adminToken)
+      .send({ checkoutSessionId: 'cs_subscription_confirmed' });
+
+    expect(confirmResponse.status).toBe(200);
+    expect(confirmResponse.body.overview.currentPlan).toEqual(
+      expect.objectContaining({ id: 'plan_single' })
+    );
+    expect(confirmResponse.body.overview.lockedFeatureKeys).not.toContain('payments');
+    expect(confirmResponse.body.overview.lockedFeatureKeys).not.toContain('advanced_reports');
+    expect(confirmResponse.body.overview.lockedFeatureKeys).not.toContain('team_management');
+  });
+
+  it('does not activate a package from an unpaid Stripe checkout event', async () => {
+    vi.spyOn(stripePaymentService, 'constructWebhookEvent').mockReturnValue({
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_unpaid',
+          payment_status: 'unpaid',
+          metadata: { kind: 'package_purchase' }
+        }
+      }
+    } as never);
+    const activateSpy = vi.spyOn(appointmentService, 'activateStripePackagePurchase');
+
+    const response = await request(app)
+      .post('/api/stripe/webhook')
+      .set('stripe-signature', 'test_signature')
+      .set('content-type', 'application/json')
+      .send({ id: 'evt_unpaid' });
+
+    expect(response.status).toBe(200);
+    expect(activateSpy).not.toHaveBeenCalled();
   });
 
   it('sets an admin session cookie for the whole app and accepts it on protected routes', async () => {
@@ -980,11 +1338,13 @@ describe('Client platform API', () => {
     const launchLinksResponse = await request(app)
       .get(`/api/platform/clients/${clientId}/launch-links`)
       .set('Host', 'attacker.example')
+      .set('X-Forwarded-Proto', 'https')
       .set('x-admin-token', adminToken);
 
     expect(launchLinksResponse.status).toBe(200);
+    expect(new URL(launchLinksResponse.body.launchLinks.dashboardLink).protocol).toBe('http:');
     expect(new URL(launchLinksResponse.body.launchLinks.dashboardLink).hostname).toBe('localhost');
-    expect(new URL(launchLinksResponse.body.launchLinks.dashboardLink).port).toBe('8000');
+    expect(new URL(launchLinksResponse.body.launchLinks.dashboardLink).port).toBe(String(env.PORT));
     expect(new URL(launchLinksResponse.body.launchLinks.bookingPageLink).hostname).not.toBe(
       'attacker.example'
     );
@@ -2857,7 +3217,7 @@ describe('Client platform API', () => {
       expect.objectContaining({
         businessId: clientId,
         planId: 'plan_single',
-        status: 'trialing',
+        status: 'active',
         demoCard: expect.objectContaining({
           brand: 'visa',
           last4: '4242'
@@ -3087,7 +3447,7 @@ describe('Client platform API', () => {
       });
 
     const activeSubscription = (await billingRepository.listBusinessSubscriptions()).find(
-      (subscription) => subscription.businessId === clientId && subscription.status === 'trialing'
+      (subscription) => subscription.businessId === clientId && subscription.status === 'active'
     );
 
     expect(activeSubscription).toBeTruthy();
@@ -3192,7 +3552,7 @@ describe('Client platform API', () => {
     expect(billingResponse.body.subscription).toEqual(
       expect.objectContaining({
         planId: 'plan_single',
-        status: 'trialing'
+        status: 'active'
       })
     );
   });

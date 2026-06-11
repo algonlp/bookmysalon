@@ -55,10 +55,10 @@ export interface BusinessSubscription {
   businessId: string;
   planId: string;
   status: BusinessSubscriptionStatus;
-  provider: 'demo';
+  provider: 'demo' | 'stripe';
   providerCustomerId: string;
   providerSubscriptionId: string;
-  demoCard: DemoBillingCard;
+  demoCard?: DemoBillingCard;
   appointmentCreditsGranted: number;
   appointmentCreditsRemaining: number;
   appointmentCreditsUsed: number;
@@ -93,6 +93,10 @@ export interface DemoCheckoutInput {
   expYear: number;
   cvc: string;
   billingEmail?: string;
+}
+
+export interface CreateSubscriptionCheckoutInput {
+  planId: string;
 }
 
 export interface BillingFeatureAccess {

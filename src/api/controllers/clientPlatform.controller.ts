@@ -103,6 +103,10 @@ const businessSettingsSchema = z.object({
     .optional()
 });
 
+const stripeConnectOnboardingSchema = z.object({
+  countryCode: z.string().trim().length(2).toUpperCase().optional()
+});
+
 const accountTypeSchema = z.object({
   accountType: z.enum(['independent', 'team'])
 });
@@ -201,6 +205,8 @@ const createPackagePlanSchema = z.object({
   includedServiceIds: z.array(z.string().trim().min(1)).optional().default([]),
   totalUses: z.number().int().min(1).max(100),
   priceLabel: z.string().trim().min(1, 'Package price is required'),
+  amountCents: z.number().int().positive().optional(),
+  currencyCode: z.string().trim().length(3).optional(),
   expiresAt: z
     .string()
     .trim()
@@ -567,6 +573,38 @@ export const clientPlatformController = {
       await appointmentService.sellPackageToCustomer(
         getClientId(req),
         sellPackageSchema.parse(req.body)
+      )
+    );
+  },
+
+  async createStripeConnectOnboarding(
+    req: Request,
+    res: Response,
+    _next: NextFunction
+  ): Promise<void> {
+    res.status(201).json(
+      await clientPlatformService.createStripeConnectOnboarding(
+        getClientId(req),
+        getRequestOrigin(req),
+        stripeConnectOnboardingSchema.parse(req.body ?? {}).countryCode
+      )
+    );
+  },
+
+  async getStripeConnectStatus(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    res.status(200).json({
+      stripeConnectAccount: await clientPlatformService.refreshStripeConnectAccount(getClientId(req))
+    });
+  },
+
+  async createPackageCheckout(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    res.status(201).json(
+      await appointmentService.createPackageCheckoutSession(
+        getClientId(req),
+        sellPackageSchema.parse(req.body),
+        getRequestOrigin(req),
+        `/calendar?clientId=${encodeURIComponent(getClientId(req))}&packageCheckout=success`,
+        `/calendar?clientId=${encodeURIComponent(getClientId(req))}&packageCheckout=cancelled`
       )
     );
   },

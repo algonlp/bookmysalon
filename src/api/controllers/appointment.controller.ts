@@ -98,6 +98,13 @@ const createAppointmentPaymentSchema = z.object({
   note: z.string().trim().max(240).optional().or(z.literal(''))
 });
 
+const createPackageCheckoutSchema = z.object({
+  packagePlanId: z.string().trim().min(1, 'Package plan is required'),
+  customerName: z.string().trim().min(2, 'Customer name is required'),
+  customerPhone: z.string().trim().min(7, 'Customer phone is required'),
+  customerEmail: z.string().trim().email().optional().or(z.literal(''))
+});
+
 const publicAppointmentAccessSchema = z.object({
   accessToken: appointmentAccessTokenSchema
 });
@@ -194,6 +201,19 @@ export const appointmentController = {
         getBusinessId(req),
         createAppointmentSchema.parse(req.body),
         origin
+      )
+    );
+  },
+
+  async createPublicPackageCheckout(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const origin = getRequestOrigin(req);
+    res.status(201).json(
+      await appointmentService.createPackageCheckoutSession(
+        getBusinessId(req),
+        createPackageCheckoutSchema.parse(req.body),
+        origin,
+        `/book/${encodeURIComponent(getBusinessId(req))}?packageCheckout=success`,
+        `/book/${encodeURIComponent(getBusinessId(req))}?packageCheckout=cancelled`
       )
     );
   },

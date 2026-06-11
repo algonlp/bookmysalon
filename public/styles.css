@@ -1276,6 +1276,20 @@ textarea:focus-visible {
   box-shadow: 0 0 0 5px rgba(212, 138, 85, 0.12);
 }
 
+.public-salon-card-distance {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(14, 125, 64, 0.1);
+  color: #0d7f44;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
 .public-salon-type-list {
   display: flex;
   flex-wrap: wrap;
@@ -1518,7 +1532,7 @@ textarea:focus-visible {
 
 .nearby-salon-result {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-columns: 36px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
   min-width: 0;
@@ -1527,7 +1541,6 @@ textarea:focus-visible {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.86);
   color: inherit;
-  text-decoration: none;
   box-shadow: 0 16px 34px rgba(64, 49, 39, 0.08);
 }
 
@@ -1564,6 +1577,61 @@ textarea:focus-visible {
 .nearby-salon-result-copy span {
   color: #625c56;
   font-size: 0.86rem;
+}
+
+.nearby-salon-result-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.nearby-salon-result-link,
+.nearby-salon-result-directions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.nearby-salon-result-link {
+  background: #151311;
+  color: #fff;
+}
+
+.nearby-salon-result-directions {
+  border: 1px solid rgba(108, 76, 245, 0.2);
+  background: rgba(108, 76, 245, 0.08);
+  color: #4f46d8;
+}
+
+.nearby-salon-result-link:hover,
+.nearby-salon-result-link:focus-visible,
+.nearby-salon-result-directions:hover,
+.nearby-salon-result-directions:focus-visible {
+  transform: translateY(-1px);
+}
+
+@media (max-width: 720px) {
+  .nearby-salon-result {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  .nearby-salon-result-actions {
+    grid-column: 1 / -1;
+    justify-content: stretch;
+  }
+
+  .nearby-salon-result-link,
+  .nearby-salon-result-directions {
+    flex: 1 1 0;
+  }
 }
 
 .salon-detail-panel {
@@ -6946,11 +7014,33 @@ button.calendar-reports-summary-card {
 }
 
 .calendar-appointment-service {
-  font-weight: 700;
-}
+    font-weight: 700;
+  }
+
+  .calendar-appointment-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .calendar-appointment-details span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    max-width: 100%;
+    padding: 0 10px;
+    border: 1px solid rgba(31, 26, 23, 0.08);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.74);
+    color: #4f4a45;
+    font-size: 0.82rem;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
 
 .calendar-appointment-footer {
-  display: flex;
+    display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;

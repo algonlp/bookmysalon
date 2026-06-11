@@ -82,6 +82,7 @@ const existingRowCache = new Map<string, boolean>();
 const businessScopedCacheTables = [
   'businesses',
   'business_settings',
+  'business_stripe_connect_accounts',
   'team_members',
   'services',
   'products',
@@ -311,6 +312,33 @@ const syncBusinessSettings = async (clientRecord: ClientRecord): Promise<void> =
   );
 };
 
+const syncBusinessStripeConnectAccount = async (clientRecord: ClientRecord): Promise<void> => {
+  if (!clientRecord.stripeConnectAccount) {
+    await deleteByColumnValue('business_stripe_connect_accounts', 'business_id', clientRecord.id);
+    return;
+  }
+
+  await upsertRows(
+    'business_stripe_connect_accounts',
+    [
+      {
+        business_id: clientRecord.id,
+        stripe_account_id: asText(clientRecord.stripeConnectAccount.accountId),
+        charges_enabled: asBoolean(clientRecord.stripeConnectAccount.chargesEnabled),
+        payouts_enabled: asBoolean(clientRecord.stripeConnectAccount.payoutsEnabled),
+        details_submitted: asBoolean(clientRecord.stripeConnectAccount.detailsSubmitted),
+        requirements_due: asStringArray(clientRecord.stripeConnectAccount.requirementsDue),
+        disabled_reason: asText(clientRecord.stripeConnectAccount.disabledReason),
+        country: asText(clientRecord.stripeConnectAccount.country),
+        default_currency: asText(clientRecord.stripeConnectAccount.defaultCurrency),
+        created_at: asTimestamp(clientRecord.stripeConnectAccount.createdAt),
+        updated_at: asTimestamp(clientRecord.stripeConnectAccount.updatedAt)
+      }
+    ],
+    'business_id'
+  );
+};
+
 const syncBusinessServiceTypes = async (clientRecord: ClientRecord): Promise<void> => {
   await deleteByColumnValue('business_service_types', 'business_id', clientRecord.id);
   await upsertRows(
@@ -451,6 +479,8 @@ const syncPackagePlans = async (businessId: string, packagePlans: PackagePlanRec
       name: asText(packagePlan.name),
       total_uses: asNumber(packagePlan.totalUses, 1),
       price_label: asText(packagePlan.priceLabel),
+      amount_cents: asNullableNumber(packagePlan.amountCents),
+      currency_code: asText(packagePlan.currencyCode),
       expires_at: asNullableText(packagePlan.expiresAt),
       is_active: asBoolean(packagePlan.isActive, true),
       created_at: asTimestamp(packagePlan.createdAt),
@@ -574,6 +604,7 @@ export const syncClientRecordToRelational = async (clientRecord: ClientRecord): 
   knownBusinessNames.set(clientRecord.id, asText(clientRecord.businessName));
 
   await syncBusinessSettings(clientRecord);
+  await syncBusinessStripeConnectAccount(clientRecord);
   await syncBusinessServiceTypes(clientRecord);
   await syncBusinessServiceLocations(clientRecord);
   await syncTeamMembers(clientRecord.id, clientRecord.teamMembers);
@@ -624,6 +655,11 @@ export const syncPackagePurchaseToRelational = async (
         total_uses: asNumber(packagePurchase.totalUses),
         remaining_uses: asNumber(packagePurchase.remainingUses),
         price_label: asText(packagePurchase.priceLabel),
+        amount_cents: asNullableNumber(packagePurchase.amountCents),
+        currency_code: asText(packagePurchase.currencyCode),
+        payment_provider: asText(packagePurchase.paymentProvider),
+        provider_checkout_session_id: asText(packagePurchase.providerCheckoutSessionId),
+        provider_payment_intent_id: asText(packagePurchase.providerPaymentIntentId),
         status: packagePurchase.status,
         purchased_at: asTimestamp(packagePurchase.purchasedAt),
         expires_at: asNullableText(packagePurchase.expiresAt),

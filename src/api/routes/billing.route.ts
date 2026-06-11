@@ -11,9 +11,26 @@ billingRouter.get(
 );
 
 billingRouter.get(
+  '/billing/stripe-return',
+  asyncHandler(billingController.handleStripeSubscriptionReturn)
+);
+
+billingRouter.get(
   '/platform/clients/:clientId/billing',
   asyncHandler(requirePlatformAdminAccess),
   asyncHandler(billingController.getBillingOverview)
+);
+
+billingRouter.post(
+  '/platform/clients/:clientId/billing/checkout',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(billingController.createStripeSubscriptionCheckout)
+);
+
+billingRouter.post(
+  '/platform/clients/:clientId/billing/checkout/confirm',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(billingController.confirmStripeSubscriptionCheckout)
 );
 
 billingRouter.post(

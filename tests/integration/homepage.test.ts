@@ -144,7 +144,7 @@ describe('GET /', () => {
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
     expect(response.text).toContain('Legendary Learner');
-    expect(response.text).toContain('Create your Fresha account');
+    expect(response.text).toContain('Create your QR Schedule account');
     expect(response.text).toContain('Create your first appointment');
     expect(response.text).toContain('Help center');
   });
@@ -251,7 +251,7 @@ describe('GET /', () => {
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
     expect(response.text).toContain('Your business is set up!');
-    expect(response.text).toContain('Enjoy 7 days free of using Fresha for business');
+    expect(response.text).toContain('Enjoy 7 days free of using QR Schedule for business');
     expect(response.text).toContain('Done');
     expect(response.text).toContain('<script src="/main.js"></script>');
   });
@@ -296,7 +296,7 @@ describe('GET /', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
-    expect(response.text).toContain('fresha');
+    expect(response.text).toContain('QR Schedule');
     expect(response.text).toContain('Continue setup');
     expect(response.text).toContain('Today');
     expect(response.text).toContain('Owner');

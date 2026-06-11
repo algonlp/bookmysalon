@@ -4,12 +4,12 @@ import { env } from '../config/env';
 const secureCookies = env.APP_ENV === 'prod';
 const defaultPublicOrigin = `http://localhost:${env.PORT}`;
 
-export const getRequestOrigin = (req: Request): string => {
+export const getRequestOrigin = (_req: Request): string => {
   if (env.PUBLIC_BASE_URL) {
     return env.PUBLIC_BASE_URL;
   }
 
-  return req.secure ? defaultPublicOrigin.replace('http://', 'https://') : defaultPublicOrigin;
+  return defaultPublicOrigin;
 };
 
 export const getCookieValue = (req: Request, cookieName: string): string | undefined => {

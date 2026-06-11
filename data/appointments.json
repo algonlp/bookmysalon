@@ -402,10 +402,35 @@
       "currencyCode": "",
       "startAt": "2026-05-19T10:00:00.000Z",
       "endAt": "2026-05-19T11:00:00.000Z",
-      "status": "booked",
+      "status": "completed",
       "source": "direct",
       "createdAt": "2026-05-18T05:15:26.513Z",
-      "updatedAt": "2026-05-18T05:15:26.513Z"
+      "updatedAt": "2026-06-11T06:27:26.088Z"
+    },
+    {
+      "id": "cdf40c22-f6da-4f07-9b09-0b2f699d5358",
+      "businessId": "a6a2a0e6-e3ad-45ec-8382-2a15dbfadd5b",
+      "businessName": "xyz",
+      "publicAccessToken": "22653c80-52ae-4e79-8bb6-8b58e5d767af",
+      "serviceId": "hair-salon-cut-and-style",
+      "categoryName": "Hair salon",
+      "serviceName": "Cut and style",
+      "customerName": "sir",
+      "customerPhone": "+923337167515",
+      "customerEmail": "",
+      "serviceLocation": "physical",
+      "customerAddress": "",
+      "appointmentDate": "2026-06-03",
+      "appointmentTime": "09:00",
+      "servicePriceLabel": "$2,200",
+      "serviceAmountValue": 2200,
+      "currencyCode": "",
+      "startAt": "2026-06-03T09:00:00.000Z",
+      "endAt": "2026-06-03T10:00:00.000Z",
+      "status": "completed",
+      "source": "direct",
+      "createdAt": "2026-06-03T05:33:13.722Z",
+      "updatedAt": "2026-06-03T10:00:45.935Z"
     }
   ],
   "paymentRecords": [
@@ -428,7 +453,80 @@
     }
   ],
   "reviews": [],
-  "packagePurchases": [],
+  "packagePurchases": [
+    {
+      "id": "07635b47-48dd-40b4-8595-24a9286f18bc",
+      "businessId": "test-pk-karachi-001",
+      "packagePlanId": "pk-karachi-001-package-haircut-duo",
+      "packageName": "Haircut Duo",
+      "includedServiceIds": [
+        "pk-karachi-001-barber-haircut"
+      ],
+      "customerKey": "923001234567",
+      "customerName": "Stripe Test User",
+      "customerPhone": "+923001234567",
+      "customerEmail": "stripe-test@example.com",
+      "totalUses": 2,
+      "remainingUses": 2,
+      "priceLabel": "Rs 2,000",
+      "amountCents": 200000,
+      "currencyCode": "PKR",
+      "paymentProvider": "stripe",
+      "status": "pending_payment",
+      "purchasedAt": "2026-06-11T06:42:44.138Z",
+      "createdAt": "2026-06-11T06:42:44.138Z",
+      "updatedAt": "2026-06-11T06:42:46.163Z",
+      "providerCheckoutSessionId": "cs_test_a1oWSsVCoICklA4w9jSIjCOWeSSUAKW9oTZgEW6UTOfVEYL25l6FwWA9U0"
+    },
+    {
+      "id": "c6f35249-71e5-4abe-96cd-209690bcd425",
+      "businessId": "test-pk-karachi-001",
+      "packagePlanId": "pk-karachi-001-package-haircut-duo",
+      "packageName": "Haircut Duo",
+      "includedServiceIds": [
+        "pk-karachi-001-barber-haircut"
+      ],
+      "customerKey": "923001234567",
+      "customerName": "Protocol Test",
+      "customerPhone": "+923001234567",
+      "customerEmail": "protocol-test@example.com",
+      "totalUses": 2,
+      "remainingUses": 2,
+      "priceLabel": "Rs 2,000",
+      "amountCents": 200000,
+      "currencyCode": "PKR",
+      "paymentProvider": "stripe",
+      "status": "pending_payment",
+      "purchasedAt": "2026-06-11T06:58:29.087Z",
+      "createdAt": "2026-06-11T06:58:29.087Z",
+      "updatedAt": "2026-06-11T06:58:30.040Z",
+      "providerCheckoutSessionId": "cs_test_a13acd6iHhlwfjXKxs8U7HVFFbEGucCmPSEWUrlkqwK1TXvZxvSAy4Nre3"
+    },
+    {
+      "id": "d5260a93-7724-4231-89fe-6032198620f0",
+      "businessId": "test-pk-karachi-001",
+      "packagePlanId": "pk-karachi-001-package-haircut-duo",
+      "packageName": "Haircut Duo",
+      "includedServiceIds": [
+        "pk-karachi-001-barber-haircut"
+      ],
+      "customerKey": "923001234567",
+      "customerName": "Return URL Test",
+      "customerPhone": "+923001234567",
+      "customerEmail": "return-url-test@example.com",
+      "totalUses": 2,
+      "remainingUses": 2,
+      "priceLabel": "Rs 2,000",
+      "amountCents": 200000,
+      "currencyCode": "PKR",
+      "paymentProvider": "stripe",
+      "status": "pending_payment",
+      "purchasedAt": "2026-06-11T07:01:18.177Z",
+      "createdAt": "2026-06-11T07:01:18.177Z",
+      "updatedAt": "2026-06-11T07:01:19.321Z",
+      "providerCheckoutSessionId": "cs_test_a1Q8zepTA8sM3urlJjXKFMGWSEgpXheI14j3Gzhbl2qgYTnegiWBF5Cod4"
+    }
+  ],
   "loyaltyRewards": [],
   "waitlistEntries": []
 }

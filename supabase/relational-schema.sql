@@ -326,6 +326,132 @@ create index if not exists businesses_email_idx on businesses (email);
 create index if not exists businesses_mobile_number_idx on businesses (mobile_number);
 create index if not exists businesses_business_name_idx on businesses (business_name);
 
+-- Ensure every JSONB client has its normalized parent business row before any
+-- child-table backfill or existing database trigger inserts related records.
+insert into businesses (
+  id,
+  admin_token,
+  email,
+  mobile_number,
+  business_phone_number,
+  provider,
+  business_name,
+  website,
+  profile_image_url,
+  account_type,
+  venue_address,
+  preferred_language,
+  onboarding_completed,
+  created_at,
+  updated_at
+)
+select
+  client.id,
+  coalesce(nullif(client.payload->>'adminToken', ''), 'missing-admin-token'),
+  coalesce(client.payload->>'email', client.email, ''),
+  coalesce(client.payload->>'mobileNumber', client.mobile_number, ''),
+  coalesce(client.payload->>'businessPhoneNumber', ''),
+  case
+    when client.payload->>'provider' in ('email', 'facebook', 'google', 'apple')
+      then (client.payload->>'provider')::auth_provider
+    else 'email'::auth_provider
+  end,
+  coalesce(client.payload->>'businessName', client.business_name, ''),
+  coalesce(client.payload->>'website', ''),
+  coalesce(client.payload->>'profileImageUrl', ''),
+  case
+    when client.payload->>'accountType' in ('independent', 'team')
+      then (client.payload->>'accountType')::account_type
+    else null
+  end,
+  coalesce(client.payload->>'venueAddress', ''),
+  case
+    when client.payload->>'preferredLanguage' in (
+      'english',
+      'urdu',
+      'arabic',
+      'hindi',
+      'spanish',
+      'french',
+      'german',
+      'turkish',
+      'portuguese',
+      'chinese'
+    )
+      then (client.payload->>'preferredLanguage')::preferred_language
+    else null
+  end,
+  coalesce((client.payload->>'onboardingCompleted')::boolean, false),
+  coalesce((client.payload->>'createdAt')::timestamptz, now()),
+  coalesce((client.payload->>'updatedAt')::timestamptz, now())
+from client_platform_clients as client
+on conflict (id) do update set
+  admin_token = excluded.admin_token,
+  email = excluded.email,
+  mobile_number = excluded.mobile_number,
+  business_phone_number = excluded.business_phone_number,
+  provider = excluded.provider,
+  business_name = excluded.business_name,
+  website = excluded.website,
+  profile_image_url = excluded.profile_image_url,
+  account_type = excluded.account_type,
+  venue_address = excluded.venue_address,
+  preferred_language = excluded.preferred_language,
+  onboarding_completed = excluded.onboarding_completed,
+  updated_at = excluded.updated_at;
+
+create table if not exists business_gallery_images (
+  id text primary key default gen_random_uuid()::text,
+  business_id text not null references businesses (id) on delete cascade,
+  image_url text not null,
+  storage_path text not null default '',
+  display_order integer not null default 0,
+  is_cover boolean not null default false,
+  mime_type text not null default '',
+  file_size_bytes integer null check (file_size_bytes is null or file_size_bytes >= 0),
+  alt_text text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists business_gallery_images_business_id_idx
+  on business_gallery_images (business_id);
+
+create index if not exists business_gallery_images_business_order_idx
+  on business_gallery_images (business_id, display_order);
+
+create unique index if not exists business_gallery_images_one_cover_idx
+  on business_gallery_images (business_id)
+  where is_cover = true;
+
+-- Backfill gallery images only after their parent businesses exist.
+insert into business_gallery_images (
+  business_id,
+  image_url,
+  display_order,
+  is_cover,
+  created_at,
+  updated_at
+)
+select
+  client.id,
+  image.value,
+  (image.ordinality - 1)::integer,
+  image.ordinality = 1,
+  now(),
+  now()
+from client_platform_clients as client
+cross join lateral jsonb_array_elements_text(
+  coalesce(client.payload->'galleryImageUrls', '[]'::jsonb)
+) with ordinality as image(value, ordinality)
+where image.value <> ''
+  and exists (
+    select 1
+    from businesses as business
+    where business.id = client.id
+  )
+on conflict do nothing;
+
 create table if not exists business_settings (
   business_id text primary key references businesses (id) on delete cascade,
   currency_code text not null default 'PKR',
@@ -334,6 +460,20 @@ create table if not exists business_settings (
   use_service_templates boolean not null default true,
   report_page_title text not null default '',
   report_page_subtitle text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists business_stripe_connect_accounts (
+  business_id text primary key references businesses (id) on delete cascade,
+  stripe_account_id text not null unique,
+  charges_enabled boolean not null default false,
+  payouts_enabled boolean not null default false,
+  details_submitted boolean not null default false,
+  requirements_due text[] not null default '{}'::text[],
+  disabled_reason text not null default '',
+  country text not null default '',
+  default_currency text not null default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

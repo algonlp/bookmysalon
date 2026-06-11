@@ -9,7 +9,12 @@ export type AppointmentSource =
   | 'facebook'
   | 'applemaps';
 
-export type PackagePurchaseStatus = 'active' | 'expired' | 'fully_used';
+export type PackagePurchaseStatus =
+  | 'pending_payment'
+  | 'active'
+  | 'expired'
+  | 'fully_used'
+  | 'payment_failed';
 
 export type LoyaltyRewardStatus = 'available' | 'reserved' | 'redeemed' | 'expired';
 
@@ -267,6 +272,11 @@ export interface PackagePurchaseRecord {
   totalUses: number;
   remainingUses: number;
   priceLabel: string;
+  amountCents?: number;
+  currencyCode?: string;
+  paymentProvider?: 'stripe' | 'manual';
+  providerCheckoutSessionId?: string;
+  providerPaymentIntentId?: string;
   status: PackagePurchaseStatus;
   purchasedAt: string;
   expiresAt?: string;
@@ -305,6 +315,8 @@ export interface SellPackageInput {
   customerPhone: string;
   customerEmail?: string;
 }
+
+export type CreatePackageCheckoutInput = SellPackageInput;
 
 export interface WaitlistRecord {
   id: string;

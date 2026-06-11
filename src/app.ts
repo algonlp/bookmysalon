@@ -5,7 +5,9 @@ import { env } from './config/env';
 import { apiRouter } from './api/routes';
 import { errorHandler } from './api/middlewares/errorHandler';
 import { notFoundHandler } from './api/middlewares/notFound';
+import { asyncHandler } from './api/middlewares/asyncHandler';
 import { requirePlatformAdminPageAccess } from './api/middlewares/requirePlatformAdminAccess';
+import { stripeWebhookController } from './api/controllers/stripeWebhook.controller';
 
 export const app = express();
 
@@ -56,6 +58,12 @@ app.use((_req, res, next) => {
 
   next();
 });
+
+app.post(
+  '/api/stripe/webhook',
+  express.raw({ type: 'application/json' }),
+  asyncHandler(stripeWebhookController.handleWebhook)
+);
 
 app.use(express.json({ limit: '8mb' }));
 app.use(express.static(publicDir, { index: false }));

@@ -90,6 +90,42 @@
                     <option value="">Select a service</option>
                   </select>
                 </label>
+
+                <div class="booking-history-panel is-hidden" id="booking-package-plans-panel">
+                  <strong>Buy a package</strong>
+                  <p class="booking-package-panel-copy">
+                    Pick a package, pay securely by card, then use the package balance for future bookings.
+                  </p>
+                  <div class="booking-history-list booking-package-panel-list" id="booking-package-plans-list"></div>
+                  <div class="booking-package-panel-grid">
+                    <label class="booking-package-panel-field">
+                      <span>Package</span>
+                      <select id="booking-package-plan-select">
+                        <option value="">Select a package</option>
+                      </select>
+                    </label>
+                    <label class="booking-package-panel-field">
+                      <span>Preferred date</span>
+                      <select id="booking-package-plan-date-select">
+                        <option value="">Select a date</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div class="booking-package-preview is-hidden" id="booking-package-plan-preview">
+                    <div class="booking-package-preview-header">
+                      <div>
+                        <p class="booking-package-preview-eyebrow">Selected package</p>
+                        <strong id="booking-package-plan-preview-title"></strong>
+                      </div>
+                      <span class="booking-package-preview-badge" id="booking-package-plan-preview-badge"></span>
+                    </div>
+                    <p class="booking-package-preview-copy" id="booking-package-plan-preview-copy"></p>
+                    <p class="booking-package-preview-services" id="booking-package-plan-preview-services"></p>
+                    <button class="continue-button booking-package-buy-button" id="booking-package-buy-button" type="button">
+                      Buy package
+                    </button>
+                  </div>
+                </div>
               </section>
 
               <section class="booking-step-panel booking-professional-panel" data-booking-step="professional">

@@ -1,5 +1,5 @@
 ﻿app:
-  name: algonlp-fresha
+  name: qr-schedule
   env: base
 logging:
   level: INFO

@@ -34,6 +34,20 @@ const normalizeBaseUrl = (value: string | undefined): string | undefined => {
     return undefined;
   }
 
+  const normalizedValue = value.trim();
+
+  try {
+    return new URL(normalizedValue).origin;
+  } catch {
+    return normalizedValue.replace(/\/+$/, '');
+  }
+};
+
+const normalizeUrlWithPath = (value: string | undefined): string | undefined => {
+  if (typeof value !== 'string' || value.trim().length === 0) {
+    return undefined;
+  }
+
   return value.trim().replace(/\/+$/, '');
 };
 
@@ -58,6 +72,9 @@ const parseStringList = (value: string | undefined): string[] => {
     .map((entry) => entry.trim())
     .filter((entry) => entry.length > 0);
 };
+
+const normalizeOptionalEnv = (value: string | undefined): string | undefined =>
+  value?.trim() || undefined;
 
 const envSchema = z.object({
   PORT: z.coerce.number().int().positive().default(8000),
@@ -218,6 +235,27 @@ const envSchema = z.object({
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_PHONE_NUMBER: z.string().optional(),
+  STRIPE_SECRET_KEY: z
+    .string()
+    .regex(/^sk_(test|live)_[A-Za-z0-9]+$/, 'STRIPE_SECRET_KEY must start with sk_test_ or sk_live_')
+    .optional(),
+  STRIPE_PUBLISHABLE_KEY: z
+    .string()
+    .regex(
+      /^pk_(test|live)_[A-Za-z0-9]+$/,
+      'STRIPE_PUBLISHABLE_KEY must start with pk_test_ or pk_live_'
+    )
+    .optional(),
+  STRIPE_WEBHOOK_SECRET: z
+    .string()
+    .regex(/^whsec_[A-Za-z0-9]+$/, 'STRIPE_WEBHOOK_SECRET must start with whsec_')
+    .optional(),
+  STRIPE_CHARGE_CURRENCY_CODE: z.string().trim().length(3).optional(),
+  STRIPE_PKR_TO_GBP_RATE: z.coerce.number().positive().optional(),
+  STRIPE_PACKAGE_PAYMENT_CURRENCY_CODE: z.string().trim().length(3).optional(),
+  STRIPE_PACKAGE_PAYMENT_APPLICATION_FEE_CENTS: z.coerce.number().int().min(0).default(0),
+  STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE: z.boolean().default(false),
+  STRIPE_CONNECT_COUNTRY_CODE: z.string().trim().length(2).default('GB'),
   SALON_ADMIN_PHONE: z.string().optional()
 });
 
@@ -376,13 +414,42 @@ const resolvedEnv = {
   PUBLIC_HOME_SEARCH_RESULTS_LIMIT: process.env.PUBLIC_HOME_SEARCH_RESULTS_LIMIT,
   PUBLIC_LOCATION_SEARCH_COUNTRY_CODE: process.env.PUBLIC_LOCATION_SEARCH_COUNTRY_CODE?.trim().toLowerCase(),
   PUBLIC_LOCATION_SEARCH_COUNTRY_LABEL: process.env.PUBLIC_LOCATION_SEARCH_COUNTRY_LABEL?.trim(),
-  LOCATION_SEARCH_PROVIDER_BASE_URL: normalizeBaseUrl(process.env.LOCATION_SEARCH_PROVIDER_BASE_URL),
+  LOCATION_SEARCH_PROVIDER_BASE_URL: normalizeUrlWithPath(process.env.LOCATION_SEARCH_PROVIDER_BASE_URL),
   TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID?.trim() || process.env.TWILIO_SID?.trim(),
   TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN?.trim() || process.env.TWILIO_TOKEN?.trim(),
-  TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER?.trim() || process.env.TWILIO_FROM?.trim()
+  TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER?.trim() || process.env.TWILIO_FROM?.trim(),
+  STRIPE_SECRET_KEY: normalizeOptionalEnv(process.env.STRIPE_SECRET_KEY),
+  STRIPE_PUBLISHABLE_KEY: normalizeOptionalEnv(process.env.STRIPE_PUBLISHABLE_KEY),
+  STRIPE_WEBHOOK_SECRET: normalizeOptionalEnv(process.env.STRIPE_WEBHOOK_SECRET),
+  STRIPE_CHARGE_CURRENCY_CODE: process.env.STRIPE_CHARGE_CURRENCY_CODE?.trim(),
+  STRIPE_PKR_TO_GBP_RATE: process.env.STRIPE_PKR_TO_GBP_RATE,
+  STRIPE_PACKAGE_PAYMENT_CURRENCY_CODE: process.env.STRIPE_PACKAGE_PAYMENT_CURRENCY_CODE?.trim(),
+  STRIPE_PACKAGE_PAYMENT_APPLICATION_FEE_CENTS:
+    process.env.STRIPE_PACKAGE_PAYMENT_APPLICATION_FEE_CENTS,
+  STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE: parseBooleanEnv(
+    process.env.STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE,
+    false
+  ),
+  STRIPE_CONNECT_COUNTRY_CODE: process.env.STRIPE_CONNECT_COUNTRY_CODE?.trim()
 };
 
 const parsedEnv = envSchema.parse(resolvedEnv);
+
+const stripeSecretMode = parsedEnv.STRIPE_SECRET_KEY?.match(/^sk_(test|live)_/)?.[1];
+const stripePublishableMode = parsedEnv.STRIPE_PUBLISHABLE_KEY?.match(/^pk_(test|live)_/)?.[1];
+
+if (stripeSecretMode && stripePublishableMode && stripeSecretMode !== stripePublishableMode) {
+  throw new Error('Stripe secret and publishable keys must both use the same test or live mode.');
+}
+
+if (
+  stripeSecretMode === 'live' &&
+  parsedEnv.STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE
+) {
+  throw new Error(
+    'STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE must be false when using a live Stripe key.'
+  );
+}
 
 if (
   parsedEnv.CLIENT_PLATFORM_STORAGE === 'supabase' &&

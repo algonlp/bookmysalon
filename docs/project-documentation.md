@@ -1,8 +1,8 @@
-# AlgoNLP Fresha Project
+# QR Schedule Project
 
 ## Complete Project Documentation
 
-- Project name: `algonlp-fresha`
+- Project name: `qr-schedule`
 - Version: `0.1.0`
 - Documentation date: March 12, 2026
 - Primary stack: Node.js, TypeScript, Express, vanilla HTML/CSS/JS, Vitest
@@ -11,7 +11,7 @@
 
 ## 1. Executive Summary
 
-AlgoNLP Fresha Project is a service-booking and salon-management prototype inspired by the Fresha product experience. The application combines:
+QR Schedule Project is a service-booking and salon-management prototype for appointment scheduling workflows. The application combines:
 
 1. a public-facing marketing site,
 2. a professional signup and onboarding flow,
@@ -810,7 +810,7 @@ If this project continues, the most sensible next implementation order is:
 
 ## 24. Conclusion
 
-AlgoNLP Fresha Project already provides a strong interactive prototype for a salon/spa booking platform. The onboarding flow, dashboard payload generation, QR-based booking flow, and appointment slot logic are implemented and tested. The project is also structured well enough to grow into a fuller SaaS platform.
+QR Schedule Project already provides a strong interactive prototype for a salon/spa booking platform. The onboarding flow, dashboard payload generation, QR-based booking flow, and appointment slot logic are implemented and tested. The project is also structured well enough to grow into a fuller SaaS platform.
 
 Its strongest qualities today are:
 
