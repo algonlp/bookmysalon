@@ -168,6 +168,38 @@ const buildFeatureAccess = (currentPlan: SubscriptionPlan | null): BillingOvervi
   }));
 };
 
+const mapStripeSubscriptionStatus = (
+  status: string | undefined,
+  fallback: BusinessSubscriptionStatus
+): BusinessSubscriptionStatus => {
+  if (status === 'trialing') {
+    return 'trialing';
+  }
+
+  if (status === 'active') {
+    return 'active';
+  }
+
+  if (status === 'past_due' || status === 'unpaid' || status === 'incomplete') {
+    return 'past_due';
+  }
+
+  if (status === 'canceled' || status === 'cancelled' || status === 'incomplete_expired') {
+    return 'cancelled';
+  }
+
+  return fallback;
+};
+
+const findStripeSubscriptionByProviderId = async (
+  providerSubscriptionId: string
+): Promise<BusinessSubscription | null> =>
+  (await billingRepository.listBusinessSubscriptions()).find(
+    (subscription) =>
+      subscription.provider === 'stripe' &&
+      subscription.providerSubscriptionId === providerSubscriptionId
+  ) ?? null;
+
 export const billingService = {
   async listSubscriptionPlans(): Promise<{ plans: SubscriptionPlan[] }> {
     return {
@@ -530,6 +562,139 @@ export const billingService = {
       invoice,
       overview: await billingService.getBillingOverview(input.businessId)
     };
+  },
+
+  async recordStripeInvoicePaid(input: {
+    providerInvoiceId: string;
+    providerSubscriptionId: string;
+    providerCustomerId?: string;
+    amountPaidCents?: number;
+    currencyCode?: string;
+    periodStart?: string;
+    periodEnd?: string;
+    paidAt?: string;
+    metadata?: Record<string, string>;
+  }): Promise<void> {
+    if (!input.providerSubscriptionId) {
+      return;
+    }
+
+    const existingInvoice = (await billingRepository.listBillingInvoices()).find(
+      (invoice) => invoice.id === input.providerInvoiceId
+    );
+
+    let subscription = await findStripeSubscriptionByProviderId(input.providerSubscriptionId);
+
+    if (!subscription && input.metadata?.businessId && input.metadata.planId) {
+      const activation = await billingService.activateStripeSubscriptionCheckout({
+        businessId: input.metadata.businessId,
+        planId: input.metadata.planId,
+        providerCustomerId: input.providerCustomerId,
+        providerSubscriptionId: input.providerSubscriptionId
+      });
+      subscription = activation.subscription;
+    }
+
+    if (!subscription) {
+      return;
+    }
+
+    const plans = await listNormalizedSubscriptionPlans();
+    const plan = plans.find((entry) => entry.id === subscription?.planId) ?? null;
+    const periodStart = input.periodStart ?? subscription.currentPeriodStart;
+    const periodEnd = input.periodEnd ?? subscription.currentPeriodEnd;
+    const isNewerPeriod = periodEnd.localeCompare(subscription.currentPeriodEnd) > 0;
+    const includedCredits = isNewerPeriod && !existingInvoice ? getPlanIncludedCredits(plan) : 0;
+    const paidAt = input.paidAt ?? new Date().toISOString();
+
+    const updatedSubscription: BusinessSubscription = {
+      ...subscription,
+      status: subscription.status === 'trialing' ? 'trialing' : 'active',
+      providerCustomerId: input.providerCustomerId ?? subscription.providerCustomerId,
+      appointmentCreditsGranted: subscription.appointmentCreditsGranted + includedCredits,
+      appointmentCreditsRemaining: subscription.appointmentCreditsRemaining + includedCredits,
+      currentPeriodStart: periodStart,
+      currentPeriodEnd: periodEnd,
+      cancelledAt: undefined,
+      updatedAt: paidAt
+    };
+
+    await billingRepository.saveBusinessSubscription(updatedSubscription);
+
+    await billingRepository.saveBillingInvoice({
+      id: input.providerInvoiceId,
+      businessId: subscription.businessId,
+      subscriptionId: subscription.id,
+      planId: subscription.planId,
+      amountCents: input.amountPaidCents ?? plan?.amountCents ?? 0,
+      currencyCode: input.currencyCode ?? plan?.currencyCode ?? 'GBP',
+      status: 'paid',
+      periodStart,
+      periodEnd,
+      paidAt,
+      createdAt: existingInvoice?.createdAt ?? paidAt,
+      updatedAt: paidAt
+    });
+  },
+
+  async markStripeInvoicePaymentFailed(input: {
+    providerSubscriptionId: string;
+    failedAt?: string;
+  }): Promise<void> {
+    const subscription = await findStripeSubscriptionByProviderId(input.providerSubscriptionId);
+
+    if (!subscription) {
+      return;
+    }
+
+    await billingRepository.saveBusinessSubscription({
+      ...subscription,
+      status: 'past_due',
+      updatedAt: input.failedAt ?? new Date().toISOString()
+    });
+  },
+
+  async syncStripeSubscriptionLifecycle(input: {
+    providerSubscriptionId: string;
+    providerCustomerId?: string;
+    status?: string;
+    currentPeriodStart?: string;
+    currentPeriodEnd?: string;
+    cancelledAt?: string;
+    metadata?: Record<string, string>;
+  }): Promise<void> {
+    if (!input.providerSubscriptionId) {
+      return;
+    }
+
+    let subscription = await findStripeSubscriptionByProviderId(input.providerSubscriptionId);
+
+    if (!subscription && input.metadata?.businessId && input.metadata.planId) {
+      const activation = await billingService.activateStripeSubscriptionCheckout({
+        businessId: input.metadata.businessId,
+        planId: input.metadata.planId,
+        providerCustomerId: input.providerCustomerId,
+        providerSubscriptionId: input.providerSubscriptionId
+      });
+      subscription = activation.subscription;
+    }
+
+    if (!subscription) {
+      return;
+    }
+
+    const nowIso = new Date().toISOString();
+    const nextStatus = mapStripeSubscriptionStatus(input.status, subscription.status);
+
+    await billingRepository.saveBusinessSubscription({
+      ...subscription,
+      status: nextStatus,
+      providerCustomerId: input.providerCustomerId ?? subscription.providerCustomerId,
+      currentPeriodStart: input.currentPeriodStart ?? subscription.currentPeriodStart,
+      currentPeriodEnd: input.currentPeriodEnd ?? subscription.currentPeriodEnd,
+      cancelledAt: nextStatus === 'cancelled' ? input.cancelledAt ?? nowIso : undefined,
+      updatedAt: nowIso
+    });
   },
 
   async consumeAppointmentCreditForBooking(

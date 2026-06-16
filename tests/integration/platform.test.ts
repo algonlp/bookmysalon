@@ -383,12 +383,287 @@ describe('Client platform API', () => {
 
     const response = await request(app)
       .post('/api/stripe/webhook')
+      .set('x-forwarded-proto', 'https')
       .set('stripe-signature', 'test_signature')
       .set('content-type', 'application/json')
       .send({ id: 'evt_unpaid' });
 
     expect(response.status).toBe(200);
     expect(activateSpy).not.toHaveBeenCalled();
+  });
+
+  it('reports that the Stripe webhook endpoint is ready for signed POST requests', async () => {
+    const response = await request(app)
+      .get('/api/stripe/webhook')
+      .set('x-forwarded-proto', 'https');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      status: 'ready',
+      message: 'Stripe webhooks must be sent as signed POST requests'
+    });
+  });
+
+  it('records paid Stripe subscription invoices and advances the billing period', async () => {
+    env.STRIPE_SECRET_KEY = 'sk_test_platform';
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'stripe-invoice-paid@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    vi.spyOn(stripePaymentService, 'retrieveCheckoutSession').mockResolvedValue({
+      id: 'cs_invoice_paid_seed',
+      status: 'complete',
+      payment_status: 'paid',
+      customer: 'cus_invoice_paid',
+      subscription: 'sub_invoice_paid',
+      metadata: {
+        kind: 'subscription_checkout',
+        businessId: clientId,
+        planId: 'plan_single'
+      }
+    } as never);
+
+    await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/checkout/confirm`)
+      .set('x-admin-token', adminToken)
+      .send({ checkoutSessionId: 'cs_invoice_paid_seed' });
+
+    vi.spyOn(stripePaymentService, 'constructWebhookEvent').mockReturnValue({
+      type: 'invoice.paid',
+      data: {
+        object: {
+          id: 'in_paid_renewal',
+          paid: true,
+          status: 'paid',
+          customer: 'cus_invoice_paid',
+          subscription: 'sub_invoice_paid',
+          amount_paid: 249000,
+          currency: 'gbp',
+          created: 1798761600,
+          lines: {
+            data: [
+              {
+                period: {
+                  start: 1798761600,
+                  end: 1801440000
+                }
+              }
+            ]
+          }
+        }
+      }
+    } as never);
+
+    const response = await request(app)
+      .post('/api/stripe/webhook')
+      .set('x-forwarded-proto', 'https')
+      .set('stripe-signature', 'test_signature')
+      .set('content-type', 'application/json')
+      .send({ id: 'evt_invoice_paid' });
+
+    expect(response.status).toBe(200);
+    const subscriptions = await billingRepository.listBusinessSubscriptions();
+    expect(subscriptions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          businessId: clientId,
+          providerSubscriptionId: 'sub_invoice_paid',
+          status: 'active',
+          currentPeriodEnd: '2027-02-01T00:00:00.000Z'
+        })
+      ])
+    );
+    expect(await billingRepository.listBillingInvoices()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'in_paid_renewal',
+          businessId: clientId,
+          amountCents: 249000,
+          currencyCode: 'GBP',
+          status: 'paid'
+        })
+      ])
+    );
+  });
+
+  it('marks a Stripe subscription past due when an invoice payment fails', async () => {
+    env.STRIPE_SECRET_KEY = 'sk_test_platform';
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'stripe-invoice-failed@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    vi.spyOn(stripePaymentService, 'retrieveCheckoutSession').mockResolvedValue({
+      id: 'cs_invoice_failed_seed',
+      status: 'complete',
+      payment_status: 'paid',
+      customer: 'cus_invoice_failed',
+      subscription: 'sub_invoice_failed',
+      metadata: {
+        kind: 'subscription_checkout',
+        businessId: clientId,
+        planId: 'plan_single'
+      }
+    } as never);
+
+    await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/checkout/confirm`)
+      .set('x-admin-token', adminToken)
+      .send({ checkoutSessionId: 'cs_invoice_failed_seed' });
+
+    vi.spyOn(stripePaymentService, 'constructWebhookEvent').mockReturnValue({
+      type: 'invoice.payment_failed',
+      data: {
+        object: {
+          id: 'in_failed',
+          customer: 'cus_invoice_failed',
+          subscription: 'sub_invoice_failed',
+          created: 1798761600
+        }
+      }
+    } as never);
+
+    const response = await request(app)
+      .post('/api/stripe/webhook')
+      .set('x-forwarded-proto', 'https')
+      .set('stripe-signature', 'test_signature')
+      .set('content-type', 'application/json')
+      .send({ id: 'evt_invoice_failed' });
+
+    expect(response.status).toBe(200);
+    expect(await billingRepository.listBusinessSubscriptions()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          providerSubscriptionId: 'sub_invoice_failed',
+          status: 'past_due'
+        })
+      ])
+    );
+  });
+
+  it('syncs Stripe subscription status and period updates', async () => {
+    env.STRIPE_SECRET_KEY = 'sk_test_platform';
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'stripe-subscription-updated@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    vi.spyOn(stripePaymentService, 'retrieveCheckoutSession').mockResolvedValue({
+      id: 'cs_subscription_updated_seed',
+      status: 'complete',
+      payment_status: 'paid',
+      customer: 'cus_subscription_updated',
+      subscription: 'sub_subscription_updated',
+      metadata: {
+        kind: 'subscription_checkout',
+        businessId: clientId,
+        planId: 'plan_single'
+      }
+    } as never);
+
+    await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/checkout/confirm`)
+      .set('x-admin-token', adminToken)
+      .send({ checkoutSessionId: 'cs_subscription_updated_seed' });
+
+    vi.spyOn(stripePaymentService, 'constructWebhookEvent').mockReturnValue({
+      type: 'customer.subscription.updated',
+      data: {
+        object: {
+          id: 'sub_subscription_updated',
+          customer: 'cus_subscription_updated',
+          status: 'past_due',
+          current_period_start: 1796083200,
+          current_period_end: 1798761600
+        }
+      }
+    } as never);
+
+    const response = await request(app)
+      .post('/api/stripe/webhook')
+      .set('x-forwarded-proto', 'https')
+      .set('stripe-signature', 'test_signature')
+      .set('content-type', 'application/json')
+      .send({ id: 'evt_subscription_updated' });
+
+    expect(response.status).toBe(200);
+    expect(await billingRepository.listBusinessSubscriptions()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          providerSubscriptionId: 'sub_subscription_updated',
+          status: 'past_due',
+          currentPeriodStart: '2026-12-01T00:00:00.000Z',
+          currentPeriodEnd: '2027-01-01T00:00:00.000Z'
+        })
+      ])
+    );
+  });
+
+  it('cancels a local subscription when Stripe deletes the subscription', async () => {
+    env.STRIPE_SECRET_KEY = 'sk_test_platform';
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'stripe-subscription-deleted@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    vi.spyOn(stripePaymentService, 'retrieveCheckoutSession').mockResolvedValue({
+      id: 'cs_subscription_deleted_seed',
+      status: 'complete',
+      payment_status: 'paid',
+      customer: 'cus_subscription_deleted',
+      subscription: 'sub_subscription_deleted',
+      metadata: {
+        kind: 'subscription_checkout',
+        businessId: clientId,
+        planId: 'plan_single'
+      }
+    } as never);
+
+    await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/checkout/confirm`)
+      .set('x-admin-token', adminToken)
+      .send({ checkoutSessionId: 'cs_subscription_deleted_seed' });
+
+    vi.spyOn(stripePaymentService, 'constructWebhookEvent').mockReturnValue({
+      type: 'customer.subscription.deleted',
+      data: {
+        object: {
+          id: 'sub_subscription_deleted',
+          customer: 'cus_subscription_deleted',
+          status: 'canceled',
+          current_period_start: 1796083200,
+          current_period_end: 1798761600,
+          canceled_at: 1796170000
+        }
+      }
+    } as never);
+
+    const response = await request(app)
+      .post('/api/stripe/webhook')
+      .set('x-forwarded-proto', 'https')
+      .set('stripe-signature', 'test_signature')
+      .set('content-type', 'application/json')
+      .send({ id: 'evt_subscription_deleted' });
+
+    expect(response.status).toBe(200);
+    expect(await billingRepository.listBusinessSubscriptions()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          providerSubscriptionId: 'sub_subscription_deleted',
+          status: 'cancelled',
+          cancelledAt: '2026-12-02T00:06:40.000Z'
+        })
+      ])
+    );
   });
 
   it('sets an admin session cookie for the whole app and accepts it on protected routes', async () => {

@@ -23,7 +23,8 @@ if (env.TRUST_PROXY) {
 
 app.use((req, res, next) => {
   if (shouldEnforceHttps && !isSecureRequest(req)) {
-    res.redirect(308, `${env.PUBLIC_BASE_URL}${req.originalUrl}`);
+    res.setHeader('Cache-Control', 'no-store');
+    res.redirect(307, `${env.PUBLIC_BASE_URL}${req.originalUrl}`);
     return;
   }
 
@@ -64,6 +65,13 @@ app.post(
   express.raw({ type: 'application/json' }),
   asyncHandler(stripeWebhookController.handleWebhook)
 );
+
+app.get('/api/stripe/webhook', (_req, res) => {
+  res.status(200).json({
+    status: 'ready',
+    message: 'Stripe webhooks must be sent as signed POST requests'
+  });
+});
 
 app.use(express.json({ limit: '8mb' }));
 app.use(express.static(publicDir, { index: false }));
