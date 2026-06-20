@@ -94,6 +94,7 @@ const runningLateNotificationSchema = z.object({
 
 const createAppointmentPaymentSchema = z.object({
   amountValue: z.number().positive('Payment amount must be greater than zero'),
+  tipAmountValue: z.number().min(0, 'Tip amount cannot be negative').optional(),
   method: z.enum(['cash', 'card', 'bank_transfer', 'wallet', 'other']),
   note: z.string().trim().max(240).optional().or(z.literal(''))
 });

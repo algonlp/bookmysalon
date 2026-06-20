@@ -12100,6 +12100,191 @@
       "onboardingCompleted": true,
       "createdAt": "2026-06-11T07:50:39.800Z",
       "updatedAt": "2026-06-11T07:51:15.549Z"
+    },
+    {
+      "id": "9a3598ac-9d09-4160-b5aa-5862d04f36d9",
+      "adminToken": "7d074acf-0ad5-4482-a9db-7bfd06af8f91",
+      "email": "pk@gmail.com",
+      "mobileNumber": "",
+      "businessPhoneNumber": "",
+      "provider": "email",
+      "businessName": "maqsood paracha",
+      "website": "",
+      "profileImageUrl": "",
+      "galleryImageUrls": [],
+      "serviceTypes": [
+        "Hair salon",
+        "Nails",
+        "Eyebrows & lashes",
+        "Beauty salon",
+        "Medspa",
+        "Barber",
+        "Massage",
+        "Spa & sauna",
+        "Waxing salon"
+      ],
+      "services": [
+        {
+          "id": "hair-salon-cut-and-style",
+          "name": "Cut and style",
+          "durationMinutes": 60,
+          "categoryName": "Hair salon",
+          "priceLabel": "$2,200",
+          "description": "Signature haircut finished with a professional blow-dry.",
+          "isActive": true
+        },
+        {
+          "id": "hair-salon-blow-dry",
+          "name": "Blow dry",
+          "durationMinutes": 45,
+          "categoryName": "Hair salon",
+          "priceLabel": "$1,500",
+          "description": "Smooth blow-dry with styling tailored to the guest.",
+          "isActive": true
+        },
+        {
+          "id": "nails-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Nails",
+          "priceLabel": "$1,600",
+          "description": "Nail shaping, cuticle care, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "nails-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Nails",
+          "priceLabel": "$2,100",
+          "description": "Foot soak, nail care, exfoliation, and polish refresh.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-brow-shaping",
+          "name": "Brow shaping",
+          "durationMinutes": 30,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$900",
+          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "isActive": true
+        },
+        {
+          "id": "eyebrows-lashes-lash-lift",
+          "name": "Lash lift",
+          "durationMinutes": 45,
+          "categoryName": "Eyebrows & lashes",
+          "priceLabel": "$1,800",
+          "description": "Lift and curl natural lashes for a brighter eye look.",
+          "isActive": true
+        },
+        {
+          "id": "beauty-salon-facial-treatment",
+          "name": "Facial treatment",
+          "durationMinutes": 60,
+          "categoryName": "Beauty salon",
+          "priceLabel": "$2,700",
+          "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
+          "isActive": true
+        },
+        {
+          "id": "medspa-skin-consultation",
+          "name": "Skin consultation",
+          "durationMinutes": 45,
+          "categoryName": "Medspa",
+          "priceLabel": "$2,400",
+          "description": "Professional consultation to recommend the right skin treatments.",
+          "isActive": true
+        },
+        {
+          "id": "barber-haircut",
+          "name": "Haircut",
+          "durationMinutes": 45,
+          "categoryName": "Barber",
+          "priceLabel": "$1,200",
+          "description": "Classic barber haircut with clipper and scissor finishing.",
+          "isActive": true
+        },
+        {
+          "id": "barber-beard-trim",
+          "name": "Beard trim",
+          "durationMinutes": 30,
+          "categoryName": "Barber",
+          "priceLabel": "$800",
+          "description": "Shape, line-up, and beard tidy-up for a clean finish.",
+          "isActive": true
+        },
+        {
+          "id": "massage-deep-tissue-massage",
+          "name": "Deep tissue massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$3,200",
+          "description": "Targeted pressure massage designed for muscle recovery.",
+          "isActive": true
+        },
+        {
+          "id": "massage-relaxation-massage",
+          "name": "Relaxation massage",
+          "durationMinutes": 60,
+          "categoryName": "Massage",
+          "priceLabel": "$2,900",
+          "description": "Full-body relaxation massage to reduce stress and tension.",
+          "isActive": true
+        },
+        {
+          "id": "spa-sauna-spa-session",
+          "name": "Spa session",
+          "durationMinutes": 60,
+          "categoryName": "Spa & sauna",
+          "priceLabel": "$3,500",
+          "description": "Unwind with a restorative spa session in a calm setting.",
+          "isActive": true
+        },
+        {
+          "id": "waxing-salon-full-arm-waxing",
+          "name": "Full arm waxing",
+          "durationMinutes": 45,
+          "categoryName": "Waxing salon",
+          "priceLabel": "$1,700",
+          "description": "Full arm waxing service for a smooth, polished result.",
+          "isActive": true
+        }
+      ],
+      "products": [],
+      "productSales": [],
+      "packagePlans": [],
+      "loyaltyProgram": null,
+      "businessSettings": {
+        "currencyCode": "USD",
+        "currencyLocale": "en-US",
+        "slotTimes": [
+          "09:00",
+          "10:00",
+          "11:00",
+          "12:00",
+          "14:00",
+          "15:00",
+          "16:00",
+          "17:00"
+        ],
+        "useServiceTemplates": true,
+        "reportMetadata": {
+          "pageTitle": "Reporting and analytics",
+          "pageSubtitle": "Access all of your business reports in one workspace."
+        }
+      },
+      "customerProfiles": [],
+      "teamMembers": [],
+      "accountType": "independent",
+      "serviceLocation": [
+        "mobile"
+      ],
+      "venueAddress": "karachi",
+      "preferredLanguage": "english",
+      "onboardingCompleted": true,
+      "createdAt": "2026-06-16T05:04:36.327Z",
+      "updatedAt": "2026-06-16T05:05:17.871Z"
     }
   ]
 }

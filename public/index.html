@@ -168,7 +168,24 @@
                   <path d="M8 3v4M16 3v4M4 10h16"></path>
                 </svg>
               </span>
-              <input id="time-query" name="time" type="date" aria-label="Choose date" />
+              <button
+                class="time-query-trigger"
+                id="time-query-trigger"
+                type="button"
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                aria-controls="time-query-popover"
+              >
+                Any time
+              </button>
+              <input id="time-query" name="time" type="hidden" />
+              <input id="time-period-query" name="period" type="hidden" value="any" />
+              <div
+                class="time-query-popover is-hidden"
+                id="time-query-popover"
+                role="dialog"
+                aria-label="Choose date and time"
+              ></div>
             </label>
 
             <button class="search-button" type="submit">Search</button>
@@ -180,12 +197,10 @@
           <div class="public-salon-showcase-copy">
             <h2 id="public-salon-showcase-title">Recommended</h2>
             <p
-              class="public-salon-showcase-status"
+              class="public-salon-showcase-status is-hidden"
               id="public-salon-showcase-status"
               aria-live="polite"
-            >
-              Showing recently launched businesses ready for booking.
-            </p>
+            ></p>
           </div>
 
           <div class="public-salon-showcase-list" id="public-salon-showcase-list"></div>

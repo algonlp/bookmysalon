@@ -2162,12 +2162,14 @@ describe('Client platform API', () => {
     expect(initialBalance.outstandingAmountValue).toBe(initialBalance.expectedAmountValue);
 
     const paymentAmount = Math.max(1, Math.floor(initialBalance.expectedAmountValue / 2));
+    const tipAmount = 10;
 
     const createPaymentResponse = await request(app)
       .post(`/api/platform/clients/${clientId}/appointments/${appointmentId}/payments`)
       .set('x-admin-token', adminToken)
       .send({
-        amountValue: paymentAmount,
+        amountValue: paymentAmount + tipAmount,
+        tipAmountValue: tipAmount,
         method: 'cash',
         note: 'Front desk payment'
       });
@@ -2176,7 +2178,9 @@ describe('Client platform API', () => {
     expect(createPaymentResponse.body.payment).toEqual(
       expect.objectContaining({
         appointmentId,
-        amountValue: paymentAmount,
+        amountValue: paymentAmount + tipAmount,
+        serviceAmountValue: paymentAmount,
+        tipAmountValue: tipAmount,
         method: 'cash',
         status: 'posted',
         note: 'Front desk payment'
@@ -2186,9 +2190,13 @@ describe('Client platform API', () => {
       expect.objectContaining({
         appointmentId,
         paidAmountValue: paymentAmount,
+        tipAmountValue: tipAmount,
         outstandingAmountValue: initialBalance.expectedAmountValue - paymentAmount
       })
     );
+    expect(createPaymentResponse.body.summary.collectedAmountValue).toBe(paymentAmount + tipAmount);
+    expect(createPaymentResponse.body.summary.serviceCollectedAmountValue).toBe(paymentAmount);
+    expect(createPaymentResponse.body.summary.tipCollectedAmountValue).toBe(tipAmount);
 
     const finalPaymentsResponse = await request(app)
       .get(`/api/platform/clients/${clientId}/payments`)
@@ -2199,7 +2207,9 @@ describe('Client platform API', () => {
       expect.objectContaining({
         currencyCode: initialBalance.currencyCode,
         expectedAmountValue: initialBalance.expectedAmountValue,
-        collectedAmountValue: paymentAmount,
+        collectedAmountValue: paymentAmount + tipAmount,
+        serviceCollectedAmountValue: paymentAmount,
+        tipCollectedAmountValue: tipAmount,
         pendingAmountValue: initialBalance.expectedAmountValue - paymentAmount,
         recordedPaymentsCount: 1,
         outstandingAppointmentsCount: 1
@@ -2209,7 +2219,9 @@ describe('Client platform API', () => {
       expect.arrayContaining([
         expect.objectContaining({
           appointmentId,
-          amountValue: paymentAmount,
+          amountValue: paymentAmount + tipAmount,
+          serviceAmountValue: paymentAmount,
+          tipAmountValue: tipAmount,
           method: 'cash'
         })
       ])

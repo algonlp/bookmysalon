@@ -198,6 +198,7 @@ export interface AppointmentRunningLateInput {
 
 export interface CreateAppointmentPaymentInput {
   amountValue: number;
+  tipAmountValue?: number;
   method: PaymentMethod;
   note?: string;
 }
@@ -208,10 +209,14 @@ export interface PaymentRecord {
   appointmentId: string;
   customerName: string;
   serviceName: string;
+  teamMemberName?: string;
   appointmentDate: string;
   appointmentTime: string;
   currencyCode: string;
   amountValue: number;
+  serviceAmountValue?: number;
+  tipAmountValue?: number;
+  tipRecipientName?: string;
   entryType: PaymentEntryType;
   method: PaymentMethod;
   status: PaymentStatus;
@@ -230,6 +235,7 @@ export interface AppointmentPaymentBalance {
   currencyCode: string;
   expectedAmountValue: number;
   paidAmountValue: number;
+  tipAmountValue: number;
   outstandingAmountValue: number;
 }
 
@@ -237,6 +243,8 @@ export interface PaymentSnapshot {
   currencyCode: string;
   expectedAmountValue: number;
   collectedAmountValue: number;
+  serviceCollectedAmountValue: number;
+  tipCollectedAmountValue: number;
   pendingAmountValue: number;
   overpaidAmountValue: number;
   recordedPaymentsCount: number;

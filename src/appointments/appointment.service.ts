@@ -481,6 +481,32 @@ const getPaymentNetAmount = (paymentRecord: PaymentRecord): number => {
   return paymentRecord.entryType === 'refund' ? -paymentRecord.amountValue : paymentRecord.amountValue;
 };
 
+const getPaymentServiceNetAmount = (paymentRecord: PaymentRecord): number => {
+  if (paymentRecord.status !== 'posted') {
+    return 0;
+  }
+
+  const serviceAmountValue =
+    Number.isFinite(paymentRecord.serviceAmountValue) && Number(paymentRecord.serviceAmountValue) >= 0
+      ? Number(paymentRecord.serviceAmountValue)
+      : Math.max(0, Number(paymentRecord.amountValue) - Number(paymentRecord.tipAmountValue ?? 0));
+
+  return paymentRecord.entryType === 'refund' ? -serviceAmountValue : serviceAmountValue;
+};
+
+const getPaymentTipNetAmount = (paymentRecord: PaymentRecord): number => {
+  if (paymentRecord.status !== 'posted') {
+    return 0;
+  }
+
+  const tipAmountValue =
+    Number.isFinite(paymentRecord.tipAmountValue) && Number(paymentRecord.tipAmountValue) >= 0
+      ? Number(paymentRecord.tipAmountValue)
+      : 0;
+
+  return paymentRecord.entryType === 'refund' ? -tipAmountValue : tipAmountValue;
+};
+
 const hasPotentialFutureSlots = (appointmentDate: string, slotTimes: string[]): boolean =>
   slotTimes.some((slot) => !isPastSlot(appointmentDate, slot));
 
@@ -769,12 +795,19 @@ const buildPaymentSnapshotForAppointments = (
   balances: AppointmentPaymentBalance[];
 } => {
   const paymentsByAppointmentId = new Map<string, number>();
+  const tipsByAppointmentId = new Map<string, number>();
 
   for (const paymentRecord of paymentRecords) {
     const currentAmount = paymentsByAppointmentId.get(paymentRecord.appointmentId) ?? 0;
     paymentsByAppointmentId.set(
       paymentRecord.appointmentId,
-      currentAmount + getPaymentNetAmount(paymentRecord)
+      currentAmount + getPaymentServiceNetAmount(paymentRecord)
+    );
+
+    const currentTipAmount = tipsByAppointmentId.get(paymentRecord.appointmentId) ?? 0;
+    tipsByAppointmentId.set(
+      paymentRecord.appointmentId,
+      currentTipAmount + getPaymentTipNetAmount(paymentRecord)
     );
   }
 
@@ -786,18 +819,21 @@ const buildPaymentSnapshotForAppointments = (
           ? Number(appointment.serviceAmountValue)
           : 0;
       const paidAmountValue = Math.max(0, paymentsByAppointmentId.get(appointment.id) ?? 0);
+      const tipAmountValue = Math.max(0, tipsByAppointmentId.get(appointment.id) ?? 0);
       const outstandingAmountValue = Math.max(0, expectedAmountValue - paidAmountValue);
 
       return {
         appointmentId: appointment.id,
         customerName: appointment.customerName,
         serviceName: appointment.serviceName,
+        teamMemberName: appointment.teamMemberName,
         appointmentDate: appointment.appointmentDate,
         appointmentTime: appointment.appointmentTime,
         status: appointment.status,
         currencyCode: appointment.currencyCode?.trim() ?? '',
         expectedAmountValue,
         paidAmountValue,
+        tipAmountValue,
         outstandingAmountValue
       };
     })
@@ -813,6 +849,14 @@ const buildPaymentSnapshotForAppointments = (
   );
   const collectedAmountValue = paymentRecords.reduce(
     (sum, paymentRecord) => sum + getPaymentNetAmount(paymentRecord),
+    0
+  );
+  const serviceCollectedAmountValue = paymentRecords.reduce(
+    (sum, paymentRecord) => sum + getPaymentServiceNetAmount(paymentRecord),
+    0
+  );
+  const tipCollectedAmountValue = paymentRecords.reduce(
+    (sum, paymentRecord) => sum + getPaymentTipNetAmount(paymentRecord),
     0
   );
   const pendingAmountValue = balances.reduce(
@@ -833,6 +877,8 @@ const buildPaymentSnapshotForAppointments = (
       currencyCode,
       expectedAmountValue,
       collectedAmountValue,
+      serviceCollectedAmountValue,
+      tipCollectedAmountValue,
       pendingAmountValue,
       overpaidAmountValue,
       recordedPaymentsCount: paymentRecords.filter((paymentRecord) => paymentRecord.status === 'posted')
@@ -2426,16 +2472,33 @@ export const appointmentService = {
       throw new HttpError(404, 'Appointment balance was not found');
     }
 
-    if (!Number.isFinite(input.amountValue) || input.amountValue <= 0) {
+    const amountValue = Number(input.amountValue);
+    const rawTipAmountValue = Number(input.tipAmountValue ?? 0);
+    const tipAmountValue = rawTipAmountValue > 0 ? rawTipAmountValue : 0;
+    const serviceAmountValue = Math.max(0, amountValue - tipAmountValue);
+
+    if (!Number.isFinite(amountValue) || amountValue <= 0) {
       throw new HttpError(400, 'Payment amount must be greater than zero');
+    }
+
+    if (!Number.isFinite(rawTipAmountValue) || rawTipAmountValue < 0) {
+      throw new HttpError(400, 'Tip amount cannot be negative');
+    }
+
+    if (tipAmountValue - amountValue > 0.0001) {
+      throw new HttpError(400, 'Tip amount cannot exceed the total payment amount');
     }
 
     if (balance.outstandingAmountValue <= 0) {
       throw new HttpError(409, 'This appointment is already fully paid');
     }
 
-    if (input.amountValue - balance.outstandingAmountValue > 0.0001) {
-      throw new HttpError(409, 'Payment amount cannot exceed the outstanding balance');
+    if (serviceAmountValue <= 0) {
+      throw new HttpError(400, 'Payment must include a service amount before a tip can be recorded');
+    }
+
+    if (serviceAmountValue - balance.outstandingAmountValue > 0.0001) {
+      throw new HttpError(409, 'Service payment amount cannot exceed the outstanding balance');
     }
 
     const now = new Date().toISOString();
@@ -2448,7 +2511,10 @@ export const appointmentService = {
       appointmentDate: appointment.appointmentDate,
       appointmentTime: appointment.appointmentTime,
       currencyCode: balance.currencyCode,
-      amountValue: input.amountValue,
+      amountValue,
+      serviceAmountValue,
+      tipAmountValue,
+      tipRecipientName: appointment.teamMemberName ?? '',
       entryType: 'payment',
       method: input.method,
       status: 'posted',

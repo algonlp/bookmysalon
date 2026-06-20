@@ -825,6 +825,9 @@ create table if not exists payments (
   appointment_time time not null,
   currency_code text not null default '',
   amount_value numeric(12, 2) not null,
+  service_amount_value numeric(12, 2) null,
+  tip_amount_value numeric(12, 2) not null default 0,
+  tip_recipient_name text not null default '',
   entry_type payment_entry_type not null,
   method payment_method not null,
   status payment_status not null,
@@ -836,6 +839,10 @@ create table if not exists payments (
 create index if not exists payments_business_id_idx on payments (business_id);
 create index if not exists payments_appointment_id_idx on payments (appointment_id);
 create index if not exists payments_status_idx on payments (status);
+
+alter table payments add column if not exists service_amount_value numeric(12, 2) null;
+alter table payments add column if not exists tip_amount_value numeric(12, 2) not null default 0;
+alter table payments add column if not exists tip_recipient_name text not null default '';
 
 create table if not exists waitlist_entries (
   id text primary key,

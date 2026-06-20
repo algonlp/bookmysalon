@@ -10,6 +10,8 @@ const DEFAULT_BOOKING_PHONE_LABEL = 'Phone number';
 const DEFAULT_BOOKING_PHONE_HELP = 'You and the business will receive SMS updates on this number.';
 const DEFAULT_PHONE_COUNTRY_CODE_LABEL = 'Country code';
 const DEFAULT_BUSINESS_PHONE_LABEL = 'Business phone number';
+const DEFAULT_SALON_IMAGE_URL =
+  'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1400&q=80';
 const DEFAULT_DASHBOARD_UI_COPY = {
   locale: 'en-GB',
   bookingSourceLabels: {
@@ -447,6 +449,7 @@ const splitPhoneNumberParts = (phoneValue, defaultCountryCode = '') => {
 const serviceInput = document.querySelector('#service-query');
 const cityInput = document.querySelector('#city-query');
 const timeInput = document.querySelector('#time-query');
+const timePeriodInput = document.querySelector('#time-period-query');
 const searchPanel = document.querySelector('#search-panel');
 const menuToggle = document.querySelector('#menu-toggle');
 const siteMenu = document.querySelector('#site-menu');
@@ -2079,7 +2082,7 @@ const getSalonImageSource = (salon) => {
 
   return (
     imageCandidates.find((value) => typeof value === 'string' && value.trim().length > 0)?.trim() ||
-    '/signup-photo.jpeg'
+    DEFAULT_SALON_IMAGE_URL
   );
 };
 
@@ -2112,12 +2115,12 @@ const createSalonShowcaseCard = (salon) => {
 
   const tag = document.createElement('span');
   tag.className = 'public-salon-card-tag';
-  tag.textContent = getSalonRatingLabel(salon);
+  tag.textContent = 'Featured';
 
   const heart = document.createElement('span');
   heart.className = 'public-salon-card-heart';
   heart.setAttribute('aria-hidden', 'true');
-  heart.textContent = '<3';
+  heart.textContent = '♡';
 
   media.append(image, tag, heart);
 
@@ -2273,7 +2276,7 @@ const getSalonAdditionalInformation = (salon) =>
 const getSalonGalleryImages = (salon) => {
   const imageSource = getSalonImageSource(salon);
   const imageUrls = [
-    ...(imageSource === '/signup-photo.jpeg' ? [] : [imageSource]),
+    ...(imageSource === DEFAULT_SALON_IMAGE_URL ? [] : [imageSource]),
     ...(Array.isArray(salon.galleryImageUrls) ? salon.galleryImageUrls : []),
     ...(Array.isArray(salon.photoUrls) ? salon.photoUrls : []),
     ...(Array.isArray(salon.galleryImages) ? salon.galleryImages : [])
@@ -2282,7 +2285,7 @@ const getSalonGalleryImages = (salon) => {
     .map((value) => value.trim());
   const uniqueImages = imageUrls.filter((value, index, values) => values.indexOf(value) === index);
 
-  return uniqueImages.length > 0 ? uniqueImages : ['/signup-photo.jpeg'];
+  return uniqueImages.length > 0 ? uniqueImages : [DEFAULT_SALON_IMAGE_URL];
 };
 
 const renderSalonDetailPanel = (salon) => {
@@ -2682,12 +2685,13 @@ const initSalonProfilePage = async () => {
   }
 };
 
-const createSalonRail = (title, salons) => {
+const createSalonRail = (title, salons, { hideTitle = false } = {}) => {
   const railSection = document.createElement('section');
   railSection.className = 'public-salon-rail';
 
   const railHeader = document.createElement('div');
   railHeader.className = 'public-salon-rail-header';
+  railHeader.classList.toggle('is-title-hidden', hideTitle);
 
   const heading = document.createElement('h3');
   heading.textContent = title;
@@ -2711,7 +2715,11 @@ const createSalonRail = (title, salons) => {
     rail.scrollBy({ left: Math.max(280, rail.clientWidth * 0.75), behavior: 'smooth' });
   });
 
-  railSection.append(railHeader, rail);
+  if (hideTitle) {
+    railSection.append(rail);
+  } else {
+    railSection.append(railHeader, rail);
+  }
   return railSection;
 };
 
@@ -2808,6 +2816,8 @@ const initHomeSalonSearch = () => {
   const cityDropdown = document.querySelector('#city-query-dropdown');
   const cityAutocomplete = document.querySelector('#city-autocomplete');
   const locationTrigger = document.querySelector('#city-location-trigger');
+  const timeTrigger = document.querySelector('#time-query-trigger');
+  const timePopover = document.querySelector('#time-query-popover');
 
   if (
     !(showcaseList instanceof HTMLDivElement) ||
@@ -2836,6 +2846,15 @@ const initHomeSalonSearch = () => {
   let nearbySearchRequestId = 0;
   const salonCoordinatesCache = new Map();
   const cityAreaSuggestionsCache = new Map();
+  const currentLocationSuggestion = {
+    id: 'current-location',
+    value: 'Current location',
+    label: 'Current location',
+    primaryLabel: 'Current location',
+    secondaryLabel: 'Use your device location',
+    sourceLabel: 'Nearby',
+    kind: 'current-location'
+  };
   const popularLocationCities = ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad'];
   const cityAreaSeeds = {
     faisalabad: [
@@ -2880,6 +2899,237 @@ const initHomeSalonSearch = () => {
     ],
     islamabad: ['Blue Area', 'F-7', 'F-8', 'G-9', 'G-10', 'I-8', 'Bahria Town', 'DHA'],
     rawalpindi: ['Saddar', 'Commercial Market', 'Satellite Town', 'Bahria Town', 'DHA', 'Chaklala']
+  };
+
+  const formatDateInputValue = (date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+  const formatShortDateLabel = (date) =>
+    new Intl.DateTimeFormat(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    }).format(date);
+
+  const formatMonthLabel = (date) =>
+    new Intl.DateTimeFormat(undefined, {
+      month: 'short',
+      year: 'numeric'
+    }).format(date);
+
+  const initTimeQueryPopover = () => {
+    if (
+      !(timeTrigger instanceof HTMLButtonElement) ||
+      !(timePopover instanceof HTMLDivElement) ||
+      !(timeInput instanceof HTMLInputElement) ||
+      !(timePeriodInput instanceof HTMLInputElement)
+    ) {
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    let selectedDateValue = timeInput.value;
+    let selectedPeriod = timePeriodInput.value || 'any';
+    const periods = [
+      { value: 'any', label: 'Any time', meta: '' },
+      { value: 'morning', label: 'Morning', meta: '9am - 12pm' },
+      { value: 'afternoon', label: 'Afternoon', meta: '12pm - 5pm' },
+      { value: 'evening', label: 'Evening', meta: '5pm - 12am' },
+      { value: 'custom', label: 'Custom', meta: '' }
+    ];
+
+    const closePopover = () => {
+      timePopover.classList.add('is-hidden');
+      timeTrigger.setAttribute('aria-expanded', 'false');
+    };
+
+    const openPopover = () => {
+      renderPopover();
+      timePopover.classList.remove('is-hidden');
+      timeTrigger.setAttribute('aria-expanded', 'true');
+    };
+
+    const getTriggerLabel = () => {
+      const periodLabel = periods.find((period) => period.value === selectedPeriod)?.label ?? 'Any time';
+
+      if (!selectedDateValue && selectedPeriod === 'any') {
+        return 'Any time';
+      }
+
+      if (!selectedDateValue) {
+        return periodLabel;
+      }
+
+      const selectedDate = new Date(`${selectedDateValue}T00:00:00`);
+      const dateLabel = Number.isNaN(selectedDate.getTime())
+        ? selectedDateValue
+        : formatShortDateLabel(selectedDate);
+
+      return selectedPeriod === 'any' ? dateLabel : `${dateLabel}, ${periodLabel}`;
+    };
+
+    const syncTimeSelection = () => {
+      timeInput.value = selectedDateValue;
+      timePeriodInput.value = selectedPeriod;
+      timeTrigger.textContent = getTriggerLabel();
+    };
+
+    const setSelectedDate = (date) => {
+      selectedDateValue = formatDateInputValue(date);
+      syncTimeSelection();
+      renderPopover();
+    };
+
+    const setSelectedPeriod = (period) => {
+      selectedPeriod = period;
+      syncTimeSelection();
+      renderPopover();
+    };
+
+    const createQuickButton = (label, date) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'time-query-quick';
+      button.classList.toggle('is-selected', selectedDateValue === formatDateInputValue(date));
+
+      const title = document.createElement('strong');
+      title.textContent = label;
+      const meta = document.createElement('span');
+      meta.textContent = formatShortDateLabel(date);
+
+      button.append(title, meta);
+      button.addEventListener('click', () => setSelectedDate(date));
+      return button;
+    };
+
+    const renderPopover = () => {
+      timePopover.replaceChildren();
+
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      const quickList = document.createElement('div');
+      quickList.className = 'time-query-quick-list';
+      quickList.append(createQuickButton('Today', today), createQuickButton('Tomorrow', tomorrow));
+
+      const calendar = document.createElement('div');
+      calendar.className = 'time-query-calendar';
+
+      const monthHeader = document.createElement('div');
+      monthHeader.className = 'time-query-month-header';
+
+      const previousButton = document.createElement('button');
+      previousButton.type = 'button';
+      previousButton.className = 'time-query-month-button';
+      previousButton.setAttribute('aria-label', 'Previous month');
+      previousButton.textContent = '‹';
+      previousButton.addEventListener('click', () => {
+        visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
+        renderPopover();
+      });
+
+      const monthTitle = document.createElement('strong');
+      monthTitle.textContent = formatMonthLabel(visibleMonth);
+
+      const nextButton = document.createElement('button');
+      nextButton.type = 'button';
+      nextButton.className = 'time-query-month-button';
+      nextButton.setAttribute('aria-label', 'Next month');
+      nextButton.textContent = '›';
+      nextButton.addEventListener('click', () => {
+        visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+        renderPopover();
+      });
+
+      monthHeader.append(previousButton, monthTitle, nextButton);
+
+      const grid = document.createElement('div');
+      grid.className = 'time-query-grid';
+      ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach((weekday) => {
+        const label = document.createElement('span');
+        label.className = 'time-query-weekday';
+        label.textContent = weekday;
+        grid.append(label);
+      });
+
+      const firstDay = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+      const firstWeekdayOffset = (firstDay.getDay() + 6) % 7;
+      const daysInMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0).getDate();
+
+      for (let index = 0; index < firstWeekdayOffset; index += 1) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'time-query-day-placeholder';
+        grid.append(placeholder);
+      }
+
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const date = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), day);
+        const dateValue = formatDateInputValue(date);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'time-query-day';
+        button.classList.toggle('is-selected', selectedDateValue === dateValue);
+        button.textContent = String(day);
+        button.addEventListener('click', () => setSelectedDate(date));
+        grid.append(button);
+      }
+
+      const periodWrap = document.createElement('div');
+      periodWrap.className = 'time-query-periods';
+
+      for (const period of periods) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'time-query-period';
+        button.classList.toggle('is-selected', selectedPeriod === period.value);
+
+        const title = document.createElement('strong');
+        title.textContent = period.label;
+        button.append(title);
+
+        if (period.meta) {
+          const meta = document.createElement('span');
+          meta.textContent = period.meta;
+          button.append(meta);
+        }
+
+        button.addEventListener('click', () => setSelectedPeriod(period.value));
+        periodWrap.append(button);
+      }
+
+      calendar.append(monthHeader, grid);
+      timePopover.append(quickList, calendar, periodWrap);
+    };
+
+    timeTrigger.addEventListener('click', () => {
+      if (timePopover.classList.contains('is-hidden')) {
+        openPopover();
+        return;
+      }
+
+      closePopover();
+    });
+
+    document.addEventListener('pointerdown', (event) => {
+      if (!(event.target instanceof Node)) {
+        return;
+      }
+
+      if (timePopover.contains(event.target) || timeTrigger.contains(event.target)) {
+        return;
+      }
+
+      closePopover();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closePopover();
+      }
+    });
+
+    syncTimeSelection();
   };
 
   const buildSuggestionEntries = (salons, getValues, chipLabel, metaBuilder) => {
@@ -3035,6 +3285,7 @@ const initHomeSalonSearch = () => {
             variant === 'list'
               ? 'search-dropdown-option search-dropdown-option-list'
               : 'search-dropdown-option';
+          optionButton.classList.toggle('is-current-location', suggestion.kind === 'current-location');
           optionButton.setAttribute('role', 'option');
           optionButton.dataset.suggestionValue = suggestion.value;
 
@@ -3043,9 +3294,9 @@ const initHomeSalonSearch = () => {
           const optionTitle = document.createElement('strong');
           optionTitle.textContent = suggestion.value;
           optionCopy.append(optionTitle);
-          if (variant !== 'list') {
+          if (variant !== 'list' || suggestion.secondaryLabel) {
             const optionMeta = document.createElement('span');
-            optionMeta.textContent = suggestion.meta;
+            optionMeta.textContent = suggestion.secondaryLabel || suggestion.meta;
             optionCopy.append(optionMeta);
           }
 
@@ -3137,6 +3388,12 @@ const initHomeSalonSearch = () => {
 
     showcaseList.replaceChildren();
 
+    const setShowcaseStatus = (message) => {
+      const normalizedMessage = typeof message === 'string' ? message.trim() : '';
+      showcaseStatus.textContent = normalizedMessage;
+      showcaseStatus.classList.toggle('is-hidden', !normalizedMessage);
+    };
+
     if (locationQuery && serviceQuery) {
       showcaseTitle.textContent = `${serviceQuery} near ${locationQuery}`;
     } else if (locationQuery) {
@@ -3154,16 +3411,16 @@ const initHomeSalonSearch = () => {
         : serviceQuery
           ? `No salons found for ${serviceQuery} yet. Try another search.`
           : 'No salons have completed setup yet.';
-      showcaseStatus.textContent = locationQuery
+      setShowcaseStatus(locationQuery
         ? `No salons matched ${locationQuery}.`
         : serviceQuery
           ? `No salons matched ${serviceQuery}.`
-          : defaultStatus;
+          : defaultStatus);
       return;
     }
 
     showcaseEmpty.classList.add('is-hidden');
-    showcaseStatus.textContent = isLimited
+    setShowcaseStatus(isLimited
       ? locationQuery && serviceQuery
         ? `Showing the ${limitedCount} best salon match${limitedCount === 1 ? '' : 'es'} for ${serviceQuery} near ${locationQuery}.`
         : locationQuery
@@ -3173,7 +3430,7 @@ const initHomeSalonSearch = () => {
         ? `Showing ${salons.length} salon${salons.length === 1 ? '' : 's'} near ${locationQuery}.`
         : serviceQuery
           ? `Showing ${salons.length} salon${salons.length === 1 ? '' : 's'} for ${serviceQuery}.`
-          : defaultStatus;
+          : defaultStatus);
 
     const recommendedSalons = [...salons].sort((left, right) => {
       const leftReviews = Number(left.reviewSummary?.totalReviews) || 0;
@@ -3187,7 +3444,11 @@ const initHomeSalonSearch = () => {
       String(right.updatedAt ?? '').localeCompare(String(left.updatedAt ?? ''))
     );
 
-    showcaseList.append(createSalonRail(showcaseTitle.textContent || 'Recommended', recommendedSalons));
+    showcaseList.append(
+      createSalonRail(showcaseTitle.textContent || 'Recommended', recommendedSalons, {
+        hideTitle: true
+      })
+    );
 
     if (!locationQuery && !serviceQuery && newSalons.length > 0) {
       showcaseList.append(createSalonRail('New to QR schedule', newSalons));
@@ -3771,12 +4032,21 @@ const initHomeSalonSearch = () => {
           {
             sourceId: 'locations',
             getItemInputValue({ item }) {
-              return item.label;
+              return item.kind === 'current-location' ? '' : item.label;
             },
             async getItems() {
-              return searchLocationSuggestions(query);
+              const suggestions = await searchLocationSuggestions(query);
+              return [currentLocationSuggestion, ...suggestions];
             },
             onSelect({ item, setIsOpen, setQuery, refresh }) {
+              if (item.kind === 'current-location') {
+                setQuery('');
+                setIsOpen(false);
+                syncLocationQuery('');
+                detectCurrentLocation({ force: true });
+                return;
+              }
+
               const selectedLocation =
                 item.kind === 'city' && item.hasAreas
                   ? item.primaryLabel || item.label || ''
@@ -3799,10 +4069,11 @@ const initHomeSalonSearch = () => {
                 return html`<span class="location-autocomplete-heading">Locations</span>`;
               },
               item({ item, html }) {
-                return html`<div class="location-autocomplete-option">
+                return html`<div class="location-autocomplete-option ${item.kind === 'current-location' ? 'is-current-location' : ''}">
                   <span class="location-autocomplete-pin" aria-hidden="true"></span>
                   <span class="location-autocomplete-copy">
                     <strong>${item.label}</strong>
+                    ${item.kind === 'current-location' ? html`<span>${item.secondaryLabel}</span>` : ''}
                   </span>
                 </div>`;
               },
@@ -3820,11 +4091,11 @@ const initHomeSalonSearch = () => {
     return true;
   };
 
-  const detectCurrentLocation = () => {
+  const detectCurrentLocation = ({ force = false } = {}) => {
     if (
       !(cityInput instanceof HTMLInputElement) ||
       !navigator.geolocation ||
-      cityInput.value.trim() ||
+      (!force && cityInput.value.trim()) ||
       hasRequestedCurrentLocation
     ) {
       return;
@@ -3832,9 +4103,13 @@ const initHomeSalonSearch = () => {
 
     hasRequestedCurrentLocation = true;
 
+    if (force) {
+      syncLocationQuery('Detecting current location...', { updateAutocomplete: true });
+    }
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        if (!(cityInput instanceof HTMLInputElement) || cityInput.value.trim()) {
+        if (!(cityInput instanceof HTMLInputElement) || (!force && cityInput.value.trim())) {
           return;
         }
 
@@ -3850,6 +4125,7 @@ const initHomeSalonSearch = () => {
             '';
 
           if (!detectedLocation) {
+            hasRequestedCurrentLocation = false;
             return;
           }
 
@@ -3859,13 +4135,20 @@ const initHomeSalonSearch = () => {
             longitude: payload?.location?.longitude
           });
           syncLocationQuery(detectedLocation, { updateAutocomplete: true });
+          hasRequestedCurrentLocation = false;
           applyShowcaseFilters();
         } catch (_error) {
           hasRequestedCurrentLocation = false;
+          if (force) {
+            syncLocationQuery('', { updateAutocomplete: true });
+          }
         }
       },
       () => {
         hasRequestedCurrentLocation = false;
+        if (force) {
+          syncLocationQuery('', { updateAutocomplete: true });
+        }
       },
       {
         enableHighAccuracy: false,
@@ -3946,21 +4229,24 @@ const initHomeSalonSearch = () => {
     title: 'Find a salon near you',
     subtitle: 'Search by city, area, or address.',
     variant: 'list',
-    requireQuery: true,
-    getSuggestions: (query) => getRankedSuggestions(citySuggestions, query),
+    requireQuery: false,
+    getSuggestions: (query) => [currentLocationSuggestion, ...getRankedSuggestions(citySuggestions, query)],
     onSelect: (value) => {
+      if (value === currentLocationSuggestion.label) {
+        detectCurrentLocation({ force: true });
+        return;
+      }
+
       if (cityInput instanceof HTMLInputElement) {
         cityInput.value = value;
       }
 
       applyShowcaseFilters();
-    },
-    onOpen: () => {
-      detectCurrentLocation();
     }
   });
 
   const hasAlgoliaLocationAutocomplete = setupAlgoliaLocationAutocomplete();
+  initTimeQueryPopover();
 
   searchPanel.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -3978,7 +4264,7 @@ const initHomeSalonSearch = () => {
 
   if (locationTrigger instanceof HTMLButtonElement) {
     locationTrigger.addEventListener('click', () => {
-      detectCurrentLocation();
+      detectCurrentLocation({ force: true });
 
       if (hasAlgoliaLocationAutocomplete && locationAutocomplete?.setIsOpen) {
         locationAutocomplete.setIsOpen(true);
@@ -3995,17 +4281,6 @@ const initHomeSalonSearch = () => {
       applyShowcaseFilters();
       serviceDropdownController.refresh();
     });
-  }
-
-  if (timeInput instanceof HTMLInputElement) {
-    const openDatePicker = () => {
-      if (typeof timeInput.showPicker === 'function') {
-        timeInput.showPicker();
-      }
-    };
-
-    timeInput.addEventListener('focus', openDatePicker);
-    timeInput.addEventListener('click', openDatePicker);
   }
 
   Promise.all([loadPublicConfig().catch(() => ({})), apiRequest(salonsEndpoint)])
@@ -5832,6 +6107,8 @@ const initCalendar = () => {
         currencyCode: '',
         expectedAmountValue: 0,
         collectedAmountValue: 0,
+        serviceCollectedAmountValue: 0,
+        tipCollectedAmountValue: 0,
         pendingAmountValue: 0,
         overpaidAmountValue: 0,
         recordedPaymentsCount: 0,
@@ -6541,6 +6818,8 @@ const createTrendCard = (
       currencyCode: summary.currencyCode ?? '',
       expectedAmountValue: summary.expectedAmountValue ?? 0,
       collectedAmountValue: summary.collectedAmountValue ?? 0,
+      serviceCollectedAmountValue: summary.serviceCollectedAmountValue ?? summary.collectedAmountValue ?? 0,
+      tipCollectedAmountValue: summary.tipCollectedAmountValue ?? 0,
       pendingAmountValue: summary.pendingAmountValue ?? 0,
       overpaidAmountValue: summary.overpaidAmountValue ?? 0,
       recordedPaymentsCount: summary.recordedPaymentsCount ?? 0,
@@ -6570,9 +6849,14 @@ const createTrendCard = (
         payment.amountValue,
         payment.currencyCode || fallbackCurrencyCode
       )}`,
+      Number(payment.tipAmountValue) > 0
+        ? `Tip ${formatMoneyValue(payment.tipAmountValue, payment.currencyCode || fallbackCurrencyCode)}${
+            payment.tipRecipientName ? ` for ${payment.tipRecipientName}` : ''
+          }`
+        : '',
       `${payment.serviceName} via ${formatPaymentMethodLabel(payment.method)}`,
       formatDateTimeForDisplay(payment.appointmentDate, payment.appointmentTime)
-    ].join(' | ');
+    ].filter(Boolean).join(' | ');
 
   const getCatalogInsights = () => {
     const services = getDashboardServices();
@@ -7991,14 +8275,26 @@ const createTrendCard = (
     const amountField = document.createElement('label');
     amountField.className = 'calendar-tool-field';
     const amountLabel = document.createElement('span');
-    amountLabel.textContent = 'Amount paid';
+    amountLabel.textContent = 'Service amount';
     const amountInput = document.createElement('input');
     amountInput.type = 'number';
-    amountInput.name = 'amountValue';
+    amountInput.name = 'serviceAmountValue';
     amountInput.min = '0.01';
     amountInput.step = '0.01';
     amountInput.required = true;
     amountField.append(amountLabel, amountInput);
+
+    const tipField = document.createElement('label');
+    tipField.className = 'calendar-tool-field';
+    const tipLabel = document.createElement('span');
+    tipLabel.textContent = 'Barber tip (optional)';
+    const tipInput = document.createElement('input');
+    tipInput.type = 'number';
+    tipInput.name = 'tipAmountValue';
+    tipInput.min = '0';
+    tipInput.step = '0.01';
+    tipInput.value = '0';
+    tipField.append(tipLabel, tipInput);
 
     const noteField = document.createElement('label');
     noteField.className = 'calendar-tool-field';
@@ -8016,27 +8312,54 @@ const createTrendCard = (
     submitButton.type = 'submit';
     submitButton.textContent = 'Record payment';
 
-    form.append(appointmentField, methodField, amountField, noteField, submitButton);
+    form.append(appointmentField, methodField, amountField, tipField, noteField, submitButton);
 
     const balanceCard = createToolInfoCard('Outstanding balance', '');
     const balanceCopy = balanceCard.querySelector('p');
+    const totalCard = createToolInfoCard('Customer total', '');
+    const totalCopy = totalCard.querySelector('p');
     const detailsCard = createToolInfoCard('Appointment details', '');
     const detailsCopy = detailsCard.querySelector('p');
 
-    const updateSelectedBalance = () => {
-      const selectedBalance =
+    const updatePaymentTotal = (selectedBalance) => {
+      const serviceAmountValue = Number(amountInput.value);
+      const tipAmountValue = Number(tipInput.value);
+      const totalAmountValue =
+        (Number.isFinite(serviceAmountValue) && serviceAmountValue > 0 ? serviceAmountValue : 0) +
+        (Number.isFinite(tipAmountValue) && tipAmountValue > 0 ? tipAmountValue : 0);
+      const currencyCode = selectedBalance?.currencyCode || paymentInsights.currencyCode;
+
+      if (totalCopy instanceof HTMLElement) {
+        totalCopy.textContent =
+          `${formatMoneyValue(totalAmountValue, currencyCode)} total ` +
+          `(${formatMoneyValue(serviceAmountValue, currencyCode)} service + ` +
+          `${formatMoneyValue(tipAmountValue, currencyCode)} tip).`;
+      }
+    };
+
+    const getSelectedBalance = () =>
         outstandingBalances.find((balance) => balance.appointmentId === appointmentSelect.value) ??
         outstandingBalances[0];
+
+    const updateSelectedBalance = ({ resetTip = false, resetAmount = false } = {}) => {
+      const selectedBalance = getSelectedBalance();
 
       if (!selectedBalance) {
         amountInput.value = '';
         amountInput.max = '';
+        tipInput.value = '0';
+        updatePaymentTotal(null);
         return null;
       }
 
       appointmentSelect.value = selectedBalance.appointmentId;
       amountInput.max = String(selectedBalance.outstandingAmountValue);
-      amountInput.value = String(selectedBalance.outstandingAmountValue);
+      if (resetAmount) {
+        amountInput.value = String(selectedBalance.outstandingAmountValue);
+      }
+      if (resetTip) {
+        tipInput.value = '0';
+      }
 
       if (balanceCopy instanceof HTMLElement) {
         balanceCopy.textContent =
@@ -8045,11 +8368,13 @@ const createTrendCard = (
       }
 
       if (detailsCopy instanceof HTMLElement) {
+        const barberLabel = selectedBalance.teamMemberName ? ` with ${selectedBalance.teamMemberName}` : '';
         detailsCopy.textContent =
-          `${selectedBalance.customerName} | ${selectedBalance.serviceName} | ` +
+          `${selectedBalance.customerName} | ${selectedBalance.serviceName}${barberLabel} | ` +
           `${formatDateTimeForDisplay(selectedBalance.appointmentDate, selectedBalance.appointmentTime)}`;
       }
 
+      updatePaymentTotal(selectedBalance);
       return selectedBalance;
     };
 
@@ -8064,27 +8389,35 @@ const createTrendCard = (
       outstandingBalances.some((balance) => balance.appointmentId === preferredAppointmentId)
         ? preferredAppointmentId
         : outstandingBalances[0].appointmentId;
-    appointmentSelect.addEventListener('change', updateSelectedBalance);
-    updateSelectedBalance();
+    appointmentSelect.addEventListener('change', () => updateSelectedBalance({ resetTip: true, resetAmount: true }));
+    updateSelectedBalance({ resetTip: true, resetAmount: true });
+    amountInput.addEventListener('input', () => updatePaymentTotal(getSelectedBalance()));
+    tipInput.addEventListener('input', () => updatePaymentTotal(getSelectedBalance()));
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
 
       const selectedBalance = updateSelectedBalance();
-      const amountValue = Number(amountInput.value);
+      const serviceAmountValue = Number(amountInput.value);
+      const tipAmountValue = Number(tipInput.value);
 
       if (!selectedBalance) {
         safeAlert('Choose an appointment with an outstanding balance.');
         return;
       }
 
-      if (!Number.isFinite(amountValue) || amountValue <= 0) {
-        safeAlert('Enter a valid payment amount greater than zero.');
+      if (!Number.isFinite(serviceAmountValue) || serviceAmountValue <= 0) {
+        safeAlert('Enter a valid service payment amount greater than zero.');
         return;
       }
 
-      if (amountValue - selectedBalance.outstandingAmountValue > 0.0001) {
-        safeAlert('Payment amount cannot exceed the outstanding balance.');
+      if (!Number.isFinite(tipAmountValue) || tipAmountValue < 0) {
+        safeAlert('Enter a valid tip amount, or leave it as zero.');
+        return;
+      }
+
+      if (serviceAmountValue - selectedBalance.outstandingAmountValue > 0.0001) {
+        safeAlert('Service payment amount cannot exceed the outstanding balance.');
         return;
       }
 
@@ -8093,7 +8426,8 @@ const createTrendCard = (
 
       try {
         const payload = await recordAppointmentPayment(selectedBalance.appointmentId, {
-          amountValue,
+          amountValue: serviceAmountValue + tipAmountValue,
+          tipAmountValue,
           method: methodSelect.value,
           note: noteInput.value.trim()
         });
@@ -8118,8 +8452,8 @@ const createTrendCard = (
     openToolModal({
       eyebrow: 'Payments',
       title: 'Record payment',
-      description: 'Capture a real payment entry against an appointment balance. This is stored separately from booking status.',
-      actions: [balanceCard, detailsCard, form]
+      description: 'Capture the service payment and optional barber tip separately.',
+      actions: [balanceCard, totalCard, detailsCard, form]
     });
 
     amountInput.focus();
@@ -8138,6 +8472,10 @@ const createTrendCard = (
       createToolInfoCard(
         'Collected value',
         formatMoneyValue(paymentInsights.collectedAmountValue, paymentInsights.currencyCode)
+      ),
+      createToolInfoCard(
+        'Barber tips',
+        formatMoneyValue(paymentInsights.tipCollectedAmountValue, paymentInsights.currencyCode)
       ),
       createToolInfoCard(
         'Pending value',
