@@ -3667,11 +3667,7 @@ const initHomeSalonSearch = () => {
       showcaseStatus.classList.toggle('is-hidden', !normalizedMessage);
     };
 
-    if (locationQuery && serviceQuery) {
-      showcaseTitle.textContent = `${serviceQuery} near ${locationQuery}`;
-    } else if (locationQuery) {
-      showcaseTitle.textContent = `Salons near ${locationQuery}`;
-    } else if (serviceQuery) {
+    if (serviceQuery) {
       showcaseTitle.textContent = `Salons matching ${serviceQuery}`;
     } else {
       showcaseTitle.textContent = defaultTitle;
@@ -3844,9 +3840,7 @@ const initHomeSalonSearch = () => {
     }
 
     showcaseEmpty.classList.add('is-hidden');
-    showcaseTitle.textContent = serviceQuery
-      ? `${serviceQuery} near ${locationLabel}`
-      : `Nearby salons around ${locationLabel}`;
+    showcaseTitle.textContent = serviceQuery ? `Salons matching ${serviceQuery}` : defaultTitle;
     showcaseStatus.textContent = isFallback
       ? `No exact salon found in ${locationLabel}, so showing the closest available salons by distance.`
       : `Showing ${nearbySalons.length} salon${nearbySalons.length === 1 ? '' : 's'} around ${locationLabel}, sorted by distance. Select a salon or open directions from the map list.`;
