@@ -2553,30 +2553,40 @@ textarea:focus-visible {
   position: relative;
   grid-column: 1 / -1;
   display: grid;
-  gap: 8px;
+  gap: 10px;
   padding-right: 126px;
+  max-width: 980px;
 }
 
 .salon-detail-breadcrumb {
   margin: 0;
-  color: #5f5953;
-  font-size: 0.74rem;
-  font-weight: 800;
+  color: #6f6963;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .salon-detail-profile-header h1 {
   margin: 0;
-  color: #0f0f0f;
-  font-size: clamp(2rem, 3.4vw, 3rem);
-  line-height: 1.02;
-  letter-spacing: -0.03em;
+  color: #161310;
+  font-family: Manrope, Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  text-transform: none;
 }
 
 .salon-detail-profile-meta {
   margin: 0;
-  color: #181512;
-  font-size: 0.86rem;
-  font-weight: 800;
+  color: #4f4943;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.55;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .salon-detail-profile-actions {
