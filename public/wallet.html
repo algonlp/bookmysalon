@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Wallet</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="customer-profile-page customer-wallet-page">
+      <header class="customer-profile-topbar">
+        <a class="brand" href="/">QR schedule.com</a>
+        <div class="header-actions"></div>
+      </header>
+      <div class="customer-profile-layout">
+        <aside class="customer-profile-sidebar">
+          <strong id="customer-profile-sidebar-name">Customer</strong>
+          <nav aria-label="Customer account">
+            <a href="/profile">Profile</a>
+            <a href="/activity">Activity</a>
+            <a class="is-active" href="/wallet">Wallet</a>
+            <a href="/messages">Messages</a>
+            <a href="/favorites">Favorites</a>
+            <a href="/forms">Forms</a>
+            <a href="/settings">Settings</a>
+          </nav>
+        </aside>
+        <main class="customer-profile-main customer-wallet-main">
+          <h1>Wallet</h1>
+          <section class="customer-wallet-balance">
+            <strong id="customer-wallet-balance">$0.00</strong>
+            <span>Wallet balance</span>
+            <button type="button" id="customer-wallet-gift-card">+ Add a gift card</button>
+          </section>
+          <section class="customer-wallet-card">
+            <h2>Cards</h2>
+            <button type="button" id="customer-wallet-card-count">Add debit/credit card</button>
+          </section>
+        </main>
+      </div>
+    </div>
+    <script src="/main.js"></script>
+  </body>
+</html>

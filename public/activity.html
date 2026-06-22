@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Activity</title>
+    <meta name="description" content="Customer activity for bookings, memberships, products, and packages." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="customer-profile-page customer-activity-page">
+      <header class="customer-profile-topbar">
+        <a class="brand" href="/" aria-label="QR schedule.com home">QR schedule.com</a>
+        <div class="header-actions"></div>
+      </header>
+
+      <div class="customer-profile-layout">
+        <aside class="customer-profile-sidebar">
+          <strong id="customer-profile-sidebar-name">Customer</strong>
+          <nav aria-label="Customer account">
+            <a href="/profile">Profile</a>
+            <a class="is-active" href="/activity">Activity</a>
+            <a href="/wallet">Wallet</a>
+            <a href="/messages">Messages</a>
+            <a href="/favorites">Favorites</a>
+            <a href="/forms">Forms</a>
+            <a href="/settings">Settings</a>
+          </nav>
+        </aside>
+
+        <main class="customer-profile-main customer-activity-main">
+          <div class="customer-activity-header">
+            <h1>Activity</h1>
+            <button class="customer-activity-search" type="button" aria-label="Search activity">⌕</button>
+          </div>
+
+          <div class="customer-activity-tabs" aria-label="Activity filters">
+            <button class="is-active" type="button">Appointments <span>0</span></button>
+            <button type="button">Gift Cards <span>0</span></button>
+            <button type="button">Memberships <span>0</span></button>
+            <button type="button">Products <span>0</span></button>
+            <button type="button">Packages <span>0</span></button>
+          </div>
+
+          <section class="customer-activity-empty">
+            <div class="customer-activity-empty-icon">▣</div>
+            <h2>No appointments</h2>
+            <p>Your upcoming and past appointments will appear here</p>
+            <a href="/">Search venues</a>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Profile</title>
+    <meta name="description" content="Customer profile for QR Schedule bookings." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="customer-profile-page">
+      <header class="customer-profile-topbar">
+        <a class="brand" href="/" aria-label="QR schedule.com home">QR schedule.com</a>
+        <div class="header-actions"></div>
+      </header>
+
+      <div class="customer-profile-layout">
+        <aside class="customer-profile-sidebar">
+          <strong id="customer-profile-sidebar-name">Customer</strong>
+          <nav aria-label="Customer account">
+            <a class="is-active" href="/profile">Profile</a>
+            <a href="/activity">Activity</a>
+            <a href="/wallet">Wallet</a>
+            <a href="/messages">Messages</a>
+            <a href="/favorites">Favorites</a>
+            <a href="/forms">Forms</a>
+            <a href="/settings">Settings</a>
+          </nav>
+        </aside>
+
+        <main class="customer-profile-main">
+          <h1>Profile</h1>
+
+          <section class="customer-profile-grid">
+            <article class="customer-profile-card">
+              <button class="customer-profile-edit" type="button" id="customer-profile-edit">Edit</button>
+              <div class="customer-profile-avatar" id="customer-profile-avatar">C</div>
+              <h2 id="customer-profile-name">Customer</h2>
+
+              <dl class="customer-profile-details">
+                <div>
+                  <dt>First name</dt>
+                  <dd id="customer-profile-first-name">-</dd>
+                </div>
+                <div>
+                  <dt>Last name</dt>
+                  <dd id="customer-profile-last-name">-</dd>
+                </div>
+                <div>
+                  <dt>Phone number</dt>
+                  <dd id="customer-profile-phone">-</dd>
+                </div>
+                <div>
+                  <dt>Email</dt>
+                  <dd id="customer-profile-email">-</dd>
+                </div>
+                <div>
+                  <dt>Date of birth</dt>
+                  <dd id="customer-profile-date-of-birth">-</dd>
+                </div>
+                <div>
+                  <dt>Gender</dt>
+                  <dd id="customer-profile-gender">-</dd>
+                </div>
+              </dl>
+
+              <form class="customer-profile-edit-form is-hidden" id="customer-profile-edit-form">
+                <label>
+                  <span>First name</span>
+                  <input id="customer-profile-edit-first-name" type="text" autocomplete="given-name" />
+                </label>
+                <label>
+                  <span>Last name</span>
+                  <input id="customer-profile-edit-last-name" type="text" autocomplete="family-name" />
+                </label>
+                <label>
+                  <span>Phone number</span>
+                  <input id="customer-profile-edit-phone" type="tel" autocomplete="tel" />
+                </label>
+                <label>
+                  <span>Email</span>
+                  <input id="customer-profile-edit-email" type="email" autocomplete="email" />
+                </label>
+                <div class="customer-profile-edit-actions">
+                  <button type="button" id="customer-profile-edit-cancel">Cancel</button>
+                  <button type="submit">Save</button>
+                </div>
+              </form>
+            </article>
+
+            <article class="customer-profile-card customer-address-card">
+              <h2>My addresses</h2>
+              <div class="customer-address-list">
+                <div class="customer-address-row">
+                  <span>⌂</span>
+                  <div>
+                    <strong>Home</strong>
+                    <small>Add a home address</small>
+                  </div>
+                </div>
+                <div class="customer-address-row">
+                  <span>▣</span>
+                  <div>
+                    <strong>Work</strong>
+                    <small>Add a work address</small>
+                  </div>
+                </div>
+              </div>
+              <button class="customer-address-add" type="button">+ Add</button>
+            </article>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

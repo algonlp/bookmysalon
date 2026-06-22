@@ -83,7 +83,39 @@ app.get('/', (_req, res) => {
 });
 
 app.get('/login', (_req, res) => {
-  res.sendFile(resolve(publicDir, 'signup.html'));
+  res.sendFile(resolve(publicDir, 'login.html'));
+});
+
+app.get('/customer-login', (_req, res) => {
+  res.sendFile(resolve(publicDir, 'customer-login.html'));
+});
+
+app.get('/profile', (_req, res) => {
+  res.sendFile(resolve(publicDir, 'profile.html'));
+});
+
+app.get('/activity', (_req, res) => {
+  res.sendFile(resolve(publicDir, 'activity.html'));
+});
+
+app.get('/wallet', (_req, res) => {
+  res.sendFile(resolve(publicDir, 'wallet.html'));
+});
+
+app.get('/messages', (_req, res) => {
+  res.sendFile(resolve(publicDir, 'messages.html'));
+});
+
+app.get('/favorites', (_req, res) => {
+  res.sendFile(resolve(publicDir, 'favorites.html'));
+});
+
+app.get('/forms', (_req, res) => {
+  res.sendFile(resolve(publicDir, 'forms.html'));
+});
+
+app.get('/settings', (_req, res) => {
+  res.sendFile(resolve(publicDir, 'settings.html'));
 });
 
 app.get('/for-businesses', (_req, res) => {

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Customer login</title>
+    <meta
+      name="description"
+      content="Create a customer account or log in to save favourites and manage appointments."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="customer-login-page">
+      <section class="customer-login-panel">
+        <div class="login-topbar">
+          <a class="back-link" href="/login" aria-label="Go back">
+            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+              <path d="M15 5l-7 7 7 7"></path>
+            </svg>
+          </a>
+        </div>
+
+        <form
+          class="customer-login-form"
+          id="customer-login-form"
+          data-request-otp-endpoint="/api/public/customer-auth/otp/request"
+          data-verify-otp-endpoint="/api/public/customer-auth/otp/verify"
+        >
+          <div class="customer-login-copy">
+            <h1>QR Schedule for customers</h1>
+            <p>Create an account or log in to book and manage your appointments.</p>
+          </div>
+
+          <label class="customer-login-field">
+            <span>Name</span>
+            <input id="customer-login-name" name="name" type="text" autocomplete="name" />
+          </label>
+
+          <label class="customer-login-field">
+            <span>Email</span>
+            <input id="customer-login-email" name="email" type="email" autocomplete="email" />
+          </label>
+
+          <label class="customer-login-field">
+            <span>Mobile number</span>
+            <input
+              id="customer-login-phone"
+              name="phone"
+              type="tel"
+              inputmode="tel"
+              autocomplete="tel"
+              placeholder="+923001234567"
+              required
+            />
+          </label>
+
+          <p class="customer-login-help">We'll send you a verification code.</p>
+
+          <button class="customer-login-primary" type="submit" data-customer-login-action="request">
+            Continue
+          </button>
+
+          <div class="customer-login-otp is-hidden" id="customer-login-otp-panel">
+            <label class="customer-login-field">
+              <span>Verification code</span>
+              <input
+                id="customer-login-code"
+                name="code"
+                type="text"
+                inputmode="numeric"
+                autocomplete="one-time-code"
+                maxlength="6"
+                placeholder="123456"
+              />
+            </label>
+            <button class="customer-login-primary" type="button" id="customer-login-verify">
+              Verify and continue
+            </button>
+          </div>
+
+          <p class="customer-login-status" id="customer-login-status" aria-live="polite"></p>
+
+          <div class="customer-login-divider"><span>OR</span></div>
+
+          <button class="customer-login-secondary" type="button" disabled>Continue with mobile</button>
+          <button class="customer-login-secondary" type="button" disabled>Continue with Facebook</button>
+          <button class="customer-login-secondary" type="button" disabled>Continue with Google</button>
+
+          <p class="customer-login-owner-link">
+            Have a business account?
+            <a href="/signup">Go to QR Schedule for professionals</a>
+          </p>
+        </form>
+      </section>
+
+      <aside class="customer-login-visual" aria-hidden="true"></aside>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

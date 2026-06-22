@@ -151,8 +151,10 @@
                   placeholder="Current location"
                   aria-controls="city-query-dropdown"
                   aria-expanded="false"
+                  aria-describedby="city-location-status"
                 />
               </span>
+              <p class="search-location-status is-hidden" id="city-location-status" aria-live="polite"></p>
               <div
                 class="search-dropdown is-hidden"
                 id="city-query-dropdown"
@@ -424,7 +426,7 @@
       integrity="sha256-1XbjKeJ+FqQiRi8KgTUgGmjarD6uoHqoCCCZwaoqdqU="
       crossorigin="anonymous"
     ></script>
-    <script src="/main.js?v=salon-card-render-fix-20260517"></script>
+    <script src="/main.js?v=current-location-fix-20260622"></script>
     <script src="/home-footer.js"></script>
   </body>
 </html>

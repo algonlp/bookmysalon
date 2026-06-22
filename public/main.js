@@ -2,6 +2,10 @@ const CLIENT_STORAGE_KEY = 'qr-platform-client-id';
 const NOTIFICATION_READ_STORAGE_KEY = 'qr-platform-read-notifications';
 const REPORTS_WORKSPACE_STORAGE_KEY = 'qr-platform-reports-workspace';
 const GOOGLE_PROFILE_STORAGE_KEY = 'qr-platform-google-profile';
+const CUSTOMER_SESSION_STORAGE_KEY = 'qr-customer-session';
+const SALON_FAVOURITES_STORAGE_KEY = 'qr-public-salon-favourites';
+const PENDING_SALON_FAVOURITE_STORAGE_KEY = 'qr-pending-salon-favourite';
+const ENABLE_SALON_FAVOURITES = true;
 const BOOKING_PACKAGE_ANNOUNCEMENT_STORAGE_KEY_PREFIX = 'qr-booking-package-announcement';
 const DASHBOARD_NOTIFICATION_REFRESH_INTERVAL_MS = 30000;
 const DEFAULT_PHONE_PLACEHOLDER = '+1234567890';
@@ -2197,6 +2201,236 @@ const createDetailText = (tagName, className, text) => {
   return element;
 };
 
+const getSalonDetailId = (salon) =>
+  String(salon?.clientId || salon?.id || salon?.bookingLink || salon?.businessName || '').trim();
+
+const getSalonDetailUrl = (salon) => {
+  const salonId = getSalonDetailId(salon);
+  const path = salonId ? `/salon/${encodeURIComponent(salonId)}` : window.location.pathname;
+  return new URL(path, window.location.origin).toString();
+};
+
+const getFavouriteSalonIds = () => {
+  try {
+    const storedValue = window.localStorage.getItem(SALON_FAVOURITES_STORAGE_KEY);
+    const parsedValue = storedValue ? JSON.parse(storedValue) : [];
+    return Array.isArray(parsedValue) ? parsedValue.filter((value) => typeof value === 'string') : [];
+  } catch (_error) {
+    return [];
+  }
+};
+
+const getCustomerSession = () => {
+  try {
+    const storedValue = window.localStorage.getItem(CUSTOMER_SESSION_STORAGE_KEY);
+    const parsedValue = storedValue ? JSON.parse(storedValue) : null;
+    return parsedValue && typeof parsedValue === 'object' ? parsedValue : null;
+  } catch (_error) {
+    return null;
+  }
+};
+
+const isCustomerLoggedIn = () => Boolean(getCustomerSession()?.id);
+
+const createCustomerSession = () => {
+  const session = {
+    id: `customer-${Date.now()}`,
+    createdAt: new Date().toISOString()
+  };
+
+  try {
+    window.localStorage.setItem(CUSTOMER_SESSION_STORAGE_KEY, JSON.stringify(session));
+  } catch (_error) {
+    // Keep navigation working even when storage is unavailable.
+  }
+
+  return session;
+};
+
+const storeCustomerSession = (customer) => {
+  const session = {
+    id: customer?.id || `customer-${Date.now()}`,
+    phone: typeof customer?.phone === 'string' ? customer.phone.trim() : '',
+    name: typeof customer?.name === 'string' ? customer.name.trim() : '',
+    email: typeof customer?.email === 'string' ? customer.email.trim() : '',
+    sessionToken: typeof customer?.sessionToken === 'string' ? customer.sessionToken.trim() : '',
+    favoriteSalonIds: Array.isArray(customer?.favoriteSalonIds) ? customer.favoriteSalonIds : [],
+    wallet: customer?.wallet ?? null,
+    notifications: customer?.notifications ?? null,
+    socialLogins: customer?.socialLogins ?? null,
+    dateOfBirth: typeof customer?.dateOfBirth === 'string' ? customer.dateOfBirth.trim() : '',
+    gender: typeof customer?.gender === 'string' ? customer.gender.trim() : '',
+    verifiedAt: customer?.verifiedAt || new Date().toISOString()
+  };
+
+  try {
+    window.localStorage.setItem(CUSTOMER_SESSION_STORAGE_KEY, JSON.stringify(session));
+  } catch (_error) {
+    // Keep navigation working even when storage is unavailable.
+  }
+
+  return session;
+};
+
+const updateStoredCustomerSession = (updates = {}) => {
+  const currentSession = getCustomerSession() ?? {};
+  return storeCustomerSession({
+    ...currentSession,
+    ...updates,
+    id: currentSession.id || updates.id || `customer-${Date.now()}`
+  });
+};
+
+const getCustomerAuthHeaders = () => {
+  const sessionToken = getCustomerSession()?.sessionToken;
+  return sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {};
+};
+
+const customerApiRequest = (path, options = {}) =>
+  apiRequest(path, {
+    ...options,
+    headers: {
+      ...(options.headers ?? {}),
+      ...getCustomerAuthHeaders()
+    }
+  });
+
+const getCurrentPathWithSearch = () => `${window.location.pathname}${window.location.search}`;
+
+const redirectToCustomerLogin = () => {
+  if (!ENABLE_SALON_FAVOURITES) {
+    safeAlert('Favourites are coming soon. You can keep exploring salons for now.');
+    return;
+  }
+
+  const params = new URLSearchParams({
+    role: 'customer',
+    redirect: getCurrentPathWithSearch()
+  });
+  window.location.assign(`/login?${params.toString()}`);
+};
+
+const setFavouriteSalonIds = (ids) => {
+  try {
+    window.localStorage.setItem(SALON_FAVOURITES_STORAGE_KEY, JSON.stringify([...new Set(ids)]));
+  } catch (_error) {
+    // Favourites are a convenience only; booking still works when storage is unavailable.
+  }
+};
+
+const addSalonFavourite = async (salon) => {
+  if (!ENABLE_SALON_FAVOURITES) {
+    return false;
+  }
+
+  const salonId = getSalonDetailId(salon);
+
+  if (!salonId) {
+    return false;
+  }
+
+  const payload = await customerApiRequest('/api/public/customers/me/favorites', {
+    method: 'POST',
+    body: JSON.stringify({ salonId })
+  });
+  if (payload?.customer) {
+    updateStoredCustomerSession(payload.customer);
+    setFavouriteSalonIds(payload.customer.favoriteSalonIds ?? []);
+  }
+  return true;
+};
+
+const setPendingSalonFavourite = (salon) => {
+  if (!ENABLE_SALON_FAVOURITES) {
+    return;
+  }
+
+  const salonId = getSalonDetailId(salon);
+
+  if (!salonId) {
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(PENDING_SALON_FAVOURITE_STORAGE_KEY, salonId);
+  } catch (_error) {
+    // Ignore storage errors; the user can still favourite after login.
+  }
+};
+
+const consumePendingSalonFavourite = async (salon) => {
+  if (!ENABLE_SALON_FAVOURITES) {
+    return false;
+  }
+
+  const salonId = getSalonDetailId(salon);
+
+  if (!salonId || !isCustomerLoggedIn()) {
+    return false;
+  }
+
+  try {
+    const pendingSalonId = window.sessionStorage.getItem(PENDING_SALON_FAVOURITE_STORAGE_KEY);
+
+    if (pendingSalonId !== salonId) {
+      return false;
+    }
+
+    window.sessionStorage.removeItem(PENDING_SALON_FAVOURITE_STORAGE_KEY);
+    return await addSalonFavourite(salon);
+  } catch (_error) {
+    return false;
+  }
+};
+
+const isSalonFavourite = (salon) => {
+  const salonId = getSalonDetailId(salon);
+  return salonId ? getFavouriteSalonIds().includes(salonId) : false;
+};
+
+const setSalonFavouriteButtonState = (button, isFavourite) => {
+  button.classList.toggle('is-active', isFavourite);
+  button.setAttribute('aria-pressed', isFavourite ? 'true' : 'false');
+  button.setAttribute('aria-label', isFavourite ? 'Remove from favourites' : 'Add to favourites');
+  button.title = isFavourite ? 'Remove from favourites' : 'Add to favourites';
+};
+
+const createSalonActionButton = ({ className, label, iconSvg }) => {
+  const button = document.createElement('button');
+  button.className = className;
+  button.type = 'button';
+  button.innerHTML = `${iconSvg}<span>${label}</span>`;
+  return button;
+};
+
+const shareSalonProfile = async (salon) => {
+  const shareUrl = getSalonDetailUrl(salon);
+  const shareData = {
+    title: salon?.businessName || 'Salon profile',
+    text: `Book ${salon?.businessName || 'this salon'} on QR schedule.com`,
+    url: shareUrl
+  };
+
+  try {
+    if (navigator.share) {
+      await navigator.share(shareData);
+      return;
+    }
+
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(shareUrl);
+      safeAlert('Salon link copied.');
+      return;
+    }
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      return;
+    }
+  }
+
+  safeAlert(shareUrl);
+};
+
 const getSalonReviewSummaryText = (salon) => {
   const totalReviews = Number(salon.reviewSummary?.totalReviews) || 0;
   const averageRating = Number(salon.reviewSummary?.averageRating) || 0;
@@ -2326,7 +2560,46 @@ const renderSalonDetailPanel = (salon) => {
     `${ratingLabel} ***** (${reviewCount}) | Open until 11:00PM | ${locationLabel}`
   );
 
-  profileHeader.append(breadcrumb, title, meta);
+  const headerActions = document.createElement('div');
+  headerActions.className = 'salon-detail-profile-actions';
+
+  const shareButton = createSalonActionButton({
+    className: 'salon-detail-action-button',
+    label: 'Share',
+    iconSvg:
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 16V4"></path><path d="M8 8l4-4 4 4"></path><path d="M6 12v7h12v-7"></path></svg>'
+  });
+  shareButton.setAttribute('aria-label', `Share ${businessName}`);
+  shareButton.addEventListener('click', () => {
+    void shareSalonProfile(salon);
+  });
+
+  const saveButton = createSalonActionButton({
+    className: 'salon-detail-action-button salon-detail-favourite-button',
+    label: 'Save',
+    iconSvg:
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"></path></svg>'
+  });
+  setSalonFavouriteButtonState(saveButton, isSalonFavourite(salon));
+  consumePendingSalonFavourite(salon)
+    .then((didApplyPendingFavourite) => {
+      if (didApplyPendingFavourite) {
+        setSalonFavouriteButtonState(saveButton, true);
+      }
+    })
+    .catch(() => {});
+  saveButton.addEventListener('click', () => {
+    if (!ENABLE_SALON_FAVOURITES) {
+      safeAlert('Favourites are coming soon. You can keep exploring salons for now.');
+      return;
+    }
+
+    setPendingSalonFavourite(salon);
+    redirectToCustomerLogin();
+  });
+
+  headerActions.append(shareButton, saveButton);
+  profileHeader.append(breadcrumb, title, meta, headerActions);
 
   const gallery = document.createElement('div');
   gallery.className = 'salon-detail-gallery';
@@ -2352,15 +2625,6 @@ const renderSalonDetailPanel = (salon) => {
 
     gallery.append(imageWrap);
   });
-
-  const galleryActions = document.createElement('div');
-  galleryActions.className = 'salon-detail-gallery-actions';
-  const shareButton = createDetailText('button', '', 'Share');
-  const saveButton = createDetailText('button', '', 'Save');
-  shareButton.type = 'button';
-  saveButton.type = 'button';
-  galleryActions.append(shareButton, saveButton);
-  gallery.append(galleryActions);
 
   const servicesSection = document.createElement('section');
   servicesSection.className = 'salon-detail-section';
@@ -2815,6 +3079,7 @@ const initHomeSalonSearch = () => {
   const serviceDropdown = document.querySelector('#service-query-dropdown');
   const cityDropdown = document.querySelector('#city-query-dropdown');
   const cityAutocomplete = document.querySelector('#city-autocomplete');
+  const cityLocationStatus = document.querySelector('#city-location-status');
   const locationTrigger = document.querySelector('#city-location-trigger');
   const timeTrigger = document.querySelector('#time-query-trigger');
   const timePopover = document.querySelector('#time-query-popover');
@@ -2854,6 +3119,14 @@ const initHomeSalonSearch = () => {
     secondaryLabel: 'Use your device location',
     sourceLabel: 'Nearby',
     kind: 'current-location'
+  };
+  const setCityLocationStatus = (message = '') => {
+    if (!(cityLocationStatus instanceof HTMLElement)) {
+      return;
+    }
+
+    cityLocationStatus.textContent = message;
+    cityLocationStatus.classList.toggle('is-hidden', !message);
   };
   const popularLocationCities = ['Lahore', 'Karachi', 'Islamabad', 'Rawalpindi', 'Faisalabad'];
   const cityAreaSeeds = {
@@ -4092,9 +4365,23 @@ const initHomeSalonSearch = () => {
   };
 
   const detectCurrentLocation = ({ force = false } = {}) => {
+    if (!(cityInput instanceof HTMLInputElement)) {
+      return;
+    }
+
+    if (!window.isSecureContext) {
+      setCityLocationStatus(
+        'Current location needs HTTPS. Open this site on a secure public URL, or use localhost while testing.'
+      );
+      return;
+    }
+
+    if (!navigator.geolocation) {
+      setCityLocationStatus('Location access is not available in this browser. Search by city or area instead.');
+      return;
+    }
+
     if (
-      !(cityInput instanceof HTMLInputElement) ||
-      !navigator.geolocation ||
       (!force && cityInput.value.trim()) ||
       hasRequestedCurrentLocation
     ) {
@@ -4105,6 +4392,7 @@ const initHomeSalonSearch = () => {
 
     if (force) {
       syncLocationQuery('Detecting current location...', { updateAutocomplete: true });
+      setCityLocationStatus('Requesting your current location...');
     }
 
     navigator.geolocation.getCurrentPosition(
@@ -4126,6 +4414,7 @@ const initHomeSalonSearch = () => {
 
           if (!detectedLocation) {
             hasRequestedCurrentLocation = false;
+            setCityLocationStatus('Location detected, but no address could be resolved. Search manually.');
             return;
           }
 
@@ -4135,6 +4424,7 @@ const initHomeSalonSearch = () => {
             longitude: payload?.location?.longitude
           });
           syncLocationQuery(detectedLocation, { updateAutocomplete: true });
+          setCityLocationStatus('');
           hasRequestedCurrentLocation = false;
           applyShowcaseFilters();
         } catch (_error) {
@@ -4142,13 +4432,24 @@ const initHomeSalonSearch = () => {
           if (force) {
             syncLocationQuery('', { updateAutocomplete: true });
           }
+          setCityLocationStatus('Unable to detect the current location right now. Search manually.');
         }
       },
-      () => {
+      (error) => {
         hasRequestedCurrentLocation = false;
         if (force) {
           syncLocationQuery('', { updateAutocomplete: true });
         }
+        const errorMessage =
+          error.code === error.PERMISSION_DENIED
+            ? 'Location permission was denied. Search by city or area instead.'
+            : error.code === error.POSITION_UNAVAILABLE
+              ? 'Current location is unavailable right now. Search by city or area instead.'
+              : error.code === error.TIMEOUT
+                ? 'Location detection timed out. Try again or search manually.'
+                : 'Unable to access your current location right now. Search manually.';
+
+        setCityLocationStatus(errorMessage);
       },
       {
         enableHighAccuracy: false,
@@ -4681,6 +4982,428 @@ const initSignup = () => {
       }
     })
     .catch(() => {});
+};
+
+const initCustomerLogin = () => {
+  const customerLoginLink = document.querySelector('[data-customer-login]');
+
+  if (!(customerLoginLink instanceof HTMLAnchorElement)) {
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const redirectPath = params.get('redirect') || '/';
+  const safeRedirectPath = redirectPath.startsWith('/') && !redirectPath.startsWith('//') ? redirectPath : '/';
+  const loginParams = new URLSearchParams({ redirect: safeRedirectPath });
+
+  customerLoginLink.href = `/customer-login?${loginParams.toString()}`;
+  customerLoginLink.addEventListener('click', (event) => {
+    event.preventDefault();
+    window.location.assign(`/customer-login?${loginParams.toString()}`);
+  });
+};
+
+const initCustomerOtpLogin = () => {
+  const form = document.querySelector('#customer-login-form');
+  const nameInput = document.querySelector('#customer-login-name');
+  const emailInput = document.querySelector('#customer-login-email');
+  const phoneInput = document.querySelector('#customer-login-phone');
+  const codeInput = document.querySelector('#customer-login-code');
+  const otpPanel = document.querySelector('#customer-login-otp-panel');
+  const verifyButton = document.querySelector('#customer-login-verify');
+  const status = document.querySelector('#customer-login-status');
+
+  if (
+    !(form instanceof HTMLFormElement) ||
+    !(phoneInput instanceof HTMLInputElement) ||
+    !(codeInput instanceof HTMLInputElement) ||
+    !(otpPanel instanceof HTMLElement) ||
+    !(verifyButton instanceof HTMLButtonElement)
+  ) {
+    return;
+  }
+
+  const requestEndpoint = form.dataset.requestOtpEndpoint?.trim();
+  const verifyEndpoint = form.dataset.verifyOtpEndpoint?.trim();
+  const params = new URLSearchParams(window.location.search);
+  const redirectPath = params.get('redirect') || '/';
+  const safeRedirectPath = redirectPath.startsWith('/') && !redirectPath.startsWith('//') ? redirectPath : '/';
+
+  const setStatus = (message = '', isError = false) => {
+    if (!(status instanceof HTMLElement)) {
+      return;
+    }
+
+    status.textContent = message;
+    status.classList.toggle('is-error', isError);
+  };
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    if (!requestEndpoint) {
+      setStatus('Customer login is not configured.', true);
+      return;
+    }
+
+    const phone = phoneInput.value.trim();
+
+    if (phone.length < 7) {
+      setStatus('Enter your mobile number first.', true);
+      phoneInput.focus();
+      return;
+    }
+
+    setStatus('Sending verification code...');
+
+    try {
+      const payload = await apiRequest(requestEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          phone,
+          name: nameInput instanceof HTMLInputElement ? nameInput.value.trim() : '',
+          email: emailInput instanceof HTMLInputElement ? emailInput.value.trim() : ''
+        })
+      });
+
+      otpPanel.classList.remove('is-hidden');
+      codeInput.focus();
+      setStatus(payload?.message || 'Verification code sent.');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Unable to send verification code.', true);
+    }
+  });
+
+  verifyButton.addEventListener('click', async () => {
+    if (!verifyEndpoint) {
+      setStatus('Customer login is not configured.', true);
+      return;
+    }
+
+    const phone = phoneInput.value.trim();
+    const code = codeInput.value.trim();
+
+    if (!/^\d{6}$/.test(code)) {
+      setStatus('Enter the 6 digit verification code.', true);
+      codeInput.focus();
+      return;
+    }
+
+    setStatus('Verifying code...');
+
+    try {
+      const payload = await apiRequest(verifyEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({ phone, code })
+      });
+
+      storeCustomerSession({
+        ...payload?.customer,
+        sessionToken: payload?.sessionToken
+      });
+      window.location.assign(safeRedirectPath);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Unable to verify code.', true);
+    }
+  });
+};
+
+const getCustomerInitial = (session) => {
+  const label = session?.name || session?.email || session?.phone || 'Customer';
+  return String(label).trim().charAt(0).toUpperCase() || 'C';
+};
+
+const getCustomerDisplayName = (session) =>
+  session?.name || session?.email || session?.phone || 'Customer account';
+
+const initCustomerAccountMenu = () => {
+  const headerActions = document.querySelector('.header-actions');
+  const session = getCustomerSession();
+
+  if (!(headerActions instanceof HTMLElement) || !session?.id) {
+    return;
+  }
+
+  const loginLink = headerActions.querySelector('.login-link[href="/login"]');
+  if (loginLink instanceof HTMLElement) {
+    loginLink.classList.add('is-hidden');
+  }
+
+  const existingMenu = headerActions.querySelector('.customer-account-menu');
+  if (existingMenu instanceof HTMLElement) {
+    existingMenu.remove();
+  }
+
+  const menuWrap = document.createElement('div');
+  menuWrap.className = 'customer-account-menu';
+
+  const menuButton = document.createElement('button');
+  menuButton.className = 'customer-account-trigger';
+  menuButton.type = 'button';
+  menuButton.setAttribute('aria-label', 'Open customer menu');
+  menuButton.setAttribute('aria-expanded', 'false');
+  menuButton.innerHTML = `<span class="customer-account-avatar">${escapeHtml(getCustomerInitial(session))}</span><span class="customer-account-chevron">⌄</span>`;
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'customer-account-dropdown is-hidden';
+  dropdown.innerHTML = `
+    <strong>${escapeHtml(getCustomerDisplayName(session))}</strong>
+    <a href="/profile">Profile</a>
+    <a href="/activity">Activity</a>
+    <a href="/wallet">Wallet</a>
+    <a href="/messages">Messages</a>
+    <a href="/favorites">Favorites</a>
+    <a href="/forms">Forms</a>
+    <a href="/settings">Settings</a>
+    <button type="button" data-customer-logout>Log out</button>
+    <span>Download the app</span>
+    <a href="/help">Help and support</a>
+    <a href="/">English (US)</a>
+    <a href="/signup" class="customer-account-business-link">For businesses -></a>
+  `;
+
+  const setOpen = (isOpen) => {
+    dropdown.classList.toggle('is-hidden', !isOpen);
+    menuButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  };
+
+  menuButton.addEventListener('click', () => {
+    setOpen(dropdown.classList.contains('is-hidden'));
+  });
+
+  dropdown.addEventListener('click', (event) => {
+    const logoutButton =
+      event.target instanceof HTMLElement ? event.target.closest('[data-customer-logout]') : null;
+
+    if (!(logoutButton instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    window.localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
+    window.sessionStorage.removeItem(PENDING_SALON_FAVOURITE_STORAGE_KEY);
+    window.location.reload();
+  });
+
+  document.addEventListener('click', (event) => {
+    if (event.target instanceof Node && !menuWrap.contains(event.target)) {
+      setOpen(false);
+    }
+  });
+
+  menuWrap.append(menuButton, dropdown);
+  headerActions.append(menuWrap);
+};
+
+const initCustomerProfilePage = () => {
+  const profilePage = document.querySelector('.customer-profile-page');
+
+  if (!(profilePage instanceof HTMLElement)) {
+    return;
+  }
+
+  const session = getCustomerSession();
+
+  if (!session?.id) {
+    const params = new URLSearchParams({ role: 'customer', redirect: window.location.pathname });
+    window.location.assign(`/login?${params.toString()}`);
+    return;
+  }
+
+  const setText = (selector, value) => {
+    const element = document.querySelector(selector);
+    if (element instanceof HTMLElement) {
+      element.textContent = value || '-';
+    }
+  };
+
+  const setChecked = (selector, value) => {
+    const element = document.querySelector(selector);
+    if (element instanceof HTMLInputElement) {
+      element.checked = Boolean(value);
+    }
+  };
+
+  const renderCustomerAccountData = (customer) => {
+    const wallet = customer.wallet ?? {};
+    const balanceMinor = Number(wallet.balanceMinor ?? 0);
+    const currencyCode = typeof wallet.currencyCode === 'string' ? wallet.currencyCode : 'USD';
+    const balance = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currencyCode
+    }).format(balanceMinor / 100);
+    setText('#customer-wallet-balance', balance);
+    setText(
+      '#customer-wallet-card-count',
+      Array.isArray(wallet.cards) && wallet.cards.length > 0
+        ? `${wallet.cards.length} saved card${wallet.cards.length === 1 ? '' : 's'}`
+        : 'Add debit/credit card'
+    );
+
+    const favoriteCount = Array.isArray(customer.favoriteSalonIds) ? customer.favoriteSalonIds.length : 0;
+    setText('#customer-favorites-title', favoriteCount > 0 ? `${favoriteCount} favorite${favoriteCount === 1 ? '' : 's'}` : 'No favorites');
+    setText(
+      '#customer-favorites-copy',
+      favoriteCount > 0
+        ? 'Your saved salons will be listed here as the catalog grows.'
+        : "Your favorites list is empty. Let's fill it up!"
+    );
+
+    const notifications = customer.notifications ?? {};
+    setChecked('#customer-notify-appointment-text', notifications.appointmentTextMessage);
+    setChecked('#customer-notify-appointment-whatsapp', notifications.appointmentWhatsapp);
+    setChecked('#customer-notify-marketing-email', notifications.marketingEmail);
+    setChecked('#customer-notify-marketing-text', notifications.marketingTextMessage);
+    setChecked('#customer-notify-marketing-whatsapp', notifications.marketingWhatsapp);
+
+    const socialLogins = customer.socialLogins ?? {};
+    setText('#customer-facebook-state', socialLogins.facebookConnected ? 'Disconnect' : 'Connect');
+    setText('#customer-google-state', socialLogins.googleConnected ? 'Disconnect' : 'Connect');
+  };
+
+  const renderCustomerProfile = (customer) => {
+    const displayName = getCustomerDisplayName(customer);
+    const nameParts = displayName.split(/\s+/).filter(Boolean);
+    const firstName = nameParts[0] || displayName;
+    const lastName = nameParts.slice(1).join(' ');
+
+    setText('#customer-profile-sidebar-name', displayName);
+    setText('#customer-profile-avatar', getCustomerInitial(customer));
+    setText('#customer-profile-name', displayName);
+    setText('#customer-profile-first-name', firstName);
+    setText('#customer-profile-last-name', lastName);
+    setText('#customer-profile-phone', customer.phone || '-');
+    setText('#customer-profile-email', customer.email || '-');
+    setText('#customer-profile-date-of-birth', customer.dateOfBirth || '-');
+    setText('#customer-profile-gender', customer.gender || '-');
+    renderCustomerAccountData(customer);
+
+    return { displayName, firstName, lastName };
+  };
+
+  let renderedProfile = renderCustomerProfile(session);
+
+  customerApiRequest('/api/public/customers/me')
+    .then((payload) => {
+      if (payload?.customer) {
+        const nextSession = updateStoredCustomerSession(payload.customer);
+        renderedProfile = renderCustomerProfile(nextSession);
+      }
+    })
+    .catch(() => {
+      // Keep the locally cached customer visible if the profile request is temporarily unavailable.
+    });
+
+  const editButton = document.querySelector('#customer-profile-edit');
+  const editForm = document.querySelector('#customer-profile-edit-form');
+  const cancelButton = document.querySelector('#customer-profile-edit-cancel');
+  const firstNameInput = document.querySelector('#customer-profile-edit-first-name');
+  const lastNameInput = document.querySelector('#customer-profile-edit-last-name');
+  const phoneInput = document.querySelector('#customer-profile-edit-phone');
+  const emailInput = document.querySelector('#customer-profile-edit-email');
+
+  if (
+    !(editButton instanceof HTMLButtonElement) ||
+    !(editForm instanceof HTMLFormElement) ||
+    !(firstNameInput instanceof HTMLInputElement) ||
+    !(lastNameInput instanceof HTMLInputElement) ||
+    !(phoneInput instanceof HTMLInputElement) ||
+    !(emailInput instanceof HTMLInputElement)
+  ) {
+    return;
+  }
+
+  const fillEditForm = () => {
+    const currentSession = getCustomerSession() ?? session;
+    const currentName = getCustomerDisplayName(currentSession);
+    const currentParts = currentName.split(/\s+/).filter(Boolean);
+    firstNameInput.value = currentParts[0] ?? '';
+    lastNameInput.value = currentParts.slice(1).join(' ');
+    phoneInput.value = currentSession.phone || '';
+    emailInput.value = currentSession.email || '';
+  };
+
+  const setEditMode = (isEditing) => {
+    editForm.classList.toggle('is-hidden', !isEditing);
+    editButton.textContent = isEditing ? 'Editing' : 'Edit';
+    editButton.disabled = isEditing;
+  };
+
+  editButton.addEventListener('click', () => {
+    fillEditForm();
+    setEditMode(true);
+  });
+
+  if (cancelButton instanceof HTMLButtonElement) {
+    cancelButton.addEventListener('click', () => {
+      setEditMode(false);
+    });
+  }
+
+  editForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const nextFirstName = firstNameInput.value.trim();
+    const nextLastName = lastNameInput.value.trim();
+    const nextName = [nextFirstName, nextLastName].filter(Boolean).join(' ') || renderedProfile.displayName;
+
+    try {
+      const payload = await customerApiRequest('/api/public/customers/me', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          name: nextName,
+          phone: phoneInput.value.trim(),
+          email: emailInput.value.trim()
+        })
+      });
+      const nextSession = updateStoredCustomerSession(payload?.customer);
+      renderedProfile = renderCustomerProfile(nextSession);
+      setEditMode(false);
+    } catch (error) {
+      safeAlert(error instanceof Error ? error.message : 'Unable to update profile');
+    }
+  });
+
+  const settingsInputs = [
+    '#customer-notify-appointment-text',
+    '#customer-notify-appointment-whatsapp',
+    '#customer-notify-marketing-email',
+    '#customer-notify-marketing-text',
+    '#customer-notify-marketing-whatsapp'
+  ]
+    .map((selector) => document.querySelector(selector))
+    .filter((element) => element instanceof HTMLInputElement);
+
+  const saveSettings = async () => {
+    const currentSession = getCustomerSession() ?? {};
+    const notifications = {
+      appointmentTextMessage: Boolean(document.querySelector('#customer-notify-appointment-text')?.checked),
+      appointmentWhatsapp: Boolean(document.querySelector('#customer-notify-appointment-whatsapp')?.checked),
+      marketingEmail: Boolean(document.querySelector('#customer-notify-marketing-email')?.checked),
+      marketingTextMessage: Boolean(document.querySelector('#customer-notify-marketing-text')?.checked),
+      marketingWhatsapp: Boolean(document.querySelector('#customer-notify-marketing-whatsapp')?.checked)
+    };
+    const socialLogins = currentSession.socialLogins ?? {
+      facebookConnected: false,
+      googleConnected: false
+    };
+
+    const payload = await customerApiRequest('/api/public/customers/me/settings', {
+      method: 'PATCH',
+      body: JSON.stringify({ notifications, socialLogins })
+    });
+
+    if (payload?.customer) {
+      updateStoredCustomerSession(payload.customer);
+    }
+  };
+
+  settingsInputs.forEach((input) => {
+    input.addEventListener('change', () => {
+      saveSettings().catch((error) => {
+        safeAlert(error instanceof Error ? error.message : 'Unable to update settings');
+      });
+    });
+  });
 };
 
 const initBusinessProfile = () => {
@@ -16757,6 +17480,10 @@ const initSmsLogs = () => {
 };
 
 syncClientIdFromQuery();
+initCustomerLogin();
+initCustomerOtpLogin();
+initCustomerAccountMenu();
+initCustomerProfilePage();
 
 if (guardAdminPages()) {
   initSignup();

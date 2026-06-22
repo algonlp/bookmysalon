@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | Settings</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="customer-profile-page customer-settings-page">
+      <header class="customer-profile-topbar">
+        <a class="brand" href="/">QR schedule.com</a>
+        <div class="header-actions"></div>
+      </header>
+      <div class="customer-profile-layout">
+        <aside class="customer-profile-sidebar">
+          <strong id="customer-profile-sidebar-name">Customer</strong>
+          <nav aria-label="Customer account">
+            <a href="/profile">Profile</a>
+            <a href="/activity">Activity</a>
+            <a href="/wallet">Wallet</a>
+            <a href="/messages">Messages</a>
+            <a href="/favorites">Favorites</a>
+            <a href="/forms">Forms</a>
+            <a class="is-active" href="/settings">Settings</a>
+          </nav>
+        </aside>
+        <main class="customer-profile-main customer-settings-main">
+          <h1>Settings</h1>
+          <section class="customer-settings-card">
+            <h2>My social logins</h2>
+            <p>Link social profiles for easier access to your QR Schedule account</p>
+            <div class="customer-settings-row"><strong>Facebook</strong><button type="button" id="customer-facebook-state">Connect</button></div>
+            <div class="customer-settings-row"><strong>Google</strong><button type="button" id="customer-google-state">Connect</button></div>
+          </section>
+          <section class="customer-settings-card">
+            <h2>My notifications</h2>
+            <p>We will send you updates about your appointments, news and offers.</p>
+            <h3>Appointment notifications</h3>
+            <label>Text message <input id="customer-notify-appointment-text" type="checkbox" /></label>
+            <label>WhatsApp <input id="customer-notify-appointment-whatsapp" type="checkbox" /></label>
+            <h3>Marketing notifications</h3>
+            <label>Email <input id="customer-notify-marketing-email" type="checkbox" /></label>
+            <label>Text message <input id="customer-notify-marketing-text" type="checkbox" /></label>
+            <label>WhatsApp <input id="customer-notify-marketing-whatsapp" type="checkbox" /></label>
+          </section>
+        </main>
+      </div>
+    </div>
+    <script src="/main.js"></script>
+  </body>
+</html>
