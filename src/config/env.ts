@@ -95,6 +95,8 @@ const envSchema = z.object({
   PLATFORM_ADMIN_COOKIE_NAME: z.string().trim().min(1).default('platform_admin_session'),
   ADMIN_SESSION_TTL_DAYS: z.coerce.number().int().positive().default(30),
   PUBLIC_SUPPORT_COMPANY_NAME: z.string().optional(),
+  PUBLIC_SUPPORT_EMAIL: z.string().email().optional(),
+  PUBLIC_SUPPORT_PHONE: z.string().optional(),
   PUBLIC_GOOGLE_CLIENT_ID: z.string().trim().min(1).optional(),
   PUBLIC_SUPPORT_PLATFORM_NAME: z.string().optional(),
   PUBLIC_SUPPORT_WEBSITE_URL: z.string().url().optional(),

@@ -5,6 +5,7 @@ const GOOGLE_PROFILE_STORAGE_KEY = 'qr-platform-google-profile';
 const CUSTOMER_SESSION_STORAGE_KEY = 'qr-customer-session';
 const SALON_FAVOURITES_STORAGE_KEY = 'qr-public-salon-favourites';
 const PENDING_SALON_FAVOURITE_STORAGE_KEY = 'qr-pending-salon-favourite';
+const PUBLIC_LOCATION_STORAGE_KEY = 'qr-public-location';
 const ENABLE_SALON_FAVOURITES = true;
 const BOOKING_PACKAGE_ANNOUNCEMENT_STORAGE_KEY_PREFIX = 'qr-booking-package-announcement';
 const DASHBOARD_NOTIFICATION_REFRESH_INTERVAL_MS = 30000;
@@ -2440,6 +2441,76 @@ const getSalonReviewSummaryText = (salon) => {
     : 'New';
 };
 
+const createSalonDetailMeta = (salon) => {
+  const meta = document.createElement('div');
+  meta.className = 'salon-detail-profile-meta';
+
+  const totalReviews = Number(salon.reviewSummary?.totalReviews) || 0;
+  const averageRating = Number(salon.reviewSummary?.averageRating) || 0;
+  const address = formatAddressSingleLine(salon.venueAddress);
+  const openingStatus = getSalonOpeningStatusText(salon);
+  const distanceText = getSalonDistanceText(salon);
+  const mapQuery = getSalonMapQuery(salon);
+  let distanceValueElement = null;
+  let distanceSeparatorElement = null;
+
+  const ratingGroup = document.createElement('span');
+  ratingGroup.className = 'salon-detail-meta-rating';
+
+  if (totalReviews > 0 && averageRating > 0) {
+    ratingGroup.append(
+      createDetailText('strong', '', averageRating.toFixed(1)),
+      createDetailText('span', 'salon-detail-meta-stars', '★★★★★'),
+      createDetailText('a', 'salon-detail-meta-reviews', `(${totalReviews})`)
+    );
+    ratingGroup.querySelector('a')?.setAttribute('href', '#reviews');
+  } else {
+    ratingGroup.append(createDetailText('strong', '', 'New'));
+  }
+
+  meta.append(ratingGroup);
+
+  [openingStatus, address].filter(Boolean).forEach((label) => {
+    meta.append(createDetailText('span', 'salon-detail-meta-separator', '•'));
+    meta.append(createDetailText('span', '', label));
+  });
+
+  if (distanceText || (address && getStoredPublicLocation())) {
+    distanceSeparatorElement = createDetailText('span', 'salon-detail-meta-separator', '•');
+    distanceValueElement = createDetailText('span', '', distanceText);
+    distanceValueElement.className = distanceText ? '' : 'is-hidden';
+    distanceValueElement.dataset.salonDistance = 'true';
+    distanceSeparatorElement.classList.toggle('is-hidden', !distanceText);
+    meta.append(distanceSeparatorElement, distanceValueElement);
+  }
+
+  if (mapQuery) {
+    const origin = getStoredPublicLocation();
+    const directionsLink = document.createElement('a');
+    directionsLink.className = 'salon-detail-directions-link';
+    directionsLink.href = buildGoogleDirectionsUrl({ destination: mapQuery, origin });
+    directionsLink.target = '_blank';
+    directionsLink.rel = 'noopener';
+    directionsLink.textContent = 'Get directions';
+
+    meta.append(createDetailText('span', 'salon-detail-meta-separator', '•'), directionsLink);
+  }
+
+  meta.updateDistanceLabel = (label) => {
+    const normalizedLabel = typeof label === 'string' ? label.trim() : '';
+
+    if (!distanceValueElement || !distanceSeparatorElement || !normalizedLabel) {
+      return;
+    }
+
+    distanceValueElement.textContent = normalizedLabel;
+    distanceValueElement.classList.remove('is-hidden');
+    distanceSeparatorElement.classList.remove('is-hidden');
+  };
+
+  return meta;
+};
+
 const getSalonAboutText = (salon) => {
   const serviceTypes = Array.isArray(salon.serviceTypes) && salon.serviceTypes.length > 0
     ? salon.serviceTypes.join(', ')
@@ -2477,6 +2548,99 @@ const buildGoogleDirectionsUrl = ({ destination, origin }) => {
   return `https://www.google.com/maps/dir/?${params.toString()}`;
 };
 
+const getSalonCoordinates = (salon) => {
+  const latitude =
+    toFiniteNumber(salon?.latitude) ??
+    toFiniteNumber(salon?.venueLatitude) ??
+    toFiniteNumber(salon?.location?.latitude) ??
+    toFiniteNumber(salon?.coordinates?.latitude);
+  const longitude =
+    toFiniteNumber(salon?.longitude) ??
+    toFiniteNumber(salon?.venueLongitude) ??
+    toFiniteNumber(salon?.location?.longitude) ??
+    toFiniteNumber(salon?.coordinates?.longitude);
+
+  return latitude === null || longitude === null ? null : { latitude, longitude };
+};
+
+const getStoredPublicLocation = () => {
+  try {
+    const rawLocation = window.localStorage?.getItem(PUBLIC_LOCATION_STORAGE_KEY);
+    const location = rawLocation ? JSON.parse(rawLocation) : null;
+    const latitude = toFiniteNumber(location?.latitude);
+    const longitude = toFiniteNumber(location?.longitude);
+
+    return latitude === null || longitude === null ? null : { latitude, longitude };
+  } catch (_error) {
+    return null;
+  }
+};
+
+const setStoredPublicLocation = (location) => {
+  try {
+    const latitude = toFiniteNumber(location?.latitude);
+    const longitude = toFiniteNumber(location?.longitude);
+
+    if (latitude === null || longitude === null) {
+      window.localStorage?.removeItem(PUBLIC_LOCATION_STORAGE_KEY);
+      return;
+    }
+
+    window.localStorage?.setItem(
+      PUBLIC_LOCATION_STORAGE_KEY,
+      JSON.stringify({
+        label: typeof location?.label === 'string' ? location.label.trim() : '',
+        latitude,
+        longitude
+      })
+    );
+  } catch (_error) {}
+};
+
+const getSalonDistanceText = (salon) => {
+  const storedLocation = getStoredPublicLocation();
+  const salonCoordinates = getSalonCoordinates(salon);
+  const distanceKilometers =
+    toFiniteNumber(salon?.distanceKilometers) ?? getDistanceInKilometers(storedLocation, salonCoordinates);
+
+  return formatDistanceLabel(distanceKilometers);
+};
+
+const resolveSalonDistanceText = async (salon) => {
+  const storedLocation = getStoredPublicLocation();
+
+  if (!storedLocation) {
+    return '';
+  }
+
+  const existingDistanceText = getSalonDistanceText(salon);
+
+  if (existingDistanceText) {
+    return existingDistanceText;
+  }
+
+  const address = typeof salon?.venueAddress === 'string' ? salon.venueAddress.trim() : '';
+
+  if (!address) {
+    return '';
+  }
+
+  try {
+    const params = new URLSearchParams({ q: address });
+    const payload = await apiRequest(`/api/public/locations/search?${params.toString()}`);
+    const suggestion = Array.isArray(payload?.suggestions) ? payload.suggestions[0] : null;
+    const salonCoordinates = {
+      latitude: toFiniteNumber(suggestion?.latitude),
+      longitude: toFiniteNumber(suggestion?.longitude)
+    };
+    const distanceKilometers = getDistanceInKilometers(storedLocation, salonCoordinates);
+
+    return formatDistanceLabel(distanceKilometers);
+  } catch (_error) {
+    return '';
+  }
+};
+
 const getSalonOpeningHours = (salon) => {
   const openingHours = Array.isArray(salon?.openingHours) ? salon.openingHours : [];
   const weekdayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -2500,6 +2664,36 @@ const getSalonOpeningHours = (salon) => {
   }
 
   return [];
+};
+
+const getTodaySalonOpeningEntry = (salon) => {
+  const openingHours = getSalonOpeningHours(salon);
+
+  if (openingHours.length === 0) {
+    return null;
+  }
+
+  const today = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date()).toLowerCase();
+  return (
+    openingHours.find((entry) => String(entry?.weekday || '').toLowerCase() === today) ??
+    openingHours.find((entry) => !entry?.isClosed) ??
+    null
+  );
+};
+
+const getSalonOpeningStatusText = (salon) => {
+  const entry = getTodaySalonOpeningEntry(salon);
+
+  if (!entry) {
+    return '';
+  }
+
+  if (entry.isClosed) {
+    return 'Closed today';
+  }
+
+  const closingTime = formatTimeForDisplay(entry.closingTime);
+  return closingTime ? `Open until ${closingTime}` : 'Open today';
 };
 
 const getSalonAdditionalInformation = (salon) =>
@@ -2554,11 +2748,12 @@ const renderSalonDetailPanel = (salon) => {
   const title = createDetailText('h1', '', businessName);
   title.id = 'salon-detail-title';
 
-  const meta = createDetailText(
-    'p',
-    'salon-detail-profile-meta',
-    `${ratingLabel} ***** (${reviewCount}) | Open until 11:00PM | ${locationLabel}`
-  );
+  const meta = createSalonDetailMeta(salon);
+  resolveSalonDistanceText(salon)
+    .then((distanceText) => {
+      meta.updateDistanceLabel?.(distanceText);
+    })
+    .catch(() => {});
 
   const headerActions = document.createElement('div');
   headerActions.className = 'salon-detail-profile-actions';
@@ -2737,6 +2932,7 @@ const renderSalonDetailPanel = (salon) => {
   const reviewsSection = document.createElement('section');
   reviewsSection.className = 'salon-detail-section';
   reviewsSection.dataset.detailSection = 'reviews';
+  reviewsSection.id = 'reviews';
   reviewsSection.append(
     createDetailText('h3', '', 'Reviews'),
     createDetailText('p', 'salon-detail-rating-line', `${getSalonReviewSummaryText(salon)} *****`)
@@ -2861,7 +3057,10 @@ const renderSalonDetailPanel = (salon) => {
   bookNow.href = salon.bookingLink || '#';
   bookNow.textContent = 'Book now';
 
-  const hours = createDetailText('p', 'salon-detail-card-meta', 'Open until 11:00PM');
+  const openingStatus = getSalonOpeningStatusText(salon);
+  const hours = openingStatus
+    ? createDetailText('p', 'salon-detail-card-meta', openingStatus)
+    : null;
   const address = createDetailText(
     'p',
     'salon-detail-card-meta',
@@ -2870,8 +3069,8 @@ const renderSalonDetailPanel = (salon) => {
 
   aside.append(
     bookNow,
-    createDetailText('p', 'salon-detail-card-rating', `${ratingLabel} ***** (${reviewCount})`),
-    hours,
+    createDetailText('p', 'salon-detail-card-rating', `${ratingLabel} (${reviewCount})`),
+    ...(hours ? [hours] : []),
     address
   );
   panel.classList.remove('is-hidden');
@@ -2908,11 +3107,425 @@ const initSalonDetailTabs = () => {
   });
 };
 
+const initSalonHeaderSearch = (salon, { onLocationChange } = {}) => {
+  const form = document.querySelector('.salon-header-search');
+
+  if (!(form instanceof HTMLFormElement)) {
+    return;
+  }
+
+  const popover = form.querySelector('[data-salon-search-popover]');
+  const serviceButton = form.querySelector('[data-salon-search-control="service"]');
+  const locationButton = form.querySelector('[data-salon-search-control="location"]');
+  const timeButton = form.querySelector('[data-salon-search-control="time"]');
+  let selectedService = '';
+  let selectedDateValue = '';
+  let selectedPeriod = 'any';
+
+  if (
+    !(popover instanceof HTMLElement) ||
+    !(serviceButton instanceof HTMLButtonElement) ||
+    !(locationButton instanceof HTMLButtonElement) ||
+    !(timeButton instanceof HTMLButtonElement)
+  ) {
+    return;
+  }
+
+  const closePopover = () => {
+    popover.classList.add('is-hidden');
+    popover.classList.remove('is-time-picker');
+    popover.replaceChildren();
+  };
+
+  const formatSalonSearchDateValue = (date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+  const formatSalonSearchDateLabel = (date) =>
+    new Intl.DateTimeFormat(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    }).format(date);
+
+  const formatSalonSearchMonthLabel = (date) =>
+    new Intl.DateTimeFormat(undefined, {
+      month: 'short',
+      year: 'numeric'
+    }).format(date);
+
+  const getServiceOptions = () => {
+    const services = Array.isArray(salon?.services) ? salon.services : [];
+    const labels = [
+      ...(Array.isArray(salon?.serviceTypes) ? salon.serviceTypes : []),
+      ...services.map((service) => service?.categoryName),
+      ...services.map((service) => service?.name)
+    ];
+
+    return labels
+      .filter((value) => typeof value === 'string' && value.trim())
+      .map((value) => value.trim())
+      .filter((value, index, values) => values.findIndex((entry) => normalizeSearchValue(entry) === normalizeSearchValue(value)) === index)
+      .slice(0, 10);
+  };
+
+  const scrollToServices = () => {
+    const servicesSection = document.querySelector('[data-detail-section="services"]');
+
+    if (servicesSection instanceof HTMLElement) {
+      servicesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const applyService = (label) => {
+    selectedService = typeof label === 'string' ? label.trim() : '';
+    serviceButton.textContent = selectedService || 'All treatments';
+    closePopover();
+    scrollToServices();
+
+    if (!selectedService) {
+      return;
+    }
+
+    const categoryButton = document.querySelector(
+      `[data-service-category="${CSS.escape(selectedService)}"]`
+    );
+
+    if (categoryButton instanceof HTMLButtonElement) {
+      categoryButton.click();
+    }
+  };
+
+  const showServicePopover = () => {
+    popover.replaceChildren();
+    popover.classList.remove('is-hidden');
+    popover.append(
+      createDetailText('h3', '', 'Choose a treatment'),
+      createDetailText('p', '', 'Search or select a service from this salon. This stays on the same page.')
+    );
+
+    const input = document.createElement('input');
+    input.type = 'search';
+    input.placeholder = 'Search treatments';
+    input.value = selectedService;
+
+    const optionsWrap = document.createElement('div');
+    optionsWrap.className = 'salon-header-search-options';
+
+    const renderOptions = () => {
+      optionsWrap.replaceChildren();
+      const query = normalizeSearchValue(input.value);
+      const options = getServiceOptions().filter((label) =>
+        !query || normalizeSearchValue(label).includes(query)
+      );
+
+      if (options.length === 0) {
+        optionsWrap.append(createDetailText('p', '', 'No matching services found yet.'));
+        return;
+      }
+
+      options.forEach((label) => {
+        const option = document.createElement('button');
+        option.type = 'button';
+        option.textContent = label;
+        option.addEventListener('click', () => applyService(label));
+        optionsWrap.append(option);
+      });
+    };
+
+    input.addEventListener('input', renderOptions);
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        applyService(input.value);
+      }
+    });
+
+    popover.append(input, optionsWrap);
+    renderOptions();
+    input.focus();
+  };
+
+  const showTimePopover = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let visibleMonth = selectedDateValue
+      ? new Date(new Date(`${selectedDateValue}T00:00:00`).getFullYear(), new Date(`${selectedDateValue}T00:00:00`).getMonth(), 1)
+      : new Date(today.getFullYear(), today.getMonth(), 1);
+    const periods = [
+      { value: 'any', label: 'Any time', meta: '' },
+      { value: 'morning', label: 'Morning', meta: '9am - 12pm' },
+      { value: 'afternoon', label: 'Afternoon', meta: '12pm - 5pm' },
+      { value: 'evening', label: 'Evening', meta: '5pm - 12am' },
+      { value: 'custom', label: 'Custom', meta: '' }
+    ];
+
+    const getTimeLabel = () => {
+      const periodLabel = periods.find((period) => period.value === selectedPeriod)?.label ?? 'Any time';
+
+      if (!selectedDateValue && selectedPeriod === 'any') {
+        return 'Any time';
+      }
+
+      if (!selectedDateValue) {
+        return periodLabel;
+      }
+
+      const selectedDate = new Date(`${selectedDateValue}T00:00:00`);
+      const dateLabel = Number.isNaN(selectedDate.getTime())
+        ? selectedDateValue
+        : formatSalonSearchDateLabel(selectedDate);
+
+      return selectedPeriod === 'any' ? dateLabel : `${dateLabel}, ${periodLabel}`;
+    };
+
+    const syncTimeLabel = () => {
+      timeButton.textContent = getTimeLabel();
+    };
+
+    const setSelectedDate = (date) => {
+      selectedDateValue = formatSalonSearchDateValue(date);
+      syncTimeLabel();
+      renderTimePicker();
+    };
+
+    const setSelectedPeriod = (period) => {
+      selectedPeriod = period;
+      syncTimeLabel();
+      renderTimePicker();
+    };
+
+    const createQuickButton = (label, date) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'time-query-quick';
+      button.classList.toggle('is-selected', selectedDateValue === formatSalonSearchDateValue(date));
+
+      const title = document.createElement('strong');
+      title.textContent = label;
+      const meta = document.createElement('span');
+      meta.textContent = formatSalonSearchDateLabel(date);
+
+      button.append(title, meta);
+      button.addEventListener('click', () => setSelectedDate(date));
+      return button;
+    };
+
+    const renderTimePicker = () => {
+      popover.replaceChildren();
+      popover.classList.add('is-time-picker');
+      popover.classList.remove('is-hidden');
+
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      const quickList = document.createElement('div');
+      quickList.className = 'time-query-quick-list';
+      quickList.append(createQuickButton('Today', today), createQuickButton('Tomorrow', tomorrow));
+
+      const calendar = document.createElement('div');
+      calendar.className = 'time-query-calendar';
+
+      const monthHeader = document.createElement('div');
+      monthHeader.className = 'time-query-month-header';
+
+      const previousButton = document.createElement('button');
+      previousButton.type = 'button';
+      previousButton.className = 'time-query-month-button';
+      previousButton.setAttribute('aria-label', 'Previous month');
+      previousButton.textContent = '‹';
+      previousButton.addEventListener('click', () => {
+        visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
+        renderTimePicker();
+      });
+
+      const monthTitle = document.createElement('strong');
+      monthTitle.textContent = formatSalonSearchMonthLabel(visibleMonth);
+
+      const nextButton = document.createElement('button');
+      nextButton.type = 'button';
+      nextButton.className = 'time-query-month-button';
+      nextButton.setAttribute('aria-label', 'Next month');
+      nextButton.textContent = '›';
+      nextButton.addEventListener('click', () => {
+        visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+        renderTimePicker();
+      });
+
+      monthHeader.append(previousButton, monthTitle, nextButton);
+
+      const grid = document.createElement('div');
+      grid.className = 'time-query-grid';
+      ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].forEach((weekday) => {
+        const label = document.createElement('span');
+        label.className = 'time-query-weekday';
+        label.textContent = weekday;
+        grid.append(label);
+      });
+
+      const firstDay = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), 1);
+      const firstWeekdayOffset = (firstDay.getDay() + 6) % 7;
+      const daysInMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0).getDate();
+
+      for (let index = 0; index < firstWeekdayOffset; index += 1) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'time-query-day-placeholder';
+        grid.append(placeholder);
+      }
+
+      for (let day = 1; day <= daysInMonth; day += 1) {
+        const date = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth(), day);
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'time-query-day';
+        button.classList.toggle('is-selected', selectedDateValue === formatSalonSearchDateValue(date));
+        button.textContent = String(day);
+        button.addEventListener('click', () => setSelectedDate(date));
+        grid.append(button);
+      }
+
+      const periodWrap = document.createElement('div');
+      periodWrap.className = 'time-query-periods';
+
+      periods.forEach((period) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'time-query-period';
+        button.classList.toggle('is-selected', selectedPeriod === period.value);
+
+        const title = document.createElement('strong');
+        title.textContent = period.label;
+        button.append(title);
+
+        if (period.meta) {
+          const meta = document.createElement('span');
+          meta.textContent = period.meta;
+          button.append(meta);
+        }
+
+        button.addEventListener('click', () => setSelectedPeriod(period.value));
+        periodWrap.append(button);
+      });
+
+      calendar.append(monthHeader, grid);
+      popover.append(quickList, calendar, periodWrap);
+    };
+
+    popover.replaceChildren();
+    renderTimePicker();
+  };
+
+  const showLocationMessage = (title, message) => {
+    popover.replaceChildren();
+    popover.classList.remove('is-hidden');
+    popover.append(createDetailText('h3', '', title), createDetailText('p', '', message));
+  };
+
+  const detectCurrentLocation = () => {
+    closePopover();
+
+    if (!navigator.geolocation) {
+      locationButton.textContent = 'Search manually';
+      showLocationMessage('Location unavailable', 'Your browser does not support location detection. You can still use directions from the salon address.');
+      return;
+    }
+
+    if (!window.isSecureContext) {
+      locationButton.textContent = 'Current location';
+      showLocationMessage(
+        'Secure connection needed',
+        'Current location works on HTTPS or localhost. Open the public secure URL, then try again.'
+      );
+      return;
+    }
+
+    locationButton.textContent = 'Detecting...';
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const params = new URLSearchParams({
+            latitude: String(position.coords.latitude),
+            longitude: String(position.coords.longitude)
+          });
+          const payload = await apiRequest(`/api/public/locations/reverse?${params.toString()}`);
+          const location =
+            payload?.location && typeof payload.location === 'object'
+              ? payload.location
+              : {
+                  label: 'Current location',
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude
+                };
+          const label =
+            location?.primaryLabel?.trim?.() ||
+            location?.label?.split?.(',')?.[0]?.trim?.() ||
+            'Current location';
+
+          setStoredPublicLocation({
+            label,
+            latitude: location.latitude ?? position.coords.latitude,
+            longitude: location.longitude ?? position.coords.longitude
+          });
+          locationButton.textContent = label;
+
+          if (typeof onLocationChange === 'function') {
+            await onLocationChange();
+          }
+        } catch (_error) {
+          setStoredPublicLocation({
+            label: 'Current location',
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          });
+          locationButton.textContent = 'Current location';
+
+          if (typeof onLocationChange === 'function') {
+            await onLocationChange();
+          }
+        }
+      },
+      (error) => {
+        locationButton.textContent = 'Current location';
+        showLocationMessage(
+          'Location not allowed',
+          error?.code === error?.PERMISSION_DENIED
+            ? 'Please allow location permission in the browser to show distance from you.'
+            : 'Unable to detect your current location right now. Please try again.'
+        );
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 300000
+      }
+    );
+  };
+
+  serviceButton.addEventListener('click', showServicePopover);
+  timeButton.addEventListener('click', showTimePopover);
+  locationButton.addEventListener('click', detectCurrentLocation);
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    closePopover();
+    scrollToServices();
+  });
+
+  document.addEventListener('click', (event) => {
+    if (event.target instanceof Node && !form.contains(event.target)) {
+      closePopover();
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closePopover();
+    }
+  });
+};
+
 const initSalonProfilePage = async () => {
   const salonId = getSalonClientIdFromPath();
   const panel = document.querySelector('#salon-detail-panel');
   const status = document.querySelector('#salon-profile-status');
-  const headerBookLink = document.querySelector('#salon-header-book-link');
 
   if (!salonId || !(panel instanceof HTMLElement)) {
     return;
@@ -2932,11 +3545,13 @@ const initSalonProfilePage = async () => {
 
     document.title = `${salon.businessName || 'Business'} | QR schedule.com`;
 
-    if (headerBookLink instanceof HTMLAnchorElement) {
-      headerBookLink.href = salon.bookingLink || `/book/${encodeURIComponent(salonId)}`;
-    }
-
     renderSalonDetailPanel(salon);
+    initSalonHeaderSearch(salon, {
+      onLocationChange: async () => {
+        renderSalonDetailPanel(salon);
+        panel.classList.add('salon-detail-page-ready');
+      }
+    });
     panel.classList.add('salon-detail-page-ready');
 
     if (status instanceof HTMLElement) {
@@ -4033,6 +4648,7 @@ const initHomeSalonSearch = () => {
             longitude
           }
         : null;
+    setStoredPublicLocation(selectedLocationDetails);
   };
 
   const getLocalLocationSuggestions = (query) =>

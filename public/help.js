@@ -46,10 +46,26 @@ const buildSupportCopy = ({ supportCompanyName, supportFocusText }) => {
   return 'Use the main platform to continue with customer booking or business onboarding.';
 };
 
+const formatWebsiteLabel = (url) => {
+  try {
+    const parsedUrl = new URL(url);
+    return parsedUrl.hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+};
+
+const normalizePhoneHref = (phoneValue) => {
+  const digits = typeof phoneValue === 'string' ? phoneValue.replace(/[^\d+]/g, '') : '';
+  return digits ? `tel:${digits}` : '#';
+};
+
 const applyPublicConfig = (config) => {
   const supportCompanyName = config.supportCompanyName?.trim() || 'Algonlp';
   const supportPlatformName = config.supportPlatformName?.trim() ?? '';
   const supportWebsiteUrl = config.supportWebsiteUrl?.trim() ?? '';
+  const supportEmail = config.supportEmail?.trim() ?? '';
+  const supportPhone = config.supportPhone?.trim() ?? '';
   const supportFocusText = config.supportFocusText?.trim() ?? '';
 
   const heading =
@@ -69,13 +85,29 @@ const applyPublicConfig = (config) => {
   toggleRow('help-focus-row', supportFocusText.length > 0);
 
   const websiteLink = document.getElementById('help-website-link');
+  const emailLink = document.getElementById('help-email-link');
+  const phoneLink = document.getElementById('help-phone-link');
   const hasWebsite = supportWebsiteUrl.length > 0;
+  const hasEmail = supportEmail.length > 0;
+  const hasPhone = supportPhone.length > 0;
 
   toggleRow('help-website-row', hasWebsite);
+  toggleRow('help-email-row', hasEmail);
+  toggleRow('help-phone-row', hasPhone);
 
   if (websiteLink && hasWebsite) {
-    websiteLink.textContent = supportWebsiteUrl;
+    websiteLink.textContent = formatWebsiteLabel(supportWebsiteUrl);
     websiteLink.setAttribute('href', supportWebsiteUrl);
+  }
+
+  if (emailLink && hasEmail) {
+    emailLink.textContent = supportEmail;
+    emailLink.setAttribute('href', `mailto:${supportEmail}`);
+  }
+
+  if (phoneLink && hasPhone) {
+    phoneLink.textContent = supportPhone;
+    phoneLink.setAttribute('href', normalizePhoneHref(supportPhone));
   }
 };
 

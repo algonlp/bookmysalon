@@ -15,16 +15,16 @@ const footerServices = [
 ];
 
 const footerCountryCities = {
-  australia: ['Sydney', 'Melbourne', 'Perth', 'Brisbane', 'Gold Coast'],
-  bahrain: ['Manama', 'Riffa', 'Muharraq', 'Hamad Town', 'Isa Town'],
-  barbados: ['Bridgetown', 'Holetown', 'Speightstown', 'Oistins', 'Bathsheba'],
-  belgium: ['Brussels', 'Antwerp', 'Ghent', 'Bruges', 'Liege'],
-  brazil: ['Sao Paulo', 'Rio de Janeiro', 'Brasilia', 'Salvador', 'Fortaleza'],
-  canada: ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Ottawa'],
-  denmark: ['Copenhagen', 'Aarhus', 'Odense', 'Aalborg', 'Esbjerg'],
-  france: ['Paris', 'Lyon', 'Marseille', 'Nice', 'Toulouse'],
-  germany: ['Berlin', 'Munich', 'Hamburg', 'Cologne', 'Frankfurt'],
-  greece: ['Athens', 'Thessaloniki', 'Patras', 'Heraklion', 'Larissa']
+  lahore: ['Lahore', 'Gulberg, Lahore', 'DHA, Lahore', 'Johar Town, Lahore', 'Model Town, Lahore'],
+  karachi: ['Karachi', 'Clifton, Karachi', 'DHA, Karachi', 'Gulshan-e-Iqbal, Karachi', 'Bahadurabad, Karachi'],
+  islamabad: ['Islamabad', 'Blue Area, Islamabad', 'F-7, Islamabad', 'F-8, Islamabad', 'G-9, Islamabad'],
+  rawalpindi: ['Rawalpindi', 'Saddar, Rawalpindi', 'Commercial Market, Rawalpindi', 'Satellite Town, Rawalpindi', 'Bahria Town, Rawalpindi'],
+  faisalabad: ['Faisalabad', 'D Ground, Faisalabad', 'Madina Town, Faisalabad', 'Peoples Colony, Faisalabad', 'Canal Road, Faisalabad'],
+  multan: ['Multan', 'Gulgasht Colony, Multan', 'Cantt, Multan', 'Model Town, Multan', 'Bosan Road, Multan'],
+  peshawar: ['Peshawar', 'University Road, Peshawar', 'Saddar, Peshawar', 'Hayatabad, Peshawar', 'Ring Road, Peshawar'],
+  quetta: ['Quetta', 'Jinnah Town, Quetta', 'Cantt, Quetta', 'Satellite Town, Quetta', 'Airport Road, Quetta'],
+  sialkot: ['Sialkot', 'Cantt, Sialkot', 'Paris Road, Sialkot', 'Daska Road, Sialkot', 'Kashmir Road, Sialkot'],
+  gujranwala: ['Gujranwala', 'Satellite Town, Gujranwala', 'DC Road, Gujranwala', 'Model Town, Gujranwala', 'Wapda Town, Gujranwala']
 };
 
 if (footerYear) {
@@ -67,7 +67,7 @@ const renderFooterCityBrowser = (countryKey) => {
     return;
   }
 
-  const cities = footerCountryCities[countryKey] ?? footerCountryCities.australia;
+  const cities = footerCountryCities[countryKey] ?? footerCountryCities.lahore;
   footerCityGrid.dataset.activeCountry = countryKey;
   footerCityGrid.replaceChildren();
 

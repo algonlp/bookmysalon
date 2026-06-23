@@ -21,9 +21,56 @@
       <header class="site-header">
         <a class="brand" href="/" aria-label="QR schedule.com home">QR schedule.com</a>
 
+        <form class="salon-header-search" role="search" aria-label="Search this salon">
+          <button type="button" data-salon-search-control="service">All treatments</button>
+          <button type="button" data-salon-search-control="location">Current location</button>
+          <button type="button" data-salon-search-control="time">Any time</button>
+          <button class="salon-header-search-submit" type="submit" aria-label="Search">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="M16 16l4 4"></path>
+            </svg>
+          </button>
+          <div class="salon-header-search-popover is-hidden" data-salon-search-popover></div>
+        </form>
+
         <div class="header-actions">
-          <a class="login-link" href="/">Explore</a>
-          <a class="pill-button fill" id="salon-header-book-link" href="/">Book now</a>
+          <div class="menu-wrap">
+            <button
+              class="pill-button menu-button"
+              id="menu-toggle"
+              type="button"
+              aria-label="Open menu"
+              aria-expanded="false"
+              aria-controls="site-menu"
+            >
+              <span>Menu</span>
+              <span class="menu-lines" aria-hidden="true">
+                <span></span>
+                <span></span>
+              </span>
+            </button>
+
+            <div class="menu-popover is-hidden" id="site-menu">
+              <div class="menu-section">
+                <p class="menu-heading">For customers</p>
+                <a href="/login">Log in</a>
+                <a href="/help">Help and support</a>
+              </div>
+
+              <div class="menu-divider"></div>
+
+              <a href="/for-businesses" class="menu-business-link">
+                <span>For businesses</span>
+                <span class="business-arrow" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M5 12h14"></path>
+                    <path d="M13 6l6 6-6 6"></path>
+                  </svg>
+                </span>
+              </a>
+            </div>
+          </div>
         </div>
       </header>
 
