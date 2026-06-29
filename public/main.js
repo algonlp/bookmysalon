@@ -15557,6 +15557,7 @@ const initPublicBooking = () => {
   const teamMemberCards = document.querySelector('#booking-team-member-cards');
   const dateStrip = document.querySelector('#booking-date-strip');
   const calendarEl = document.querySelector('#booking-calendar');
+  const calendarToggle = document.querySelector('#booking-calendar-toggle');
   const timeList = document.querySelector('#booking-time-list');
   const servicesByName = new Map();
   const servicesById = new Map();
@@ -16568,8 +16569,14 @@ const initPublicBooking = () => {
       if (!isPast) {
         btn.addEventListener('click', () => {
           dateInput.value = dateValue;
-          renderCalendar();
           renderDateStrip(); renderCalendar();
+
+          if (calendarEl instanceof HTMLElement && calendarToggle instanceof HTMLButtonElement) {
+            calendarEl.classList.add('is-hidden');
+            calendarToggle.classList.remove('is-open');
+            calendarToggle.querySelector('span').textContent = 'Pick another date';
+          }
+
           void syncAvailableSlots();
         });
       }
@@ -17328,6 +17335,23 @@ const initPublicBooking = () => {
     renderDateStrip(); renderCalendar();
     await populateSlots();
   });
+
+  if (calendarToggle instanceof HTMLButtonElement && calendarEl instanceof HTMLElement) {
+    calendarToggle.addEventListener('click', () => {
+      const isOpen = !calendarEl.classList.contains('is-hidden');
+
+      if (isOpen) {
+        calendarEl.classList.add('is-hidden');
+        calendarToggle.classList.remove('is-open');
+        calendarToggle.querySelector('span').textContent = 'Pick another date';
+      } else {
+        calendarEl.classList.remove('is-hidden');
+        calendarToggle.classList.add('is-open');
+        calendarToggle.querySelector('span').textContent = 'Close calendar';
+        renderCalendar();
+      }
+    });
+  }
 
   timeList.addEventListener('click', (event) => {
     const button = event.target instanceof Element ? event.target.closest('[data-time-value]') : null;

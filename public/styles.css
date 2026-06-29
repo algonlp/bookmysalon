@@ -10050,12 +10050,60 @@ button.calendar-reports-summary-card {
   color: rgba(255, 255, 255, 0.82);
 }
 
+.booking-calendar-dropdown {
+  margin-top: 8px;
+}
+
+.booking-calendar-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid rgba(18, 18, 18, 0.1);
+  border-radius: 22px;
+  background: #ffffff;
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.booking-calendar-toggle:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  transform: translateY(-1px);
+}
+
+.booking-calendar-toggle.is-open {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.booking-calendar-toggle svg {
+  flex-shrink: 0;
+}
+
 .booking-calendar {
   background: #fffdf8;
   border: 1px solid rgba(18, 18, 18, 0.08);
   border-radius: 18px;
   padding: 18px;
   overflow: hidden;
+  margin-top: 10px;
+  animation: calendarSlideDown 250ms ease;
+  transform-origin: top center;
+}
+
+@keyframes calendarSlideDown {
+  from {
+    opacity: 0;
+    transform: scaleY(0.8) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
 }
 
 .booking-calendar-nav {

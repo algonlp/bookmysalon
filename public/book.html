@@ -154,8 +154,14 @@
                   </label>
                 </div>
                 <p class="booking-choice-label">Select a date</p>
-                <div class="booking-date-strip is-hidden" id="booking-date-strip"></div>
-                <div class="booking-calendar" id="booking-calendar"></div>
+                <div class="booking-date-strip" id="booking-date-strip"></div>
+                <div class="booking-calendar-dropdown">
+                  <button class="booking-calendar-toggle" type="button" id="booking-calendar-toggle">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                    <span>Pick another date</span>
+                  </button>
+                  <div class="booking-calendar is-hidden" id="booking-calendar"></div>
+                </div>
                 <p class="booking-choice-label">Pick a time</p>
                 <div class="booking-time-list" id="booking-time-list"></div>
                 <label class="booking-field booking-native-field">
