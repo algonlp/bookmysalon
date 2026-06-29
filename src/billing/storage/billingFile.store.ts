@@ -101,6 +101,24 @@ export class BillingFileStore implements BillingStore {
     return this.state.billingInvoices.filter((record) => record.businessId === businessId);
   }
 
+  async saveSubscriptionPlan(plan: SubscriptionPlan): Promise<SubscriptionPlan> {
+    return this.withWriteLock(async () => {
+      await this.loadStateFromDisk();
+      const existingIndex = this.state.subscriptionPlans.findIndex(
+        (entry) => entry.id === plan.id
+      );
+
+      if (existingIndex >= 0) {
+        this.state.subscriptionPlans[existingIndex] = plan;
+      } else {
+        this.state.subscriptionPlans.push(plan);
+      }
+
+      await this.persist();
+      return plan;
+    });
+  }
+
   async saveBusinessSubscription(
     subscription: BusinessSubscription
   ): Promise<BusinessSubscription> {

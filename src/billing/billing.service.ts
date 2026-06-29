@@ -209,6 +209,42 @@ export const billingService = {
     };
   },
 
+  async updateSubscriptionPlan(
+    planId: string,
+    updates: {
+      name?: string;
+      summary?: string;
+      amountCents?: number;
+      badgeLabel?: string;
+      trialDays?: number;
+      includedAppointmentCredits?: number;
+    }
+  ): Promise<SubscriptionPlan> {
+    const plans = await listNormalizedSubscriptionPlans();
+    const plan = plans.find((entry) => entry.id === planId);
+
+    if (!plan) {
+      throw new HttpError(404, 'Subscription plan was not found');
+    }
+
+    const updatedPlan: SubscriptionPlan = {
+      ...plan,
+      name: updates.name ?? plan.name,
+      summary: updates.summary ?? plan.summary,
+      amountCents: updates.amountCents ?? plan.amountCents,
+      badgeLabel: updates.badgeLabel ?? plan.badgeLabel,
+      trialDays: updates.trialDays ?? plan.trialDays,
+      entitlements: {
+        ...plan.entitlements,
+        includedAppointmentCredits:
+          updates.includedAppointmentCredits ?? plan.entitlements.includedAppointmentCredits
+      },
+      updatedAt: new Date().toISOString()
+    };
+
+    return billingRepository.saveSubscriptionPlan(updatedPlan);
+  },
+
   async getBillingOverview(businessId: string): Promise<BillingOverview> {
     await getBusinessOrThrow(businessId);
 

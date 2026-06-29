@@ -15,6 +15,12 @@ billingRouter.get(
   asyncHandler(billingController.handleStripeSubscriptionReturn)
 );
 
+billingRouter.put(
+  '/billing/subscription-plans/:planId',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(billingController.updateSubscriptionPlan)
+);
+
 billingRouter.get(
   '/platform/clients/:clientId/billing',
   asyncHandler(requirePlatformAdminAccess),

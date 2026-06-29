@@ -14550,6 +14550,103 @@ const createTrendCard = (
     });
   }
 
+  const openSubscriptionPlansEditor = async () => {
+    openToolModal({
+      eyebrow: 'Subscription plans',
+      title: 'Loading plans...',
+      description: 'Fetching subscription plan data.',
+      dialogClassName: 'wide'
+    });
+
+    try {
+      const payload = await apiRequest('/api/billing/subscription-plans');
+      const plans = Array.isArray(payload?.plans) ? payload.plans : [];
+
+      const container = document.createElement('div');
+      container.style.cssText = 'display:grid;gap:18px;';
+
+      for (const plan of plans) {
+        const card = document.createElement('div');
+        card.style.cssText = 'padding:16px;border:1px solid rgba(18,18,18,0.1);border-radius:16px;background:rgba(255,252,248,0.92);';
+
+        const heading = document.createElement('strong');
+        heading.textContent = plan.name;
+        heading.style.cssText = 'display:block;font-size:1.1rem;margin-bottom:10px;';
+
+        const makeField = (label, value, inputType = 'text') => {
+          const row = document.createElement('label');
+          row.style.cssText = 'display:grid;grid-template-columns:180px 1fr;align-items:center;gap:8px;margin-bottom:6px;font-size:0.88rem;color:#5c5651;';
+          const span = document.createElement('span');
+          span.textContent = label;
+          const input = document.createElement('input');
+          input.type = inputType;
+          input.value = value;
+          input.style.cssText = 'padding:6px 10px;border:1px solid rgba(18,18,18,0.12);border-radius:10px;font-size:0.88rem;background:#fff;';
+          row.append(span, input);
+          return { row, input };
+        };
+
+        const nameField = makeField('Plan name', plan.name);
+        const priceField = makeField('Price (Rs)', Math.round(plan.amountCents / 100), 'number');
+        const summaryField = makeField('Summary', plan.summary);
+        const badgeField = makeField('Badge label', plan.badgeLabel);
+        const creditsField = makeField('Appointment credits', plan.entitlements?.includedAppointmentCredits ?? 0, 'number');
+        const trialField = makeField('Trial days', plan.trialDays ?? 0, 'number');
+
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'calendar-tool-action';
+        saveBtn.type = 'button';
+        saveBtn.textContent = `Save ${plan.name}`;
+        saveBtn.style.cssText = 'margin-top:10px;';
+
+        saveBtn.addEventListener('click', async () => {
+          saveBtn.disabled = true;
+          saveBtn.textContent = 'Saving...';
+
+          try {
+            await apiRequest(`/api/billing/subscription-plans/${encodeURIComponent(plan.id)}`, {
+              method: 'PUT',
+              body: JSON.stringify({
+                name: nameField.input.value.trim(),
+                amountCents: Math.round(Number(priceField.input.value) * 100),
+                summary: summaryField.input.value.trim(),
+                badgeLabel: badgeField.input.value.trim(),
+                includedAppointmentCredits: Number(creditsField.input.value),
+                trialDays: Number(trialField.input.value)
+              })
+            });
+            saveBtn.textContent = `Saved!`;
+            setTimeout(() => {
+              saveBtn.disabled = false;
+              saveBtn.textContent = `Save ${nameField.input.value.trim() || plan.name}`;
+            }, 1500);
+          } catch (error) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = `Save ${plan.name}`;
+            safeAlert(error instanceof Error ? error.message : 'Unable to save plan');
+          }
+        });
+
+        card.append(heading, nameField.row, priceField.row, summaryField.row, badgeField.row, creditsField.row, trialField.row, saveBtn);
+        container.append(card);
+      }
+
+      openToolModal({
+        eyebrow: 'Subscription plans',
+        title: 'Manage subscription plans',
+        description: 'Edit plan details below. Changes apply immediately to the pricing page.',
+        actions: [container],
+        dialogClassName: 'wide'
+      });
+    } catch (error) {
+      openToolModal({
+        eyebrow: 'Subscription plans',
+        title: 'Unable to load plans',
+        description: error instanceof Error ? error.message : 'Failed to load subscription plans.'
+      });
+    }
+  };
+
   if (settingsAction instanceof HTMLButtonElement) {
     settingsAction.addEventListener('click', () => {
       openToolModal({
@@ -14558,6 +14655,9 @@ const createTrendCard = (
         description:
           'Calendar preferences are not persisted yet, but these shortcuts now guide the admin to the active working areas.',
         actions: [
+          createToolActionButton('Manage subscription plans', () => {
+            void openSubscriptionPlansEditor();
+          }),
           createToolActionButton('Open SMS logs', () => {
             closeToolModal();
             window.location.assign(buildPathWithClientId('/sms-logs', clientId));

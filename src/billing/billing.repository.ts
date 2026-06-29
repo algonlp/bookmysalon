@@ -1,7 +1,8 @@
 import { env } from '../config/env';
 import type {
   BillingInvoice,
-  BusinessSubscription
+  BusinessSubscription,
+  SubscriptionPlan
 } from './billing.types';
 import type { BillingStore } from './billing.store';
 import { BillingFileStore } from './storage/billingFile.store';
@@ -57,6 +58,10 @@ class BillingRepository {
 
   listBillingInvoicesByBusinessId(businessId: string) {
     return this.store.listBillingInvoicesByBusinessId(businessId);
+  }
+
+  saveSubscriptionPlan(plan: SubscriptionPlan) {
+    return this.store.saveSubscriptionPlan(plan);
   }
 
   saveBusinessSubscription(subscription: BusinessSubscription) {

@@ -17,6 +17,7 @@ type StripePaymentIntentData = NonNullable<
 
 interface CreatePackageCheckoutSessionInput {
   packagePurchase: PackagePurchaseRecord;
+  businessName?: string;
   amountCents: number;
   currencyCode: string;
   successUrl: string;
@@ -235,6 +236,8 @@ export const stripePaymentService = {
         env.STRIPE_PACKAGE_PAYMENT_APPLICATION_FEE_CENTS;
     }
 
+    const salonLabel = input.businessName?.trim() || input.packagePurchase.businessId;
+
     return getStripeClient().checkout.sessions.create({
       mode: 'payment',
       customer_email: input.packagePurchase.customerEmail || undefined,
@@ -246,7 +249,7 @@ export const stripePaymentService = {
             currency: chargeMoney.currencyCode.toLowerCase(),
             unit_amount: chargeMoney.amountCents,
             product_data: {
-              name: input.packagePurchase.packageName,
+              name: `${input.packagePurchase.packageName} — ${salonLabel}`,
               metadata: {
                 businessId: input.packagePurchase.businessId,
                 packagePlanId: input.packagePurchase.packagePlanId,
@@ -257,6 +260,11 @@ export const stripePaymentService = {
           }
         }
       ],
+      custom_text: {
+        submit: {
+          message: `QRSchedule — ${input.packagePurchase.packageName} at ${salonLabel}`
+        }
+      },
       metadata: {
         kind: 'package_purchase',
         businessId: input.packagePurchase.businessId,

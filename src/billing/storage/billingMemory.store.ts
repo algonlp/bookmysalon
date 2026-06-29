@@ -32,6 +32,20 @@ export class BillingMemoryStore implements BillingStore {
     return this.state.billingInvoices.filter((record) => record.businessId === businessId);
   }
 
+  async saveSubscriptionPlan(plan: SubscriptionPlan): Promise<SubscriptionPlan> {
+    const existingIndex = this.state.subscriptionPlans.findIndex(
+      (entry) => entry.id === plan.id
+    );
+
+    if (existingIndex >= 0) {
+      this.state.subscriptionPlans[existingIndex] = plan;
+    } else {
+      this.state.subscriptionPlans.push(plan);
+    }
+
+    return plan;
+  }
+
   async saveBusinessSubscription(
     subscription: BusinessSubscription
   ): Promise<BusinessSubscription> {

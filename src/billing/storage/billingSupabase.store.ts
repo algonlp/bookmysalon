@@ -118,6 +118,16 @@ export class BillingSupabaseStore implements BillingStore {
     }
   }
 
+  saveSubscriptionPlan(plan: SubscriptionPlan): Promise<SubscriptionPlan> {
+    return subscriptionPlanTable.upsert(plan).catch((error: unknown) => {
+      if (isMissingTableError(error)) {
+        throw missingBillingTablesError();
+      }
+
+      throw error;
+    });
+  }
+
   saveBusinessSubscription(
     subscription: BusinessSubscription
   ): Promise<BusinessSubscription> {

@@ -2745,6 +2745,7 @@ export const appointmentService = {
     const checkoutSession = await stripePaymentService
       .createPackageCheckoutSession({
         packagePurchase,
+        businessName: business.businessName,
         amountCents,
         currencyCode,
         destinationAccountId,

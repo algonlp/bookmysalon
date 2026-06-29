@@ -17,6 +17,15 @@ const demoCheckoutSchema = z.object({
   billingEmail: z.string().trim().email().optional().or(z.literal(''))
 });
 
+const updatePlanSchema = z.object({
+  name: z.string().trim().min(1).optional(),
+  summary: z.string().trim().min(1).optional(),
+  amountCents: z.coerce.number().int().min(0).optional(),
+  badgeLabel: z.string().trim().optional(),
+  trialDays: z.coerce.number().int().min(0).optional(),
+  includedAppointmentCredits: z.coerce.number().int().min(0).optional()
+});
+
 const checkoutSchema = z.object({
   planId: z.string().trim().min(1, 'Plan is required')
 });
@@ -40,6 +49,18 @@ const getClientId = (req: Request): string => {
 export const billingController = {
   async listSubscriptionPlans(_req: Request, res: Response, _next: NextFunction): Promise<void> {
     res.status(200).json(await billingService.listSubscriptionPlans());
+  },
+
+  async updateSubscriptionPlan(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const planId = req.params.planId;
+
+    if (!planId) {
+      throw new HttpError(400, 'Plan id is required');
+    }
+
+    const updates = updatePlanSchema.parse(req.body);
+    const plan = await billingService.updateSubscriptionPlan(planId, updates);
+    res.status(200).json(plan);
   },
 
   async getBillingOverview(req: Request, res: Response, _next: NextFunction): Promise<void> {
