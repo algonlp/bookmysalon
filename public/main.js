@@ -14865,6 +14865,126 @@ const createTrendCard = (
     }
   };
 
+  const openOpeningHoursEditor = async () => {
+    openToolModal({
+      eyebrow: 'Opening hours',
+      title: 'Loading hours...',
+      description: 'Fetching your current opening hours.'
+    });
+
+    try {
+      const payload = await apiRequest(
+        `/api/platform/clients/${encodeURIComponent(clientId)}`
+      );
+      const currentSlotTimes = payload?.client?.businessSettings?.slotTimes ?? [];
+
+      const container = document.createElement('div');
+      container.style.cssText = 'display:grid;gap:14px;';
+
+      const infoText = document.createElement('p');
+      infoText.style.cssText = 'font-size:0.85rem;color:#665f5a;margin:0;';
+      infoText.textContent = 'Set your opening and closing time. Slots will be generated in 1-hour intervals.';
+
+      const row = document.createElement('div');
+      row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;';
+
+      const makeTimeInput = (label, value) => {
+        const wrap = document.createElement('label');
+        wrap.style.cssText = 'display:grid;gap:4px;font-size:0.85rem;color:#5c5651;';
+        const span = document.createElement('span');
+        span.textContent = label;
+        const input = document.createElement('input');
+        input.type = 'time';
+        input.value = value;
+        input.style.cssText = 'padding:8px 12px;border:1px solid rgba(18,18,18,0.12);border-radius:10px;font-size:0.9rem;background:#fff;';
+        wrap.append(span, input);
+        return { wrap, input };
+      };
+
+      const firstSlot = currentSlotTimes[0] || '09:00';
+      const lastSlot = currentSlotTimes[currentSlotTimes.length - 1] || '17:00';
+
+      const openField = makeTimeInput('Opening time', firstSlot);
+      const closeField = makeTimeInput('Closing time', lastSlot);
+      row.append(openField.wrap, closeField.wrap);
+
+      const currentLabel = document.createElement('p');
+      currentLabel.style.cssText = 'font-size:0.82rem;color:#8a8480;margin:0;';
+      currentLabel.textContent = `Current slots: ${currentSlotTimes.join(', ') || 'Not set'}`;
+
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'calendar-tool-action';
+      saveBtn.type = 'button';
+      saveBtn.textContent = 'Save opening hours';
+
+      saveBtn.addEventListener('click', async () => {
+        const openTime = openField.input.value;
+        const closeTime = closeField.input.value;
+
+        if (!openTime || !closeTime) {
+          safeAlert('Please select both opening and closing time.');
+          return;
+        }
+
+        if (openTime >= closeTime) {
+          safeAlert('Closing time must be after opening time.');
+          return;
+        }
+
+        const slots = [];
+        const [openH, openM] = openTime.split(':').map(Number);
+        const [closeH, closeM] = closeTime.split(':').map(Number);
+        let minutes = openH * 60 + openM;
+        const endMinutes = closeH * 60 + closeM;
+
+        while (minutes <= endMinutes) {
+          const h = String(Math.floor(minutes / 60)).padStart(2, '0');
+          const m = String(minutes % 60).padStart(2, '0');
+          slots.push(`${h}:${m}`);
+          minutes += 60;
+        }
+
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Saving...';
+
+        try {
+          await apiRequest(
+            `/api/platform/clients/${encodeURIComponent(clientId)}/business-settings`,
+            {
+              method: 'PATCH',
+              body: JSON.stringify({ slotTimes: slots })
+            }
+          );
+          saveBtn.textContent = 'Saved!';
+          currentLabel.textContent = `Current slots: ${slots.join(', ')}`;
+          setTimeout(() => {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save opening hours';
+          }, 1500);
+        } catch (error) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save opening hours';
+          safeAlert(error instanceof Error ? error.message : 'Unable to save opening hours');
+        }
+      });
+
+      container.append(infoText, row, currentLabel, saveBtn);
+
+      openToolModal({
+        eyebrow: 'Opening hours',
+        title: 'Set your opening hours',
+        description: 'Choose when your business opens and closes. The calendar will update accordingly.',
+        actions: [container]
+      });
+    } catch (error) {
+      openToolModal({
+        eyebrow: 'Opening hours',
+        title: 'Unable to load hours',
+        description: error instanceof Error ? error.message : 'Failed to load opening hours.'
+      });
+    }
+  };
+
   if (settingsAction instanceof HTMLButtonElement) {
     settingsAction.addEventListener('click', () => {
       openToolModal({
@@ -14873,6 +14993,9 @@ const createTrendCard = (
         description:
           'Calendar preferences are not persisted yet, but these shortcuts now guide the admin to the active working areas.',
         actions: [
+          createToolActionButton('Opening hours', () => {
+            void openOpeningHoursEditor();
+          }),
           createToolActionButton('Manage subscription plans', () => {
             void openSubscriptionPlansEditor();
           }),
