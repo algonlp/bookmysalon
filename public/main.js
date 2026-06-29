@@ -336,7 +336,7 @@ const getAppointmentSummaryDetails = (appointment) =>
 const formatPaymentMethodLabel = (methodValue) =>
   PAYMENT_METHOD_LABELS[typeof methodValue === 'string' ? methodValue.trim() : ''] ?? 'Other';
 
-const formatDateForApi = (date) => date.toISOString().slice(0, 10);
+const formatDateForApi = (date) => getLocalDateValue(date);
 
 const normalizeBusinessSettings = (value) => {
   const slotPattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
@@ -938,6 +938,13 @@ const setMultilineAddress = (element, address) => {
 
     element.append(document.createTextNode(part));
   });
+};
+
+const getLocalDateValue = (date = new Date()) => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 };
 
 const escapeHtml = (value) =>
@@ -10343,7 +10350,7 @@ const createTrendCard = (
     form.className = 'calendar-tool-form';
     const defaultExpiryDate = new Date();
     defaultExpiryDate.setDate(defaultExpiryDate.getDate() + 30);
-    const defaultExpiryValue = defaultExpiryDate.toISOString().slice(0, 10);
+    const defaultExpiryValue = getLocalDateValue(defaultExpiryDate);
 
     const nameField = document.createElement('label');
     nameField.className = 'calendar-tool-field';
@@ -10385,7 +10392,7 @@ const createTrendCard = (
     expiryLabel.textContent = 'Expiry date';
     const expiryInput = document.createElement('input');
     expiryInput.type = 'date';
-    expiryInput.min = new Date().toISOString().slice(0, 10);
+    expiryInput.min = getLocalDateValue();
     expiryInput.value = packagePlan?.expiresAt?.slice(0, 10) ?? defaultExpiryValue;
     expiryInput.required = true;
     expiryField.append(expiryLabel, expiryInput);
@@ -13367,7 +13374,7 @@ const createTrendCard = (
     const dateInput = document.createElement('input');
     dateInput.type = 'date';
     dateInput.name = 'appointmentDate';
-    dateInput.min = new Date().toISOString().slice(0, 10);
+    dateInput.min = getLocalDateValue();
     dateInput.value = appointment.appointmentDate;
     dateInput.required = true;
     dateField.append(dateLabel, dateInput);
@@ -15895,8 +15902,8 @@ const initPublicBooking = () => {
   const packageCheckoutStatus = new URLSearchParams(window.location.search).get('packageCheckout');
   const packageCheckoutStorageKey = `qr-booking-package-checkout:${businessId}`;
   const today = new Date();
-  dateInput.value = today.toISOString().slice(0, 10);
-  dateInput.min = today.toISOString().slice(0, 10);
+  dateInput.value = getLocalDateValue(today);
+  dateInput.min = getLocalDateValue(today);
 
   const rememberPackageCheckoutCustomer = (customer) => {
     try {
@@ -16060,7 +16067,7 @@ const initPublicBooking = () => {
     placeholder.textContent = 'Select a date';
     packagePlanDateSelect.append(placeholder);
 
-    const baseDateValue = dateInput.min || today.toISOString().slice(0, 10);
+    const baseDateValue = dateInput.min || getLocalDateValue(today);
     const baseDate = new Date(`${baseDateValue}T00:00:00`);
 
     if (Number.isNaN(baseDate.getTime())) {
@@ -16073,7 +16080,7 @@ const initPublicBooking = () => {
     for (let offset = 0; offset < 30; offset += 1) {
       const optionDate = new Date(baseDate);
       optionDate.setDate(baseDate.getDate() + offset);
-      const optionValue = optionDate.toISOString().slice(0, 10);
+      const optionValue = getLocalDateValue(optionDate);
       optionValues.add(optionValue);
 
       const option = document.createElement('option');
@@ -16403,7 +16410,7 @@ const initPublicBooking = () => {
   const renderDateStrip = () => {
     dateStrip.replaceChildren();
 
-    const baseDateValue = dateInput.min || new Date().toISOString().slice(0, 10);
+    const baseDateValue = dateInput.min || getLocalDateValue();
     const baseDate = new Date(`${baseDateValue}T00:00:00`);
     const selectedDateValue = dateInput.value || baseDateValue;
 
@@ -16416,7 +16423,7 @@ const initPublicBooking = () => {
     for (let offset = 0; offset < 14; offset += 1) {
       const date = new Date(baseDate);
       date.setDate(baseDate.getDate() + offset);
-      const dateValue = date.toISOString().slice(0, 10);
+      const dateValue = getLocalDateValue(date);
       visibleDateValues.add(dateValue);
 
       const button = document.createElement('button');
@@ -17440,7 +17447,7 @@ const initPublicBooking = () => {
       savedWaitlistSignature = '';
       bookingForm.reset();
       clearSelectedPublishedPackagePlan();
-      dateInput.value = today.toISOString().slice(0, 10);
+      dateInput.value = getLocalDateValue(today);
       setBookingCustomerPhoneValue(bookedPhone);
       serviceLocationSelect.value = availableBookingLocations.includes(bookingUiCopy.defaultLocationValue)
         ? bookingUiCopy.defaultLocationValue
@@ -17559,7 +17566,7 @@ const initManageBooking = () => {
   }
 
   const { businessId, appointmentId, accessToken } = bookingRoute;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getLocalDateValue();
   const requestedAction = new URLSearchParams(window.location.search).get('action');
   let appointmentDetails = null;
   let countdownIntervalId = null;
