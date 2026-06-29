@@ -8738,16 +8738,17 @@ button.calendar-reports-summary-card {
 }
 
 .calendar-tool-body {
-  margin-top: 18px;
-  color: #5c5651;
-  line-height: 1.6;
+  margin-top: 14px;
+  color: #8a8480;
+  font-size: 0.88rem;
+  line-height: 1.55;
 }
 
 .calendar-tool-actions {
   display: grid;
   align-items: stretch;
-  gap: 12px;
-  margin-top: 22px;
+  gap: 14px;
+  margin-top: 20px;
 }
 
 .calendar-tool-actions > .calendar-tool-action {
@@ -8802,26 +8803,37 @@ button.calendar-reports-summary-card {
 
 .calendar-tool-inline-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
+}
+
+.calendar-tool-inline-actions .calendar-tool-action {
+  min-height: 36px;
+  padding: 0 14px;
+  font-size: 0.82rem;
+  border-radius: 10px;
 }
 
 .calendar-tool-field {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  color: #4f4a45;
+  color: #3a352f;
   font-weight: 700;
 }
 
 .calendar-tool-field span {
-  font-size: 0.92rem;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #8a8480;
+  font-weight: 800;
 }
 
 .calendar-tool-help {
   margin: 0;
-  color: #655f59;
-  font-size: 0.86rem;
+  color: #8a8480;
+  font-size: 0.82rem;
   font-weight: 600;
   line-height: 1.45;
 }
@@ -8829,11 +8841,40 @@ button.calendar-reports-summary-card {
 .calendar-tool-field input,
 .calendar-tool-field select {
   width: 100%;
-  min-height: 48px;
+  min-height: 46px;
   padding: 0 16px;
-  border: 1px solid rgba(18, 18, 18, 0.12);
-  border-radius: 16px;
-  background: rgba(255, 252, 248, 0.98);
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 12px;
+  background: #ffffff;
+  font-size: 0.92rem;
+  color: #1f1a17;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.calendar-tool-field input:focus,
+.calendar-tool-field select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(108, 76, 245, 0.1);
+}
+
+.calendar-tool-field textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 12px;
+  background: #ffffff;
+  font-size: 0.92rem;
+  color: #1f1a17;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.calendar-tool-field textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(108, 76, 245, 0.1);
 }
 
 .calendar-role-picker {
@@ -8988,19 +9029,25 @@ button.calendar-reports-summary-card {
 }
 
 .calendar-tool-image-preview {
-  width: 88px;
-  height: 88px;
-  border: 1px solid rgba(18, 18, 18, 0.1);
-  border-radius: 24px;
+  width: 80px;
+  height: 80px;
+  border: 2px solid rgba(108, 76, 245, 0.12);
+  border-radius: 20px;
   background:
-    linear-gradient(180deg, rgba(247, 237, 230, 0.95), rgba(235, 227, 221, 0.96));
-  color: #3a342f;
-  font-size: 1.8rem;
+    linear-gradient(135deg, rgba(108, 76, 245, 0.06), rgba(200, 146, 99, 0.08));
+  color: var(--primary);
+  font-size: 1.6rem;
   font-weight: 800;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  transition: border-color 180ms ease, transform 180ms ease;
+}
+
+.calendar-tool-image-preview:hover {
+  border-color: rgba(108, 76, 245, 0.28);
+  transform: scale(1.04);
 }
 
 .calendar-tool-file-input {
@@ -9008,13 +9055,15 @@ button.calendar-reports-summary-card {
 }
 
 .calendar-tool-gallery-field {
-  padding-top: 4px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(18, 18, 18, 0.06);
 }
 
 .calendar-tool-url-toggle {
   font-size: 0.82rem;
   color: var(--primary);
   margin-top: 6px;
+  border-radius: 10px;
 }
 
 .calendar-tool-url-panel {
@@ -9091,13 +9140,29 @@ button.calendar-reports-summary-card {
 }
 
 .calendar-tool-submit {
-  width: fit-content;
-  min-width: 140px;
+  width: 100%;
+  min-height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--primary), var(--primary-strong));
+  color: #ffffff;
+  font-size: 0.94rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.calendar-tool-submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(108, 76, 245, 0.3);
 }
 
 .calendar-tool-submit:disabled {
   opacity: 0.7;
   cursor: wait;
+  transform: none;
+  box-shadow: none;
 }
 
 .calendar-notification-item {
@@ -9425,13 +9490,15 @@ button.calendar-reports-summary-card {
 }
 
 .calendar-tool-action-danger {
-  border-color: rgba(148, 44, 44, 0.14);
+  width: 100%;
+  border-color: rgba(148, 44, 44, 0.1);
   color: #8a2f2f;
-  background: rgba(255, 239, 239, 0.88);
+  background: transparent;
+  font-size: 0.88rem;
 }
 
 .calendar-tool-action-danger:hover {
-  background: rgba(173, 51, 51, 0.12);
+  background: rgba(173, 51, 51, 0.06);
 }
 
 .booking-page {
