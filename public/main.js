@@ -14604,7 +14604,7 @@ const createTrendCard = (
           saveBtn.textContent = 'Saving...';
 
           try {
-            await apiRequest(`/api/billing/subscription-plans/${encodeURIComponent(plan.id)}`, {
+            await apiRequest(`/api/platform/clients/${encodeURIComponent(clientId)}/billing/subscription-plans/${encodeURIComponent(plan.id)}`, {
               method: 'PUT',
               body: JSON.stringify({
                 name: nameField.input.value.trim(),

@@ -16,7 +16,7 @@ billingRouter.get(
 );
 
 billingRouter.put(
-  '/billing/subscription-plans/:planId',
+  '/platform/clients/:clientId/billing/subscription-plans/:planId',
   asyncHandler(requirePlatformAdminAccess),
   asyncHandler(billingController.updateSubscriptionPlan)
 );
