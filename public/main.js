@@ -14605,7 +14605,7 @@ const createTrendCard = (
 
           try {
             await apiRequest(`/api/platform/clients/${encodeURIComponent(clientId)}/billing/subscription-plans/${encodeURIComponent(plan.id)}`, {
-              method: 'PUT',
+              method: 'POST',
               body: JSON.stringify({
                 name: nameField.input.value.trim(),
                 amountCents: Math.round(Number(priceField.input.value) * 100),

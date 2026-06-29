@@ -15,7 +15,7 @@ billingRouter.get(
   asyncHandler(billingController.handleStripeSubscriptionReturn)
 );
 
-billingRouter.put(
+billingRouter.post(
   '/platform/clients/:clientId/billing/subscription-plans/:planId',
   asyncHandler(requirePlatformAdminAccess),
   asyncHandler(billingController.updateSubscriptionPlan)
