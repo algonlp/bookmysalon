@@ -143,6 +143,19 @@ export const normalizeSubscriptionPlans = (
       return plan;
     }
 
+    const wasEdited = plan.updatedAt > defaultPlan.updatedAt;
+
+    if (wasEdited) {
+      return {
+        ...defaultPlan,
+        ...plan,
+        entitlements: {
+          ...defaultPlan.entitlements,
+          ...plan.entitlements
+        }
+      };
+    }
+
     return {
       ...defaultPlan,
       id: plan.id,
