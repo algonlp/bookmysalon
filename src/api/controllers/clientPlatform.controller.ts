@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import { randomInt } from 'crypto';
 import { z } from 'zod';
 import { env } from '../../config/env';
 import { HttpError } from '../../shared/errors/httpError';
@@ -13,7 +14,42 @@ import {
 } from '../../platform/clientPlatform.paths';
 import { preferredLanguageValues } from '../../platform/clientPlatform.types';
 import { appointmentService } from '../../appointments/appointment.service';
+import { twilioSmsService } from '../../notifications/twilioSms.service';
+import { hashPassword, verifyPassword } from '../../shared/hashToken';
 import { clearAdminSessionCookie, getRequestOrigin, setAdminSessionCookie } from '../../shared/http';
+
+interface AdminOtpRecord {
+  code: string;
+  expiresAt: number;
+  attempts: number;
+  clientId: string;
+}
+
+const adminOtpStore = new Map<string, AdminOtpRecord>();
+
+interface SignupOtpRecord {
+  code: string;
+  expiresAt: number;
+  attempts: number;
+  email: string;
+  mobileNumber: string;
+  password: string;
+  businessName: string;
+  provider: 'email' | 'facebook' | 'google' | 'apple';
+}
+
+const signupOtpStore = new Map<string, SignupOtpRecord>();
+const OTP_TTL_MS = 10 * 60 * 1000;
+const MAX_VERIFY_ATTEMPTS = 5;
+
+const createOtpCode = (): string => String(randomInt(100000, 1000000));
+
+const maskPhone = (phone: string): string => {
+  const digits = phone.replace(/[^\d]/g, '');
+  return digits.length > 4
+    ? '****' + digits.slice(-4)
+    : '****' + digits;
+};
 
 const isValidProfileImageValue = (value: string): boolean => {
   if (!value) {
@@ -35,6 +71,8 @@ const shouldExposeAdminTokenForTests = (): boolean =>
 const createClientSchema = z.object({
   email: z.string().trim().email().optional(),
   mobileNumber: z.string().trim().min(7, 'Mobile number is required').optional(),
+  password: z.string().trim().min(6, 'Password must be at least 6 characters').optional(),
+  businessName: z.string().trim().min(1).optional(),
   provider: z.enum(['email', 'facebook', 'google', 'apple']).default('email')
 }).refine(
   (value) => value.provider !== 'email' || Boolean(value.email || value.mobileNumber),
@@ -50,7 +88,8 @@ const googleAuthSchema = z.object({
 
 const loginClientSchema = z.object({
   email: z.string().trim().email().optional(),
-  mobileNumber: z.string().trim().min(7, 'Mobile number is required').optional()
+  mobileNumber: z.string().trim().min(7, 'Mobile number is required').optional(),
+  password: z.string().trim().optional()
 }).refine(
   (value) => Boolean(value.email || value.mobileNumber),
   {
@@ -58,6 +97,16 @@ const loginClientSchema = z.object({
     path: ['email']
   }
 );
+
+const verifyAdminOtpSchema = z.object({
+  clientId: z.string().trim().min(1, 'Client id is required'),
+  code: z.string().trim().regex(/^\d{6}$/, 'Enter the 6 digit code')
+});
+
+const verifySignupOtpSchema = z.object({
+  phone: z.string().trim().min(7, 'Mobile number is required'),
+  code: z.string().trim().regex(/^\d{6}$/, 'Enter the 6 digit code')
+});
 
 const businessProfileSchema = z.object({
   businessName: z.string().trim().min(1, 'Business name is required'),
@@ -284,7 +333,89 @@ const getPackagePlanId = (req: Request): string => {
 
 export const clientPlatformController = {
   async createClient(req: Request, res: Response, _next: NextFunction): Promise<void> {
-    const { client, plainAdminToken } = await clientPlatformService.createClient(createClientSchema.parse(req.body));
+    const input = createClientSchema.parse(req.body);
+    const mobileNumber = input.mobileNumber?.trim();
+
+    if (mobileNumber) {
+      const existing = await clientPlatformService.findClientForLogin({
+        email: input.email,
+        mobileNumber
+      });
+
+      if (existing) {
+        throw new HttpError(409, 'An account with this email or mobile number already exists. Please log in instead.');
+      }
+
+      const code = createOtpCode();
+      const phoneKey = mobileNumber.replace(/[^\d+]/g, '');
+
+      signupOtpStore.set(phoneKey, {
+        code,
+        expiresAt: Date.now() + OTP_TTL_MS,
+        attempts: 0,
+        email: input.email?.trim() || '',
+        mobileNumber,
+        password: input.password?.trim() || '',
+        businessName: input.businessName?.trim() || '',
+        provider: input.provider
+      });
+
+      const smsResult = await twilioSmsService.sendSms(
+        mobileNumber,
+        `Your QR Schedule verification code is ${code}. It expires in 10 minutes.`,
+        'customer'
+      );
+
+      res.status(200).json({
+        otpRequired: true,
+        maskedPhone: maskPhone(mobileNumber),
+        smsStatus: smsResult.status
+      });
+      return;
+    }
+
+    const { client, plainAdminToken } = await clientPlatformService.createClient(input);
+    setAdminSessionCookie(res, plainAdminToken);
+    res.status(201).json({
+      client: serializeClientForResponse(client),
+      ...(shouldExposeAdminTokenForTests() ? { adminToken: plainAdminToken } : {}),
+      nextStep: buildPlatformClientPagePath(platformClientPagePaths.onboarding.businessName, client.id)
+    });
+  },
+
+  async verifySignupOtp(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const input = verifySignupOtpSchema.parse(req.body);
+    const phoneKey = input.phone.replace(/[^\d+]/g, '');
+    const record = signupOtpStore.get(phoneKey);
+
+    if (!record || record.expiresAt < Date.now()) {
+      signupOtpStore.delete(phoneKey);
+      res.status(400).json({ error: 'Verification code expired. Request a new code.' });
+      return;
+    }
+
+    if (record.attempts >= MAX_VERIFY_ATTEMPTS) {
+      signupOtpStore.delete(phoneKey);
+      res.status(429).json({ error: 'Too many attempts. Request a new code.' });
+      return;
+    }
+
+    if (record.code !== input.code.trim()) {
+      record.attempts += 1;
+      res.status(400).json({ error: 'Invalid verification code.' });
+      return;
+    }
+
+    signupOtpStore.delete(phoneKey);
+
+    const { client, plainAdminToken } = await clientPlatformService.createClient({
+      email: record.email || undefined,
+      mobileNumber: record.mobileNumber,
+      password: record.password || undefined,
+      businessName: record.businessName || undefined,
+      provider: record.provider
+    });
+
     setAdminSessionCookie(res, plainAdminToken);
     res.status(201).json({
       client: serializeClientForResponse(client),
@@ -307,7 +438,81 @@ export const clientPlatformController = {
   },
 
   async loginClient(req: Request, res: Response, _next: NextFunction): Promise<void> {
-    const payload = await clientPlatformService.loginClient(loginClientSchema.parse(req.body));
+    const input = loginClientSchema.parse(req.body);
+    const client = await clientPlatformService.findClientForLogin(input);
+
+    if (!client) {
+      throw new HttpError(404, 'Account not found. Sign up to create a new workspace.');
+    }
+
+    if (client.password) {
+      if (!input.password) {
+        throw new HttpError(400, 'Password is required.');
+      }
+
+      if (!verifyPassword(input.password, client.password)) {
+        throw new HttpError(401, 'Invalid password.');
+      }
+    }
+
+    if (!client.mobileNumber) {
+      const payload = await clientPlatformService.loginClient(input);
+      setAdminSessionCookie(res, payload.plainAdminToken);
+      res.status(200).json({
+        client: serializeClientForResponse(payload.client),
+        ...(shouldExposeAdminTokenForTests() ? { adminToken: payload.plainAdminToken } : {}),
+        nextStep: payload.nextStep
+      });
+      return;
+    }
+
+    const code = createOtpCode();
+    adminOtpStore.set(client.id, {
+      code,
+      expiresAt: Date.now() + OTP_TTL_MS,
+      attempts: 0,
+      clientId: client.id
+    });
+
+    const smsResult = await twilioSmsService.sendSms(
+      client.mobileNumber,
+      `Your QR Schedule verification code is ${code}. It expires in 10 minutes.`,
+      'customer'
+    );
+
+    res.status(200).json({
+      otpRequired: true,
+      clientId: client.id,
+      maskedPhone: maskPhone(client.mobileNumber),
+      smsStatus: smsResult.status
+    });
+  },
+
+  async verifyAdminOtp(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const input = verifyAdminOtpSchema.parse(req.body);
+    const record = adminOtpStore.get(input.clientId);
+
+    if (!record || record.expiresAt < Date.now()) {
+      adminOtpStore.delete(input.clientId);
+      res.status(400).json({ error: 'Verification code expired. Request a new code.' });
+      return;
+    }
+
+    if (record.attempts >= MAX_VERIFY_ATTEMPTS) {
+      adminOtpStore.delete(input.clientId);
+      res.status(429).json({ error: 'Too many attempts. Request a new code.' });
+      return;
+    }
+
+    if (record.code !== input.code.trim()) {
+      record.attempts += 1;
+      res.status(400).json({ error: 'Invalid verification code.' });
+      return;
+    }
+
+    adminOtpStore.delete(input.clientId);
+
+    const payload = await clientPlatformService.loginClientById(input.clientId);
     setAdminSessionCookie(res, payload.plainAdminToken);
     res.status(200).json({
       client: serializeClientForResponse(payload.client),

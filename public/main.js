@@ -5337,9 +5337,16 @@ const guardAdminPages = () => {
 const initSignup = () => {
   const signupForm = document.querySelector('#pro-signup-form');
   const emailInput = document.querySelector('#professional-email');
+  const nameInput = document.querySelector('#professional-name');
   const googleSigninHost = document.querySelector('#google-signin-host');
   const mobileInput = document.querySelector('#professional-mobile');
+  const passwordInput = document.querySelector('#professional-password');
   const providerButtons = document.querySelectorAll('[data-auth-provider]');
+  const otpPanel = document.querySelector('#pro-signup-otp-panel');
+  const otpCodeInput = document.querySelector('#pro-signup-otp-code');
+  const otpMessage = document.querySelector('#pro-signup-otp-message');
+  const verifyOtpButton = document.querySelector('#pro-signup-verify-otp');
+  const statusEl = document.querySelector('#pro-signup-status');
 
   if (!(signupForm instanceof HTMLFormElement)) {
     return;
@@ -5348,33 +5355,82 @@ const initSignup = () => {
   const createEndpoint = signupForm.dataset.createEndpoint?.trim();
   const googleAuthEndpoint = signupForm.dataset.googleAuthEndpoint?.trim();
   const loginEndpoint = signupForm.dataset.loginEndpoint?.trim();
+  const verifyOtpEndpoint = signupForm.dataset.verifyOtpEndpoint?.trim();
+  const verifySignupOtpEndpoint = signupForm.dataset.verifySignupOtpEndpoint?.trim();
 
   if (!createEndpoint || !googleAuthEndpoint || !loginEndpoint) {
     safeAlert('Signup configuration is missing.');
     return;
   }
 
-  const createClient = async (provider, email = '', mobileNumber = '') => {
+  let pendingOtpClientId = '';
+  let pendingOtpPhone = '';
+  let pendingOtpType = '';
+
+  const setStatus = (message = '', isError = false) => {
+    if (statusEl instanceof HTMLElement) {
+      statusEl.textContent = message;
+      statusEl.classList.toggle('is-error', isError);
+    }
+  };
+
+  const createClient = async (provider, email = '', mobileNumber = '', password = '', businessName = '') => {
     const payload = await apiRequest(createEndpoint, {
       method: 'POST',
       body: JSON.stringify({
         provider,
         email: email.trim() || undefined,
-        mobileNumber: mobileNumber.trim() || undefined
+        mobileNumber: mobileNumber.trim() || undefined,
+        password: password.trim() || undefined,
+        businessName: businessName.trim() || undefined
       })
     });
+
+    if (payload.otpRequired) {
+      pendingOtpPhone = mobileNumber.trim();
+      pendingOtpType = 'signup';
+
+      if (otpPanel instanceof HTMLElement) {
+        otpPanel.classList.remove('is-hidden');
+      }
+
+      if (otpMessage instanceof HTMLElement) {
+        otpMessage.textContent = `Enter the verification code sent to ${payload.maskedPhone || 'your mobile number'}.`;
+      }
+
+      if (otpCodeInput instanceof HTMLInputElement) {
+        otpCodeInput.value = '';
+        otpCodeInput.focus();
+      }
+
+      setStatus(payload.smsStatus === 'sent' ? 'Verification code sent.' : 'Verification code created.');
+      return;
+    }
 
     setAdminSession(payload.client.id);
     window.location.assign(payload.nextStep);
   };
 
-  const loginClient = async (email = '', mobileNumber = '') => {
-    const payload = await apiRequest(loginEndpoint, {
+  const requestLoginOtp = async (email = '', mobileNumber = '', password = '') => {
+    return await apiRequest(loginEndpoint, {
       method: 'POST',
       body: JSON.stringify({
         email: email.trim() || undefined,
-        mobileNumber: mobileNumber.trim() || undefined
+        mobileNumber: mobileNumber.trim() || undefined,
+        password: password.trim() || undefined
       })
+    });
+  };
+
+  const verifyLoginOtp = async (clientId, code) => {
+    if (!verifyOtpEndpoint) {
+      safeAlert('OTP verification is not configured.');
+      return;
+    }
+
+    const payload = await apiRequest(verifyOtpEndpoint, {
+      method: 'POST',
+      body: JSON.stringify({ clientId, code })
     });
 
     setAdminSession(payload.client.id);
@@ -5415,13 +5471,39 @@ const initSignup = () => {
     window.location.assign(payload.nextStep);
   };
 
-  const continueWithEmailOrMobile = async (email = '', mobileNumber = '') => {
+  const continueWithEmailOrMobile = async (email = '', mobileNumber = '', password = '', businessName = '') => {
     try {
-      await loginClient(email, mobileNumber);
+      const result = await requestLoginOtp(email, mobileNumber, password);
+
+      if (result.otpRequired) {
+        pendingOtpClientId = result.clientId;
+        pendingOtpType = 'login';
+
+        if (otpPanel instanceof HTMLElement) {
+          otpPanel.classList.remove('is-hidden');
+        }
+
+        if (otpMessage instanceof HTMLElement) {
+          otpMessage.textContent = `Enter the verification code sent to ${result.maskedPhone || 'your mobile number'}.`;
+        }
+
+        if (otpCodeInput instanceof HTMLInputElement) {
+          otpCodeInput.value = '';
+          otpCodeInput.focus();
+        }
+
+        setStatus(result.smsStatus === 'sent' ? 'Verification code sent.' : 'Verification code created.');
+        return;
+      }
+
+      if (result.client?.id) {
+        setAdminSession(result.client.id);
+        window.location.assign(result.nextStep);
+      }
     } catch (error) {
       if (error instanceof Error && error.statusCode === 404) {
         try {
-          await createClient('email', email, mobileNumber);
+          await createClient('email', email, mobileNumber, password, businessName);
           return;
         } catch (createError) {
           safeAlert(createError instanceof Error ? createError.message : 'Unable to continue');
@@ -5556,15 +5638,52 @@ const initSignup = () => {
     event.preventDefault();
 
     const emailValue = emailInput instanceof HTMLInputElement ? emailInput.value : '';
+    const nameValue = nameInput instanceof HTMLInputElement ? nameInput.value : '';
     const mobileValue = mobileInput instanceof HTMLInputElement ? mobileInput.value : '';
+    const passwordValue = passwordInput instanceof HTMLInputElement ? passwordInput.value : '';
 
     if (!emailValue.trim() && !mobileValue.trim()) {
       safeAlert('Enter your email address or mobile number to continue.');
       return;
     }
 
-    await continueWithEmailOrMobile(emailValue, mobileValue);
+    await continueWithEmailOrMobile(emailValue, mobileValue, passwordValue, nameValue);
   });
+
+  if (verifyOtpButton instanceof HTMLButtonElement && otpCodeInput instanceof HTMLInputElement) {
+    verifyOtpButton.addEventListener('click', async () => {
+      const code = otpCodeInput.value.trim();
+
+      if (!/^\d{6}$/.test(code)) {
+        setStatus('Enter the 6 digit verification code.', true);
+        otpCodeInput.focus();
+        return;
+      }
+
+      verifyOtpButton.disabled = true;
+      setStatus('Verifying...');
+
+      try {
+        if (pendingOtpType === 'signup' && pendingOtpPhone && verifySignupOtpEndpoint) {
+          const payload = await apiRequest(verifySignupOtpEndpoint, {
+            method: 'POST',
+            body: JSON.stringify({ phone: pendingOtpPhone, code })
+          });
+
+          setAdminSession(payload.client.id);
+          window.location.assign(payload.nextStep);
+        } else if (pendingOtpClientId) {
+          await verifyLoginOtp(pendingOtpClientId, code);
+        } else {
+          setStatus('Session expired. Please enter your details again.', true);
+          verifyOtpButton.disabled = false;
+        }
+      } catch (error) {
+        verifyOtpButton.disabled = false;
+        setStatus(error instanceof Error ? error.message : 'Unable to verify code.', true);
+      }
+    });
+  }
 
   for (const button of providerButtons) {
     if (!(button instanceof HTMLButtonElement)) {

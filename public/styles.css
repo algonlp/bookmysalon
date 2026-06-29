@@ -4424,6 +4424,29 @@ textarea:focus-visible {
   line-height: 1.55;
 }
 
+.pro-signup-otp {
+  margin-top: 16px;
+}
+
+.pro-signup-otp-copy {
+  margin-bottom: 12px;
+  font-size: 0.88rem;
+  color: #665f5a;
+  line-height: 1.55;
+}
+
+.pro-signup-status {
+  margin-top: 12px;
+  font-size: 0.84rem;
+  color: #665f5a;
+  text-align: center;
+  min-height: 1.2em;
+}
+
+.pro-signup-status.is-error {
+  color: #c4321c;
+}
+
 .signup-input-wrap {
   display: block;
   border: 1px solid rgba(17, 17, 17, 0.1);

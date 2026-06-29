@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { env } from '../config/env';
 import { HttpError } from '../shared/errors/httpError';
-import { hashAdminToken } from '../shared/hashToken';
+import { hashAdminToken, hashPassword } from '../shared/hashToken';
 import { clientPlatformRepository } from './clientPlatform.repository';
 import { appointmentService } from '../appointments/appointment.service';
 import { googleIdentityService } from '../auth/googleIdentity.service';
@@ -2018,11 +2018,12 @@ const createClientRecord = async (input: CreateClientInput): Promise<{ client: C
   const client: ClientRecord = {
     id: randomUUID(),
     adminToken: hashAdminToken(plainAdminToken),
+    password: input.password ? hashPassword(input.password) : undefined,
     email: normalizedEmail || buildFallbackEmail(input.provider),
     mobileNumber: normalizedMobileNumber,
     businessPhoneNumber: '',
     provider: input.provider,
-    businessName: '',
+    businessName: input.businessName?.trim() || '',
     website: '',
     profileImageUrl: '',
     galleryImageUrls: [],
@@ -2053,10 +2054,41 @@ export const clientPlatformService = {
     return createClientRecord(input);
   },
 
+  async findClientForLogin(
+    input: Pick<CreateClientInput, 'email' | 'mobileNumber'>
+  ): Promise<ClientRecord | null> {
+    return findClientByLoginInput(input);
+  },
+
   async loginClient(
     input: Pick<CreateClientInput, 'email' | 'mobileNumber'>
   ): Promise<{ client: ClientRecord; plainAdminToken: string; nextStep: string }> {
     const client = await findClientByLoginInput(input);
+
+    if (!client) {
+      throw new HttpError(404, platformClientAuthMessages.accountNotFound);
+    }
+
+    const plainAdminToken = randomUUID();
+    const updatedClient = await updateClient(client.id, (current) => ({
+      ...current,
+      adminToken: hashAdminToken(plainAdminToken),
+      updatedAt: new Date().toISOString()
+    }));
+
+    return {
+      client: updatedClient,
+      plainAdminToken,
+      nextStep: getNextClientStep(updatedClient)
+    };
+  },
+
+  async loginClientById(
+    clientId: string
+  ): Promise<{ client: ClientRecord; plainAdminToken: string; nextStep: string }> {
+    const client = (await clientPlatformRepository.listClients())
+      .map(hydrateClientRecord)
+      .find((c) => c.id === clientId);
 
     if (!client) {
       throw new HttpError(404, platformClientAuthMessages.accountNotFound);

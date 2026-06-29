@@ -6,11 +6,13 @@ import { requirePlatformAdminAccess } from '../middlewares/requirePlatformAdminA
 export const clientPlatformRouter = Router();
 
 clientPlatformRouter.post('/platform/clients', asyncHandler(clientPlatformController.createClient));
+clientPlatformRouter.post('/platform/clients/signup/verify', asyncHandler(clientPlatformController.verifySignupOtp));
 clientPlatformRouter.post(
   '/platform/clients/google-auth',
   asyncHandler(clientPlatformController.authenticateGoogleClient)
 );
 clientPlatformRouter.post('/platform/clients/login', asyncHandler(clientPlatformController.loginClient));
+clientPlatformRouter.post('/platform/clients/otp/verify', asyncHandler(clientPlatformController.verifyAdminOtp));
 clientPlatformRouter.post(
   '/platform/clients/:clientId/logout',
   asyncHandler(requirePlatformAdminAccess),

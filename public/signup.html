@@ -39,10 +39,12 @@
               data-create-endpoint="/api/platform/clients"
               data-google-auth-endpoint="/api/platform/clients/google-auth"
               data-login-endpoint="/api/platform/clients/login"
+              data-verify-otp-endpoint="/api/platform/clients/otp/verify"
+              data-verify-signup-otp-endpoint="/api/platform/clients/signup/verify"
             >
               <div class="pro-signup-form-intro">
                 <strong>Start your professional workspace</strong>
-                <span>Enter your email or mobile number. Existing accounts go to the dashboard, and new accounts continue the setup steps for your salon or studio.</span>
+                <span>Enter your details below. Existing accounts will receive an OTP for verification.</span>
               </div>
 
               <label class="signup-input-wrap">
@@ -55,9 +57,15 @@
                 />
               </label>
 
-              <div class="signup-input-divider">
-                <span>or</span>
-              </div>
+              <label class="signup-input-wrap" id="professional-name-wrap">
+                <input
+                  id="professional-name"
+                  name="businessName"
+                  type="text"
+                  autocomplete="organization"
+                  placeholder="Your name or business name"
+                />
+              </label>
 
               <label class="signup-input-wrap">
                 <input
@@ -70,6 +78,17 @@
                 />
               </label>
 
+              <label class="signup-input-wrap">
+                <input
+                  id="professional-password"
+                  name="password"
+                  type="password"
+                  autocomplete="new-password"
+                  placeholder="Create a password (min 6 characters)"
+                  minlength="6"
+                />
+              </label>
+
               <button class="continue-button" type="submit">
                 <span>Continue</span>
                 <span class="continue-button-arrow" aria-hidden="true">
@@ -79,6 +98,36 @@
                   </svg>
                 </span>
               </button>
+
+              <div class="pro-signup-otp is-hidden" id="pro-signup-otp-panel">
+                <p class="pro-signup-otp-copy" id="pro-signup-otp-message">
+                  Enter the verification code sent to your mobile number.
+                </p>
+
+                <label class="signup-input-wrap">
+                  <input
+                    id="pro-signup-otp-code"
+                    name="otpCode"
+                    type="text"
+                    inputmode="numeric"
+                    autocomplete="one-time-code"
+                    maxlength="6"
+                    placeholder="Enter 6-digit code"
+                  />
+                </label>
+
+                <button class="continue-button" type="button" id="pro-signup-verify-otp">
+                  <span>Verify and continue</span>
+                  <span class="continue-button-arrow" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" focusable="false">
+                      <path d="M5 12h14"></path>
+                      <path d="M13 6l6 6-6 6"></path>
+                    </svg>
+                  </span>
+                </button>
+              </div>
+
+              <p class="pro-signup-status" id="pro-signup-status" aria-live="polite"></p>
             </form>
 
             <span class="divider-copy">OR</span>

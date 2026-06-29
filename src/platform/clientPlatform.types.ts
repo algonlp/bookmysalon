@@ -151,6 +151,7 @@ export interface CustomerProfileRecord {
 export interface ClientRecord {
   id: string;
   adminToken: string;
+  password?: string;
   email: string;
   mobileNumber: string;
   businessPhoneNumber: string;
@@ -209,6 +210,8 @@ export interface PublicClientRecord {
 export interface CreateClientInput {
   email?: string;
   mobileNumber?: string;
+  password?: string;
+  businessName?: string;
   provider: AuthProvider;
 }
 
