@@ -15556,6 +15556,7 @@ const initPublicBooking = () => {
   const serviceCards = document.querySelector('#booking-service-cards');
   const teamMemberCards = document.querySelector('#booking-team-member-cards');
   const dateStrip = document.querySelector('#booking-date-strip');
+  const calendarEl = document.querySelector('#booking-calendar');
   const timeList = document.querySelector('#booking-time-list');
   const servicesByName = new Map();
   const servicesById = new Map();
@@ -16470,6 +16471,115 @@ const initPublicBooking = () => {
     }
   };
 
+  let calendarViewMonth = new Date().getMonth();
+  let calendarViewYear = new Date().getFullYear();
+
+  const renderCalendar = (direction = 0) => {
+    if (!(calendarEl instanceof HTMLElement)) {
+      return;
+    }
+
+    const todayValue = getLocalDateValue();
+    const selectedDateValue = dateInput.value || todayValue;
+    const todayDate = new Date(`${todayValue}T00:00:00`);
+    const todayMonth = todayDate.getMonth();
+    const todayYear = todayDate.getFullYear();
+
+    const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const monthLabel = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' })
+      .format(new Date(calendarViewYear, calendarViewMonth, 1));
+
+    const isPrevDisabled = calendarViewYear === todayYear && calendarViewMonth <= todayMonth;
+
+    const nav = document.createElement('div');
+    nav.className = 'booking-calendar-nav';
+
+    const prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
+    prevBtn.disabled = isPrevDisabled;
+    prevBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 5l-7 7 7 7"/></svg>';
+    prevBtn.addEventListener('click', () => {
+      calendarViewMonth -= 1;
+      if (calendarViewMonth < 0) { calendarViewMonth = 11; calendarViewYear -= 1; }
+      renderCalendar(-1);
+    });
+
+    const title = document.createElement('strong');
+    title.textContent = monthLabel;
+
+    const nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5l7 7-7 7"/></svg>';
+    nextBtn.addEventListener('click', () => {
+      calendarViewMonth += 1;
+      if (calendarViewMonth > 11) { calendarViewMonth = 0; calendarViewYear += 1; }
+      renderCalendar(1);
+    });
+
+    nav.append(prevBtn, title, nextBtn);
+
+    const weekdays = document.createElement('div');
+    weekdays.className = 'booking-calendar-weekdays';
+    for (const label of weekdayLabels) {
+      const span = document.createElement('span');
+      span.textContent = label;
+      weekdays.append(span);
+    }
+
+    const grid = document.createElement('div');
+    grid.className = 'booking-calendar-grid';
+
+    if (direction !== 0) {
+      grid.classList.add(direction > 0 ? 'is-entering' : 'is-entering-left');
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          grid.classList.remove('is-entering', 'is-entering-left');
+        });
+      });
+    }
+
+    const firstDay = new Date(calendarViewYear, calendarViewMonth, 1);
+    const lastDay = new Date(calendarViewYear, calendarViewMonth + 1, 0);
+    let startWeekday = firstDay.getDay();
+    startWeekday = startWeekday === 0 ? 6 : startWeekday - 1;
+
+    for (let i = 0; i < startWeekday; i++) {
+      const empty = document.createElement('button');
+      empty.type = 'button';
+      empty.className = 'booking-calendar-day is-empty';
+      empty.disabled = true;
+      grid.append(empty);
+    }
+
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+      const date = new Date(calendarViewYear, calendarViewMonth, day);
+      const dateValue = getLocalDateValue(date);
+      const isPast = dateValue < todayValue;
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'booking-calendar-day';
+      btn.textContent = String(day);
+      btn.disabled = isPast;
+
+      if (dateValue === todayValue) { btn.classList.add('is-today'); }
+      if (dateValue === selectedDateValue) { btn.classList.add('is-active'); }
+
+      if (!isPast) {
+        btn.addEventListener('click', () => {
+          dateInput.value = dateValue;
+          renderCalendar();
+          renderDateStrip(); renderCalendar();
+          void syncAvailableSlots();
+        });
+      }
+
+      grid.append(btn);
+    }
+
+    calendarEl.replaceChildren(nav, weekdays, grid);
+  };
+
   const renderTimeButtons = (slots = []) => {
     timeList.replaceChildren();
     lastLoadedSlots = slots;
@@ -17075,7 +17185,7 @@ const initPublicBooking = () => {
 
       renderServiceTabs(payload.services);
       renderServiceCards();
-      renderDateStrip();
+      renderDateStrip(); renderCalendar();
       activeWaitlistOffer = payload.waitlistOffer ?? null;
 
       if (activeWaitlistOffer) {
@@ -17215,7 +17325,7 @@ const initPublicBooking = () => {
     }
 
     dateInput.value = card.dataset.dateValue ?? dateInput.value;
-    renderDateStrip();
+    renderDateStrip(); renderCalendar();
     await populateSlots();
   });
 
@@ -17254,7 +17364,7 @@ const initPublicBooking = () => {
 
   dateInput.addEventListener('change', async () => {
 
-    renderDateStrip();
+    renderDateStrip(); renderCalendar();
     syncPackagePlanDateOptions();
 
     await populateSlots();

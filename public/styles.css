@@ -10050,6 +10050,123 @@ button.calendar-reports-summary-card {
   color: rgba(255, 255, 255, 0.82);
 }
 
+.booking-calendar {
+  background: #fffdf8;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 18px;
+  padding: 18px;
+  overflow: hidden;
+}
+
+.booking-calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.booking-calendar-nav strong {
+  font-size: 1.02rem;
+  color: #1f1a17;
+}
+
+.booking-calendar-nav button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(18, 18, 18, 0.1);
+  border-radius: 50%;
+  background: #ffffff;
+  color: #1f1a17;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+
+.booking-calendar-nav button:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.booking-calendar-nav button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.booking-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.booking-calendar-weekdays span {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8a8480;
+  padding: 4px 0;
+}
+
+.booking-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.booking-calendar-grid.is-entering {
+  opacity: 0;
+  transform: translateX(24px);
+}
+
+.booking-calendar-grid.is-entering-left {
+  opacity: 0;
+  transform: translateX(-24px);
+}
+
+.booking-calendar-day {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #1f1a17;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.booking-calendar-day:hover:not(:disabled):not(.is-active) {
+  background: var(--primary-soft);
+  transform: scale(1.1);
+}
+
+.booking-calendar-day.is-active {
+  background: var(--primary);
+  color: #ffffff;
+  transform: scale(1.08);
+  box-shadow: 0 4px 14px rgba(108, 76, 245, 0.3);
+}
+
+.booking-calendar-day.is-today:not(.is-active) {
+  background: rgba(108, 76, 245, 0.08);
+  font-weight: 800;
+}
+
+.booking-calendar-day:disabled {
+  color: #d0ccc8;
+  cursor: default;
+}
+
+.booking-calendar-day.is-empty {
+  visibility: hidden;
+}
+
 .booking-time-list {
   display: grid;
   gap: 12px;
