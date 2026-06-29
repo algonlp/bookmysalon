@@ -4447,6 +4447,23 @@ textarea:focus-visible {
   color: #c4321c;
 }
 
+.pro-signup-toggle {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 0.88rem;
+  color: #665f5a;
+}
+
+.pro-signup-toggle a {
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.pro-signup-toggle a:hover {
+  text-decoration: underline;
+}
+
 .signup-input-wrap {
   display: block;
   border: 1px solid rgba(17, 17, 17, 0.1);

@@ -5338,6 +5338,8 @@ const initSignup = () => {
   const signupForm = document.querySelector('#pro-signup-form');
   const emailInput = document.querySelector('#professional-email');
   const nameInput = document.querySelector('#professional-name');
+  const nameWrap = document.querySelector('#professional-name-wrap');
+  const mobileWrap = document.querySelector('#professional-mobile-wrap');
   const googleSigninHost = document.querySelector('#google-signin-host');
   const mobileInput = document.querySelector('#professional-mobile');
   const passwordInput = document.querySelector('#professional-password');
@@ -5347,6 +5349,11 @@ const initSignup = () => {
   const otpMessage = document.querySelector('#pro-signup-otp-message');
   const verifyOtpButton = document.querySelector('#pro-signup-verify-otp');
   const statusEl = document.querySelector('#pro-signup-status');
+  const toggleLink = document.querySelector('#pro-signup-toggle-link');
+  const toggleText = document.querySelector('#pro-signup-toggle-text');
+  const headingText = document.querySelector('#pro-signup-heading-text');
+  const formTitle = document.querySelector('#pro-signup-form-title');
+  const formSubtitle = document.querySelector('#pro-signup-form-subtitle');
 
   if (!(signupForm instanceof HTMLFormElement)) {
     return;
@@ -5366,6 +5373,74 @@ const initSignup = () => {
   let pendingOtpClientId = '';
   let pendingOtpPhone = '';
   let pendingOtpType = '';
+  let formMode = 'login';
+
+  const setFormMode = (mode) => {
+    formMode = mode;
+
+    const isSignup = mode === 'signup';
+
+    if (nameWrap instanceof HTMLElement) {
+      nameWrap.classList.toggle('is-hidden', !isSignup);
+    }
+
+    if (mobileWrap instanceof HTMLElement) {
+      mobileWrap.classList.toggle('is-hidden', !isSignup);
+    }
+
+    if (headingText instanceof HTMLElement) {
+      headingText.textContent = isSignup
+        ? 'Create an account to manage your business.'
+        : 'Log in to manage your business.';
+    }
+
+    if (formTitle instanceof HTMLElement) {
+      formTitle.textContent = isSignup
+        ? 'Create your professional workspace'
+        : 'Log in to your workspace';
+    }
+
+    if (formSubtitle instanceof HTMLElement) {
+      formSubtitle.textContent = isSignup
+        ? 'Enter your email, name, mobile number and password.'
+        : 'Enter your email or mobile number and password.';
+    }
+
+    if (passwordInput instanceof HTMLInputElement) {
+      passwordInput.placeholder = isSignup
+        ? 'Create a password (min 6 characters)'
+        : 'Enter your password';
+      passwordInput.autocomplete = isSignup ? 'new-password' : 'current-password';
+    }
+
+    if (toggleText instanceof HTMLElement) {
+      toggleText.innerHTML = isSignup
+        ? 'Already have an account? <a href="#" id="pro-signup-toggle-link">Log in</a>'
+        : 'Don\'t have an account? <a href="#" id="pro-signup-toggle-link">Sign up</a>';
+
+      const newLink = toggleText.querySelector('#pro-signup-toggle-link');
+      if (newLink) {
+        newLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          setFormMode(isSignup ? 'login' : 'signup');
+        });
+      }
+    }
+
+    setStatus('');
+  };
+
+  if (toggleLink instanceof HTMLElement) {
+    toggleLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      setFormMode('signup');
+    });
+  }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('plan') || urlParams.has('signup')) {
+    setFormMode('signup');
+  }
 
   const setStatus = (message = '', isError = false) => {
     if (statusEl instanceof HTMLElement) {
@@ -5641,6 +5716,30 @@ const initSignup = () => {
     const nameValue = nameInput instanceof HTMLInputElement ? nameInput.value : '';
     const mobileValue = mobileInput instanceof HTMLInputElement ? mobileInput.value : '';
     const passwordValue = passwordInput instanceof HTMLInputElement ? passwordInput.value : '';
+
+    if (formMode === 'signup') {
+      if (!emailValue.trim()) {
+        safeAlert('Enter your email address.');
+        return;
+      }
+
+      if (!mobileValue.trim()) {
+        safeAlert('Enter your mobile number for OTP verification.');
+        return;
+      }
+
+      if (!passwordValue.trim() || passwordValue.trim().length < 6) {
+        safeAlert('Create a password with at least 6 characters.');
+        return;
+      }
+
+      try {
+        await createClient('email', emailValue, mobileValue, passwordValue, nameValue);
+      } catch (error) {
+        safeAlert(error instanceof Error ? error.message : 'Unable to create account.');
+      }
+      return;
+    }
 
     if (!emailValue.trim() && !mobileValue.trim()) {
       safeAlert('Enter your email address or mobile number to continue.');

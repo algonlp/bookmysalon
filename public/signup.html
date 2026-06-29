@@ -30,7 +30,7 @@
 
           <div class="pro-signup-content">
             <h1>QR schedule</h1>
-            <p>Create an account or log in to manage your business.</p>
+            <p id="pro-signup-heading-text">Log in to manage your business.</p>
 
             <form
               class="pro-signup-form"
@@ -42,9 +42,9 @@
               data-verify-otp-endpoint="/api/platform/clients/otp/verify"
               data-verify-signup-otp-endpoint="/api/platform/clients/signup/verify"
             >
-              <div class="pro-signup-form-intro">
-                <strong>Start your professional workspace</strong>
-                <span>Enter your details below. Existing accounts will receive an OTP for verification.</span>
+              <div class="pro-signup-form-intro" id="pro-signup-form-intro">
+                <strong id="pro-signup-form-title">Log in to your workspace</strong>
+                <span id="pro-signup-form-subtitle">Enter your email or mobile number and password.</span>
               </div>
 
               <label class="signup-input-wrap">
@@ -57,7 +57,7 @@
                 />
               </label>
 
-              <label class="signup-input-wrap" id="professional-name-wrap">
+              <label class="signup-input-wrap is-hidden" id="professional-name-wrap">
                 <input
                   id="professional-name"
                   name="businessName"
@@ -67,7 +67,7 @@
                 />
               </label>
 
-              <label class="signup-input-wrap">
+              <label class="signup-input-wrap is-hidden" id="professional-mobile-wrap">
                 <input
                   id="professional-mobile"
                   name="mobileNumber"
@@ -83,8 +83,8 @@
                   id="professional-password"
                   name="password"
                   type="password"
-                  autocomplete="new-password"
-                  placeholder="Create a password (min 6 characters)"
+                  autocomplete="current-password"
+                  placeholder="Enter your password"
                   minlength="6"
                 />
               </label>
@@ -129,6 +129,10 @@
 
               <p class="pro-signup-status" id="pro-signup-status" aria-live="polite"></p>
             </form>
+
+            <div class="pro-signup-toggle">
+              <p id="pro-signup-toggle-text">Don't have an account? <a href="#" id="pro-signup-toggle-link">Sign up</a></p>
+            </div>
 
             <span class="divider-copy">OR</span>
 
