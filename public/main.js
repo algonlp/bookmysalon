@@ -11774,7 +11774,23 @@ const createTrendCard = (
     clearGalleryButton.textContent = 'Clear gallery';
 
     galleryActions.append(galleryUploadButton, clearGalleryButton);
-    galleryField.append(galleryLabel, galleryHelp, galleryPreview, galleryActions, galleryPickerInput, ...galleryInputs);
+
+    const galleryUrlToggle = document.createElement('button');
+    galleryUrlToggle.className = 'calendar-tool-action calendar-tool-url-toggle';
+    galleryUrlToggle.type = 'button';
+    galleryUrlToggle.textContent = 'Paste image URLs manually';
+
+    const galleryUrlPanel = document.createElement('div');
+    galleryUrlPanel.className = 'calendar-tool-url-panel is-hidden';
+    galleryUrlPanel.append(...galleryInputs);
+
+    galleryUrlToggle.addEventListener('click', () => {
+      const isOpen = !galleryUrlPanel.classList.contains('is-hidden');
+      galleryUrlPanel.classList.toggle('is-hidden', isOpen);
+      galleryUrlToggle.textContent = isOpen ? 'Paste image URLs manually' : 'Hide URL fields';
+    });
+
+    galleryField.append(galleryLabel, galleryHelp, galleryPreview, galleryActions, galleryPickerInput, galleryUrlToggle, galleryUrlPanel);
 
     const submitButton = document.createElement('button');
     submitButton.className = 'calendar-tool-action calendar-tool-submit';
