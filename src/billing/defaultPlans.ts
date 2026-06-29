@@ -59,7 +59,7 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
     key: 'solo',
     name: 'Solo',
     summary: 'For one independent professional with full workspace access until appointment credits run out.',
-    amountCents: 126000,
+    amountCents: 30000,
     currencyCode: 'PKR',
     billingInterval: 'month',
     trialDays: 0,

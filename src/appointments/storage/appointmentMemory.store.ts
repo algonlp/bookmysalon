@@ -19,24 +19,48 @@ export class AppointmentMemoryStore implements AppointmentStore {
     return [...this.state.appointments];
   }
 
+  async listAppointmentsByBusinessId(businessId: string): Promise<AppointmentRecord[]> {
+    return this.state.appointments.filter((record) => record.businessId === businessId);
+  }
+
   async listPaymentRecords(): Promise<PaymentRecord[]> {
     return [...this.state.paymentRecords];
+  }
+
+  async listPaymentRecordsByBusinessId(businessId: string): Promise<PaymentRecord[]> {
+    return this.state.paymentRecords.filter((record) => record.businessId === businessId);
   }
 
   async listReviews(): Promise<ReviewRecord[]> {
     return [...this.state.reviews];
   }
 
+  async listReviewsByBusinessId(businessId: string): Promise<ReviewRecord[]> {
+    return this.state.reviews.filter((record) => record.businessId === businessId);
+  }
+
   async listPackagePurchases(): Promise<PackagePurchaseRecord[]> {
     return [...this.state.packagePurchases];
+  }
+
+  async listPackagePurchasesByBusinessId(businessId: string): Promise<PackagePurchaseRecord[]> {
+    return this.state.packagePurchases.filter((record) => record.businessId === businessId);
   }
 
   async listLoyaltyRewards(): Promise<LoyaltyRewardRecord[]> {
     return [...this.state.loyaltyRewards];
   }
 
+  async listLoyaltyRewardsByBusinessId(businessId: string): Promise<LoyaltyRewardRecord[]> {
+    return this.state.loyaltyRewards.filter((record) => record.businessId === businessId);
+  }
+
   async listWaitlistEntries(): Promise<WaitlistRecord[]> {
     return [...this.state.waitlistEntries];
+  }
+
+  async listWaitlistEntriesByBusinessId(businessId: string): Promise<WaitlistRecord[]> {
+    return this.state.waitlistEntries.filter((record) => record.businessId === businessId);
   }
 
   async saveAppointment(appointment: AppointmentRecord): Promise<AppointmentRecord> {

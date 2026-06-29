@@ -1,8 +1,10 @@
 import type { NextFunction, Request, Response } from 'express';
+import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { billingService } from '../../billing/billing.service';
 import { clientPlatformRepository } from '../../platform/clientPlatform.repository';
 import { HttpError } from '../../shared/errors/httpError';
+import { hashAdminToken } from '../../shared/hashToken';
 import { getRequestOrigin, setAdminSessionCookie } from '../../shared/http';
 
 const demoCheckoutSchema = z.object({
@@ -97,7 +99,13 @@ export const billingController = {
       throw new HttpError(404, 'Business not found');
     }
 
-    setAdminSessionCookie(res, client.adminToken);
+    const plainAdminToken = randomUUID();
+    await clientPlatformRepository.saveClient({
+      ...client,
+      adminToken: hashAdminToken(plainAdminToken),
+      updatedAt: new Date().toISOString()
+    });
+    setAdminSessionCookie(res, plainAdminToken);
     res.redirect(
       303,
       `/calendar?clientId=${encodeURIComponent(confirmation.businessId)}&subscriptionCheckout=success`

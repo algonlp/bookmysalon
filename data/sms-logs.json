@@ -25,6 +25,32 @@
       "body": "Your appointment at xyz is confirmed for 2026-06-03 at 09:00. Service: Cut and style. Ref: cdf40c22. Open your live booking link for the countdown and updates: http://localhost:8002/book/a6a2a0e6-e3ad-45ec-8382-2a15dbfadd5b/manage/cdf40c22-f6da-4f07-9b09-0b2f699d5358?accessToken=22653c80-52ae-4e79-8bb6-8b58e5d767af",
       "messageId": "SMee789baa50a1463d723c11844c1229ee",
       "createdAt": "2026-06-03T05:33:14.685Z"
+    },
+    {
+      "id": "9656aa6e-b911-437b-a479-f880f08355df",
+      "businessId": "01a6480d-f827-46f8-adf9-5f53c273d537",
+      "appointmentId": "ca60d33c-460d-4365-bd68-7bc0a774cada",
+      "recipient": "customer",
+      "channel": "sms",
+      "destination": "03001234567",
+      "status": "failed",
+      "source": "appointment_confirmation",
+      "body": "Your appointment at Demo Salon Islamabad is confirmed for 2026-06-25 at 10:00. Service: Consultation. Ref: ca60d33c. Open your live booking link for the countdown and updates: http://localhost:8003/book/01a6480d-f827-46f8-adf9-5f53c273d537/manage/ca60d33c-460d-4365-bd68-7bc0a774cada?accessToken=a94fec93-1121-4f0b-bb87-742f43364cb1",
+      "reason": "Recipient phone number must include a valid country code, for example +923001234567",
+      "createdAt": "2026-06-24T06:56:24.748Z"
+    },
+    {
+      "id": "2f34c7e1-91fe-4743-a493-43003d583c27",
+      "businessId": "818ddf47-2e11-4d6a-8a50-387347f4c20e",
+      "appointmentId": "03bac5c7-6310-438b-99bc-f529bd4a3d08",
+      "recipient": "customer",
+      "channel": "sms",
+      "destination": "333333333333",
+      "status": "failed",
+      "source": "appointment_confirmation",
+      "body": "Your appointment at alhda is confirmed for 2026-06-24 at 09:00. Service: Cut and style. Ref: 03bac5c7. Open your live booking link for the countdown and updates: http://localhost:8003/book/818ddf47-2e11-4d6a-8a50-387347f4c20e/manage/03bac5c7-6310-438b-99bc-f529bd4a3d08?accessToken=ccbe8193-e891-43d6-bf06-8c535add1f2f",
+      "reason": "Recipient phone number must include a valid country code, for example +923001234567",
+      "createdAt": "2026-06-24T08:39:42.326Z"
     }
   ]
 }

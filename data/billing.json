@@ -5,7 +5,7 @@
       "key": "solo",
       "name": "Solo",
       "summary": "For one independent professional with full workspace access until appointment credits run out.",
-      "amountCents": 126000,
+      "amountCents": 30000,
       "currencyCode": "PKR",
       "billingInterval": "month",
       "trialDays": 0,
@@ -156,13 +156,13 @@
       "providerCustomerId": "cus_UgPoJRNJqADte8",
       "providerSubscriptionId": "sub_1Th2yuQxjTpxGanLaBchyZih",
       "appointmentCreditsGranted": 50,
-      "appointmentCreditsRemaining": 50,
-      "appointmentCreditsUsed": 0,
+      "appointmentCreditsRemaining": 49,
+      "appointmentCreditsUsed": 1,
       "currentPeriodStart": "2026-06-11T07:39:29.044Z",
       "currentPeriodEnd": "2026-07-11T07:39:29.044Z",
       "trialEndsAt": "2026-06-18T07:39:29.044Z",
       "createdAt": "2026-06-11T07:39:29.044Z",
-      "updatedAt": "2026-06-11T07:39:29.044Z"
+      "updatedAt": "2026-06-24T08:39:42.298Z"
     },
     {
       "id": "e518364e-b976-489d-8948-7c136691f0c4",

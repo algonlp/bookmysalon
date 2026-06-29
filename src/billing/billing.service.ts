@@ -32,12 +32,14 @@ const sortPlans = (plans: SubscriptionPlan[]): SubscriptionPlan[] =>
 const listNormalizedSubscriptionPlans = async (): Promise<SubscriptionPlan[]> =>
   sortPlans(normalizeSubscriptionPlans(await billingRepository.listSubscriptionPlans()));
 
-const getBusinessOrThrow = async (businessId: string): Promise<void> => {
+const getBusinessOrThrow = async (businessId: string): Promise<{ businessName: string }> => {
   const business = await clientPlatformRepository.getClientById(businessId);
 
   if (!business) {
     throw new HttpError(404, 'Business not found');
   }
+
+  return { businessName: business.businessName };
 };
 
 const addMonths = (date: Date, monthsToAdd: number): Date => {
@@ -210,15 +212,12 @@ export const billingService = {
   async getBillingOverview(businessId: string): Promise<BillingOverview> {
     await getBusinessOrThrow(businessId);
 
-    const [plans, subscriptions, invoices] = await Promise.all([
+    const [plans, businessSubscriptions, businessInvoices] = await Promise.all([
       listNormalizedSubscriptionPlans(),
-      billingRepository.listBusinessSubscriptions(),
-      billingRepository.listBillingInvoices()
+      billingRepository.listBusinessSubscriptionsByBusinessId(businessId),
+      billingRepository.listBillingInvoicesByBusinessId(businessId)
     ]);
     const sortedPlans = plans;
-    const businessSubscriptions = subscriptions.filter(
-      (subscription) => subscription.businessId === businessId
-    );
     const rawSubscription = getLatestSubscription(businessSubscriptions);
     const currentPlan = rawSubscription
       ? sortedPlans.find((plan) => plan.id === rawSubscription.planId) ?? null
@@ -232,9 +231,7 @@ export const billingService = {
       plans: sortedPlans,
       subscription,
       currentPlan,
-      latestInvoice: getLatestInvoice(
-        invoices.filter((invoice) => invoice.businessId === businessId)
-      ),
+      latestInvoice: getLatestInvoice(businessInvoices),
       creditBalance: {
         granted: subscription?.appointmentCreditsGranted ?? 0,
         remaining: subscription?.appointmentCreditsRemaining ?? 0,
@@ -272,9 +269,8 @@ export const billingService = {
         ? new Date(now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000).toISOString()
         : undefined;
 
-    const existingSubscriptions = (await billingRepository.listBusinessSubscriptions()).filter(
+    const existingSubscriptions = (await billingRepository.listBusinessSubscriptionsByBusinessId(businessId)).filter(
       (subscription) =>
-        subscription.businessId === businessId &&
         activeSubscriptionStatuses.includes(subscription.status)
     );
     const existingCreditRemainder = existingSubscriptions.reduce((sum, subscription) => {
@@ -366,7 +362,7 @@ export const billingService = {
     input: CreateSubscriptionCheckoutInput,
     origin: string
   ): Promise<{ checkoutUrl: string; checkoutSessionId: string }> {
-    await getBusinessOrThrow(businessId);
+    const { businessName } = await getBusinessOrThrow(businessId);
     const plans = await listNormalizedSubscriptionPlans();
     const plan = plans.find((entry) => entry.id === input.planId);
 
@@ -380,6 +376,7 @@ export const billingService = {
 
     const checkoutSession = await stripePaymentService.createSubscriptionCheckoutSession({
       businessId,
+      businessName,
       plan,
       successUrl: `${origin}/api/billing/stripe-return?session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${origin}/calendar?clientId=${encodeURIComponent(businessId)}&subscriptionCheckout=cancelled`
@@ -467,9 +464,9 @@ export const billingService = {
       plan.trialDays > 0
         ? new Date(now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000).toISOString()
         : undefined;
-    const existingSubscriptions = (await billingRepository.listBusinessSubscriptions()).filter(
+    const businessSubscriptions = await billingRepository.listBusinessSubscriptionsByBusinessId(input.businessId);
+    const existingSubscriptions = businessSubscriptions.filter(
       (subscription) =>
-        subscription.businessId === input.businessId &&
         activeSubscriptionStatuses.includes(subscription.status)
     );
     const existingCreditRemainder = existingSubscriptions.reduce((sum, subscription) => {
@@ -479,7 +476,7 @@ export const billingService = {
     const includedCredits = getPlanIncludedCredits(plan);
     const appointmentCreditsGranted = existingCreditRemainder + includedCredits;
 
-    const duplicateSubscription = (await billingRepository.listBusinessSubscriptions()).find(
+    const duplicateSubscription = businessSubscriptions.find(
       (subscription) =>
         subscription.provider === 'stripe' &&
         subscription.providerSubscriptionId === input.providerSubscriptionId
@@ -487,7 +484,7 @@ export const billingService = {
 
     if (duplicateSubscription) {
       const invoice =
-        (await billingRepository.listBillingInvoices()).find(
+        (await billingRepository.listBillingInvoicesByBusinessId(input.businessId)).find(
           (entry) => entry.subscriptionId === duplicateSubscription.id
         ) ?? {
           id: randomUUID(),
@@ -701,14 +698,12 @@ export const billingService = {
     businessId: string
   ): Promise<BusinessSubscription | null> {
     await getBusinessOrThrow(businessId);
-    const [plans, subscriptions] = await Promise.all([
+    const [plans, businessSubscriptions] = await Promise.all([
       listNormalizedSubscriptionPlans(),
-      billingRepository.listBusinessSubscriptions()
+      billingRepository.listBusinessSubscriptionsByBusinessId(businessId)
     ]);
     const sortedPlans = plans;
-    const rawSubscription = getLatestSubscription(
-      subscriptions.filter((subscription) => subscription.businessId === businessId)
-    );
+    const rawSubscription = getLatestSubscription(businessSubscriptions);
 
     if (!rawSubscription) {
       return null;
@@ -751,14 +746,12 @@ export const billingService = {
     reason: string;
   }> {
     await getBusinessOrThrow(businessId);
-    const [plans, subscriptions] = await Promise.all([
+    const [plans, businessSubscriptions] = await Promise.all([
       listNormalizedSubscriptionPlans(),
-      billingRepository.listBusinessSubscriptions()
+      billingRepository.listBusinessSubscriptionsByBusinessId(businessId)
     ]);
     const sortedPlans = plans;
-    const rawSubscription = getLatestSubscription(
-      subscriptions.filter((subscription) => subscription.businessId === businessId)
-    );
+    const rawSubscription = getLatestSubscription(businessSubscriptions);
 
     if (!rawSubscription) {
       return {

@@ -83,9 +83,19 @@ export class AppointmentFileStore implements AppointmentStore {
     return [...this.state.appointments];
   }
 
+  async listAppointmentsByBusinessId(businessId: string): Promise<AppointmentRecord[]> {
+    await this.ensureLoaded();
+    return this.state.appointments.filter((record) => record.businessId === businessId);
+  }
+
   async listPaymentRecords(): Promise<PaymentRecord[]> {
     await this.ensureLoaded();
     return [...this.state.paymentRecords];
+  }
+
+  async listPaymentRecordsByBusinessId(businessId: string): Promise<PaymentRecord[]> {
+    await this.ensureLoaded();
+    return this.state.paymentRecords.filter((record) => record.businessId === businessId);
   }
 
   async listReviews(): Promise<ReviewRecord[]> {
@@ -93,9 +103,19 @@ export class AppointmentFileStore implements AppointmentStore {
     return [...this.state.reviews];
   }
 
+  async listReviewsByBusinessId(businessId: string): Promise<ReviewRecord[]> {
+    await this.ensureLoaded();
+    return this.state.reviews.filter((record) => record.businessId === businessId);
+  }
+
   async listPackagePurchases(): Promise<PackagePurchaseRecord[]> {
     await this.ensureLoaded();
     return [...this.state.packagePurchases];
+  }
+
+  async listPackagePurchasesByBusinessId(businessId: string): Promise<PackagePurchaseRecord[]> {
+    await this.ensureLoaded();
+    return this.state.packagePurchases.filter((record) => record.businessId === businessId);
   }
 
   async listLoyaltyRewards(): Promise<LoyaltyRewardRecord[]> {
@@ -103,9 +123,19 @@ export class AppointmentFileStore implements AppointmentStore {
     return [...this.state.loyaltyRewards];
   }
 
+  async listLoyaltyRewardsByBusinessId(businessId: string): Promise<LoyaltyRewardRecord[]> {
+    await this.ensureLoaded();
+    return this.state.loyaltyRewards.filter((record) => record.businessId === businessId);
+  }
+
   async listWaitlistEntries(): Promise<WaitlistRecord[]> {
     await this.ensureLoaded();
     return [...this.state.waitlistEntries];
+  }
+
+  async listWaitlistEntriesByBusinessId(businessId: string): Promise<WaitlistRecord[]> {
+    await this.ensureLoaded();
+    return this.state.waitlistEntries.filter((record) => record.businessId === businessId);
   }
 
   async saveAppointment(appointment: AppointmentRecord): Promise<AppointmentRecord> {

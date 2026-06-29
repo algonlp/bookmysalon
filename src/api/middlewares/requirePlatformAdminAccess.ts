@@ -3,6 +3,7 @@ import { env } from '../../config/env';
 import { platformClientPagePaths } from '../../platform/clientPlatform.paths';
 import { clientPlatformRepository } from '../../platform/clientPlatform.repository';
 import { clearAdminSessionCookie, getCookieValue } from '../../shared/http';
+import { verifyAdminToken } from '../../shared/hashToken';
 
 const getClientIdFromPageRequest = (req: Request): string | undefined => {
   const clientId = req.query.clientId;
@@ -22,7 +23,7 @@ const hasPlatformAdminAccess = async (
 ): Promise<boolean> => {
   const client = await clientPlatformRepository.getClientById(clientId);
 
-  return !!client && client.adminToken === adminToken;
+  return !!client && verifyAdminToken(adminToken, client.adminToken);
 };
 
 export const requirePlatformAdminAccess = async (

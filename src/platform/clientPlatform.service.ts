@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { env } from '../config/env';
 import { HttpError } from '../shared/errors/httpError';
+import { hashAdminToken } from '../shared/hashToken';
 import { clientPlatformRepository } from './clientPlatform.repository';
 import { appointmentService } from '../appointments/appointment.service';
 import { googleIdentityService } from '../auth/googleIdentity.service';
@@ -1997,7 +1998,7 @@ const findClientByLoginInput = async (
   return null;
 };
 
-const createClientRecord = async (input: CreateClientInput): Promise<ClientRecord> => {
+const createClientRecord = async (input: CreateClientInput): Promise<{ client: ClientRecord; plainAdminToken: string }> => {
   const now = new Date().toISOString();
   const normalizedEmail = normalizeClientEmail(input.email);
   const normalizedMobileNumber = normalizeClientMobileNumber(input.mobileNumber);
@@ -2013,9 +2014,10 @@ const createClientRecord = async (input: CreateClientInput): Promise<ClientRecor
     }
   }
 
+  const plainAdminToken = randomUUID();
   const client: ClientRecord = {
     id: randomUUID(),
-    adminToken: randomUUID(),
+    adminToken: hashAdminToken(plainAdminToken),
     email: normalizedEmail || buildFallbackEmail(input.provider),
     mobileNumber: normalizedMobileNumber,
     businessPhoneNumber: '',
@@ -2043,27 +2045,34 @@ const createClientRecord = async (input: CreateClientInput): Promise<ClientRecor
   };
 
   await clientPlatformRepository.saveClient(client);
-  return client;
+  return { client, plainAdminToken };
 };
 
 export const clientPlatformService = {
-  async createClient(input: CreateClientInput): Promise<ClientRecord> {
+  async createClient(input: CreateClientInput): Promise<{ client: ClientRecord; plainAdminToken: string }> {
     return createClientRecord(input);
-
   },
 
   async loginClient(
     input: Pick<CreateClientInput, 'email' | 'mobileNumber'>
-  ): Promise<{ client: ClientRecord; nextStep: string }> {
+  ): Promise<{ client: ClientRecord; plainAdminToken: string; nextStep: string }> {
     const client = await findClientByLoginInput(input);
 
     if (!client) {
       throw new HttpError(404, platformClientAuthMessages.accountNotFound);
     }
 
+    const plainAdminToken = randomUUID();
+    const updatedClient = await updateClient(client.id, (current) => ({
+      ...current,
+      adminToken: hashAdminToken(plainAdminToken),
+      updatedAt: new Date().toISOString()
+    }));
+
     return {
-      client,
-      nextStep: getNextClientStep(client)
+      client: updatedClient,
+      plainAdminToken,
+      nextStep: getNextClientStep(updatedClient)
     };
   },
 
@@ -2071,6 +2080,7 @@ export const clientPlatformService = {
     input: AuthenticateGoogleClientInput
   ): Promise<{
     client: ClientRecord;
+    plainAdminToken: string;
     created: boolean;
     googleIdentity: { email: string; name: string };
     nextStep: string;
@@ -2079,24 +2089,33 @@ export const clientPlatformService = {
     const existingClient = await findClientByLoginInput({ email: googleIdentity.email });
 
     if (existingClient) {
+      const plainAdminToken = randomUUID();
+      const updatedClient = await updateClient(existingClient.id, (current) => ({
+        ...current,
+        adminToken: hashAdminToken(plainAdminToken),
+        updatedAt: new Date().toISOString()
+      }));
+
       return {
-        client: existingClient,
+        client: updatedClient,
+        plainAdminToken,
         created: false,
         googleIdentity: {
           email: googleIdentity.email,
           name: googleIdentity.name
         },
-        nextStep: getNextClientStep(existingClient)
+        nextStep: getNextClientStep(updatedClient)
       };
     }
 
-    const client = await createClientRecord({
+    const { client, plainAdminToken } = await createClientRecord({
       email: googleIdentity.email,
       provider: 'google'
     });
 
     return {
       client,
+      plainAdminToken,
       created: true,
       googleIdentity: {
         email: googleIdentity.email,
@@ -2109,7 +2128,7 @@ export const clientPlatformService = {
   logoutClient(clientId: string): Promise<ClientRecord> {
     return updateClient(clientId, (client) => ({
       ...client,
-      adminToken: randomUUID(),
+      adminToken: hashAdminToken(randomUUID()),
       updatedAt: new Date().toISOString()
     }));
   },

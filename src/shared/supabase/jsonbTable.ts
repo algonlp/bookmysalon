@@ -41,6 +41,23 @@ export class SupabaseJsonbTable<TRecord extends { id: string }> {
     return (data ?? []).map((row) => row.payload as TRecord);
   }
 
+  async listByColumn(column: string, value: string): Promise<TRecord[]> {
+    const client = getSupabaseClient();
+    const { data, error } = await client
+      .from(this.definition.tableName)
+      .select('payload')
+      .eq(column, value)
+      .order('id', { ascending: true });
+
+    if (error) {
+      throw new Error(
+        `Failed to list ${this.definition.tableName} by ${column}: ${error.message}`
+      );
+    }
+
+    return (data ?? []).map((row) => row.payload as TRecord);
+  }
+
   async getById(id: string): Promise<TRecord | undefined> {
     const client = getSupabaseClient();
     const { data, error } = await client

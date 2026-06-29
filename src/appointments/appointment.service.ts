@@ -402,18 +402,16 @@ const getServiceCatalogForBusiness = async (businessId: string): Promise<Appoint
 };
 
 const listBusinessAppointments = async (businessId: string): Promise<AppointmentRecord[]> => {
-  const appointments = await appointmentRepository.listAppointments();
+  const appointments = await appointmentRepository.listAppointmentsByBusinessId(businessId);
 
   return appointments
-    .filter((appointment) => appointment.businessId === businessId)
     .sort((left, right) => left.startAt.localeCompare(right.startAt));
 };
 
 const listBusinessPaymentRecords = async (businessId: string): Promise<PaymentRecord[]> => {
-  const paymentRecords = await appointmentRepository.listPaymentRecords();
+  const paymentRecords = await appointmentRepository.listPaymentRecordsByBusinessId(businessId);
 
   return paymentRecords
-    .filter((paymentRecord) => paymentRecord.businessId === businessId)
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 };
 
@@ -604,13 +602,13 @@ const listBusinessPackagePurchases = async (
   businessId: string
 ): Promise<PackagePurchaseRecord[]> => {
   const now = new Date();
-  const packagePurchases = (await appointmentRepository.listPackagePurchases())
-    .filter((packagePurchase) => packagePurchase.businessId === businessId)
+  const allPurchases = await appointmentRepository.listPackagePurchasesByBusinessId(businessId);
+  const packagePurchases = allPurchases
     .map((packagePurchase) => normalizePackagePurchaseStatus(packagePurchase, now));
 
   await Promise.all(
     packagePurchases.map(async (packagePurchase) => {
-      const original = (await appointmentRepository.listPackagePurchases()).find(
+      const original = allPurchases.find(
         (entry) => entry.id === packagePurchase.id
       );
 
@@ -632,13 +630,13 @@ const listBusinessWaitlistEntries = async (businessId: string): Promise<Waitlist
   const now = new Date();
   const business = await getBusinessOrThrow(businessId);
   const slotTimes = getBusinessSlotTimes(business);
-  const waitlistEntries = (await appointmentRepository.listWaitlistEntries())
-    .filter((waitlistEntry) => waitlistEntry.businessId === businessId)
+  const allEntries = await appointmentRepository.listWaitlistEntriesByBusinessId(businessId);
+  const waitlistEntries = allEntries
     .map((waitlistEntry) => normalizeWaitlistStatus(waitlistEntry, slotTimes, now));
 
   await Promise.all(
     waitlistEntries.map(async (waitlistEntry) => {
-      const original = (await appointmentRepository.listWaitlistEntries()).find(
+      const original = allEntries.find(
         (entry) => entry.id === waitlistEntry.id
       );
 
@@ -661,10 +659,9 @@ const listBusinessWaitlistEntries = async (businessId: string): Promise<Waitlist
 };
 
 const listBusinessLoyaltyRewards = async (businessId: string): Promise<LoyaltyRewardRecord[]> => {
-  const loyaltyRewards = await appointmentRepository.listLoyaltyRewards();
+  const loyaltyRewards = await appointmentRepository.listLoyaltyRewardsByBusinessId(businessId);
 
   return loyaltyRewards
-    .filter((loyaltyReward) => loyaltyReward.businessId === businessId)
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 };
 
@@ -1261,10 +1258,9 @@ const formatSmsDate = (appointmentDate: string, appointmentTime: string): string
 };
 
 const listBusinessReviews = async (businessId: string): Promise<ReviewRecord[]> => {
-  const reviews = await appointmentRepository.listReviews();
+  const reviews = await appointmentRepository.listReviewsByBusinessId(businessId);
 
   return reviews
-    .filter((review) => review.businessId === businessId)
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 };
 

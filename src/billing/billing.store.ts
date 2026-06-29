@@ -14,7 +14,9 @@ export interface BillingState {
 export interface BillingStore {
   listSubscriptionPlans(): Promise<SubscriptionPlan[]>;
   listBusinessSubscriptions(): Promise<BusinessSubscription[]>;
+  listBusinessSubscriptionsByBusinessId(businessId: string): Promise<BusinessSubscription[]>;
   listBillingInvoices(): Promise<BillingInvoice[]>;
+  listBillingInvoicesByBusinessId(businessId: string): Promise<BillingInvoice[]>;
   saveBusinessSubscription(subscription: BusinessSubscription): Promise<BusinessSubscription>;
   saveBillingInvoice(invoice: BillingInvoice): Promise<BillingInvoice>;
   reset(): Promise<void>;

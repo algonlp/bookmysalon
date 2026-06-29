@@ -146,24 +146,48 @@ export class AppointmentSupabaseStore implements AppointmentStore {
     return appointmentTable.list();
   }
 
+  listAppointmentsByBusinessId(businessId: string): Promise<AppointmentRecord[]> {
+    return appointmentTable.listByColumn('business_id', businessId);
+  }
+
   listPaymentRecords(): Promise<PaymentRecord[]> {
     return paymentTable.list();
+  }
+
+  listPaymentRecordsByBusinessId(businessId: string): Promise<PaymentRecord[]> {
+    return paymentTable.listByColumn('business_id', businessId);
   }
 
   listReviews(): Promise<ReviewRecord[]> {
     return reviewTable.list();
   }
 
+  listReviewsByBusinessId(businessId: string): Promise<ReviewRecord[]> {
+    return reviewTable.listByColumn('business_id', businessId);
+  }
+
   listPackagePurchases(): Promise<PackagePurchaseRecord[]> {
     return packagePurchaseTable.list();
+  }
+
+  listPackagePurchasesByBusinessId(businessId: string): Promise<PackagePurchaseRecord[]> {
+    return packagePurchaseTable.listByColumn('business_id', businessId);
   }
 
   listLoyaltyRewards(): Promise<LoyaltyRewardRecord[]> {
     return loyaltyRewardTable.list();
   }
 
+  listLoyaltyRewardsByBusinessId(businessId: string): Promise<LoyaltyRewardRecord[]> {
+    return loyaltyRewardTable.listByColumn('business_id', businessId);
+  }
+
   listWaitlistEntries(): Promise<WaitlistRecord[]> {
     return waitlistTable.list();
+  }
+
+  listWaitlistEntriesByBusinessId(businessId: string): Promise<WaitlistRecord[]> {
+    return waitlistTable.listByColumn('business_id', businessId);
   }
 
   async saveAppointment(appointment: AppointmentRecord): Promise<AppointmentRecord> {

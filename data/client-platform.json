@@ -18,7 +18,7 @@
           "name": "Haircut",
           "durationMinutes": 45,
           "categoryName": "Barber",
-          "priceLabel": "Rs 1,200",
+          "priceLabel": "RsÂ 1,200",
           "description": "Classic barber haircut with clipper and scissor finishing.",
           "isActive": true
         },
@@ -27,7 +27,7 @@
           "name": "Beard trim",
           "durationMinutes": 30,
           "categoryName": "Barber",
-          "priceLabel": "Rs 800",
+          "priceLabel": "RsÂ 800",
           "description": "Shape, line-up, and beard tidy-up for a clean finish.",
           "isActive": true
         }
@@ -86,7 +86,7 @@
           "name": "Cut and style",
           "durationMinutes": 60,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 2,200",
+          "priceLabel": "RsÂ 2,200",
           "description": "Signature haircut finished with a professional blow-dry.",
           "isActive": true
         },
@@ -95,7 +95,7 @@
           "name": "Blow dry",
           "durationMinutes": 45,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 1,500",
+          "priceLabel": "RsÂ 1,500",
           "description": "Smooth blow-dry with styling tailored to the guest.",
           "isActive": true
         },
@@ -104,7 +104,7 @@
           "name": "Facial treatment",
           "durationMinutes": 60,
           "categoryName": "Beauty salon",
-          "priceLabel": "Rs 2,700",
+          "priceLabel": "RsÂ 2,700",
           "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
           "isActive": true
         }
@@ -176,7 +176,7 @@
           "name": "Haircut",
           "durationMinutes": 45,
           "categoryName": "Barber",
-          "priceLabel": "Rs 1,200",
+          "priceLabel": "RsÂ 1,200",
           "description": "Classic barber haircut with clipper and scissor finishing.",
           "isActive": true
         },
@@ -185,7 +185,7 @@
           "name": "Beard trim",
           "durationMinutes": 30,
           "categoryName": "Barber",
-          "priceLabel": "Rs 800",
+          "priceLabel": "RsÂ 800",
           "description": "Shape, line-up, and beard tidy-up for a clean finish.",
           "isActive": true
         }
@@ -244,7 +244,7 @@
           "name": "Deep tissue massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 3,200",
+          "priceLabel": "RsÂ 3,200",
           "description": "Targeted pressure massage designed for muscle recovery.",
           "isActive": true
         },
@@ -253,7 +253,7 @@
           "name": "Relaxation massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 2,900",
+          "priceLabel": "RsÂ 2,900",
           "description": "Full-body relaxation massage to reduce stress and tension.",
           "isActive": true
         },
@@ -262,7 +262,7 @@
           "name": "Spa session",
           "durationMinutes": 60,
           "categoryName": "Spa & sauna",
-          "priceLabel": "Rs 3,500",
+          "priceLabel": "RsÂ 3,500",
           "description": "Unwind with a restorative spa session in a calm setting.",
           "isActive": true
         }
@@ -342,7 +342,7 @@
           "name": "Cut and style",
           "durationMinutes": 60,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 2,200",
+          "priceLabel": "RsÂ 2,200",
           "description": "Signature haircut finished with a professional blow-dry.",
           "isActive": true
         },
@@ -351,7 +351,7 @@
           "name": "Blow dry",
           "durationMinutes": 45,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 1,500",
+          "priceLabel": "RsÂ 1,500",
           "description": "Smooth blow-dry with styling tailored to the guest.",
           "isActive": true
         },
@@ -360,7 +360,7 @@
           "name": "Manicure",
           "durationMinutes": 45,
           "categoryName": "Nails",
-          "priceLabel": "Rs 1,600",
+          "priceLabel": "RsÂ 1,600",
           "description": "Nail shaping, cuticle care, and polish refresh.",
           "isActive": true
         },
@@ -369,7 +369,7 @@
           "name": "Pedicure",
           "durationMinutes": 60,
           "categoryName": "Nails",
-          "priceLabel": "Rs 2,100",
+          "priceLabel": "RsÂ 2,100",
           "description": "Foot soak, nail care, exfoliation, and polish refresh.",
           "isActive": true
         },
@@ -378,8 +378,8 @@
           "name": "Brow shaping",
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "priceLabel": "RsÂ 900",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -387,7 +387,7 @@
           "name": "Lash lift",
           "durationMinutes": 45,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 1,800",
+          "priceLabel": "RsÂ 1,800",
           "description": "Lift and curl natural lashes for a brighter eye look.",
           "isActive": true
         },
@@ -396,7 +396,7 @@
           "name": "Facial treatment",
           "durationMinutes": 60,
           "categoryName": "Beauty salon",
-          "priceLabel": "Rs 2,700",
+          "priceLabel": "RsÂ 2,700",
           "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
           "isActive": true
         },
@@ -405,7 +405,7 @@
           "name": "Skin consultation",
           "durationMinutes": 45,
           "categoryName": "Medspa",
-          "priceLabel": "Rs 2,400",
+          "priceLabel": "RsÂ 2,400",
           "description": "Professional consultation to recommend the right skin treatments.",
           "isActive": true
         },
@@ -414,7 +414,7 @@
           "name": "Haircut",
           "durationMinutes": 45,
           "categoryName": "Barber",
-          "priceLabel": "Rs 1,200",
+          "priceLabel": "RsÂ 1,200",
           "description": "Classic barber haircut with clipper and scissor finishing.",
           "isActive": true
         },
@@ -423,7 +423,7 @@
           "name": "Beard trim",
           "durationMinutes": 30,
           "categoryName": "Barber",
-          "priceLabel": "Rs 800",
+          "priceLabel": "RsÂ 800",
           "description": "Shape, line-up, and beard tidy-up for a clean finish.",
           "isActive": true
         },
@@ -432,7 +432,7 @@
           "name": "Deep tissue massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 3,200",
+          "priceLabel": "RsÂ 3,200",
           "description": "Targeted pressure massage designed for muscle recovery.",
           "isActive": true
         },
@@ -441,7 +441,7 @@
           "name": "Relaxation massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 2,900",
+          "priceLabel": "RsÂ 2,900",
           "description": "Full-body relaxation massage to reduce stress and tension.",
           "isActive": true
         },
@@ -450,7 +450,7 @@
           "name": "Spa session",
           "durationMinutes": 60,
           "categoryName": "Spa & sauna",
-          "priceLabel": "Rs 3,500",
+          "priceLabel": "RsÂ 3,500",
           "description": "Unwind with a restorative spa session in a calm setting.",
           "isActive": true
         },
@@ -459,7 +459,7 @@
           "name": "Full arm waxing",
           "durationMinutes": 45,
           "categoryName": "Waxing salon",
-          "priceLabel": "Rs 1,700",
+          "priceLabel": "RsÂ 1,700",
           "description": "Full arm waxing service for a smooth, polished result.",
           "isActive": true
         }
@@ -518,7 +518,7 @@
       "serviceLocation": [
         "physical"
       ],
-      "venueAddress": "University of Agriculture, Faisalabad, یونیورسٹی مین روڈ, Faisalabad City Tehsil, Faisalabad District, Faisalabad Division, Punjab, 38900, Pakistan",
+      "venueAddress": "University of Agriculture, Faisalabad, ÛŒÙˆÙ†ÛŒÙˆØ±Ø³Ù¹ÛŒ Ù…ÛŒÙ† Ø±ÙˆÚˆ, Faisalabad City Tehsil, Faisalabad District, Faisalabad Division, Punjab, 38900, Pakistan",
       "preferredLanguage": "english",
       "onboardingCompleted": true,
       "createdAt": "2026-04-09T06:28:28.238Z",
@@ -551,7 +551,7 @@
           "name": "Cut and style",
           "durationMinutes": 60,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 2,200",
+          "priceLabel": "RsÂ 2,200",
           "description": "Signature haircut finished with a professional blow-dry.",
           "isActive": true
         },
@@ -560,7 +560,7 @@
           "name": "Blow dry",
           "durationMinutes": 45,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 1,500",
+          "priceLabel": "RsÂ 1,500",
           "description": "Smooth blow-dry with styling tailored to the guest.",
           "isActive": true
         },
@@ -569,7 +569,7 @@
           "name": "Manicure",
           "durationMinutes": 45,
           "categoryName": "Nails",
-          "priceLabel": "Rs 1,600",
+          "priceLabel": "RsÂ 1,600",
           "description": "Nail shaping, cuticle care, and polish refresh.",
           "isActive": true
         },
@@ -578,7 +578,7 @@
           "name": "Pedicure",
           "durationMinutes": 60,
           "categoryName": "Nails",
-          "priceLabel": "Rs 2,100",
+          "priceLabel": "RsÂ 2,100",
           "description": "Foot soak, nail care, exfoliation, and polish refresh.",
           "isActive": true
         },
@@ -587,8 +587,8 @@
           "name": "Brow shaping",
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "priceLabel": "RsÂ 900",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -596,7 +596,7 @@
           "name": "Lash lift",
           "durationMinutes": 45,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 1,800",
+          "priceLabel": "RsÂ 1,800",
           "description": "Lift and curl natural lashes for a brighter eye look.",
           "isActive": true
         },
@@ -605,7 +605,7 @@
           "name": "Facial treatment",
           "durationMinutes": 60,
           "categoryName": "Beauty salon",
-          "priceLabel": "Rs 2,700",
+          "priceLabel": "RsÂ 2,700",
           "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
           "isActive": true
         },
@@ -614,7 +614,7 @@
           "name": "Skin consultation",
           "durationMinutes": 45,
           "categoryName": "Medspa",
-          "priceLabel": "Rs 2,400",
+          "priceLabel": "RsÂ 2,400",
           "description": "Professional consultation to recommend the right skin treatments.",
           "isActive": true
         },
@@ -623,7 +623,7 @@
           "name": "Haircut",
           "durationMinutes": 45,
           "categoryName": "Barber",
-          "priceLabel": "Rs 1,200",
+          "priceLabel": "RsÂ 1,200",
           "description": "Classic barber haircut with clipper and scissor finishing.",
           "isActive": true
         },
@@ -632,7 +632,7 @@
           "name": "Beard trim",
           "durationMinutes": 30,
           "categoryName": "Barber",
-          "priceLabel": "Rs 800",
+          "priceLabel": "RsÂ 800",
           "description": "Shape, line-up, and beard tidy-up for a clean finish.",
           "isActive": true
         },
@@ -641,7 +641,7 @@
           "name": "Deep tissue massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 3,200",
+          "priceLabel": "RsÂ 3,200",
           "description": "Targeted pressure massage designed for muscle recovery.",
           "isActive": true
         },
@@ -650,7 +650,7 @@
           "name": "Relaxation massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 2,900",
+          "priceLabel": "RsÂ 2,900",
           "description": "Full-body relaxation massage to reduce stress and tension.",
           "isActive": true
         },
@@ -659,7 +659,7 @@
           "name": "Spa session",
           "durationMinutes": 60,
           "categoryName": "Spa & sauna",
-          "priceLabel": "Rs 3,500",
+          "priceLabel": "RsÂ 3,500",
           "description": "Unwind with a restorative spa session in a calm setting.",
           "isActive": true
         },
@@ -668,7 +668,7 @@
           "name": "Full arm waxing",
           "durationMinutes": 45,
           "categoryName": "Waxing salon",
-          "priceLabel": "Rs 1,700",
+          "priceLabel": "RsÂ 1,700",
           "description": "Full arm waxing service for a smooth, polished result.",
           "isActive": true
         }
@@ -734,7 +734,7 @@
           "name": "Cut and style",
           "durationMinutes": 60,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 2,200",
+          "priceLabel": "RsÂ 2,200",
           "description": "Signature haircut finished with a professional blow-dry.",
           "isActive": true
         },
@@ -743,7 +743,7 @@
           "name": "Blow dry",
           "durationMinutes": 45,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 1,500",
+          "priceLabel": "RsÂ 1,500",
           "description": "Smooth blow-dry with styling tailored to the guest.",
           "isActive": true
         },
@@ -752,7 +752,7 @@
           "name": "Manicure",
           "durationMinutes": 45,
           "categoryName": "Nails",
-          "priceLabel": "Rs 1,600",
+          "priceLabel": "RsÂ 1,600",
           "description": "Nail shaping, cuticle care, and polish refresh.",
           "isActive": true
         },
@@ -761,7 +761,7 @@
           "name": "Pedicure",
           "durationMinutes": 60,
           "categoryName": "Nails",
-          "priceLabel": "Rs 2,100",
+          "priceLabel": "RsÂ 2,100",
           "description": "Foot soak, nail care, exfoliation, and polish refresh.",
           "isActive": true
         },
@@ -770,8 +770,8 @@
           "name": "Brow shaping",
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "priceLabel": "RsÂ 900",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -779,7 +779,7 @@
           "name": "Lash lift",
           "durationMinutes": 45,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 1,800",
+          "priceLabel": "RsÂ 1,800",
           "description": "Lift and curl natural lashes for a brighter eye look.",
           "isActive": true
         },
@@ -788,7 +788,7 @@
           "name": "Facial treatment",
           "durationMinutes": 60,
           "categoryName": "Beauty salon",
-          "priceLabel": "Rs 2,700",
+          "priceLabel": "RsÂ 2,700",
           "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
           "isActive": true
         },
@@ -797,7 +797,7 @@
           "name": "Skin consultation",
           "durationMinutes": 45,
           "categoryName": "Medspa",
-          "priceLabel": "Rs 2,400",
+          "priceLabel": "RsÂ 2,400",
           "description": "Professional consultation to recommend the right skin treatments.",
           "isActive": true
         },
@@ -806,7 +806,7 @@
           "name": "Haircut",
           "durationMinutes": 45,
           "categoryName": "Barber",
-          "priceLabel": "Rs 1,200",
+          "priceLabel": "RsÂ 1,200",
           "description": "Classic barber haircut with clipper and scissor finishing.",
           "isActive": true
         },
@@ -815,7 +815,7 @@
           "name": "Beard trim",
           "durationMinutes": 30,
           "categoryName": "Barber",
-          "priceLabel": "Rs 800",
+          "priceLabel": "RsÂ 800",
           "description": "Shape, line-up, and beard tidy-up for a clean finish.",
           "isActive": true
         },
@@ -824,7 +824,7 @@
           "name": "Deep tissue massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 3,200",
+          "priceLabel": "RsÂ 3,200",
           "description": "Targeted pressure massage designed for muscle recovery.",
           "isActive": true
         },
@@ -833,7 +833,7 @@
           "name": "Relaxation massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 2,900",
+          "priceLabel": "RsÂ 2,900",
           "description": "Full-body relaxation massage to reduce stress and tension.",
           "isActive": true
         },
@@ -842,7 +842,7 @@
           "name": "Spa session",
           "durationMinutes": 60,
           "categoryName": "Spa & sauna",
-          "priceLabel": "Rs 3,500",
+          "priceLabel": "RsÂ 3,500",
           "description": "Unwind with a restorative spa session in a calm setting.",
           "isActive": true
         },
@@ -851,7 +851,7 @@
           "name": "Full arm waxing",
           "durationMinutes": 45,
           "categoryName": "Waxing salon",
-          "priceLabel": "Rs 1,700",
+          "priceLabel": "RsÂ 1,700",
           "description": "Full arm waxing service for a smooth, polished result.",
           "isActive": true
         }
@@ -917,7 +917,7 @@
           "name": "Cut and style",
           "durationMinutes": 60,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 2,200",
+          "priceLabel": "RsÂ 2,200",
           "description": "Signature haircut finished with a professional blow-dry.",
           "isActive": true
         },
@@ -926,7 +926,7 @@
           "name": "Blow dry",
           "durationMinutes": 45,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 1,500",
+          "priceLabel": "RsÂ 1,500",
           "description": "Smooth blow-dry with styling tailored to the guest.",
           "isActive": true
         },
@@ -935,7 +935,7 @@
           "name": "Manicure",
           "durationMinutes": 45,
           "categoryName": "Nails",
-          "priceLabel": "Rs 1,600",
+          "priceLabel": "RsÂ 1,600",
           "description": "Nail shaping, cuticle care, and polish refresh.",
           "isActive": true
         },
@@ -944,7 +944,7 @@
           "name": "Pedicure",
           "durationMinutes": 60,
           "categoryName": "Nails",
-          "priceLabel": "Rs 2,100",
+          "priceLabel": "RsÂ 2,100",
           "description": "Foot soak, nail care, exfoliation, and polish refresh.",
           "isActive": true
         },
@@ -953,8 +953,8 @@
           "name": "Brow shaping",
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "priceLabel": "RsÂ 900",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -962,7 +962,7 @@
           "name": "Lash lift",
           "durationMinutes": 45,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 1,800",
+          "priceLabel": "RsÂ 1,800",
           "description": "Lift and curl natural lashes for a brighter eye look.",
           "isActive": true
         },
@@ -971,7 +971,7 @@
           "name": "Facial treatment",
           "durationMinutes": 60,
           "categoryName": "Beauty salon",
-          "priceLabel": "Rs 2,700",
+          "priceLabel": "RsÂ 2,700",
           "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
           "isActive": true
         },
@@ -980,7 +980,7 @@
           "name": "Skin consultation",
           "durationMinutes": 45,
           "categoryName": "Medspa",
-          "priceLabel": "Rs 2,400",
+          "priceLabel": "RsÂ 2,400",
           "description": "Professional consultation to recommend the right skin treatments.",
           "isActive": true
         },
@@ -989,7 +989,7 @@
           "name": "Haircut",
           "durationMinutes": 45,
           "categoryName": "Barber",
-          "priceLabel": "Rs 1,200",
+          "priceLabel": "RsÂ 1,200",
           "description": "Classic barber haircut with clipper and scissor finishing.",
           "isActive": true
         },
@@ -998,7 +998,7 @@
           "name": "Beard trim",
           "durationMinutes": 30,
           "categoryName": "Barber",
-          "priceLabel": "Rs 800",
+          "priceLabel": "RsÂ 800",
           "description": "Shape, line-up, and beard tidy-up for a clean finish.",
           "isActive": true
         },
@@ -1007,7 +1007,7 @@
           "name": "Deep tissue massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 3,200",
+          "priceLabel": "RsÂ 3,200",
           "description": "Targeted pressure massage designed for muscle recovery.",
           "isActive": true
         },
@@ -1016,7 +1016,7 @@
           "name": "Relaxation massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 2,900",
+          "priceLabel": "RsÂ 2,900",
           "description": "Full-body relaxation massage to reduce stress and tension.",
           "isActive": true
         },
@@ -1025,7 +1025,7 @@
           "name": "Spa session",
           "durationMinutes": 60,
           "categoryName": "Spa & sauna",
-          "priceLabel": "Rs 3,500",
+          "priceLabel": "RsÂ 3,500",
           "description": "Unwind with a restorative spa session in a calm setting.",
           "isActive": true
         },
@@ -1034,7 +1034,7 @@
           "name": "Full arm waxing",
           "durationMinutes": 45,
           "categoryName": "Waxing salon",
-          "priceLabel": "Rs 1,700",
+          "priceLabel": "RsÂ 1,700",
           "description": "Full arm waxing service for a smooth, polished result.",
           "isActive": true
         }
@@ -1100,7 +1100,7 @@
           "name": "Cut and style",
           "durationMinutes": 60,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 2,200",
+          "priceLabel": "RsÂ 2,200",
           "description": "Signature haircut finished with a professional blow-dry.",
           "isActive": true
         },
@@ -1109,7 +1109,7 @@
           "name": "Blow dry",
           "durationMinutes": 45,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 1,500",
+          "priceLabel": "RsÂ 1,500",
           "description": "Smooth blow-dry with styling tailored to the guest.",
           "isActive": true
         },
@@ -1118,7 +1118,7 @@
           "name": "Manicure",
           "durationMinutes": 45,
           "categoryName": "Nails",
-          "priceLabel": "Rs 1,600",
+          "priceLabel": "RsÂ 1,600",
           "description": "Nail shaping, cuticle care, and polish refresh.",
           "isActive": true
         },
@@ -1127,7 +1127,7 @@
           "name": "Pedicure",
           "durationMinutes": 60,
           "categoryName": "Nails",
-          "priceLabel": "Rs 2,100",
+          "priceLabel": "RsÂ 2,100",
           "description": "Foot soak, nail care, exfoliation, and polish refresh.",
           "isActive": true
         },
@@ -1136,8 +1136,8 @@
           "name": "Brow shaping",
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "priceLabel": "RsÂ 900",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -1145,7 +1145,7 @@
           "name": "Lash lift",
           "durationMinutes": 45,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 1,800",
+          "priceLabel": "RsÂ 1,800",
           "description": "Lift and curl natural lashes for a brighter eye look.",
           "isActive": true
         },
@@ -1154,7 +1154,7 @@
           "name": "Facial treatment",
           "durationMinutes": 60,
           "categoryName": "Beauty salon",
-          "priceLabel": "Rs 2,700",
+          "priceLabel": "RsÂ 2,700",
           "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
           "isActive": true
         },
@@ -1163,7 +1163,7 @@
           "name": "Skin consultation",
           "durationMinutes": 45,
           "categoryName": "Medspa",
-          "priceLabel": "Rs 2,400",
+          "priceLabel": "RsÂ 2,400",
           "description": "Professional consultation to recommend the right skin treatments.",
           "isActive": true
         },
@@ -1172,7 +1172,7 @@
           "name": "Haircut",
           "durationMinutes": 45,
           "categoryName": "Barber",
-          "priceLabel": "Rs 1,200",
+          "priceLabel": "RsÂ 1,200",
           "description": "Classic barber haircut with clipper and scissor finishing.",
           "isActive": true
         },
@@ -1181,7 +1181,7 @@
           "name": "Beard trim",
           "durationMinutes": 30,
           "categoryName": "Barber",
-          "priceLabel": "Rs 800",
+          "priceLabel": "RsÂ 800",
           "description": "Shape, line-up, and beard tidy-up for a clean finish.",
           "isActive": true
         },
@@ -1190,7 +1190,7 @@
           "name": "Deep tissue massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 3,200",
+          "priceLabel": "RsÂ 3,200",
           "description": "Targeted pressure massage designed for muscle recovery.",
           "isActive": true
         },
@@ -1199,7 +1199,7 @@
           "name": "Relaxation massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 2,900",
+          "priceLabel": "RsÂ 2,900",
           "description": "Full-body relaxation massage to reduce stress and tension.",
           "isActive": true
         },
@@ -1208,7 +1208,7 @@
           "name": "Spa session",
           "durationMinutes": 60,
           "categoryName": "Spa & sauna",
-          "priceLabel": "Rs 3,500",
+          "priceLabel": "RsÂ 3,500",
           "description": "Unwind with a restorative spa session in a calm setting.",
           "isActive": true
         },
@@ -1217,7 +1217,7 @@
           "name": "Full arm waxing",
           "durationMinutes": 45,
           "categoryName": "Waxing salon",
-          "priceLabel": "Rs 1,700",
+          "priceLabel": "RsÂ 1,700",
           "description": "Full arm waxing service for a smooth, polished result.",
           "isActive": true
         }
@@ -1301,7 +1301,7 @@
           "name": "Cut and style",
           "durationMinutes": 60,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 2,200",
+          "priceLabel": "RsÂ 2,200",
           "description": "Signature haircut finished with a professional blow-dry.",
           "isActive": true
         },
@@ -1310,7 +1310,7 @@
           "name": "Blow dry",
           "durationMinutes": 45,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 1,500",
+          "priceLabel": "RsÂ 1,500",
           "description": "Smooth blow-dry with styling tailored to the guest.",
           "isActive": true
         },
@@ -1319,7 +1319,7 @@
           "name": "Manicure",
           "durationMinutes": 45,
           "categoryName": "Nails",
-          "priceLabel": "Rs 1,600",
+          "priceLabel": "RsÂ 1,600",
           "description": "Nail shaping, cuticle care, and polish refresh.",
           "isActive": true
         },
@@ -1328,7 +1328,7 @@
           "name": "Pedicure",
           "durationMinutes": 60,
           "categoryName": "Nails",
-          "priceLabel": "Rs 2,100",
+          "priceLabel": "RsÂ 2,100",
           "description": "Foot soak, nail care, exfoliation, and polish refresh.",
           "isActive": true
         },
@@ -1337,8 +1337,8 @@
           "name": "Brow shaping",
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "priceLabel": "RsÂ 900",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -1346,7 +1346,7 @@
           "name": "Lash lift",
           "durationMinutes": 45,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 1,800",
+          "priceLabel": "RsÂ 1,800",
           "description": "Lift and curl natural lashes for a brighter eye look.",
           "isActive": true
         },
@@ -1355,7 +1355,7 @@
           "name": "Facial treatment",
           "durationMinutes": 60,
           "categoryName": "Beauty salon",
-          "priceLabel": "Rs 2,700",
+          "priceLabel": "RsÂ 2,700",
           "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
           "isActive": true
         },
@@ -1364,7 +1364,7 @@
           "name": "Skin consultation",
           "durationMinutes": 45,
           "categoryName": "Medspa",
-          "priceLabel": "Rs 2,400",
+          "priceLabel": "RsÂ 2,400",
           "description": "Professional consultation to recommend the right skin treatments.",
           "isActive": true
         },
@@ -1373,7 +1373,7 @@
           "name": "Haircut",
           "durationMinutes": 45,
           "categoryName": "Barber",
-          "priceLabel": "Rs 1,200",
+          "priceLabel": "RsÂ 1,200",
           "description": "Classic barber haircut with clipper and scissor finishing.",
           "isActive": true
         },
@@ -1382,7 +1382,7 @@
           "name": "Beard trim",
           "durationMinutes": 30,
           "categoryName": "Barber",
-          "priceLabel": "Rs 800",
+          "priceLabel": "RsÂ 800",
           "description": "Shape, line-up, and beard tidy-up for a clean finish.",
           "isActive": true
         },
@@ -1391,7 +1391,7 @@
           "name": "Deep tissue massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 3,200",
+          "priceLabel": "RsÂ 3,200",
           "description": "Targeted pressure massage designed for muscle recovery.",
           "isActive": true
         },
@@ -1400,7 +1400,7 @@
           "name": "Relaxation massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 2,900",
+          "priceLabel": "RsÂ 2,900",
           "description": "Full-body relaxation massage to reduce stress and tension.",
           "isActive": true
         },
@@ -1409,7 +1409,7 @@
           "name": "Spa session",
           "durationMinutes": 60,
           "categoryName": "Spa & sauna",
-          "priceLabel": "Rs 3,500",
+          "priceLabel": "RsÂ 3,500",
           "description": "Unwind with a restorative spa session in a calm setting.",
           "isActive": true
         },
@@ -1418,7 +1418,7 @@
           "name": "Full arm waxing",
           "durationMinutes": 45,
           "categoryName": "Waxing salon",
-          "priceLabel": "Rs 1,700",
+          "priceLabel": "RsÂ 1,700",
           "description": "Full arm waxing service for a smooth, polished result.",
           "isActive": true
         }
@@ -1452,7 +1452,7 @@
       "serviceLocation": [
         "physical"
       ],
-      "venueAddress": "University of Agriculture, Faisalabad, یونیورسٹی مین روڈ, Faisalabad City Tehsil, Faisalabad District, Faisalabad Division, Punjab, 38900, Pakistan",
+      "venueAddress": "University of Agriculture, Faisalabad, ÛŒÙˆÙ†ÛŒÙˆØ±Ø³Ù¹ÛŒ Ù…ÛŒÙ† Ø±ÙˆÚˆ, Faisalabad City Tehsil, Faisalabad District, Faisalabad Division, Punjab, 38900, Pakistan",
       "preferredLanguage": "english",
       "onboardingCompleted": true,
       "createdAt": "2026-04-16T06:39:01.664Z",
@@ -1484,7 +1484,7 @@
           "name": "Cut and style",
           "durationMinutes": 60,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 2,200",
+          "priceLabel": "RsÂ 2,200",
           "description": "Signature haircut finished with a professional blow-dry.",
           "isActive": true
         },
@@ -1493,7 +1493,7 @@
           "name": "Blow dry",
           "durationMinutes": 45,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 1,500",
+          "priceLabel": "RsÂ 1,500",
           "description": "Smooth blow-dry with styling tailored to the guest.",
           "isActive": true
         },
@@ -1502,7 +1502,7 @@
           "name": "Manicure",
           "durationMinutes": 45,
           "categoryName": "Nails",
-          "priceLabel": "Rs 1,600",
+          "priceLabel": "RsÂ 1,600",
           "description": "Nail shaping, cuticle care, and polish refresh.",
           "isActive": true
         },
@@ -1511,7 +1511,7 @@
           "name": "Pedicure",
           "durationMinutes": 60,
           "categoryName": "Nails",
-          "priceLabel": "Rs 2,100",
+          "priceLabel": "RsÂ 2,100",
           "description": "Foot soak, nail care, exfoliation, and polish refresh.",
           "isActive": true
         },
@@ -1520,8 +1520,8 @@
           "name": "Brow shaping",
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "priceLabel": "RsÂ 900",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -1529,7 +1529,7 @@
           "name": "Lash lift",
           "durationMinutes": 45,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 1,800",
+          "priceLabel": "RsÂ 1,800",
           "description": "Lift and curl natural lashes for a brighter eye look.",
           "isActive": true
         },
@@ -1538,7 +1538,7 @@
           "name": "Facial treatment",
           "durationMinutes": 60,
           "categoryName": "Beauty salon",
-          "priceLabel": "Rs 2,700",
+          "priceLabel": "RsÂ 2,700",
           "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
           "isActive": true
         },
@@ -1547,7 +1547,7 @@
           "name": "Skin consultation",
           "durationMinutes": 45,
           "categoryName": "Medspa",
-          "priceLabel": "Rs 2,400",
+          "priceLabel": "RsÂ 2,400",
           "description": "Professional consultation to recommend the right skin treatments.",
           "isActive": true
         },
@@ -1556,7 +1556,7 @@
           "name": "Haircut",
           "durationMinutes": 45,
           "categoryName": "Barber",
-          "priceLabel": "Rs 1,200",
+          "priceLabel": "RsÂ 1,200",
           "description": "Classic barber haircut with clipper and scissor finishing.",
           "isActive": true
         },
@@ -1565,7 +1565,7 @@
           "name": "Beard trim",
           "durationMinutes": 30,
           "categoryName": "Barber",
-          "priceLabel": "Rs 800",
+          "priceLabel": "RsÂ 800",
           "description": "Shape, line-up, and beard tidy-up for a clean finish.",
           "isActive": true
         },
@@ -1574,7 +1574,7 @@
           "name": "Deep tissue massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 3,200",
+          "priceLabel": "RsÂ 3,200",
           "description": "Targeted pressure massage designed for muscle recovery.",
           "isActive": true
         },
@@ -1583,7 +1583,7 @@
           "name": "Relaxation massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 2,900",
+          "priceLabel": "RsÂ 2,900",
           "description": "Full-body relaxation massage to reduce stress and tension.",
           "isActive": true
         },
@@ -1592,7 +1592,7 @@
           "name": "Spa session",
           "durationMinutes": 60,
           "categoryName": "Spa & sauna",
-          "priceLabel": "Rs 3,500",
+          "priceLabel": "RsÂ 3,500",
           "description": "Unwind with a restorative spa session in a calm setting.",
           "isActive": true
         },
@@ -1601,7 +1601,7 @@
           "name": "Full arm waxing",
           "durationMinutes": 45,
           "categoryName": "Waxing salon",
-          "priceLabel": "Rs 1,700",
+          "priceLabel": "RsÂ 1,700",
           "description": "Full arm waxing service for a smooth, polished result.",
           "isActive": true
         }
@@ -1635,7 +1635,7 @@
       "serviceLocation": [
         "mobile"
       ],
-      "venueAddress": "University of Agriculture, Faisalabad, یونیورسٹی مین روڈ, Faisalabad City Tehsil, Faisalabad District, Faisalabad Division, Punjab, 38900, Pakistan",
+      "venueAddress": "University of Agriculture, Faisalabad, ÛŒÙˆÙ†ÛŒÙˆØ±Ø³Ù¹ÛŒ Ù…ÛŒÙ† Ø±ÙˆÚˆ, Faisalabad City Tehsil, Faisalabad District, Faisalabad Division, Punjab, 38900, Pakistan",
       "preferredLanguage": "english",
       "onboardingCompleted": true,
       "createdAt": "2026-04-16T07:19:39.829Z",
@@ -1668,7 +1668,7 @@
           "name": "Cut and style",
           "durationMinutes": 60,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 2,200",
+          "priceLabel": "RsÂ 2,200",
           "description": "Signature haircut finished with a professional blow-dry.",
           "isActive": true
         },
@@ -1677,7 +1677,7 @@
           "name": "Blow dry",
           "durationMinutes": 45,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 1,500",
+          "priceLabel": "RsÂ 1,500",
           "description": "Smooth blow-dry with styling tailored to the guest.",
           "isActive": true
         },
@@ -1686,7 +1686,7 @@
           "name": "Manicure",
           "durationMinutes": 45,
           "categoryName": "Nails",
-          "priceLabel": "Rs 1,600",
+          "priceLabel": "RsÂ 1,600",
           "description": "Nail shaping, cuticle care, and polish refresh.",
           "isActive": true
         },
@@ -1695,7 +1695,7 @@
           "name": "Pedicure",
           "durationMinutes": 60,
           "categoryName": "Nails",
-          "priceLabel": "Rs 2,100",
+          "priceLabel": "RsÂ 2,100",
           "description": "Foot soak, nail care, exfoliation, and polish refresh.",
           "isActive": true
         },
@@ -1704,8 +1704,8 @@
           "name": "Brow shaping",
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "priceLabel": "RsÂ 900",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -1713,7 +1713,7 @@
           "name": "Lash lift",
           "durationMinutes": 45,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 1,800",
+          "priceLabel": "RsÂ 1,800",
           "description": "Lift and curl natural lashes for a brighter eye look.",
           "isActive": true
         },
@@ -1722,7 +1722,7 @@
           "name": "Facial treatment",
           "durationMinutes": 60,
           "categoryName": "Beauty salon",
-          "priceLabel": "Rs 2,700",
+          "priceLabel": "RsÂ 2,700",
           "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
           "isActive": true
         },
@@ -1731,7 +1731,7 @@
           "name": "Skin consultation",
           "durationMinutes": 45,
           "categoryName": "Medspa",
-          "priceLabel": "Rs 2,400",
+          "priceLabel": "RsÂ 2,400",
           "description": "Professional consultation to recommend the right skin treatments.",
           "isActive": true
         },
@@ -1740,7 +1740,7 @@
           "name": "Haircut",
           "durationMinutes": 45,
           "categoryName": "Barber",
-          "priceLabel": "Rs 1,200",
+          "priceLabel": "RsÂ 1,200",
           "description": "Classic barber haircut with clipper and scissor finishing.",
           "isActive": true
         },
@@ -1749,7 +1749,7 @@
           "name": "Beard trim",
           "durationMinutes": 30,
           "categoryName": "Barber",
-          "priceLabel": "Rs 800",
+          "priceLabel": "RsÂ 800",
           "description": "Shape, line-up, and beard tidy-up for a clean finish.",
           "isActive": true
         },
@@ -1758,7 +1758,7 @@
           "name": "Deep tissue massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 3,200",
+          "priceLabel": "RsÂ 3,200",
           "description": "Targeted pressure massage designed for muscle recovery.",
           "isActive": true
         },
@@ -1767,7 +1767,7 @@
           "name": "Relaxation massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 2,900",
+          "priceLabel": "RsÂ 2,900",
           "description": "Full-body relaxation massage to reduce stress and tension.",
           "isActive": true
         },
@@ -1776,7 +1776,7 @@
           "name": "Spa session",
           "durationMinutes": 60,
           "categoryName": "Spa & sauna",
-          "priceLabel": "Rs 3,500",
+          "priceLabel": "RsÂ 3,500",
           "description": "Unwind with a restorative spa session in a calm setting.",
           "isActive": true
         },
@@ -1785,7 +1785,7 @@
           "name": "Full arm waxing",
           "durationMinutes": 45,
           "categoryName": "Waxing salon",
-          "priceLabel": "Rs 1,700",
+          "priceLabel": "RsÂ 1,700",
           "description": "Full arm waxing service for a smooth, polished result.",
           "isActive": true
         }
@@ -1819,7 +1819,7 @@
       "serviceLocation": [
         "physical"
       ],
-      "venueAddress": "University of Agriculture, Faisalabad, یونیورسٹی مین روڈ, Faisalabad City Tehsil, Faisalabad District, Faisalabad Division, Punjab, 38900, Pakistan",
+      "venueAddress": "University of Agriculture, Faisalabad, ÛŒÙˆÙ†ÛŒÙˆØ±Ø³Ù¹ÛŒ Ù…ÛŒÙ† Ø±ÙˆÚˆ, Faisalabad City Tehsil, Faisalabad District, Faisalabad Division, Punjab, 38900, Pakistan",
       "preferredLanguage": "english",
       "onboardingCompleted": true,
       "createdAt": "2026-04-16T07:34:39.556Z",
@@ -1852,7 +1852,7 @@
           "name": "Cut and style",
           "durationMinutes": 60,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 2,200",
+          "priceLabel": "RsÂ 2,200",
           "description": "Signature haircut finished with a professional blow-dry.",
           "isActive": true
         },
@@ -1861,7 +1861,7 @@
           "name": "Blow dry",
           "durationMinutes": 45,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 1,500",
+          "priceLabel": "RsÂ 1,500",
           "description": "Smooth blow-dry with styling tailored to the guest.",
           "isActive": true
         },
@@ -1870,7 +1870,7 @@
           "name": "Manicure",
           "durationMinutes": 45,
           "categoryName": "Nails",
-          "priceLabel": "Rs 1,600",
+          "priceLabel": "RsÂ 1,600",
           "description": "Nail shaping, cuticle care, and polish refresh.",
           "isActive": true
         },
@@ -1879,7 +1879,7 @@
           "name": "Pedicure",
           "durationMinutes": 60,
           "categoryName": "Nails",
-          "priceLabel": "Rs 2,100",
+          "priceLabel": "RsÂ 2,100",
           "description": "Foot soak, nail care, exfoliation, and polish refresh.",
           "isActive": true
         },
@@ -1888,8 +1888,8 @@
           "name": "Brow shaping",
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "priceLabel": "RsÂ 900",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -1897,7 +1897,7 @@
           "name": "Lash lift",
           "durationMinutes": 45,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 1,800",
+          "priceLabel": "RsÂ 1,800",
           "description": "Lift and curl natural lashes for a brighter eye look.",
           "isActive": true
         },
@@ -1906,7 +1906,7 @@
           "name": "Facial treatment",
           "durationMinutes": 60,
           "categoryName": "Beauty salon",
-          "priceLabel": "Rs 2,700",
+          "priceLabel": "RsÂ 2,700",
           "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
           "isActive": true
         },
@@ -1915,7 +1915,7 @@
           "name": "Skin consultation",
           "durationMinutes": 45,
           "categoryName": "Medspa",
-          "priceLabel": "Rs 2,400",
+          "priceLabel": "RsÂ 2,400",
           "description": "Professional consultation to recommend the right skin treatments.",
           "isActive": true
         },
@@ -1924,7 +1924,7 @@
           "name": "Haircut",
           "durationMinutes": 45,
           "categoryName": "Barber",
-          "priceLabel": "Rs 1,200",
+          "priceLabel": "RsÂ 1,200",
           "description": "Classic barber haircut with clipper and scissor finishing.",
           "isActive": true
         },
@@ -1933,7 +1933,7 @@
           "name": "Beard trim",
           "durationMinutes": 30,
           "categoryName": "Barber",
-          "priceLabel": "Rs 800",
+          "priceLabel": "RsÂ 800",
           "description": "Shape, line-up, and beard tidy-up for a clean finish.",
           "isActive": true
         },
@@ -1942,7 +1942,7 @@
           "name": "Deep tissue massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 3,200",
+          "priceLabel": "RsÂ 3,200",
           "description": "Targeted pressure massage designed for muscle recovery.",
           "isActive": true
         },
@@ -1951,7 +1951,7 @@
           "name": "Relaxation massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 2,900",
+          "priceLabel": "RsÂ 2,900",
           "description": "Full-body relaxation massage to reduce stress and tension.",
           "isActive": true
         },
@@ -1960,7 +1960,7 @@
           "name": "Spa session",
           "durationMinutes": 60,
           "categoryName": "Spa & sauna",
-          "priceLabel": "Rs 3,500",
+          "priceLabel": "RsÂ 3,500",
           "description": "Unwind with a restorative spa session in a calm setting.",
           "isActive": true
         },
@@ -1969,7 +1969,7 @@
           "name": "Full arm waxing",
           "durationMinutes": 45,
           "categoryName": "Waxing salon",
-          "priceLabel": "Rs 1,700",
+          "priceLabel": "RsÂ 1,700",
           "description": "Full arm waxing service for a smooth, polished result.",
           "isActive": true
         }
@@ -2034,7 +2034,7 @@
           "name": "Cut and style",
           "durationMinutes": 60,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 2,200",
+          "priceLabel": "RsÂ 2,200",
           "description": "Signature haircut finished with a professional blow-dry.",
           "isActive": true
         },
@@ -2043,7 +2043,7 @@
           "name": "Blow dry",
           "durationMinutes": 45,
           "categoryName": "Hair salon",
-          "priceLabel": "Rs 1,500",
+          "priceLabel": "RsÂ 1,500",
           "description": "Smooth blow-dry with styling tailored to the guest.",
           "isActive": true
         },
@@ -2052,7 +2052,7 @@
           "name": "Manicure",
           "durationMinutes": 45,
           "categoryName": "Nails",
-          "priceLabel": "Rs 1,600",
+          "priceLabel": "RsÂ 1,600",
           "description": "Nail shaping, cuticle care, and polish refresh.",
           "isActive": true
         },
@@ -2061,7 +2061,7 @@
           "name": "Pedicure",
           "durationMinutes": 60,
           "categoryName": "Nails",
-          "priceLabel": "Rs 2,100",
+          "priceLabel": "RsÂ 2,100",
           "description": "Foot soak, nail care, exfoliation, and polish refresh.",
           "isActive": true
         },
@@ -2070,8 +2070,8 @@
           "name": "Brow shaping",
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "priceLabel": "RsÂ 900",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -2079,7 +2079,7 @@
           "name": "Lash lift",
           "durationMinutes": 45,
           "categoryName": "Eyebrows & lashes",
-          "priceLabel": "Rs 1,800",
+          "priceLabel": "RsÂ 1,800",
           "description": "Lift and curl natural lashes for a brighter eye look.",
           "isActive": true
         },
@@ -2088,7 +2088,7 @@
           "name": "Facial treatment",
           "durationMinutes": 60,
           "categoryName": "Beauty salon",
-          "priceLabel": "Rs 2,700",
+          "priceLabel": "RsÂ 2,700",
           "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
           "isActive": true
         },
@@ -2097,7 +2097,7 @@
           "name": "Skin consultation",
           "durationMinutes": 45,
           "categoryName": "Medspa",
-          "priceLabel": "Rs 2,400",
+          "priceLabel": "RsÂ 2,400",
           "description": "Professional consultation to recommend the right skin treatments.",
           "isActive": true
         },
@@ -2106,7 +2106,7 @@
           "name": "Haircut",
           "durationMinutes": 45,
           "categoryName": "Barber",
-          "priceLabel": "Rs 1,200",
+          "priceLabel": "RsÂ 1,200",
           "description": "Classic barber haircut with clipper and scissor finishing.",
           "isActive": true
         },
@@ -2115,7 +2115,7 @@
           "name": "Beard trim",
           "durationMinutes": 30,
           "categoryName": "Barber",
-          "priceLabel": "Rs 800",
+          "priceLabel": "RsÂ 800",
           "description": "Shape, line-up, and beard tidy-up for a clean finish.",
           "isActive": true
         },
@@ -2124,7 +2124,7 @@
           "name": "Deep tissue massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 3,200",
+          "priceLabel": "RsÂ 3,200",
           "description": "Targeted pressure massage designed for muscle recovery.",
           "isActive": true
         },
@@ -2133,7 +2133,7 @@
           "name": "Relaxation massage",
           "durationMinutes": 60,
           "categoryName": "Massage",
-          "priceLabel": "Rs 2,900",
+          "priceLabel": "RsÂ 2,900",
           "description": "Full-body relaxation massage to reduce stress and tension.",
           "isActive": true
         },
@@ -2142,7 +2142,7 @@
           "name": "Spa session",
           "durationMinutes": 60,
           "categoryName": "Spa & sauna",
-          "priceLabel": "Rs 3,500",
+          "priceLabel": "RsÂ 3,500",
           "description": "Unwind with a restorative spa session in a calm setting.",
           "isActive": true
         },
@@ -2151,7 +2151,7 @@
           "name": "Full arm waxing",
           "durationMinutes": 45,
           "categoryName": "Waxing salon",
-          "priceLabel": "Rs 1,700",
+          "priceLabel": "RsÂ 1,700",
           "description": "Full arm waxing service for a smooth, polished result.",
           "isActive": true
         }
@@ -2217,7 +2217,7 @@
       "serviceLocation": [
         "physical"
       ],
-      "venueAddress": "University of Agriculture, Faisalabad, یونیورسٹی مین روڈ, Faisalabad City Tehsil, Faisalabad District, Faisalabad Division, Punjab, 38900, Pakistan",
+      "venueAddress": "University of Agriculture, Faisalabad, ÛŒÙˆÙ†ÛŒÙˆØ±Ø³Ù¹ÛŒ Ù…ÛŒÙ† Ø±ÙˆÚˆ, Faisalabad City Tehsil, Faisalabad District, Faisalabad Division, Punjab, 38900, Pakistan",
       "preferredLanguage": "english",
       "onboardingCompleted": true,
       "createdAt": "2026-04-16T10:34:47.414Z",
@@ -2287,7 +2287,7 @@
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
           "priceLabel": "$900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -2490,7 +2490,7 @@
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
           "priceLabel": "$900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -2711,7 +2711,7 @@
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
           "priceLabel": "$900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -10595,7 +10595,7 @@
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
           "priceLabel": "$900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -10780,7 +10780,7 @@
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
           "priceLabel": "$900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -10965,7 +10965,7 @@
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
           "priceLabel": "$900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -11150,7 +11150,7 @@
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
           "priceLabel": "$900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -11335,7 +11335,7 @@
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
           "priceLabel": "$900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -11538,7 +11538,7 @@
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
           "priceLabel": "$900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -11706,7 +11706,7 @@
     },
     {
       "id": "818ddf47-2e11-4d6a-8a50-387347f4c20e",
-      "adminToken": "3cdaabc7-48b8-4322-ab99-b8cf9cf2a8b4",
+      "adminToken": "46073ae132308a1663ab6e555747c6c1d04fd6ebb62b1b3a0352d9da41d8242f",
       "email": "abc@gmail.com",
       "mobileNumber": "",
       "businessPhoneNumber": "",
@@ -11769,7 +11769,7 @@
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
           "priceLabel": "$900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -11877,17 +11877,35 @@
           "pageSubtitle": "Access all of your business reports in one workspace."
         }
       },
-      "customerProfiles": [],
+      "customerProfiles": [
+        {
+          "id": "phone:333333333333",
+          "customerName": "maqsood",
+          "customerPhone": "333333333333",
+          "customerEmail": "",
+          "totalVisits": 1,
+          "bookedVisits": 0,
+          "completedVisits": 1,
+          "cancelledVisits": 0,
+          "lastService": "Cut and style",
+          "lastAppointmentDate": "2026-06-24",
+          "lastAppointmentTime": "09:00",
+          "firstSeenAt": "2026-06-24T08:39:42.296Z",
+          "lastSeenAt": "2026-06-29T05:28:39.076Z",
+          "createdAt": "2026-06-24T08:39:42.296Z",
+          "updatedAt": "2026-06-29T05:28:39.076Z"
+        }
+      ],
       "teamMembers": [],
       "accountType": "independent",
       "serviceLocation": [
         "physical"
       ],
-      "venueAddress": "FSD, Lützner Straße, Grünau-Nord, West, Leipzig, Saxony, 04205, Germany",
+      "venueAddress": "FSD, LÃ¼tzner StraÃŸe, GrÃ¼nau-Nord, West, Leipzig, Saxony, 04205, Germany",
       "preferredLanguage": "english",
       "onboardingCompleted": true,
       "createdAt": "2026-06-11T07:22:00.673Z",
-      "updatedAt": "2026-06-11T07:22:56.571Z"
+      "updatedAt": "2026-06-29T05:29:42.524Z"
     },
     {
       "id": "d22826d9-81e6-48c3-b574-4404b12d1087",
@@ -11981,7 +11999,7 @@
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
           "priceLabel": "$900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {
@@ -12166,7 +12184,7 @@
           "durationMinutes": 30,
           "categoryName": "Eyebrows & lashes",
           "priceLabel": "$900",
-          "description": "Precision brow shaping to suit the guest’s natural features.",
+          "description": "Precision brow shaping to suit the guestâ€™s natural features.",
           "isActive": true
         },
         {

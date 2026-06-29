@@ -26,6 +26,7 @@ interface CreatePackageCheckoutSessionInput {
 
 interface CreateSubscriptionCheckoutSessionInput {
   businessId: string;
+  businessName?: string;
   plan: SubscriptionPlan;
   successUrl: string;
   cancelUrl: string;
@@ -73,10 +74,54 @@ const getStripeClient = (): StripeClient => {
   return new Stripe(env.STRIPE_SECRET_KEY);
 };
 
+const getStripeErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'Stripe request failed';
+
+const toStripeConnectHttpError = (error: unknown): HttpError => {
+  const message = getStripeErrorMessage(error);
+
+  if (message.toLowerCase().includes("signed up for connect")) {
+    return new HttpError(
+      503,
+      'Stripe Connect is not enabled for this Stripe account. Open Stripe Dashboard > Connect and complete Connect setup before connecting salons.'
+    );
+  }
+
+  return new HttpError(502, message);
+};
+
 const getAccountRequirementsDue = (account: StripeConnectAccount): string[] => [
   ...(account.requirements?.currently_due ?? []),
   ...(account.requirements?.past_due ?? [])
 ].filter((value, index, values) => values.indexOf(value) === index);
+
+async function findOrCreateCustomer(
+  client: StripeClient,
+  businessId: string,
+  businessName: string
+): Promise<string> {
+  const existing = await client.customers.search({
+    query: `metadata["businessId"]:"${businessId}"`,
+    limit: 1,
+  });
+
+  if (existing.data.length > 0) {
+    const cust = existing.data[0];
+    if (cust.metadata?.businessName !== businessName) {
+      await client.customers.update(cust.id, {
+        metadata: { businessId, businessName },
+      });
+    }
+    return cust.id;
+  }
+
+  const customer = await client.customers.create({
+    name: businessName,
+    metadata: { businessId, businessName },
+  });
+
+  return customer.id;
+}
 
 export const stripePaymentService = {
   async retrieveCheckoutSession(sessionId: string): Promise<StripeCheckoutSession> {
@@ -88,18 +133,22 @@ export const stripePaymentService = {
     businessName: string;
     countryCode?: string;
   }): Promise<StripeConnectAccount> {
-    return getStripeClient().accounts.create({
-      type: 'express',
-      country: input.countryCode || env.STRIPE_CONNECT_COUNTRY_CODE,
-      email: input.email,
-      business_profile: {
-        name: input.businessName || undefined
-      },
-      capabilities: {
-        card_payments: { requested: true },
-        transfers: { requested: true }
-      }
-    });
+    try {
+      return await getStripeClient().accounts.create({
+        type: 'express',
+        country: input.countryCode || env.STRIPE_CONNECT_COUNTRY_CODE,
+        email: input.email,
+        business_profile: {
+          name: input.businessName || undefined
+        },
+        capabilities: {
+          card_payments: { requested: true },
+          transfers: { requested: true }
+        }
+      });
+    } catch (error) {
+      throw toStripeConnectHttpError(error);
+    }
   },
 
   async retrieveConnectAccount(accountId: string): Promise<StripeConnectAccount> {
@@ -117,16 +166,20 @@ export const stripePaymentService = {
     refreshUrl: string;
     returnUrl: string;
   }): Promise<StripeConnectAccountLink> {
-    return getStripeClient().accountLinks.create({
-      account: input.accountId,
-      refresh_url: input.refreshUrl,
-      return_url: input.returnUrl,
-      type: 'account_onboarding',
-      collection_options: {
-        fields: 'eventually_due',
-        future_requirements: 'include'
-      }
-    });
+    try {
+      return await getStripeClient().accountLinks.create({
+        account: input.accountId,
+        refresh_url: input.refreshUrl,
+        return_url: input.returnUrl,
+        type: 'account_onboarding',
+        collection_options: {
+          fields: 'eventually_due',
+          future_requirements: 'include'
+        }
+      });
+    } catch (error) {
+      throw toStripeConnectHttpError(error);
+    }
   },
 
   toConnectAccountStatus(account: StripeConnectAccount): {
@@ -224,9 +277,15 @@ export const stripePaymentService = {
     input: CreateSubscriptionCheckoutSessionInput
   ): Promise<StripeCheckoutSession> {
     const chargeMoney = getStripeChargeMoney(input.plan.amountCents, input.plan.currencyCode);
+    const salonLabel = input.businessName?.trim() || input.businessId;
+    const productName = `${input.plan.name} — ${salonLabel}`;
 
-    return getStripeClient().checkout.sessions.create({
+    const client = getStripeClient();
+    const customerId = await findOrCreateCustomer(client, input.businessId, salonLabel);
+
+    return client.checkout.sessions.create({
       mode: 'subscription',
+      customer: customerId,
       line_items: [
         {
           quantity: 1,
@@ -237,10 +296,11 @@ export const stripePaymentService = {
               interval: input.plan.billingInterval
             },
             product_data: {
-              name: input.plan.name,
+              name: productName,
               description: input.plan.summary,
               metadata: {
                 businessId: input.businessId,
+                businessName: salonLabel,
                 planId: input.plan.id,
                 planKey: input.plan.key,
                 sourceAmountCents: String(input.plan.amountCents),
@@ -250,10 +310,17 @@ export const stripePaymentService = {
           }
         }
       ],
+      custom_text: {
+        submit: {
+          message: `QRSchedule — ${input.plan.name} plan for ${salonLabel}`
+        }
+      },
       subscription_data: {
+        description: `QRSchedule ${input.plan.name} — ${salonLabel}`,
         trial_period_days: input.plan.trialDays > 0 ? input.plan.trialDays : undefined,
         metadata: {
           businessId: input.businessId,
+          businessName: salonLabel,
           planId: input.plan.id,
           planKey: input.plan.key,
           sourceAmountCents: String(input.plan.amountCents),
@@ -265,6 +332,7 @@ export const stripePaymentService = {
       metadata: {
         kind: 'subscription_checkout',
         businessId: input.businessId,
+        businessName: salonLabel,
         planId: input.plan.id,
         planKey: input.plan.key,
         sourceAmountCents: String(input.plan.amountCents),

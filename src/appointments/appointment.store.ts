@@ -18,11 +18,17 @@ export interface AppointmentState {
 
 export interface AppointmentStore {
   listAppointments(): Promise<AppointmentRecord[]>;
+  listAppointmentsByBusinessId(businessId: string): Promise<AppointmentRecord[]>;
   listPaymentRecords(): Promise<PaymentRecord[]>;
+  listPaymentRecordsByBusinessId(businessId: string): Promise<PaymentRecord[]>;
   listReviews(): Promise<ReviewRecord[]>;
+  listReviewsByBusinessId(businessId: string): Promise<ReviewRecord[]>;
   listPackagePurchases(): Promise<PackagePurchaseRecord[]>;
+  listPackagePurchasesByBusinessId(businessId: string): Promise<PackagePurchaseRecord[]>;
   listLoyaltyRewards(): Promise<LoyaltyRewardRecord[]>;
+  listLoyaltyRewardsByBusinessId(businessId: string): Promise<LoyaltyRewardRecord[]>;
   listWaitlistEntries(): Promise<WaitlistRecord[]>;
+  listWaitlistEntriesByBusinessId(businessId: string): Promise<WaitlistRecord[]>;
   saveAppointment(appointment: AppointmentRecord): Promise<AppointmentRecord>;
   savePaymentRecord(paymentRecord: PaymentRecord): Promise<PaymentRecord>;
   saveReview(review: ReviewRecord): Promise<ReviewRecord>;

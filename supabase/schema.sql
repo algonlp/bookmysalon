@@ -9,7 +9,9 @@
 
 create extension if not exists pgcrypto;
 
+-- ============================================================================
 -- JSONB sync tables used by the current application storage layer.
+-- ============================================================================
 
 create table if not exists client_platform_clients (
   id text primary key,
@@ -185,7 +187,9 @@ create index if not exists waitlist_records_business_id_idx
 create index if not exists waitlist_records_customer_phone_idx
   on waitlist_records (customer_phone);
 
+-- ============================================================================
 -- Normalized relational tables used by the relational mirror layer.
+-- ============================================================================
 
 do $$
 begin
@@ -329,24 +333,11 @@ create index if not exists businesses_email_idx on businesses (email);
 create index if not exists businesses_mobile_number_idx on businesses (mobile_number);
 create index if not exists businesses_business_name_idx on businesses (business_name);
 
--- Ensure every JSONB client has its normalized parent business row before any
--- child-table backfill or existing database trigger inserts related records.
+-- Backfill businesses from JSONB client records.
 insert into businesses (
-  id,
-  admin_token,
-  email,
-  mobile_number,
-  business_phone_number,
-  provider,
-  business_name,
-  website,
-  profile_image_url,
-  account_type,
-  venue_address,
-  preferred_language,
-  onboarding_completed,
-  created_at,
-  updated_at
+  id, admin_token, email, mobile_number, business_phone_number, provider,
+  business_name, website, profile_image_url, account_type, venue_address,
+  preferred_language, onboarding_completed, created_at, updated_at
 )
 select
   client.id,
@@ -370,16 +361,7 @@ select
   coalesce(client.payload->>'venueAddress', ''),
   case
     when client.payload->>'preferredLanguage' in (
-      'english',
-      'urdu',
-      'arabic',
-      'hindi',
-      'spanish',
-      'french',
-      'german',
-      'turkish',
-      'portuguese',
-      'chinese'
+      'english','urdu','arabic','hindi','spanish','french','german','turkish','portuguese','chinese'
     )
       then (client.payload->>'preferredLanguage')::preferred_language
     else null
@@ -427,14 +409,9 @@ create unique index if not exists business_gallery_images_one_cover_idx
   on business_gallery_images (business_id)
   where is_cover = true;
 
--- Backfill gallery images only after their parent businesses exist.
+-- Backfill gallery images from JSONB client records.
 insert into business_gallery_images (
-  business_id,
-  image_url,
-  display_order,
-  is_cover,
-  created_at,
-  updated_at
+  business_id, image_url, display_order, is_cover, created_at, updated_at
 )
 select
   client.id,
@@ -449,9 +426,7 @@ cross join lateral jsonb_array_elements_text(
 ) with ordinality as image(value, ordinality)
 where image.value <> ''
   and exists (
-    select 1
-    from businesses as business
-    where business.id = client.id
+    select 1 from businesses as business where business.id = client.id
   )
 on conflict do nothing;
 
@@ -582,14 +557,9 @@ create table if not exists package_plans (
   updated_at timestamptz not null default now()
 );
 
-alter table package_plans
-  add column if not exists expires_at timestamptz null;
-
-alter table package_plans
-  add column if not exists amount_cents integer null;
-
-alter table package_plans
-  add column if not exists currency_code text not null default '';
+alter table package_plans add column if not exists expires_at timestamptz null;
+alter table package_plans add column if not exists amount_cents integer null;
+alter table package_plans add column if not exists currency_code text not null default '';
 
 create index if not exists package_plans_business_id_idx on package_plans (business_id);
 create index if not exists package_plans_business_active_idx on package_plans (business_id, is_active);
@@ -666,25 +636,15 @@ create table if not exists package_purchases (
   updated_at timestamptz not null default now()
 );
 
+alter table package_purchases add column if not exists amount_cents integer null;
+alter table package_purchases add column if not exists currency_code text not null default '';
+alter table package_purchases add column if not exists payment_provider text not null default '';
+alter table package_purchases add column if not exists provider_checkout_session_id text not null default '';
+alter table package_purchases add column if not exists provider_payment_intent_id text not null default '';
+
 create index if not exists package_purchases_business_id_idx on package_purchases (business_id);
 create index if not exists package_purchases_customer_phone_idx on package_purchases (customer_phone);
 create index if not exists package_purchases_status_idx on package_purchases (status);
-
-alter table package_purchases
-  add column if not exists amount_cents integer null;
-
-alter table package_purchases
-  add column if not exists currency_code text not null default '';
-
-alter table package_purchases
-  add column if not exists payment_provider text not null default '';
-
-alter table package_purchases
-  add column if not exists provider_checkout_session_id text not null default '';
-
-alter table package_purchases
-  add column if not exists provider_payment_intent_id text not null default '';
-
 create index if not exists package_purchases_provider_checkout_session_id_idx
   on package_purchases (provider_checkout_session_id);
 
@@ -747,7 +707,7 @@ create table if not exists appointments (
   end_at timestamptz not null,
   status appointment_status not null,
   source appointment_source not null,
-  package_plan_id text null references package_plans (id) on delete set null,
+  package_plan_id text null,
   package_purchase_id text null references package_purchases (id) on delete set null,
   package_name text not null default '',
   package_price_label text not null default '',
@@ -758,42 +718,31 @@ create table if not exists appointments (
   updated_at timestamptz not null default now()
 );
 
-alter table appointments
-  add column if not exists package_plan_id text null;
-
-alter table appointments
-  add column if not exists package_price_label text not null default '';
-
-alter table appointments
-  add column if not exists package_total_uses integer null;
+alter table appointments add column if not exists package_plan_id text null;
+alter table appointments add column if not exists package_price_label text not null default '';
+alter table appointments add column if not exists package_total_uses integer null;
 
 do $$
 begin
   if not exists (
-    select 1
-    from pg_constraint
-    where conname = 'appointments_package_plan_id_fkey'
+    select 1 from pg_constraint where conname = 'appointments_package_plan_id_fkey'
   ) then
     alter table appointments
       add constraint appointments_package_plan_id_fkey
       foreign key (package_plan_id) references package_plans (id) on delete set null;
   end if;
-end
-$$;
+end $$;
 
 do $$
 begin
   if not exists (
-    select 1
-    from pg_constraint
-    where conname = 'appointments_package_total_uses_check'
+    select 1 from pg_constraint where conname = 'appointments_package_total_uses_check'
   ) then
     alter table appointments
       add constraint appointments_package_total_uses_check
       check (package_total_uses is null or package_total_uses >= 0);
   end if;
-end
-$$;
+end $$;
 
 create index if not exists appointments_business_id_idx on appointments (business_id);
 create index if not exists appointments_customer_phone_idx on appointments (customer_phone);
@@ -836,13 +785,13 @@ create table if not exists payments (
   updated_at timestamptz not null default now()
 );
 
-create index if not exists payments_business_id_idx on payments (business_id);
-create index if not exists payments_appointment_id_idx on payments (appointment_id);
-create index if not exists payments_status_idx on payments (status);
-
 alter table payments add column if not exists service_amount_value numeric(12, 2) null;
 alter table payments add column if not exists tip_amount_value numeric(12, 2) not null default 0;
 alter table payments add column if not exists tip_recipient_name text not null default '';
+
+create index if not exists payments_business_id_idx on payments (business_id);
+create index if not exists payments_appointment_id_idx on payments (appointment_id);
+create index if not exists payments_status_idx on payments (status);
 
 create table if not exists waitlist_entries (
   id text primary key,
@@ -873,3 +822,141 @@ create index if not exists waitlist_entries_business_id_idx on waitlist_entries 
 create index if not exists waitlist_entries_customer_phone_idx on waitlist_entries (customer_phone);
 create index if not exists waitlist_entries_date_idx on waitlist_entries (appointment_date);
 create index if not exists waitlist_entries_status_idx on waitlist_entries (status);
+
+-- ============================================================================
+-- Row Level Security: deny all access via anon/publishable key.
+-- The service role key (used by the app server) bypasses RLS automatically.
+-- ============================================================================
+
+alter table client_platform_clients enable row level security;
+alter table subscription_plan_records enable row level security;
+alter table business_subscription_records enable row level security;
+alter table billing_invoice_records enable row level security;
+alter table product_sale_records enable row level security;
+alter table appointment_records enable row level security;
+alter table payment_records enable row level security;
+alter table review_records enable row level security;
+alter table package_purchase_records enable row level security;
+alter table loyalty_reward_records enable row level security;
+alter table waitlist_records enable row level security;
+
+alter table businesses enable row level security;
+alter table business_gallery_images enable row level security;
+alter table business_settings enable row level security;
+alter table business_stripe_connect_accounts enable row level security;
+alter table business_service_types enable row level security;
+alter table business_service_locations enable row level security;
+alter table team_members enable row level security;
+alter table services enable row level security;
+alter table products enable row level security;
+alter table product_sales enable row level security;
+alter table package_plans enable row level security;
+alter table package_plan_services enable row level security;
+alter table loyalty_programs enable row level security;
+alter table loyalty_program_services enable row level security;
+alter table customer_profiles enable row level security;
+alter table package_purchases enable row level security;
+alter table package_purchase_services enable row level security;
+alter table loyalty_rewards enable row level security;
+alter table loyalty_reward_services enable row level security;
+alter table appointments enable row level security;
+alter table reviews enable row level security;
+alter table payments enable row level security;
+alter table waitlist_entries enable row level security;
+
+-- ============================================================================
+-- Auto-update updated_at on row modification.
+-- ============================================================================
+
+create or replace function set_updated_at()
+returns trigger as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$ language plpgsql;
+
+drop trigger if exists set_updated_at on businesses;
+create trigger set_updated_at before update on businesses for each row execute function set_updated_at();
+
+drop trigger if exists set_updated_at on business_gallery_images;
+create trigger set_updated_at before update on business_gallery_images for each row execute function set_updated_at();
+
+drop trigger if exists set_updated_at on business_settings;
+create trigger set_updated_at before update on business_settings for each row execute function set_updated_at();
+
+drop trigger if exists set_updated_at on business_stripe_connect_accounts;
+create trigger set_updated_at before update on business_stripe_connect_accounts for each row execute function set_updated_at();
+
+drop trigger if exists set_updated_at on team_members;
+create trigger set_updated_at before update on team_members for each row execute function set_updated_at();
+
+drop trigger if exists set_updated_at on services;
+create trigger set_updated_at before update on services for each row execute function set_updated_at();
+
+drop trigger if exists set_updated_at on products;
+create trigger set_updated_at before update on products for each row execute function set_updated_at();
+
+drop trigger if exists set_updated_at on product_sales;
+create trigger set_updated_at before update on product_sales for each row execute function set_updated_at();
+
+drop trigger if exists set_updated_at on package_plans;
+create trigger set_updated_at before update on package_plans for each row execute function set_updated_at();
+
+drop trigger if exists set_updated_at on loyalty_programs;
+create trigger set_updated_at before update on loyalty_programs for each row execute function set_updated_at();
+
+drop trigger if exists set_updated_at on customer_profiles;
+create trigger set_updated_at before update on customer_profiles for each row execute function set_updated_at();
+
+drop trigger if exists set_updated_at on package_purchases;
+create trigger set_updated_at before update on package_purchases for each row execute function set_updated_at();
+
+drop trigger if exists set_updated_at on loyalty_rewards;
+create trigger set_updated_at before update on loyalty_rewards for each row execute function set_updated_at();
+
+drop trigger if exists set_updated_at on appointments;
+create trigger set_updated_at before update on appointments for each row execute function set_updated_at();
+
+drop trigger if exists set_updated_at on payments;
+create trigger set_updated_at before update on payments for each row execute function set_updated_at();
+
+drop trigger if exists set_updated_at on waitlist_entries;
+create trigger set_updated_at before update on waitlist_entries for each row execute function set_updated_at();
+
+-- ============================================================================
+-- Foreign key constraints for billing JSONB tables.
+-- ============================================================================
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'business_subscription_records_business_id_fkey'
+  ) then
+    alter table business_subscription_records
+      add constraint business_subscription_records_business_id_fkey
+      foreign key (business_id) references businesses (id) on delete cascade;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'billing_invoice_records_business_id_fkey'
+  ) then
+    alter table billing_invoice_records
+      add constraint billing_invoice_records_business_id_fkey
+      foreign key (business_id) references businesses (id) on delete cascade;
+  end if;
+end $$;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'billing_invoice_records_subscription_id_fkey'
+  ) then
+    alter table billing_invoice_records
+      add constraint billing_invoice_records_subscription_id_fkey
+      foreign key (subscription_id) references business_subscription_records (id) on delete cascade;
+  end if;
+end $$;

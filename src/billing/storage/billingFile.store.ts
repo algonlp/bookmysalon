@@ -86,9 +86,19 @@ export class BillingFileStore implements BillingStore {
     return [...this.state.businessSubscriptions];
   }
 
+  async listBusinessSubscriptionsByBusinessId(businessId: string): Promise<BusinessSubscription[]> {
+    await this.ensureLoaded();
+    return this.state.businessSubscriptions.filter((record) => record.businessId === businessId);
+  }
+
   async listBillingInvoices(): Promise<BillingInvoice[]> {
     await this.ensureLoaded();
     return [...this.state.billingInvoices];
+  }
+
+  async listBillingInvoicesByBusinessId(businessId: string): Promise<BillingInvoice[]> {
+    await this.ensureLoaded();
+    return this.state.billingInvoices.filter((record) => record.businessId === businessId);
   }
 
   async saveBusinessSubscription(

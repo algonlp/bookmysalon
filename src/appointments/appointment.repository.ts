@@ -67,24 +67,48 @@ class AppointmentRepository {
     return this.store.listAppointments();
   }
 
+  listAppointmentsByBusinessId(businessId: string): Promise<AppointmentRecord[]> {
+    return this.store.listAppointmentsByBusinessId(businessId);
+  }
+
   listPaymentRecords(): Promise<PaymentRecord[]> {
     return this.store.listPaymentRecords();
+  }
+
+  listPaymentRecordsByBusinessId(businessId: string): Promise<PaymentRecord[]> {
+    return this.store.listPaymentRecordsByBusinessId(businessId);
   }
 
   listReviews(): Promise<ReviewRecord[]> {
     return this.store.listReviews();
   }
 
+  listReviewsByBusinessId(businessId: string): Promise<ReviewRecord[]> {
+    return this.store.listReviewsByBusinessId(businessId);
+  }
+
   listPackagePurchases(): Promise<PackagePurchaseRecord[]> {
     return this.store.listPackagePurchases();
+  }
+
+  listPackagePurchasesByBusinessId(businessId: string): Promise<PackagePurchaseRecord[]> {
+    return this.store.listPackagePurchasesByBusinessId(businessId);
   }
 
   listLoyaltyRewards(): Promise<LoyaltyRewardRecord[]> {
     return this.store.listLoyaltyRewards();
   }
 
+  listLoyaltyRewardsByBusinessId(businessId: string): Promise<LoyaltyRewardRecord[]> {
+    return this.store.listLoyaltyRewardsByBusinessId(businessId);
+  }
+
   listWaitlistEntries(): Promise<WaitlistRecord[]> {
     return this.store.listWaitlistEntries();
+  }
+
+  listWaitlistEntriesByBusinessId(businessId: string): Promise<WaitlistRecord[]> {
+    return this.store.listWaitlistEntriesByBusinessId(businessId);
   }
 
   saveAppointment(appointment: AppointmentRecord): Promise<AppointmentRecord> {

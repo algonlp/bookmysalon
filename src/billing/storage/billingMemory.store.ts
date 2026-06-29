@@ -20,8 +20,16 @@ export class BillingMemoryStore implements BillingStore {
     return [...this.state.businessSubscriptions];
   }
 
+  async listBusinessSubscriptionsByBusinessId(businessId: string): Promise<BusinessSubscription[]> {
+    return this.state.businessSubscriptions.filter((record) => record.businessId === businessId);
+  }
+
   async listBillingInvoices(): Promise<BillingInvoice[]> {
     return [...this.state.billingInvoices];
+  }
+
+  async listBillingInvoicesByBusinessId(businessId: string): Promise<BillingInvoice[]> {
+    return this.state.billingInvoices.filter((record) => record.businessId === businessId);
   }
 
   async saveBusinessSubscription(

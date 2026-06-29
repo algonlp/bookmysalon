@@ -17870,14 +17870,36 @@ const initPricingPage = () => {
       action.className = 'pricing-cta';
       action.type = 'button';
       action.textContent = plan.id === currentPlanId ? 'Current plan' : clientId ? 'Choose plan' : 'Sign up first';
-      action.addEventListener('click', () => {
+      action.addEventListener('click', async () => {
         if (!clientId) {
           window.location.assign(`/signup?plan=${encodeURIComponent(plan.key)}`);
           return;
         }
 
-        selectedPlan = plan;
-        renderCheckout();
+        action.disabled = true;
+        action.textContent = 'Opening Stripe...';
+
+        try {
+          const payload = await apiRequest(
+            `/api/platform/clients/${encodeURIComponent(clientId)}/billing/checkout`,
+            {
+              method: 'POST',
+              body: JSON.stringify({ planId: plan.id })
+            }
+          );
+
+          if (payload?.checkoutUrl) {
+            window.location.href = payload.checkoutUrl;
+            return;
+          }
+
+          safeAlert('Stripe checkout did not return a checkout link.');
+        } catch (error) {
+          safeAlert(error instanceof Error ? error.message : 'Unable to start Stripe checkout');
+        }
+
+        action.disabled = false;
+        action.textContent = 'Choose plan';
       });
 
       card.append(top, price, copy, featureWrap, action);

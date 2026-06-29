@@ -47,8 +47,16 @@ class BillingRepository {
     return this.store.listBusinessSubscriptions();
   }
 
+  listBusinessSubscriptionsByBusinessId(businessId: string) {
+    return this.store.listBusinessSubscriptionsByBusinessId(businessId);
+  }
+
   listBillingInvoices() {
     return this.store.listBillingInvoices();
+  }
+
+  listBillingInvoicesByBusinessId(businessId: string) {
+    return this.store.listBillingInvoicesByBusinessId(businessId);
   }
 
   saveBusinessSubscription(subscription: BusinessSubscription) {

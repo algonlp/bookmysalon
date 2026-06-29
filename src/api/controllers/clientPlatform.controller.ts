@@ -284,11 +284,11 @@ const getPackagePlanId = (req: Request): string => {
 
 export const clientPlatformController = {
   async createClient(req: Request, res: Response, _next: NextFunction): Promise<void> {
-    const client = await clientPlatformService.createClient(createClientSchema.parse(req.body));
-    setAdminSessionCookie(res, client.adminToken);
+    const { client, plainAdminToken } = await clientPlatformService.createClient(createClientSchema.parse(req.body));
+    setAdminSessionCookie(res, plainAdminToken);
     res.status(201).json({
       client: serializeClientForResponse(client),
-      ...(shouldExposeAdminTokenForTests() ? { adminToken: client.adminToken } : {}),
+      ...(shouldExposeAdminTokenForTests() ? { adminToken: plainAdminToken } : {}),
       nextStep: buildPlatformClientPagePath(platformClientPagePaths.onboarding.businessName, client.id)
     });
   },
@@ -297,10 +297,10 @@ export const clientPlatformController = {
     const payload = await clientPlatformService.authenticateGoogleClient({
       idToken: googleAuthSchema.parse(req.body).credential
     });
-    setAdminSessionCookie(res, payload.client.adminToken);
+    setAdminSessionCookie(res, payload.plainAdminToken);
     res.status(payload.created ? 201 : 200).json({
       client: serializeClientForResponse(payload.client),
-      ...(shouldExposeAdminTokenForTests() ? { adminToken: payload.client.adminToken } : {}),
+      ...(shouldExposeAdminTokenForTests() ? { adminToken: payload.plainAdminToken } : {}),
       googleProfile: payload.googleIdentity,
       nextStep: payload.nextStep
     });
@@ -308,10 +308,10 @@ export const clientPlatformController = {
 
   async loginClient(req: Request, res: Response, _next: NextFunction): Promise<void> {
     const payload = await clientPlatformService.loginClient(loginClientSchema.parse(req.body));
-    setAdminSessionCookie(res, payload.client.adminToken);
+    setAdminSessionCookie(res, payload.plainAdminToken);
     res.status(200).json({
       client: serializeClientForResponse(payload.client),
-      ...(shouldExposeAdminTokenForTests() ? { adminToken: payload.client.adminToken } : {}),
+      ...(shouldExposeAdminTokenForTests() ? { adminToken: payload.plainAdminToken } : {}),
       nextStep: payload.nextStep
     });
   },

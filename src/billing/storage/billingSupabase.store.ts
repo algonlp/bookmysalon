@@ -82,9 +82,33 @@ export class BillingSupabaseStore implements BillingStore {
     }
   }
 
+  async listBusinessSubscriptionsByBusinessId(businessId: string): Promise<BusinessSubscription[]> {
+    try {
+      return await businessSubscriptionTable.listByColumn('business_id', businessId);
+    } catch (error) {
+      if (isMissingTableError(error)) {
+        return [];
+      }
+
+      throw error;
+    }
+  }
+
   async listBillingInvoices(): Promise<BillingInvoice[]> {
     try {
       return await billingInvoiceTable.list();
+    } catch (error) {
+      if (isMissingTableError(error)) {
+        return [];
+      }
+
+      throw error;
+    }
+  }
+
+  async listBillingInvoicesByBusinessId(businessId: string): Promise<BillingInvoice[]> {
+    try {
+      return await billingInvoiceTable.listByColumn('business_id', businessId);
     } catch (error) {
       if (isMissingTableError(error)) {
         return [];
