@@ -7454,8 +7454,8 @@ const initCalendar = () => {
     setBillingLockedState(quickPaymentAction, 'payments');
     setBillingLockedState(clientsToggle, 'client_crm');
     clearBillingLockedState(catalogToggle);
-    setBillingLockedState(teamToggle, 'team_management');
-    setBillingLockedState(teamShortcut, 'team_management');
+    clearBillingLockedState(teamToggle);
+    clearBillingLockedState(teamShortcut);
     setBillingLockedState(reportsToggle, 'advanced_reports');
     setBillingLockedState(analyticsAction, 'advanced_reports');
     setBillingLockedState(marketingAction, 'marketing');
@@ -14608,10 +14608,6 @@ const createTrendCard = (
       event.stopPropagation();
       closeAddMenu();
 
-      if (guardBillingFeature('team_management')) {
-        return;
-      }
-
       if (getActiveDrawer() !== 'team') {
         syncSideDrawerOffset();
         setMainView('calendar');
@@ -14768,9 +14764,6 @@ const createTrendCard = (
   if (teamShortcut instanceof HTMLButtonElement && hasTeamDrawer) {
     teamShortcut.addEventListener('click', () => {
       closeAddMenu();
-      if (guardBillingFeature('team_management')) {
-        return;
-      }
 
       setMainView('calendar');
 
