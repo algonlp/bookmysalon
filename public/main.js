@@ -15585,6 +15585,7 @@ const initPublicBooking = () => {
   const stepLabels = Array.from(document.querySelectorAll('[data-step-label]'));
   const stepBackButton = document.querySelector('#booking-step-back');
   const stepContinueButton = document.querySelector('#booking-step-continue');
+  const bookingBackLink = document.querySelector('#booking-back-link');
   const serviceTabs = document.querySelector('#booking-service-tabs');
   const serviceCards = document.querySelector('#booking-service-cards');
   const teamMemberCards = document.querySelector('#booking-team-member-cards');
@@ -15930,6 +15931,10 @@ const initPublicBooking = () => {
   if (!businessId) {
     safeAlert('Booking link is invalid');
     return;
+  }
+
+  if (bookingBackLink instanceof HTMLAnchorElement) {
+    bookingBackLink.href = `/salon/${encodeURIComponent(businessId)}`;
   }
 
   const currentBookingSource = getPublicBookingSource();
