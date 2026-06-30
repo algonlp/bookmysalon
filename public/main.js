@@ -5361,6 +5361,26 @@ const initSignup = () => {
   const headingText = document.querySelector('#pro-signup-heading-text');
   const formTitle = document.querySelector('#pro-signup-form-title');
   const formSubtitle = document.querySelector('#pro-signup-form-subtitle');
+  const submitBtn = document.querySelector('#pro-signup-submit');
+  const submitLabel = document.querySelector('#pro-signup-submit-label');
+  const submitArrow = document.querySelector('#pro-signup-submit-arrow');
+  const submitSpinner = document.querySelector('#pro-signup-submit-spinner');
+
+  const setSubmitLoading = (loading) => {
+    if (submitBtn instanceof HTMLButtonElement) {
+      submitBtn.disabled = loading;
+      submitBtn.classList.toggle('is-loading', loading);
+    }
+    if (submitLabel instanceof HTMLElement) {
+      submitLabel.textContent = loading ? 'Loading...' : 'Continue';
+    }
+    if (submitArrow instanceof HTMLElement) {
+      submitArrow.classList.toggle('is-hidden', loading);
+    }
+    if (submitSpinner instanceof HTMLElement) {
+      submitSpinner.classList.toggle('is-hidden', !loading);
+    }
+  };
 
   if (!(signupForm instanceof HTMLFormElement)) {
     return;
@@ -5740,9 +5760,11 @@ const initSignup = () => {
         return;
       }
 
+      setSubmitLoading(true);
       try {
         await createClient('email', emailValue, mobileValue, passwordValue, nameValue);
       } catch (error) {
+        setSubmitLoading(false);
         safeAlert(error instanceof Error ? error.message : 'Unable to create account.');
       }
       return;
@@ -5753,7 +5775,9 @@ const initSignup = () => {
       return;
     }
 
+    setSubmitLoading(true);
     await continueWithEmailOrMobile(emailValue, mobileValue, passwordValue, nameValue);
+    setSubmitLoading(false);
   });
 
   if (verifyOtpButton instanceof HTMLButtonElement && otpCodeInput instanceof HTMLInputElement) {

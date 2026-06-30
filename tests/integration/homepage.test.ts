@@ -51,10 +51,19 @@ describe('GET /', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
-    expect(response.text).toContain('Create an account or log in to manage your business.');
+    expect(response.text).toContain('Sign up/log in');
+    expect(response.text).toContain('QR Schedule for customers');
+    expect(response.text).toContain('QR Schedule for professionals');
+  });
+
+  it('serves the professional login/signup page', async () => {
+    const response = await request(app).get('/signup');
+
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toContain('text/html');
     expect(response.text).toContain('QR schedule');
     expect(response.text).toContain('Enter your email address');
-    expect(response.text).toContain('Enter your mobile number');
+    expect(response.text).toContain('Enter your password');
   });
 
   it('serves the business landing page', async () => {

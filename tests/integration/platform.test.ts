@@ -1625,15 +1625,25 @@ describe('Client platform API', () => {
     );
   });
 
-  it('creates a client with a mobile number for professional signup', async () => {
+  it('requires OTP verification before creating a client with a mobile number', async () => {
     const createResponse = await request(app).post('/api/platform/clients').send({
       mobileNumber: '+923001234567',
       provider: 'email'
     });
 
+    expect(createResponse.status).toBe(200);
+    expect(createResponse.body.otpRequired).toBe(true);
+    expect(createResponse.body.maskedPhone).toContain('1234567'.slice(-4));
+  });
+
+  it('creates a client without a mobile number immediately, no OTP required', async () => {
+    const createResponse = await request(app).post('/api/platform/clients').send({
+      email: 'no-mobile-signup@example.com',
+      provider: 'email'
+    });
+
     expect(createResponse.status).toBe(201);
-    expect(createResponse.body.client.mobileNumber).toBe('+923001234567');
-    expect(createResponse.body.client.email).toContain('@platform.local');
+    expect(createResponse.body.client.email).toBe('no-mobile-signup@example.com');
   });
 
   it('accepts larger uploaded profile images from pc file selection', async () => {

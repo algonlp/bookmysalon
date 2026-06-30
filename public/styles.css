@@ -4555,6 +4555,26 @@ textarea:focus-visible {
   transform: translateX(3px);
 }
 
+.continue-button.is-loading {
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.continue-button-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spinnerRotate 600ms linear infinite;
+}
+
+@keyframes spinnerRotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .divider-copy {
   margin-top: 26px;
   color: #6d6863;
