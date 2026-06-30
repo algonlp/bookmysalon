@@ -35,13 +35,12 @@ describe('GET /', () => {
     expect(response.text).toContain('id="service-query"');
     expect(response.text).toContain('id="service-query-dropdown"');
     expect(response.text).toContain('id="city-location-trigger"');
-    expect(response.text).toContain('id="time-query" name="time" type="date"');
-    expect(response.text).toContain('Showing recently launched businesses ready for booking.');
+    expect(response.text).toContain('id="time-query-trigger"');
+    expect(response.text).toContain('id="time-query" name="time" type="hidden"');
     expect(response.text).toContain('Browse by City');
-    expect(response.text).toContain('data-footer-country="australia"');
-    expect(response.text).toContain('data-footer-country="greece"');
-    expect(response.text).toContain('Hair Salons in Sydney');
-    expect(response.text).toContain('Gold Coast');
+    expect(response.text).toContain('data-footer-country="lahore"');
+    expect(response.text).toContain('data-footer-country="karachi"');
+    expect(response.text).toContain('Hair Salons in Lahore');
     expect(response.text).toContain('For customers');
     expect(response.text).toContain('For businesses');
   });
