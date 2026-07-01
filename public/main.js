@@ -17650,6 +17650,10 @@ const initPublicBooking = () => {
       });
 
       successPanel.classList.remove('is-hidden');
+      if (bookingBackLink instanceof HTMLAnchorElement) {
+        bookingBackLink.href = '/activity';
+        bookingBackLink.setAttribute('aria-label', 'Go to dashboard');
+      }
       latestAppointmentReference = payload.appointment.id;
       reviewReferenceInput.value = latestAppointmentReference;
       successCopy.textContent = `Booked ${payload.appointment.serviceName}${payload.appointment.teamMemberName ? ` with ${payload.appointment.teamMemberName}` : ''} for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}.${payload.appointment.serviceLocation ? ` Service location: ${getSelectedBookingLocationLabel()}${payload.appointment.customerAddress ? ` (${payload.appointment.customerAddress})` : ''}.` : ''}${payload.appointment.packageName ? ` Package: ${payload.appointment.packageName}${payload.appointment.packageTotalUses ? ` (${payload.appointment.packageTotalUses} use${payload.appointment.packageTotalUses === 1 ? '' : 's'})` : ''}${payload.appointment.packagePriceLabel ? ` - ${payload.appointment.packagePriceLabel}` : ''}.` : ''}${payload.appointment.loyaltyRewardLabel ? ` Reward used: ${payload.appointment.loyaltyRewardLabel}.` : ''}`;
