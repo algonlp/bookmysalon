@@ -3,6 +3,9 @@ import { z } from 'zod';
 import { env } from '../../config/env';
 import { logger } from '../../shared/logger';
 
+const LOCATION_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const locationSearchCache = new Map<string, { suggestions: unknown[]; expiresAt: number }>();
+
 const locationSearchQuerySchema = z.object({
   q: z.string().trim().max(160).optional().default('')
 });
@@ -117,6 +120,17 @@ export const locationController = {
     });
 
     const countryCode = getLocationSearchCountryCode();
+    const cacheKey = `${countryCode}:${query.toLowerCase()}`;
+    const cached = locationSearchCache.get(cacheKey);
+
+    if (cached && Date.now() < cached.expiresAt) {
+      res.status(200).json({
+        suggestions: cached.suggestions,
+        countryCode,
+        countryLabel: env.PUBLIC_LOCATION_SEARCH_COUNTRY_LABEL?.trim() ?? ''
+      });
+      return;
+    }
 
     if (countryCode) {
       params.set('countrycodes', countryCode);
@@ -140,6 +154,8 @@ export const locationController = {
           seenLabels.add(dedupeKey);
           return true;
         });
+
+      locationSearchCache.set(cacheKey, { suggestions, expiresAt: Date.now() + LOCATION_CACHE_TTL_MS });
 
       res.status(200).json({
         suggestions,

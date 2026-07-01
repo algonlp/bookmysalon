@@ -2129,10 +2129,37 @@ const createSalonShowcaseCard = (salon) => {
   tag.className = 'public-salon-card-tag';
   tag.textContent = 'Featured';
 
-  const heart = document.createElement('span');
+  const heart = document.createElement('button');
   heart.className = 'public-salon-card-heart';
-  heart.setAttribute('aria-hidden', 'true');
-  heart.textContent = '♡';
+  heart.type = 'button';
+  const isCardFav = isSalonFavourite(salon);
+  heart.textContent = isCardFav ? '♥' : '♡';
+  heart.setAttribute('aria-label', isCardFav ? 'Remove from favourites' : 'Add to favourites');
+  if (isCardFav) heart.classList.add('is-active');
+  heart.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (!ENABLE_SALON_FAVOURITES) {
+      safeAlert('Favourites are coming soon. You can keep exploring salons for now.');
+      return;
+    }
+    if (isCustomerLoggedIn()) {
+      addSalonFavourite(salon)
+        .then((added) => {
+          if (added) {
+            heart.textContent = '♥';
+            heart.classList.add('is-active');
+            heart.setAttribute('aria-label', 'Remove from favourites');
+          }
+        })
+        .catch(() => {});
+    } else {
+      const salonPath = `/salon/${encodeURIComponent(salon?.clientId ?? salon?.id ?? '')}`;
+      setPendingSalonFavourite(salon);
+      const loginParams = new URLSearchParams({ role: 'customer', redirect: salonPath });
+      window.location.assign(`/login?${loginParams.toString()}`);
+    }
+  });
 
   media.append(image, tag, heart);
 
@@ -2796,6 +2823,13 @@ const renderSalonDetailPanel = (salon) => {
       return;
     }
 
+    if (isCustomerLoggedIn()) {
+      addSalonFavourite(salon)
+        .then((added) => { if (added) setSalonFavouriteButtonState(saveButton, true); })
+        .catch(() => {});
+      return;
+    }
+
     setPendingSalonFavourite(salon);
     redirectToCustomerLogin();
   });
@@ -2842,7 +2876,7 @@ const renderSalonDetailPanel = (salon) => {
     ...serviceTypes
   ].filter((value, index, values) => typeof value === 'string' && value.trim() && values.indexOf(value) === index);
 
-  categoryNames.slice(0, 7).forEach((serviceType, index) => {
+  categoryNames.forEach((serviceType, index) => {
     const chip = document.createElement('button');
     chip.type = 'button';
     chip.className = index === 0 ? 'is-active' : '';
@@ -5887,6 +5921,11 @@ const initCustomerOtpLogin = () => {
   const params = new URLSearchParams(window.location.search);
   const redirectPath = params.get('redirect') || '/';
   const safeRedirectPath = redirectPath.startsWith('/') && !redirectPath.startsWith('//') ? redirectPath : '/';
+
+  if (isCustomerLoggedIn()) {
+    window.location.assign(safeRedirectPath);
+    return;
+  }
 
   const setStatus = (message = '', isError = false) => {
     if (!(status instanceof HTMLElement)) {
@@ -16314,7 +16353,7 @@ const initPublicBooking = () => {
       ? activeBookingServiceCategory
       : visibleCategories[0] || '';
 
-    visibleCategories.slice(0, 8).forEach((category, index) => {
+    visibleCategories.forEach((category) => {
       const tab = document.createElement('button');
       tab.type = 'button';
       tab.className = category === activeBookingServiceCategory ? 'is-active' : '';

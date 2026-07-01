@@ -854,6 +854,7 @@ export const clientPlatformController = {
   },
 
   async listPublicSalons(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
     res.status(200).json({
       salons: await clientPlatformService.getPublicSalons()
     });

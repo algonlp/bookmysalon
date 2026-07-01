@@ -1964,6 +1964,7 @@ const updateClient = async (
 ): Promise<ClientRecord> => {
   const updatedClient = hydrateClientRecord(updater(await getClientOrThrow(clientId)));
   await clientPlatformRepository.saveClient(updatedClient);
+  publicSalonsCache = null;
   return updatedClient;
 };
 
@@ -2046,7 +2047,15 @@ const createClientRecord = async (input: CreateClientInput): Promise<{ client: C
   };
 
   await clientPlatformRepository.saveClient(client);
+  publicSalonsCache = null;
   return { client, plainAdminToken };
+};
+
+const PUBLIC_SALONS_CACHE_TTL_MS = 5 * 60 * 1000;
+let publicSalonsCache: { data: PublicSalonShowcaseItem[]; expiresAt: number } | null = null;
+
+export const invalidatePublicSalonsCache = (): void => {
+  publicSalonsCache = null;
 };
 
 export const clientPlatformService = {
@@ -2252,13 +2261,18 @@ export const clientPlatformService = {
   },
 
   async getPublicSalons(): Promise<PublicSalonShowcaseItem[]> {
+    const now = Date.now();
+    if (publicSalonsCache && now < publicSalonsCache.expiresAt) {
+      return publicSalonsCache.data;
+    }
+
     const clients = await clientPlatformRepository.listClients();
     const visibleClients = clients
       .map(hydrateClientRecord)
       .filter((client) => client.onboardingCompleted && client.businessName.trim().length > 0)
       .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
 
-    return Promise.all(
+    const result = await Promise.all(
       visibleClients.map(async (client) => {
         const services = await appointmentService.getServiceCatalogForBusiness(client.id);
         const reviews = await appointmentService.listReviewsForBusiness(client.id);
@@ -2299,6 +2313,9 @@ export const clientPlatformService = {
         };
       })
     );
+
+    publicSalonsCache = { data: result, expiresAt: now + PUBLIC_SALONS_CACHE_TTL_MS };
+    return result;
   },
 
   async getSmsLogs(clientId: string) {

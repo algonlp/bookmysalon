@@ -2091,6 +2091,13 @@ textarea:focus-visible {
   width: 30px;
   min-height: 30px;
   font-size: 1.25rem;
+  border: none;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.public-salon-card-heart.is-active {
+  color: #e05;
 }
 
 .public-salon-card-header {
@@ -2700,6 +2707,12 @@ textarea:focus-visible {
   padding: 36px 0 72px;
 }
 
+.simple-page-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .simple-page-card {
   display: grid;
   gap: 18px;
@@ -3005,11 +3018,21 @@ textarea:focus-visible {
   overflow-x: auto;
   padding: 0 0 8px;
   border-bottom: 0;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(18, 18, 18, 0.2) transparent;
 }
 
 .salon-detail-category-row::-webkit-scrollbar {
-  display: none;
+  height: 3px;
+}
+
+.salon-detail-category-row::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.salon-detail-category-row::-webkit-scrollbar-thumb {
+  background: rgba(18, 18, 18, 0.2);
+  border-radius: 3px;
 }
 
 .salon-detail-category-row button {
@@ -9869,12 +9892,22 @@ button.calendar-reports-summary-card {
   display: flex;
   gap: 10px;
   overflow-x: auto;
-  padding-bottom: 4px;
-  scrollbar-width: none;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(18, 18, 18, 0.2) transparent;
 }
 
 .booking-service-tabs::-webkit-scrollbar {
-  display: none;
+  height: 3px;
+}
+
+.booking-service-tabs::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.booking-service-tabs::-webkit-scrollbar-thumb {
+  background: rgba(18, 18, 18, 0.2);
+  border-radius: 3px;
 }
 
 .booking-service-tabs button,
