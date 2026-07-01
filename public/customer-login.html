@@ -35,25 +35,26 @@
           data-request-email-otp-endpoint="/api/public/customer-auth/email-otp/request"
           data-verify-email-otp-endpoint="/api/public/customer-auth/email-otp/verify"
         >
-          <!-- Step 1: Email -->
-          <div class="login-step" id="login-step-email">
+          <!-- Step 1: Email or phone input -->
+          <div class="login-step" id="login-step-entry">
             <div class="customer-login-copy">
               <h1>Sign up or log in</h1>
-              <p>Enter your email address to get started.</p>
+              <p>Enter your email or mobile number to continue.</p>
             </div>
 
             <label class="customer-login-field">
-              <span>Email address</span>
+              <span>Email or mobile number</span>
               <input
-                id="customer-login-email"
-                name="email"
-                type="email"
+                id="customer-login-entry"
+                name="entry"
+                type="text"
+                inputmode="email"
                 autocomplete="email"
-                placeholder="you@example.com"
+                placeholder="you@example.com or +923001234567"
               />
             </label>
 
-            <button class="customer-login-primary" type="button" id="login-email-continue">
+            <button class="customer-login-primary" type="button" id="login-entry-continue">
               Continue
             </button>
 
@@ -70,74 +71,11 @@
             </button>
           </div>
 
-          <!-- Step 2: Choose delivery method -->
-          <div class="login-step is-hidden" id="login-step-method">
-            <div class="customer-login-copy">
-              <h1>How would you like to verify?</h1>
-              <p>Choose how to receive your verification code.</p>
-            </div>
-
-            <button class="login-method-card" type="button" id="login-choose-email">
-              <span class="login-method-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false">
-                  <rect x="2" y="4" width="20" height="16" rx="2"></rect>
-                  <path d="M2 7l10 7 10-7"></path>
-                </svg>
-              </span>
-              <span class="login-method-text">
-                <strong>Send code to email</strong>
-                <span id="login-email-display"></span>
-              </span>
-              <span class="card-arrow" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false">
-                  <path d="M5 12h14"></path>
-                  <path d="M13 6l6 6-6 6"></path>
-                </svg>
-              </span>
-            </button>
-
-            <button class="login-method-card" type="button" id="login-choose-phone">
-              <span class="login-method-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false">
-                  <rect x="5" y="2" width="14" height="20" rx="2"></rect>
-                  <circle cx="12" cy="18" r="1" fill="currentColor" stroke="none"></circle>
-                </svg>
-              </span>
-              <span class="login-method-text">
-                <strong>Use mobile number</strong>
-                <span>Get a code via SMS</span>
-              </span>
-              <span class="card-arrow" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false">
-                  <path d="M5 12h14"></path>
-                  <path d="M13 6l6 6-6 6"></path>
-                </svg>
-              </span>
-            </button>
-
-            <div class="login-phone-expand is-hidden" id="login-phone-expand">
-              <label class="customer-login-field">
-                <span>Mobile number</span>
-                <input
-                  id="customer-login-phone"
-                  name="phone"
-                  type="tel"
-                  inputmode="tel"
-                  autocomplete="tel"
-                  placeholder="+923001234567"
-                />
-              </label>
-              <button class="customer-login-primary" type="button" id="login-phone-send">
-                Send code
-              </button>
-            </div>
-          </div>
-
-          <!-- Step 3: OTP entry -->
+          <!-- Step 2: OTP entry -->
           <div class="login-step is-hidden" id="login-step-otp">
             <div class="customer-login-copy">
               <h1>Enter your code</h1>
-              <p id="login-otp-subtitle">We sent you a 6-digit code. It expires in 10 minutes.</p>
+              <p id="login-otp-subtitle">We sent you a 6-digit verification code.</p>
             </div>
 
             <label class="customer-login-field">
@@ -155,6 +93,10 @@
 
             <button class="customer-login-primary" type="button" id="customer-login-verify">
               Verify and continue
+            </button>
+
+            <button class="customer-login-resend" type="button" id="customer-login-resend">
+              Resend code
             </button>
           </div>
 

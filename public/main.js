@@ -5896,38 +5896,34 @@ const initCustomerLogin = () => {
   });
 };
 
+const isEmailFormat = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+const isPhoneFormat = (value) => /^[+\d][\d\s\-().]{5,}$/.test(value);
+
 const initCustomerOtpLogin = () => {
   const form = document.querySelector('#customer-login-form');
-  const stepEmail = document.querySelector('#login-step-email');
-  const stepMethod = document.querySelector('#login-step-method');
+  const stepEntry = document.querySelector('#login-step-entry');
   const stepOtp = document.querySelector('#login-step-otp');
 
   if (
     !(form instanceof HTMLFormElement) ||
-    !(stepEmail instanceof HTMLElement) ||
-    !(stepMethod instanceof HTMLElement) ||
+    !(stepEntry instanceof HTMLElement) ||
     !(stepOtp instanceof HTMLElement)
   ) {
     return;
   }
 
-  const emailInput = document.querySelector('#customer-login-email');
-  const emailContinueBtn = document.querySelector('#login-email-continue');
-  const emailDisplay = document.querySelector('#login-email-display');
-  const chooseEmailBtn = document.querySelector('#login-choose-email');
-  const choosePhoneBtn = document.querySelector('#login-choose-phone');
-  const phoneExpand = document.querySelector('#login-phone-expand');
-  const phoneInput = document.querySelector('#customer-login-phone');
-  const phoneSendBtn = document.querySelector('#login-phone-send');
+  const entryInput = document.querySelector('#customer-login-entry');
+  const continueBtn = document.querySelector('#login-entry-continue');
   const otpSubtitle = document.querySelector('#login-otp-subtitle');
   const codeInput = document.querySelector('#customer-login-code');
   const verifyBtn = document.querySelector('#customer-login-verify');
+  const resendBtn = document.querySelector('#customer-login-resend');
   const status = document.querySelector('#customer-login-status');
   const backLink = document.querySelector('#customer-login-back');
 
   if (
-    !(emailInput instanceof HTMLInputElement) ||
-    !(emailContinueBtn instanceof HTMLButtonElement) ||
+    !(entryInput instanceof HTMLInputElement) ||
+    !(continueBtn instanceof HTMLButtonElement) ||
     !(codeInput instanceof HTMLInputElement) ||
     !(verifyBtn instanceof HTMLButtonElement)
   ) {
@@ -5949,7 +5945,7 @@ const initCustomerOtpLogin = () => {
     return;
   }
 
-  let enteredEmail = '';
+  let enteredValue = '';
   let otpChannel = '';
 
   const setStatus = (message = '', isError = false) => {
@@ -5959,106 +5955,77 @@ const initCustomerOtpLogin = () => {
   };
 
   const showStep = (step) => {
-    [stepEmail, stepMethod, stepOtp].forEach((el) => el.classList.add('is-hidden'));
+    [stepEntry, stepOtp].forEach((el) => el.classList.add('is-hidden'));
     step.classList.remove('is-hidden');
     setStatus('');
   };
 
   if (backLink instanceof HTMLAnchorElement) {
     backLink.addEventListener('click', (e) => {
-      if (!stepMethod.classList.contains('is-hidden')) {
+      if (!stepOtp.classList.contains('is-hidden')) {
         e.preventDefault();
-        showStep(stepEmail);
-      } else if (!stepOtp.classList.contains('is-hidden')) {
-        e.preventDefault();
-        showStep(stepMethod);
+        showStep(stepEntry);
       }
     });
   }
 
-  emailContinueBtn.addEventListener('click', () => {
-    const email = emailInput.value.trim();
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setStatus('Please enter a valid email address.', true);
-      emailInput.focus();
+  const sendOtp = async () => {
+    const value = entryInput.value.trim();
+
+    if (!value) {
+      setStatus('Please enter your email or mobile number.', true);
+      entryInput.focus();
       return;
     }
-    enteredEmail = email;
-    if (emailDisplay instanceof HTMLElement) emailDisplay.textContent = email;
-    showStep(stepMethod);
-  });
 
-  emailInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') emailContinueBtn.click();
-  });
+    const isEmail = isEmailFormat(value);
+    const isPhone = isPhoneFormat(value);
 
-  if (chooseEmailBtn instanceof HTMLButtonElement) {
-    chooseEmailBtn.addEventListener('click', async () => {
-      if (!requestEmailEndpoint) {
-        setStatus('Email login is not configured.', true);
-        return;
-      }
-      setStatus('Sending code to your email...');
-      chooseEmailBtn.disabled = true;
-      try {
-        await apiRequest(requestEmailEndpoint, {
-          method: 'POST',
-          body: JSON.stringify({ email: enteredEmail })
-        });
-        otpChannel = 'email';
-        if (otpSubtitle instanceof HTMLElement) {
-          otpSubtitle.textContent = `We sent a 6-digit code to ${enteredEmail}.`;
-        }
-        showStep(stepOtp);
-        codeInput.focus();
-      } catch (error) {
-        setStatus(error instanceof Error ? error.message : 'Unable to send code.', true);
-      } finally {
-        chooseEmailBtn.disabled = false;
-      }
-    });
-  }
+    if (!isEmail && !isPhone) {
+      setStatus('Enter a valid email address or mobile number (e.g. +923001234567).', true);
+      entryInput.focus();
+      return;
+    }
 
-  if (choosePhoneBtn instanceof HTMLButtonElement) {
-    choosePhoneBtn.addEventListener('click', () => {
-      if (phoneExpand instanceof HTMLElement) {
-        const isHidden = phoneExpand.classList.contains('is-hidden');
-        phoneExpand.classList.toggle('is-hidden', !isHidden);
-        if (isHidden && phoneInput instanceof HTMLInputElement) phoneInput.focus();
-      }
-    });
-  }
+    enteredValue = value;
+    otpChannel = isEmail ? 'email' : 'phone';
 
-  if (phoneSendBtn instanceof HTMLButtonElement) {
-    phoneSendBtn.addEventListener('click', async () => {
-      if (!requestPhoneEndpoint) {
-        setStatus('SMS login is not configured.', true);
-        return;
+    const requestEndpoint = isEmail ? requestEmailEndpoint : requestPhoneEndpoint;
+    if (!requestEndpoint) {
+      setStatus('Login is not configured.', true);
+      return;
+    }
+
+    setStatus(isEmail ? 'Sending code to your email...' : 'Sending code to your mobile...');
+    continueBtn.disabled = true;
+
+    try {
+      await apiRequest(requestEndpoint, {
+        method: 'POST',
+        body: isEmail
+          ? JSON.stringify({ email: value })
+          : JSON.stringify({ phone: value })
+      });
+
+      if (otpSubtitle instanceof HTMLElement) {
+        otpSubtitle.textContent = `We sent a 6-digit code to ${value}. It expires in 10 minutes.`;
       }
-      const phone = phoneInput instanceof HTMLInputElement ? phoneInput.value.trim() : '';
-      if (phone.length < 7) {
-        setStatus('Enter your mobile number first.', true);
-        if (phoneInput instanceof HTMLInputElement) phoneInput.focus();
-        return;
-      }
-      setStatus('Sending code to your mobile...');
-      phoneSendBtn.disabled = true;
-      try {
-        await apiRequest(requestPhoneEndpoint, {
-          method: 'POST',
-          body: JSON.stringify({ phone, email: enteredEmail })
-        });
-        otpChannel = 'phone';
-        if (otpSubtitle instanceof HTMLElement) {
-          otpSubtitle.textContent = `We sent a 6-digit code to ${phone}.`;
-        }
-        showStep(stepOtp);
-        codeInput.focus();
-      } catch (error) {
-        setStatus(error instanceof Error ? error.message : 'Unable to send code.', true);
-      } finally {
-        phoneSendBtn.disabled = false;
-      }
+      showStep(stepOtp);
+      codeInput.focus();
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Unable to send verification code.', true);
+    } finally {
+      continueBtn.disabled = false;
+    }
+  };
+
+  continueBtn.addEventListener('click', sendOtp);
+  entryInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') continueBtn.click(); });
+
+  if (resendBtn instanceof HTMLButtonElement) {
+    resendBtn.addEventListener('click', () => {
+      showStep(stepEntry);
+      entryInput.focus();
     });
   }
 
@@ -6082,11 +6049,8 @@ const initCustomerOtpLogin = () => {
     try {
       const body =
         otpChannel === 'email'
-          ? JSON.stringify({ email: enteredEmail, code })
-          : JSON.stringify({
-              phone: phoneInput instanceof HTMLInputElement ? phoneInput.value.trim() : '',
-              code
-            });
+          ? JSON.stringify({ email: enteredValue, code })
+          : JSON.stringify({ phone: enteredValue, code });
 
       const payload = await apiRequest(verifyEndpoint, { method: 'POST', body });
 
@@ -6099,9 +6063,7 @@ const initCustomerOtpLogin = () => {
     }
   });
 
-  codeInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') verifyBtn.click();
-  });
+  codeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') verifyBtn.click(); });
 };
 
 const getCustomerInitial = (session) => {
