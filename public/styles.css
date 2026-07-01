@@ -4343,6 +4343,110 @@ textarea:focus-visible {
   margin-top: 16px;
 }
 
+.login-step {
+  display: contents;
+}
+
+.login-step.is-hidden {
+  display: none;
+}
+
+.login-method-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 18px;
+  margin-bottom: 10px;
+  background: #fff;
+  border: 1.5px solid rgba(17, 17, 17, 0.12);
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.18s, transform 0.18s;
+}
+
+.login-method-card:hover,
+.login-method-card:focus-visible {
+  border-color: rgba(108, 76, 245, 0.35);
+  transform: translateY(-2px);
+}
+
+.login-method-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: rgba(108, 76, 245, 0.07);
+  border-radius: 10px;
+  flex-shrink: 0;
+  color: #4f46d8;
+}
+
+.login-method-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.login-method-text {
+  flex: 1;
+  display: grid;
+  gap: 2px;
+}
+
+.login-method-text strong {
+  font-size: 0.97rem;
+  font-weight: 700;
+  color: #111;
+}
+
+.login-method-text span {
+  font-size: 0.82rem;
+  color: #5f5953;
+}
+
+.login-phone-expand {
+  margin-top: 4px;
+  padding: 16px;
+  background: rgba(108, 76, 245, 0.04);
+  border: 1.5px solid rgba(108, 76, 245, 0.14);
+  border-radius: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.customer-login-google {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 20px;
+  margin-top: 10px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: 1.5px solid rgba(17, 17, 17, 0.18);
+  border-radius: 10px;
+  background: #fff;
+  color: #111;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.customer-login-google:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .customer-login-divider {
   display: grid;
   grid-template-columns: 1fr auto 1fr;

@@ -258,7 +258,9 @@ const envSchema = z.object({
   STRIPE_PACKAGE_PAYMENT_APPLICATION_FEE_CENTS: z.coerce.number().int().min(0).default(0),
   STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE: z.boolean().default(false),
   STRIPE_CONNECT_COUNTRY_CODE: z.string().trim().length(2).default('GB'),
-  SALON_ADMIN_PHONE: z.string().optional()
+  SALON_ADMIN_PHONE: z.string().optional(),
+  SENDGRID_API_KEY: z.string().trim().min(1).optional(),
+  SENDGRID_FROM_EMAIL: z.string().email().optional()
 });
 
 const appEnv = process.env.APP_ENV ?? 'dev';
@@ -432,7 +434,9 @@ const resolvedEnv = {
     process.env.STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE,
     false
   ),
-  STRIPE_CONNECT_COUNTRY_CODE: process.env.STRIPE_CONNECT_COUNTRY_CODE?.trim()
+  STRIPE_CONNECT_COUNTRY_CODE: process.env.STRIPE_CONNECT_COUNTRY_CODE?.trim(),
+  SENDGRID_API_KEY: process.env.SENDGRID_API_KEY?.trim(),
+  SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL?.trim()
 };
 
 const parsedEnv = envSchema.parse(resolvedEnv);

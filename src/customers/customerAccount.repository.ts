@@ -39,6 +39,10 @@ class CustomerAccountRepository {
     return this.store.getCustomerByPhone(phone);
   }
 
+  getCustomerByEmail(email: string): Promise<CustomerAccount | undefined> {
+    return this.store.getCustomerByEmail(email);
+  }
+
   getCustomerBySessionToken(sessionToken: string): Promise<CustomerAccount | undefined> {
     return this.store.getCustomerBySessionToken(sessionToken);
   }

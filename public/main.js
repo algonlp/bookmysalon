@@ -5898,111 +5898,209 @@ const initCustomerLogin = () => {
 
 const initCustomerOtpLogin = () => {
   const form = document.querySelector('#customer-login-form');
-  const nameInput = document.querySelector('#customer-login-name');
-  const emailInput = document.querySelector('#customer-login-email');
-  const phoneInput = document.querySelector('#customer-login-phone');
-  const codeInput = document.querySelector('#customer-login-code');
-  const otpPanel = document.querySelector('#customer-login-otp-panel');
-  const verifyButton = document.querySelector('#customer-login-verify');
-  const status = document.querySelector('#customer-login-status');
+  const stepEmail = document.querySelector('#login-step-email');
+  const stepMethod = document.querySelector('#login-step-method');
+  const stepOtp = document.querySelector('#login-step-otp');
 
   if (
     !(form instanceof HTMLFormElement) ||
-    !(phoneInput instanceof HTMLInputElement) ||
-    !(codeInput instanceof HTMLInputElement) ||
-    !(otpPanel instanceof HTMLElement) ||
-    !(verifyButton instanceof HTMLButtonElement)
+    !(stepEmail instanceof HTMLElement) ||
+    !(stepMethod instanceof HTMLElement) ||
+    !(stepOtp instanceof HTMLElement)
   ) {
     return;
   }
 
-  const requestEndpoint = form.dataset.requestOtpEndpoint?.trim();
-  const verifyEndpoint = form.dataset.verifyOtpEndpoint?.trim();
+  const emailInput = document.querySelector('#customer-login-email');
+  const emailContinueBtn = document.querySelector('#login-email-continue');
+  const emailDisplay = document.querySelector('#login-email-display');
+  const chooseEmailBtn = document.querySelector('#login-choose-email');
+  const choosePhoneBtn = document.querySelector('#login-choose-phone');
+  const phoneExpand = document.querySelector('#login-phone-expand');
+  const phoneInput = document.querySelector('#customer-login-phone');
+  const phoneSendBtn = document.querySelector('#login-phone-send');
+  const otpSubtitle = document.querySelector('#login-otp-subtitle');
+  const codeInput = document.querySelector('#customer-login-code');
+  const verifyBtn = document.querySelector('#customer-login-verify');
+  const status = document.querySelector('#customer-login-status');
+  const backLink = document.querySelector('#customer-login-back');
+
+  if (
+    !(emailInput instanceof HTMLInputElement) ||
+    !(emailContinueBtn instanceof HTMLButtonElement) ||
+    !(codeInput instanceof HTMLInputElement) ||
+    !(verifyBtn instanceof HTMLButtonElement)
+  ) {
+    return;
+  }
+
+  const requestPhoneEndpoint = form.dataset.requestPhoneOtpEndpoint?.trim();
+  const verifyPhoneEndpoint = form.dataset.verifyPhoneOtpEndpoint?.trim();
+  const requestEmailEndpoint = form.dataset.requestEmailOtpEndpoint?.trim();
+  const verifyEmailEndpoint = form.dataset.verifyEmailOtpEndpoint?.trim();
+
   const params = new URLSearchParams(window.location.search);
   const redirectPath = params.get('redirect') || '/';
-  const safeRedirectPath = redirectPath.startsWith('/') && !redirectPath.startsWith('//') ? redirectPath : '/';
+  const safeRedirectPath =
+    redirectPath.startsWith('/') && !redirectPath.startsWith('//') ? redirectPath : '/';
 
   if (isCustomerLoggedIn()) {
     window.location.assign(safeRedirectPath);
     return;
   }
 
-  const setStatus = (message = '', isError = false) => {
-    if (!(status instanceof HTMLElement)) {
-      return;
-    }
+  let enteredEmail = '';
+  let otpChannel = '';
 
+  const setStatus = (message = '', isError = false) => {
+    if (!(status instanceof HTMLElement)) return;
     status.textContent = message;
     status.classList.toggle('is-error', isError);
   };
 
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
+  const showStep = (step) => {
+    [stepEmail, stepMethod, stepOtp].forEach((el) => el.classList.add('is-hidden'));
+    step.classList.remove('is-hidden');
+    setStatus('');
+  };
 
-    if (!requestEndpoint) {
-      setStatus('Customer login is not configured.', true);
+  if (backLink instanceof HTMLAnchorElement) {
+    backLink.addEventListener('click', (e) => {
+      if (!stepMethod.classList.contains('is-hidden')) {
+        e.preventDefault();
+        showStep(stepEmail);
+      } else if (!stepOtp.classList.contains('is-hidden')) {
+        e.preventDefault();
+        showStep(stepMethod);
+      }
+    });
+  }
+
+  emailContinueBtn.addEventListener('click', () => {
+    const email = emailInput.value.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setStatus('Please enter a valid email address.', true);
+      emailInput.focus();
       return;
     }
-
-    const phone = phoneInput.value.trim();
-
-    if (phone.length < 7) {
-      setStatus('Enter your mobile number first.', true);
-      phoneInput.focus();
-      return;
-    }
-
-    setStatus('Sending verification code...');
-
-    try {
-      const payload = await apiRequest(requestEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          phone,
-          name: nameInput instanceof HTMLInputElement ? nameInput.value.trim() : '',
-          email: emailInput instanceof HTMLInputElement ? emailInput.value.trim() : ''
-        })
-      });
-
-      otpPanel.classList.remove('is-hidden');
-      codeInput.focus();
-      setStatus(payload?.message || 'Verification code sent.');
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Unable to send verification code.', true);
-    }
+    enteredEmail = email;
+    if (emailDisplay instanceof HTMLElement) emailDisplay.textContent = email;
+    showStep(stepMethod);
   });
 
-  verifyButton.addEventListener('click', async () => {
-    if (!verifyEndpoint) {
-      setStatus('Customer login is not configured.', true);
-      return;
-    }
+  emailInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') emailContinueBtn.click();
+  });
 
-    const phone = phoneInput.value.trim();
+  if (chooseEmailBtn instanceof HTMLButtonElement) {
+    chooseEmailBtn.addEventListener('click', async () => {
+      if (!requestEmailEndpoint) {
+        setStatus('Email login is not configured.', true);
+        return;
+      }
+      setStatus('Sending code to your email...');
+      chooseEmailBtn.disabled = true;
+      try {
+        await apiRequest(requestEmailEndpoint, {
+          method: 'POST',
+          body: JSON.stringify({ email: enteredEmail })
+        });
+        otpChannel = 'email';
+        if (otpSubtitle instanceof HTMLElement) {
+          otpSubtitle.textContent = `We sent a 6-digit code to ${enteredEmail}.`;
+        }
+        showStep(stepOtp);
+        codeInput.focus();
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : 'Unable to send code.', true);
+      } finally {
+        chooseEmailBtn.disabled = false;
+      }
+    });
+  }
+
+  if (choosePhoneBtn instanceof HTMLButtonElement) {
+    choosePhoneBtn.addEventListener('click', () => {
+      if (phoneExpand instanceof HTMLElement) {
+        const isHidden = phoneExpand.classList.contains('is-hidden');
+        phoneExpand.classList.toggle('is-hidden', !isHidden);
+        if (isHidden && phoneInput instanceof HTMLInputElement) phoneInput.focus();
+      }
+    });
+  }
+
+  if (phoneSendBtn instanceof HTMLButtonElement) {
+    phoneSendBtn.addEventListener('click', async () => {
+      if (!requestPhoneEndpoint) {
+        setStatus('SMS login is not configured.', true);
+        return;
+      }
+      const phone = phoneInput instanceof HTMLInputElement ? phoneInput.value.trim() : '';
+      if (phone.length < 7) {
+        setStatus('Enter your mobile number first.', true);
+        if (phoneInput instanceof HTMLInputElement) phoneInput.focus();
+        return;
+      }
+      setStatus('Sending code to your mobile...');
+      phoneSendBtn.disabled = true;
+      try {
+        await apiRequest(requestPhoneEndpoint, {
+          method: 'POST',
+          body: JSON.stringify({ phone, email: enteredEmail })
+        });
+        otpChannel = 'phone';
+        if (otpSubtitle instanceof HTMLElement) {
+          otpSubtitle.textContent = `We sent a 6-digit code to ${phone}.`;
+        }
+        showStep(stepOtp);
+        codeInput.focus();
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : 'Unable to send code.', true);
+      } finally {
+        phoneSendBtn.disabled = false;
+      }
+    });
+  }
+
+  verifyBtn.addEventListener('click', async () => {
     const code = codeInput.value.trim();
-
     if (!/^\d{6}$/.test(code)) {
       setStatus('Enter the 6 digit verification code.', true);
       codeInput.focus();
       return;
     }
 
+    const verifyEndpoint = otpChannel === 'email' ? verifyEmailEndpoint : verifyPhoneEndpoint;
+    if (!verifyEndpoint) {
+      setStatus('Login is not configured.', true);
+      return;
+    }
+
     setStatus('Verifying code...');
+    verifyBtn.disabled = true;
 
     try {
-      const payload = await apiRequest(verifyEndpoint, {
-        method: 'POST',
-        body: JSON.stringify({ phone, code })
-      });
+      const body =
+        otpChannel === 'email'
+          ? JSON.stringify({ email: enteredEmail, code })
+          : JSON.stringify({
+              phone: phoneInput instanceof HTMLInputElement ? phoneInput.value.trim() : '',
+              code
+            });
 
-      storeCustomerSession({
-        ...payload?.customer,
-        sessionToken: payload?.sessionToken
-      });
+      const payload = await apiRequest(verifyEndpoint, { method: 'POST', body });
+
+      storeCustomerSession({ ...payload?.customer, sessionToken: payload?.sessionToken });
       window.location.assign(safeRedirectPath);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Unable to verify code.', true);
+    } finally {
+      verifyBtn.disabled = false;
     }
+  });
+
+  codeInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') verifyBtn.click();
   });
 };
 

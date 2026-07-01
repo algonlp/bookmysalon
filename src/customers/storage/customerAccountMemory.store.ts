@@ -20,6 +20,10 @@ export class CustomerAccountMemoryStore implements CustomerAccountStore {
     return this.state.customers.find((customer) => customer.phone === phone);
   }
 
+  async getCustomerByEmail(email: string): Promise<CustomerAccount | undefined> {
+    return this.state.customers.find((c) => c.email.toLowerCase() === email.toLowerCase());
+  }
+
   async getCustomerBySessionToken(sessionToken: string): Promise<CustomerAccount | undefined> {
     return this.state.customers.find((customer) => customer.sessionToken === sessionToken);
   }

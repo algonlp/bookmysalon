@@ -14,6 +14,11 @@ export interface UpsertCustomerInput {
   email?: string;
 }
 
+export interface UpsertEmailCustomerInput {
+  email: string;
+  name?: string;
+}
+
 export interface UpdateCustomerProfileInput {
   name?: string;
   email?: string;
@@ -80,6 +85,39 @@ const createCustomer = (input: UpsertCustomerInput): CustomerAccount => {
 
 export const customerAccountService = {
   serializeCustomer,
+
+  async upsertVerifiedCustomerByEmail(input: UpsertEmailCustomerInput): Promise<CustomerAccount> {
+    const normalizedEmail = input.email.trim().toLowerCase();
+    const existingCustomer = await customerAccountRepository.getCustomerByEmail(normalizedEmail);
+    const now = new Date().toISOString();
+
+    if (!existingCustomer) {
+      const newCustomer: CustomerAccount = {
+        id: randomUUID(),
+        phone: '',
+        name: input.name?.trim() ?? '',
+        email: normalizedEmail,
+        dateOfBirth: '',
+        gender: '',
+        addresses: [],
+        favoriteSalonIds: [],
+        wallet: { balanceMinor: 0, currencyCode: 'USD', giftCards: [], cards: [] },
+        notifications: defaultNotifications(),
+        socialLogins: defaultSocialLogins(),
+        sessionToken: createSessionToken(),
+        createdAt: now,
+        updatedAt: now
+      };
+      return customerAccountRepository.saveCustomer(newCustomer);
+    }
+
+    return customerAccountRepository.saveCustomer({
+      ...existingCustomer,
+      name: input.name?.trim() || existingCustomer.name,
+      sessionToken: createSessionToken(),
+      updatedAt: now
+    });
+  },
 
   async upsertVerifiedCustomer(input: UpsertCustomerInput): Promise<CustomerAccount> {
     const phone = normalizePhone(input.phone);
