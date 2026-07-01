@@ -260,7 +260,13 @@ const envSchema = z.object({
   STRIPE_CONNECT_COUNTRY_CODE: z.string().trim().length(2).default('GB'),
   SALON_ADMIN_PHONE: z.string().optional(),
   SENDGRID_API_KEY: z.string().trim().min(1).optional(),
-  SENDGRID_FROM_EMAIL: z.string().email().optional()
+  SENDGRID_FROM_EMAIL: z.string().email().optional(),
+  SMTP_HOST: z.string().trim().min(1).optional(),
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+  SMTP_SECURE: z.boolean().default(false),
+  SMTP_USER: z.string().trim().min(1).optional(),
+  SMTP_PASS: z.string().trim().min(1).optional(),
+  SMTP_FROM: z.string().trim().min(1).optional()
 });
 
 const appEnv = process.env.APP_ENV ?? 'dev';
@@ -435,8 +441,14 @@ const resolvedEnv = {
     false
   ),
   STRIPE_CONNECT_COUNTRY_CODE: process.env.STRIPE_CONNECT_COUNTRY_CODE?.trim(),
-  SENDGRID_API_KEY: process.env.SENDGRID_API_KEY?.trim(),
-  SENDGRID_FROM_EMAIL: process.env.SENDGRID_FROM_EMAIL?.trim()
+  SENDGRID_API_KEY: normalizeOptionalEnv(process.env.SENDGRID_API_KEY),
+  SENDGRID_FROM_EMAIL: normalizeOptionalEnv(process.env.SENDGRID_FROM_EMAIL),
+  SMTP_HOST: normalizeOptionalEnv(process.env.SMTP_HOST),
+  SMTP_PORT: process.env.SMTP_PORT,
+  SMTP_SECURE: parseBooleanEnv(process.env.SMTP_SECURE, false),
+  SMTP_USER: normalizeOptionalEnv(process.env.SMTP_USER),
+  SMTP_PASS: normalizeOptionalEnv(process.env.SMTP_PASS),
+  SMTP_FROM: normalizeOptionalEnv(process.env.SMTP_FROM)
 };
 
 const parsedEnv = envSchema.parse(resolvedEnv);
