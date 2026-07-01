@@ -6137,14 +6137,31 @@ const initCustomerProfilePage = () => {
         : 'Add debit/credit card'
     );
 
-    const favoriteCount = Array.isArray(customer.favoriteSalonIds) ? customer.favoriteSalonIds.length : 0;
+    const favoriteIds = Array.isArray(customer.favoriteSalonIds) ? customer.favoriteSalonIds : [];
+    const favoriteCount = favoriteIds.length;
     setText('#customer-favorites-title', favoriteCount > 0 ? `${favoriteCount} favorite${favoriteCount === 1 ? '' : 's'}` : 'No favorites');
     setText(
       '#customer-favorites-copy',
       favoriteCount > 0
-        ? 'Your saved salons will be listed here as the catalog grows.'
+        ? 'Your saved salons are listed below.'
         : "Your favorites list is empty. Let's fill it up!"
     );
+
+    const favoritesList = document.querySelector('#customer-favorites-list');
+    const favoritesEmpty = document.querySelector('#customer-favorites-empty');
+    if (favoritesList instanceof HTMLElement && favoriteCount > 0) {
+      favoritesList.classList.remove('is-hidden');
+      if (favoritesEmpty instanceof HTMLElement) {
+        favoritesEmpty.classList.add('is-hidden');
+      }
+      apiRequest('/api/public/salons')
+        .then((payload) => {
+          const allSalons = Array.isArray(payload?.salons) ? payload.salons : [];
+          const favSalons = allSalons.filter((salon) => favoriteIds.includes(getSalonDetailId(salon)));
+          favoritesList.replaceChildren(...favSalons.map(createSalonShowcaseCard));
+        })
+        .catch(() => {})
+    }
 
     const notifications = customer.notifications ?? {};
     setChecked('#customer-notify-appointment-text', notifications.appointmentTextMessage);
@@ -17615,6 +17632,11 @@ const initPublicBooking = () => {
 
   bookingForm.addEventListener('submit', async (event) => {
     event.preventDefault();
+
+    if (!timeSelect.value) {
+      safeAlert('Please select a time slot before confirming.');
+      return;
+    }
 
     try {
       const selectedBookingLocation = getSelectedBookingLocation();

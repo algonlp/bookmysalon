@@ -824,6 +824,13 @@ textarea:focus-visible {
   min-height: calc(100vh - 160px);
 }
 
+.customer-favorites-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 28px;
+}
+
 .customer-simple-empty {
   display: grid;
   justify-items: center;
