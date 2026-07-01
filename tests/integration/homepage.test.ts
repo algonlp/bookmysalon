@@ -62,7 +62,7 @@ describe('GET /', () => {
     expect(response.headers['content-type']).toContain('text/html');
     expect(response.text).toContain('QR schedule');
     expect(response.text).toContain('Enter your email address');
-    expect(response.text).toContain('Enter your password');
+    expect(response.text).toContain('Enter your mobile number');
   });
 
   it('serves the business landing page', async () => {

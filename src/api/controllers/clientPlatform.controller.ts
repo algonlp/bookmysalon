@@ -445,16 +445,6 @@ export const clientPlatformController = {
       throw new HttpError(404, 'Account not found. Sign up to create a new workspace.');
     }
 
-    if (client.password) {
-      if (!input.password) {
-        throw new HttpError(400, 'Password is required.');
-      }
-
-      if (!verifyPassword(input.password, client.password)) {
-        throw new HttpError(401, 'Invalid password.');
-      }
-    }
-
     if (!client.mobileNumber) {
       const payload = await clientPlatformService.loginClient(input);
       setAdminSessionCookie(res, payload.plainAdminToken);

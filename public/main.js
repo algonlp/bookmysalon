@@ -5383,7 +5383,6 @@ const initSignup = () => {
   const mobileWrap = document.querySelector('#professional-mobile-wrap');
   const googleSigninHost = document.querySelector('#google-signin-host');
   const mobileInput = document.querySelector('#professional-mobile');
-  const passwordInput = document.querySelector('#professional-password');
   const providerButtons = document.querySelectorAll('[data-auth-provider]');
   const otpPanel = document.querySelector('#pro-signup-otp-panel');
   const otpCodeInput = document.querySelector('#pro-signup-otp-code');
@@ -5463,15 +5462,8 @@ const initSignup = () => {
 
     if (formSubtitle instanceof HTMLElement) {
       formSubtitle.textContent = isSignup
-        ? 'Enter your email, name, mobile number and password.'
-        : 'Enter your email or mobile number and password.';
-    }
-
-    if (passwordInput instanceof HTMLInputElement) {
-      passwordInput.placeholder = isSignup
-        ? 'Create a password (min 6 characters)'
-        : 'Enter your password';
-      passwordInput.autocomplete = isSignup ? 'new-password' : 'current-password';
+        ? 'Enter your email, name and mobile number to get a verification code.'
+        : 'Enter your email or mobile number to continue.';
     }
 
     if (toggleText instanceof HTMLElement) {
@@ -5776,7 +5768,6 @@ const initSignup = () => {
     const emailValue = emailInput instanceof HTMLInputElement ? emailInput.value : '';
     const nameValue = nameInput instanceof HTMLInputElement ? nameInput.value : '';
     const mobileValue = mobileInput instanceof HTMLInputElement ? mobileInput.value : '';
-    const passwordValue = passwordInput instanceof HTMLInputElement ? passwordInput.value : '';
 
     if (formMode === 'signup') {
       if (!emailValue.trim()) {
@@ -5789,14 +5780,9 @@ const initSignup = () => {
         return;
       }
 
-      if (!passwordValue.trim() || passwordValue.trim().length < 6) {
-        safeAlert('Create a password with at least 6 characters.');
-        return;
-      }
-
       setSubmitLoading(true);
       try {
-        await createClient('email', emailValue, mobileValue, passwordValue, nameValue);
+        await createClient('email', emailValue, mobileValue, '', nameValue);
       } catch (error) {
         setSubmitLoading(false);
         safeAlert(error instanceof Error ? error.message : 'Unable to create account.');
@@ -5810,7 +5796,7 @@ const initSignup = () => {
     }
 
     setSubmitLoading(true);
-    await continueWithEmailOrMobile(emailValue, mobileValue, passwordValue, nameValue);
+    await continueWithEmailOrMobile(emailValue, mobileValue, '', nameValue);
     setSubmitLoading(false);
   });
 
