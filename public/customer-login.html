@@ -17,51 +17,55 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
-    <div class="customer-login-page">
-      <section class="customer-login-panel">
-        <div class="login-topbar">
-          <a class="back-link" href="/login" aria-label="Go back" id="customer-login-back">
-            <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
-              <path d="M15 5l-7 7 7 7"></path>
-            </svg>
-          </a>
-        </div>
+    <div class="cl-page">
+      <div class="cl-topbar">
+        <a class="cl-topbar-back back-link" href="/login" aria-label="Go back" id="customer-login-back">
+          <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+            <path d="M15 5l-7 7 7 7"></path>
+          </svg>
+        </a>
+        <a class="cl-topbar-brand brand" href="/">QR Schedule</a>
+      </div>
 
+      <main class="cl-main">
         <form
-          class="customer-login-form"
+          class="cl-card"
           id="customer-login-form"
           data-request-phone-otp-endpoint="/api/public/customer-auth/otp/request"
           data-verify-phone-otp-endpoint="/api/public/customer-auth/otp/verify"
           data-request-email-otp-endpoint="/api/public/customer-auth/email-otp/request"
           data-verify-email-otp-endpoint="/api/public/customer-auth/email-otp/verify"
         >
-          <!-- Step 1: Email or phone input -->
+          <!-- Step 1: Entry -->
           <div class="login-step" id="login-step-entry">
-            <div class="customer-login-copy">
-              <h1>Sign up or log in</h1>
-              <p>Enter your email or mobile number to continue.</p>
-            </div>
+            <h1 class="cl-heading">Log in to QR Schedule</h1>
 
-            <label class="customer-login-field">
-              <span>Email or mobile number</span>
+            <div class="cl-input-wrap">
+              <span class="cl-input-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <circle cx="12" cy="8" r="4"></circle>
+                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"></path>
+                </svg>
+              </span>
               <input
+                class="cl-input"
                 id="customer-login-entry"
                 name="entry"
                 type="text"
                 inputmode="email"
                 autocomplete="email"
-                placeholder="you@example.com or +923001234567"
+                placeholder="Email or mobile number"
               />
-            </label>
+            </div>
 
-            <button class="customer-login-primary" type="button" id="login-entry-continue">
+            <button class="cl-btn-primary" type="button" id="login-entry-continue">
               Continue
             </button>
 
-            <div class="customer-login-divider"><span>OR</span></div>
+            <div class="cl-divider"><span>or</span></div>
 
-            <button class="customer-login-google" type="button" disabled>
-              <svg viewBox="0 0 24 24" width="18" height="18" focusable="false" aria-hidden="true">
+            <button class="cl-btn-google" type="button" disabled>
+              <svg viewBox="0 0 24 24" width="20" height="20" focusable="false" aria-hidden="true">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
@@ -69,47 +73,61 @@
               </svg>
               Continue with Google
             </button>
+
+            <button class="cl-btn-apple" type="button" disabled>
+              <svg viewBox="0 0 24 24" width="20" height="20" focusable="false" aria-hidden="true" fill="currentColor">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98l-.09.06c-.22.14-2.18 1.27-2.16 3.8.03 3.02 2.65 4.03 2.68 4.04l-.07.28zM13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+              </svg>
+              Continue with Apple
+            </button>
+
+            <div class="cl-signup-section">
+              <p>Don't have a QR Schedule account?</p>
+              <a class="cl-btn-signup" href="/login">Sign Up</a>
+            </div>
           </div>
 
-          <!-- Step 2: OTP entry -->
+          <!-- Step 2: OTP -->
           <div class="login-step is-hidden" id="login-step-otp">
-            <div class="customer-login-copy">
-              <h1>Enter your code</h1>
-              <p id="login-otp-subtitle">We sent you a 6-digit verification code.</p>
-            </div>
+            <h1 class="cl-heading">Enter your code</h1>
+            <p class="cl-subheading" id="login-otp-subtitle">We sent you a 6-digit verification code.</p>
 
-            <label class="customer-login-field">
-              <span>Verification code</span>
+            <div class="cl-input-wrap">
+              <span class="cl-input-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                  <rect x="3" y="11" width="18" height="11" rx="2"></rect>
+                  <path d="M7 11V7a5 5 0 0110 0v4"></path>
+                </svg>
+              </span>
               <input
+                class="cl-input"
                 id="customer-login-code"
                 name="code"
                 type="text"
                 inputmode="numeric"
                 autocomplete="one-time-code"
                 maxlength="6"
-                placeholder="123456"
+                placeholder="6-digit code"
               />
-            </label>
+            </div>
 
-            <button class="customer-login-primary" type="button" id="customer-login-verify">
+            <button class="cl-btn-primary" type="button" id="customer-login-verify">
               Verify and continue
             </button>
 
-            <button class="customer-login-resend" type="button" id="customer-login-resend">
+            <button class="cl-btn-resend" type="button" id="customer-login-resend">
               Resend code
             </button>
           </div>
 
-          <p class="customer-login-status" id="customer-login-status" aria-live="polite"></p>
+          <p class="cl-status" id="customer-login-status" aria-live="polite"></p>
 
-          <p class="customer-login-owner-link">
-            Have a business account?
+          <p class="cl-pro-link">
+            Are you a business?
             <a href="/signup">Go to QR Schedule for professionals</a>
           </p>
         </form>
-      </section>
-
-      <aside class="customer-login-visual" aria-hidden="true"></aside>
+      </main>
     </div>
 
     <script src="/main.js"></script>
