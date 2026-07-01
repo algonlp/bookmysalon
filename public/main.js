@@ -17594,6 +17594,10 @@ const initPublicBooking = () => {
 
       savedWaitlistSignature = getWaitlistSignature();
       successPanel.classList.remove('is-hidden');
+      if (bookingBackLink instanceof HTMLAnchorElement) {
+        bookingBackLink.href = '/activity';
+        bookingBackLink.setAttribute('aria-label', 'Go to dashboard');
+      }
       successCopy.textContent =
         `You joined the waitlist for ${payload.waitlistEntry.serviceName} on ${formatDateForDisplay(payload.waitlistEntry.appointmentDate)}.` +
         `${payload.waitlistEntry.teamMemberName ? ` Preferred team member: ${payload.waitlistEntry.teamMemberName}.` : ''} ` +
@@ -17983,6 +17987,11 @@ const initManageBooking = () => {
       summaryCopy.textContent = `Currently planned for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}.${payload.appointment.packageName ? ` Package: ${payload.appointment.packageName}${payload.appointment.packageTotalUses ? ` (${payload.appointment.packageTotalUses} use${payload.appointment.packageTotalUses === 1 ? '' : 's'})` : ''}${payload.appointment.packagePriceLabel ? ` - ${payload.appointment.packagePriceLabel}` : ''}.` : ''} Reference: ${payload.appointment.id.slice(0, 8)}.`;
       successPanel.classList.remove('is-hidden');
       successCopy.textContent = `Your appointment has been moved to ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}. SMS status: ${Array.isArray(payload.notifications) ? payload.notifications.map((entry) => `${entry.recipient} ${entry.status}`).join(', ') : 'updated'}.`;
+      const manageRescheduleBackLink = document.querySelector('.back-link');
+      if (manageRescheduleBackLink instanceof HTMLAnchorElement) {
+        manageRescheduleBackLink.href = '/activity';
+        manageRescheduleBackLink.setAttribute('aria-label', 'Go to dashboard');
+      }
       setStatus('Appointment rescheduled successfully.', 'success');
       startCountdown();
       await loadSlots(payload.appointment.appointmentTime);
@@ -18009,6 +18018,11 @@ const initManageBooking = () => {
       setFormDisabled(true);
       successPanel.classList.remove('is-hidden');
       successCopy.textContent = 'Your appointment has been cancelled.';
+      const manageCancelBackLink = document.querySelector('.back-link');
+      if (manageCancelBackLink instanceof HTMLAnchorElement) {
+        manageCancelBackLink.href = '/activity';
+        manageCancelBackLink.setAttribute('aria-label', 'Go to dashboard');
+      }
       setStatus('Appointment cancelled.', 'warning');
       summaryCopy.textContent = `This appointment was cancelled.${payload.appointment.packageName ? ` Package: ${payload.appointment.packageName}${payload.appointment.packageTotalUses ? ` (${payload.appointment.packageTotalUses} use${payload.appointment.packageTotalUses === 1 ? '' : 's'})` : ''}${payload.appointment.packagePriceLabel ? ` - ${payload.appointment.packagePriceLabel}` : ''}.` : ''} Reference: ${payload.appointment.id.slice(0, 8)}.`;
       syncCountdown();
