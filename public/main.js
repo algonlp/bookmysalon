@@ -5872,15 +5872,19 @@ const initSignup = () => {
     }
 
     button.addEventListener('click', async () => {
-      if (button.dataset.authProvider === 'google') {
-        await continueWithGoogle();
-        return;
-      }
+      button.disabled = true;
 
       try {
+        if (button.dataset.authProvider === 'google') {
+          await continueWithGoogle();
+          return;
+        }
+
         await createClient(button.dataset.authProvider ?? 'email');
       } catch (error) {
         safeAlert(error instanceof Error ? error.message : 'Unable to continue');
+      } finally {
+        button.disabled = false;
       }
     });
   }
@@ -6342,6 +6346,11 @@ const initCustomerProfilePage = () => {
     const nextFirstName = firstNameInput.value.trim();
     const nextLastName = lastNameInput.value.trim();
     const nextName = [nextFirstName, nextLastName].filter(Boolean).join(' ') || renderedProfile.displayName;
+    const editFormSubmitButton = editForm.querySelector('[type="submit"]');
+
+    if (editFormSubmitButton instanceof HTMLButtonElement) {
+      editFormSubmitButton.disabled = true;
+    }
 
     try {
       const payload = await customerApiRequest('/api/public/customers/me', {
@@ -6357,6 +6366,10 @@ const initCustomerProfilePage = () => {
       setEditMode(false);
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to update profile');
+    } finally {
+      if (editFormSubmitButton instanceof HTMLButtonElement) {
+        editFormSubmitButton.disabled = false;
+      }
     }
   });
 
@@ -6468,6 +6481,10 @@ const initBusinessProfile = () => {
       return;
     }
 
+    if (continueButton instanceof HTMLButtonElement) {
+      continueButton.disabled = true;
+    }
+
     try {
       await apiRequest(`/api/platform/clients/${clientId}/business-profile`, {
         method: 'PATCH',
@@ -6482,6 +6499,9 @@ const initBusinessProfile = () => {
       redirectTo('/onboarding/service-types', clientId);
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to save business profile');
+      if (continueButton instanceof HTMLButtonElement) {
+        continueButton.disabled = false;
+      }
     }
   };
 
@@ -6611,6 +6631,8 @@ const initServiceTypes = () => {
       return;
     }
 
+    continueButton.disabled = true;
+
     try {
       await apiRequest(`/api/platform/clients/${clientId}/service-types`, {
         method: 'PATCH',
@@ -6621,6 +6643,7 @@ const initServiceTypes = () => {
 
       redirectTo('/onboarding/account-type', clientId);
     } catch (error) {
+      continueButton.disabled = false;
       safeAlert(error instanceof Error ? error.message : 'Unable to save service types');
     }
   });
@@ -6703,6 +6726,8 @@ const initAccountType = () => {
       return;
     }
 
+    continueButton.disabled = true;
+
     try {
       await apiRequest(`/api/platform/clients/${clientId}/account-type`, {
         method: 'PATCH',
@@ -6711,6 +6736,7 @@ const initAccountType = () => {
 
       redirectTo('/onboarding/service-location', clientId);
     } catch (error) {
+      continueButton.disabled = false;
       safeAlert(error instanceof Error ? error.message : 'Unable to save account type');
     }
   });
@@ -6798,6 +6824,8 @@ const initServiceLocation = () => {
       return;
     }
 
+    continueButton.disabled = true;
+
     try {
       await apiRequest(`/api/platform/clients/${clientId}/service-location`, {
         method: 'PATCH',
@@ -6806,6 +6834,7 @@ const initServiceLocation = () => {
 
       redirectTo('/onboarding/venue-location', clientId);
     } catch (error) {
+      continueButton.disabled = false;
       safeAlert(error instanceof Error ? error.message : 'Unable to save service location');
     }
   });
@@ -7116,6 +7145,8 @@ const initVenueLocation = () => {
       return;
     }
 
+    venueAddressContinue.disabled = true;
+
     try {
       const payload = await apiRequest(`/api/platform/clients/${clientId}/venue-location`, {
         method: 'PATCH',
@@ -7124,6 +7155,7 @@ const initVenueLocation = () => {
 
       window.location.assign(payload.nextStep || buildPathWithClientId('/onboarding/salon-images', clientId));
     } catch (error) {
+      updateContinue();
       safeAlert(error instanceof Error ? error.message : 'Unable to save venue location');
     }
   });
@@ -7281,6 +7313,13 @@ const initSalonImages = () => {
 
   const saveSalonImages = async () => {
     const galleryImageUrls = getImageUrls();
+    const salonImagesSubmitButton = form.querySelector('[type="submit"]');
+
+    if (salonImagesSubmitButton instanceof HTMLButtonElement) {
+      salonImagesSubmitButton.disabled = true;
+    }
+
+    skipButton.disabled = true;
 
     try {
       const payload = await apiRequest(`/api/platform/clients/${clientId}/salon-images`, {
@@ -7290,6 +7329,11 @@ const initSalonImages = () => {
 
       window.location.assign(payload.nextStep || buildPathWithClientId('/onboarding/launch-links', clientId));
     } catch (error) {
+      if (salonImagesSubmitButton instanceof HTMLButtonElement) {
+        salonImagesSubmitButton.disabled = false;
+      }
+
+      skipButton.disabled = false;
       safeAlert(error instanceof Error ? error.message : 'Unable to save salon images');
     }
   };
@@ -14484,7 +14528,13 @@ const createTrendCard = (
     if (showQrAction instanceof HTMLButtonElement) {
       showQrAction.addEventListener('click', async () => {
         closeAddMenu();
-        await openQrModal();
+        showQrAction.disabled = true;
+
+        try {
+          await openQrModal();
+        } finally {
+          showQrAction.disabled = false;
+        }
       });
     }
 
@@ -15265,7 +15315,13 @@ const createTrendCard = (
 
   if (qrShortcutAction instanceof HTMLButtonElement) {
     qrShortcutAction.addEventListener('click', async () => {
-      await openQrModal();
+      qrShortcutAction.disabled = true;
+
+      try {
+        await openQrModal();
+      } finally {
+        qrShortcutAction.disabled = false;
+      }
     });
   }
 
@@ -15601,10 +15657,14 @@ const createTrendCard = (
 
   if (refreshAction instanceof HTMLButtonElement) {
     refreshAction.addEventListener('click', async () => {
+      refreshAction.disabled = true;
+
       try {
         await loadDashboard();
       } catch (error) {
         safeAlert(error instanceof Error ? error.message : 'Unable to refresh dashboard');
+      } finally {
+        refreshAction.disabled = false;
       }
     });
   }
@@ -17709,6 +17769,8 @@ const initPublicBooking = () => {
   });
 
   waitlistButton.addEventListener('click', async () => {
+    waitlistButton.disabled = true;
+
     try {
       const payload = await apiRequest(`/api/public/book/${businessId}/waitlist`, {
         method: 'POST',
@@ -17742,6 +17804,8 @@ const initPublicBooking = () => {
       successPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to join the waitlist');
+    } finally {
+      waitlistButton.disabled = false;
     }
   });
 
@@ -17848,6 +17912,10 @@ const initPublicBooking = () => {
   reviewForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
+    const reviewStarButtons = [...reviewStars.querySelectorAll('.booking-star-button')].filter(
+      (button) => button instanceof HTMLButtonElement
+    );
+
     try {
       const rating = Number(reviewRatingInput.value);
 
@@ -17859,6 +17927,10 @@ const initPublicBooking = () => {
       if (!reviewReferenceInput.value.trim()) {
         safeAlert('Please book an appointment first');
         return;
+      }
+
+      for (const button of reviewStarButtons) {
+        button.disabled = true;
       }
 
       const payload = await apiRequest(`/api/public/book/${businessId}/reviews`, {
@@ -17878,6 +17950,10 @@ const initPublicBooking = () => {
       reviewSuccessPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to submit review');
+    } finally {
+      for (const button of reviewStarButtons) {
+        button.disabled = false;
+      }
     }
   });
 
@@ -18119,6 +18195,12 @@ const initManageBooking = () => {
       return;
     }
 
+    const rescheduleSubmitButton = form.querySelector('[type="submit"]');
+
+    if (rescheduleSubmitButton instanceof HTMLButtonElement) {
+      rescheduleSubmitButton.disabled = true;
+    }
+
     try {
       const payload = await apiRequest(
         `/api/public/book/${businessId}/appointments/${encodeURIComponent(appointmentId)}/reschedule`,
@@ -18146,6 +18228,10 @@ const initManageBooking = () => {
       await loadSlots(payload.appointment.appointmentTime);
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to reschedule appointment');
+    } finally {
+      if (rescheduleSubmitButton instanceof HTMLButtonElement) {
+        rescheduleSubmitButton.disabled = false;
+      }
     }
   });
 
@@ -18153,6 +18239,8 @@ const initManageBooking = () => {
     if (!appointmentDetails || appointmentDetails.status !== 'booked') {
       return;
     }
+
+    cancelButton.disabled = true;
 
     try {
       const payload = await apiRequest(
@@ -18176,6 +18264,7 @@ const initManageBooking = () => {
       summaryCopy.textContent = `This appointment was cancelled.${payload.appointment.packageName ? ` Package: ${payload.appointment.packageName}${payload.appointment.packageTotalUses ? ` (${payload.appointment.packageTotalUses} use${payload.appointment.packageTotalUses === 1 ? '' : 's'})` : ''}${payload.appointment.packagePriceLabel ? ` - ${payload.appointment.packagePriceLabel}` : ''}.` : ''} Reference: ${payload.appointment.id.slice(0, 8)}.`;
       syncCountdown();
     } catch (error) {
+      cancelButton.disabled = false;
       safeAlert(error instanceof Error ? error.message : 'Unable to cancel appointment');
     }
   });
@@ -18338,6 +18427,8 @@ const initPreferredLanguage = () => {
       return;
     }
 
+    continueButton.disabled = true;
+
     try {
       await apiRequest(`/api/platform/clients/${clientId}/preferred-language`, {
         method: 'PATCH',
@@ -18351,6 +18442,7 @@ const initPreferredLanguage = () => {
 
       redirectTo('/onboarding/complete', clientId);
     } catch (error) {
+      continueButton.disabled = false;
       safeAlert(error instanceof Error ? error.message : 'Unable to save preferred language');
     }
   });
