@@ -16045,7 +16045,7 @@ const initPublicBooking = () => {
     !(timeSelect instanceof HTMLSelectElement) ||
     !(customerNameInput instanceof HTMLInputElement) ||
     !(customerPhoneLabel instanceof HTMLElement) ||
-    !(customerPhoneCountryCodeInput instanceof HTMLInputElement) ||
+    !(customerPhoneCountryCodeInput instanceof HTMLSelectElement) ||
     !(customerPhoneInput instanceof HTMLInputElement) ||
     !(customerPhoneHelp instanceof HTMLElement) ||
     !(customerEmailInput instanceof HTMLInputElement) ||
