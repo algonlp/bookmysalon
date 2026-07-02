@@ -1,56 +1,30 @@
 {
   "smsLogs": [
     {
-      "id": "7f372fc5-968b-4c3a-9e46-03eb188b333b",
-      "businessId": "3765eb45-6291-444f-a3bc-7352bc461657",
-      "appointmentId": "052b9e85-9407-4f79-8d6c-0a3e562c0995",
+      "id": "0f01d2d7-04b7-4f37-9cb0-7cdc1b050551",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "appointmentId": "6e28515d-c611-4682-87cf-4eb40cb4f08d",
       "recipient": "customer",
       "channel": "sms",
-      "destination": "+923337167515",
-      "status": "sent",
-      "source": "appointment_confirmation",
-      "body": "Your appointment at 123456 is confirmed for 2026-05-19 at 10:00. Service: Cut and style. Ref: 052b9e85. Open your live booking link for the countdown and updates: http://localhost:8002/book/3765eb45-6291-444f-a3bc-7352bc461657/manage/052b9e85-9407-4f79-8d6c-0a3e562c0995?accessToken=d47c4ce0-4e46-4b7e-b78e-4be0aa17fe6e",
-      "messageId": "SM418027fda84eafdc3012be8c2bfeb9f3",
-      "createdAt": "2026-05-18T05:15:27.779Z"
-    },
-    {
-      "id": "476d01fb-8961-4796-8530-1fb3f9a61a59",
-      "businessId": "a6a2a0e6-e3ad-45ec-8382-2a15dbfadd5b",
-      "appointmentId": "cdf40c22-f6da-4f07-9b09-0b2f699d5358",
-      "recipient": "customer",
-      "channel": "sms",
-      "destination": "+923337167515",
-      "status": "sent",
-      "source": "appointment_confirmation",
-      "body": "Your appointment at xyz is confirmed for 2026-06-03 at 09:00. Service: Cut and style. Ref: cdf40c22. Open your live booking link for the countdown and updates: http://localhost:8002/book/a6a2a0e6-e3ad-45ec-8382-2a15dbfadd5b/manage/cdf40c22-f6da-4f07-9b09-0b2f699d5358?accessToken=22653c80-52ae-4e79-8bb6-8b58e5d767af",
-      "messageId": "SMee789baa50a1463d723c11844c1229ee",
-      "createdAt": "2026-06-03T05:33:14.685Z"
-    },
-    {
-      "id": "9656aa6e-b911-437b-a479-f880f08355df",
-      "businessId": "01a6480d-f827-46f8-adf9-5f53c273d537",
-      "appointmentId": "ca60d33c-460d-4365-bd68-7bc0a774cada",
-      "recipient": "customer",
-      "channel": "sms",
-      "destination": "03001234567",
+      "destination": "1234567890",
       "status": "failed",
       "source": "appointment_confirmation",
-      "body": "Your appointment at Demo Salon Islamabad is confirmed for 2026-06-25 at 10:00. Service: Consultation. Ref: ca60d33c. Open your live booking link for the countdown and updates: http://localhost:8003/book/01a6480d-f827-46f8-adf9-5f53c273d537/manage/ca60d33c-460d-4365-bd68-7bc0a774cada?accessToken=a94fec93-1121-4f0b-bb87-742f43364cb1",
+      "body": "Your appointment at styleone_fsd is confirmed for 2026-07-02 at 11:00. Service: Cut and style. Ref: 6e28515d. Open your live booking link for the countdown and updates: http://localhost:8003/book/4a3b9419-7244-4fb5-99f8-771afb24ce7f/manage/6e28515d-c611-4682-87cf-4eb40cb4f08d?accessToken=11deeb6c-28dd-4c78-a9fb-cf768e76851f",
       "reason": "Recipient phone number must include a valid country code, for example +923001234567",
-      "createdAt": "2026-06-24T06:56:24.748Z"
+      "createdAt": "2026-07-02T05:44:28.623Z"
     },
     {
-      "id": "2f34c7e1-91fe-4743-a493-43003d583c27",
-      "businessId": "818ddf47-2e11-4d6a-8a50-387347f4c20e",
-      "appointmentId": "03bac5c7-6310-438b-99bc-f529bd4a3d08",
+      "id": "b0bf3e31-476c-403f-84b1-249a48929503",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "appointmentId": "3e197c00-d34f-4e2e-b6e5-aa274299a016",
       "recipient": "customer",
       "channel": "sms",
-      "destination": "333333333333",
+      "destination": "03230785312",
       "status": "failed",
       "source": "appointment_confirmation",
-      "body": "Your appointment at alhda is confirmed for 2026-06-24 at 09:00. Service: Cut and style. Ref: 03bac5c7. Open your live booking link for the countdown and updates: http://localhost:8003/book/818ddf47-2e11-4d6a-8a50-387347f4c20e/manage/03bac5c7-6310-438b-99bc-f529bd4a3d08?accessToken=ccbe8193-e891-43d6-bf06-8c535add1f2f",
+      "body": "Your appointment at styleone is confirmed for 2026-07-02 at 12:00. Service: Cut and style. Ref: 3e197c00. Open your live booking link for the countdown and updates: http://localhost:8003/book/4a3b9419-7244-4fb5-99f8-771afb24ce7f/manage/3e197c00-d34f-4e2e-b6e5-aa274299a016?accessToken=1eba0620-0729-40e9-9b33-e9d44762c7d6",
       "reason": "Recipient phone number must include a valid country code, for example +923001234567",
-      "createdAt": "2026-06-24T08:39:42.326Z"
+      "createdAt": "2026-07-02T06:47:49.408Z"
     }
   ]
 }
