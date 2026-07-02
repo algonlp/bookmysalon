@@ -1,14 +1,10 @@
 import { randomUUID } from 'crypto';
 import { env } from '../config/env';
 import { logger } from '../shared/logger';
+import { isTestEnvironment } from '../shared/runtimeEnv';
 import type { NotificationDispatchResult } from '../appointments/appointment.types';
 import { smsLogRepository } from './smsLog.repository';
 import type { SmsDispatchContext } from './smsLog.types';
-
-const isTestEnvironment = (): boolean =>
-  env.APP_ENV === 'test' ||
-  process.env.NODE_ENV === 'test' ||
-  process.env.VITEST === 'true';
 
 const getMissingSmsConfigParts = (): string[] => {
   const missingParts: string[] = [];

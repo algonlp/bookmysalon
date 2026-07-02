@@ -13,6 +13,7 @@ import {
 import { resetBillingRepositoryForTests } from '../../src/billing/billing.repository';
 import { stripePaymentService } from '../../src/payments/stripePayment.service';
 import { appointmentService } from '../../src/appointments/appointment.service';
+import { createTestClient } from '../helpers/createTestClient';
 
 describe('Client platform API', () => {
   const uploadedProfileImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB';
@@ -48,7 +49,7 @@ describe('Client platform API', () => {
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
     env.STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE = false;
 
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'stripe-connect-required@example.com',
       provider: 'email'
     });
@@ -107,7 +108,7 @@ describe('Client platform API', () => {
       url: 'https://connect.stripe.test/onboarding'
     } as never);
 
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'stripe-salon-one@example.com',
       provider: 'email'
     });
@@ -140,7 +141,7 @@ describe('Client platform API', () => {
   it('allows platform package checkout only when explicitly enabled with a Stripe test key', async () => {
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
     env.STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE = true;
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'stripe-platform-test-checkout@example.com',
       provider: 'email'
     });
@@ -185,7 +186,7 @@ describe('Client platform API', () => {
 
   it('routes online package checkout to the current salon Stripe account', async () => {
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'stripe-routed-salon@example.com',
       provider: 'email'
     });
@@ -265,7 +266,7 @@ describe('Client platform API', () => {
 
   it('returns Stripe subscription checkout to the business dashboard', async () => {
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'stripe-subscription-dashboard@example.com',
       provider: 'email'
     });
@@ -300,7 +301,7 @@ describe('Client platform API', () => {
 
   it('restores admin access when Stripe returns without an existing browser cookie', async () => {
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'stripe-return-cookie@example.com',
       provider: 'email'
     });
@@ -334,7 +335,7 @@ describe('Client platform API', () => {
 
   it('confirms a completed Stripe subscription checkout and unlocks dashboard features', async () => {
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'stripe-subscription-confirm@example.com',
       provider: 'email'
     });
@@ -406,7 +407,7 @@ describe('Client platform API', () => {
 
   it('records paid Stripe subscription invoices and advances the billing period', async () => {
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'stripe-invoice-paid@example.com',
       provider: 'email'
     });
@@ -491,7 +492,7 @@ describe('Client platform API', () => {
 
   it('marks a Stripe subscription past due when an invoice payment fails', async () => {
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'stripe-invoice-failed@example.com',
       provider: 'email'
     });
@@ -548,7 +549,7 @@ describe('Client platform API', () => {
 
   it('syncs Stripe subscription status and period updates', async () => {
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'stripe-subscription-updated@example.com',
       provider: 'email'
     });
@@ -608,7 +609,7 @@ describe('Client platform API', () => {
 
   it('cancels a local subscription when Stripe deletes the subscription', async () => {
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'stripe-subscription-deleted@example.com',
       provider: 'email'
     });
@@ -667,7 +668,7 @@ describe('Client platform API', () => {
   });
 
   it('sets an admin session cookie for the whole app and accepts it on protected routes', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'cookie-admin@example.com',
       provider: 'email'
     });
@@ -694,7 +695,7 @@ describe('Client platform API', () => {
   });
 
   it('logs out by clearing the cookie and rotating the admin token', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'logout-owner@example.com',
       provider: 'email'
     });
@@ -730,7 +731,7 @@ describe('Client platform API', () => {
   });
 
   it('logs in an existing account by email and sends completed businesses to the dashboard', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'login-owner@example.com',
       provider: 'email'
     });
@@ -800,7 +801,7 @@ describe('Client platform API', () => {
   });
 
   it('logs in an existing incomplete account and resumes the next onboarding step', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'resume-owner@example.com',
       provider: 'email'
     });
@@ -860,7 +861,7 @@ describe('Client platform API', () => {
 
   it('logs in the existing professional when Google returns an email that already exists', async () => {
     env.PUBLIC_GOOGLE_CLIENT_ID = 'test-google-client-id';
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'existing-google@example.com',
       provider: 'email'
     });
@@ -891,11 +892,11 @@ describe('Client platform API', () => {
   });
 
   it('returns SMS logs for the current business only', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'sms-owner@example.com',
       provider: 'email'
     });
-    const otherClientResponse = await request(app).post('/api/platform/clients').send({
+    const otherClientResponse = await createTestClient(app, {
       email: 'other-sms-owner@example.com',
       provider: 'email'
     });
@@ -946,7 +947,7 @@ describe('Client platform API', () => {
     env.TWILIO_AUTH_TOKEN = 'test-token';
     env.TWILIO_PHONE_NUMBER = '+15551234567';
 
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'invalid-phone-owner@example.com',
       provider: 'email'
     });
@@ -993,7 +994,8 @@ describe('Client platform API', () => {
         recipient: 'customer',
         status: 'failed',
         reason: expect.stringContaining('valid country code')
-      })
+      }),
+      expect.objectContaining({ recipient: 'customer', channel: 'email', status: 'skipped' })
     ]);
     expect(fetchSpy).not.toHaveBeenCalled();
 
@@ -1015,6 +1017,12 @@ describe('Client platform API', () => {
     const originalAppEnv = env.APP_ENV;
     const originalNodeEnv = process.env.NODE_ENV;
     const originalVitestEnv = process.env.VITEST;
+    const createResponse = await createTestClient(app, {
+      email: 'twilio-error-owner@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminCookie = createResponse.headers['set-cookie'] ?? [];
     try {
       env.APP_ENV = 'prod';
       process.env.NODE_ENV = 'production';
@@ -1033,13 +1041,6 @@ describe('Client platform API', () => {
         ok: false,
         status: 400
       } as Response);
-
-      const createResponse = await request(app).post('/api/platform/clients').send({
-        email: 'twilio-error-owner@example.com',
-        provider: 'email'
-      });
-      const clientId = createResponse.body.client.id as string;
-      const adminCookie = createResponse.headers['set-cookie'] ?? [];
 
       await request(app)
         .patch(`/api/platform/clients/${clientId}/business-profile`)
@@ -1079,7 +1080,8 @@ describe('Client platform API', () => {
           recipient: 'customer',
           status: 'failed',
           reason: expect.stringContaining('Twilio error 21608')
-        })
+        }),
+        expect.objectContaining({ recipient: 'customer', channel: 'email', status: 'skipped' })
       ]);
 
       const smsLogsResponse = await request(app)
@@ -1103,7 +1105,7 @@ describe('Client platform API', () => {
   });
 
   it('rejects creating a duplicate account for an existing email', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'duplicate-owner@example.com',
       provider: 'email'
     });
@@ -1120,7 +1122,7 @@ describe('Client platform API', () => {
   });
 
   it('creates a client, saves onboarding data, and serves a dashboard payload', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'owner@example.com',
       provider: 'email'
     });
@@ -1369,7 +1371,7 @@ describe('Client platform API', () => {
   });
 
   it('localizes dashboard copy when the preferred language is chinese', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'zh-owner@example.com',
       provider: 'email'
     });
@@ -1411,7 +1413,7 @@ describe('Client platform API', () => {
       tomorrow.getMonth() + 1
     ).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
 
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'settings@example.com',
       provider: 'email'
     });
@@ -1478,7 +1480,7 @@ describe('Client platform API', () => {
   });
 
   it('rejects completing onboarding before required setup is saved', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'incomplete-complete@example.com',
       provider: 'email'
     });
@@ -1504,7 +1506,7 @@ describe('Client platform API', () => {
   });
 
   it('shows newly completed businesses publicly with their full service catalog', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'public-catalog-owner@example.com',
       provider: 'email'
     });
@@ -1602,7 +1604,7 @@ describe('Client platform API', () => {
   });
 
   it('builds launch links from the configured app origin instead of the request host header', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'origin-links@example.com',
       provider: 'email'
     });
@@ -1636,18 +1638,19 @@ describe('Client platform API', () => {
     expect(createResponse.body.maskedPhone).toContain('1234567'.slice(-4));
   });
 
-  it('creates a client without a mobile number immediately, no OTP required', async () => {
+  it('requires OTP verification before creating a client with only an email', async () => {
     const createResponse = await request(app).post('/api/platform/clients').send({
       email: 'no-mobile-signup@example.com',
       provider: 'email'
     });
 
-    expect(createResponse.status).toBe(201);
-    expect(createResponse.body.client.email).toBe('no-mobile-signup@example.com');
+    expect(createResponse.status).toBe(200);
+    expect(createResponse.body.otpRequired).toBe(true);
+    expect(createResponse.body.maskedEmail).toContain('@example.com');
   });
 
   it('accepts larger uploaded profile images from pc file selection', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'upload@example.com',
       provider: 'email'
     });
@@ -1669,7 +1672,7 @@ describe('Client platform API', () => {
   });
 
   it('validates service types payloads', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       provider: 'google'
     });
 
@@ -1688,7 +1691,7 @@ describe('Client platform API', () => {
   });
 
   it('accepts saving all selected service categories', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       provider: 'google'
     });
 
@@ -1718,7 +1721,7 @@ describe('Client platform API', () => {
   });
 
   it('lets an admin edit and remove a saved team member without hardcoded barber data', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'team-admin@example.com',
       provider: 'email'
     });
@@ -1835,7 +1838,7 @@ describe('Client platform API', () => {
       bookingDate.getMonth() + 1
     ).padStart(2, '0')}-${String(bookingDate.getDate()).padStart(2, '0')}`;
 
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'appointments-admin@example.com',
       provider: 'email'
     });
@@ -1923,7 +1926,7 @@ describe('Client platform API', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(Date.UTC(2026, 2, 11, 13, 30, 0)));
 
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'timezone-admin@example.com',
       provider: 'email'
     });
@@ -2000,7 +2003,7 @@ describe('Client platform API', () => {
       bookingDate.getMonth() + 1
     ).padStart(2, '0')}-${String(bookingDate.getDate()).padStart(2, '0')}`;
 
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'ops-admin@example.com',
       provider: 'email'
     });
@@ -2114,7 +2117,7 @@ describe('Client platform API', () => {
       bookingDate.getMonth() + 1
     ).padStart(2, '0')}-${String(bookingDate.getDate()).padStart(2, '0')}`;
 
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'finance-admin@example.com',
       provider: 'email'
     });
@@ -2260,7 +2263,7 @@ describe('Client platform API', () => {
       bookingDate.getMonth() + 1
     ).padStart(2, '0')}-${String(bookingDate.getDate()).padStart(2, '0')}`;
 
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'salon@example.com',
       provider: 'email'
     });
@@ -2434,7 +2437,8 @@ describe('Client platform API', () => {
       'House 14, Street 9, DHA Phase 6, Lahore'
     );
     expect(bookingResponse.body.notifications).toEqual([
-      expect.objectContaining({ recipient: 'customer', status: 'skipped' })
+      expect.objectContaining({ recipient: 'customer', channel: 'sms', status: 'skipped' }),
+      expect.objectContaining({ recipient: 'customer', channel: 'email', status: 'skipped' })
     ]);
     expect(bookingResponse.body.manageLink).toContain(
       `/book/${clientId}/manage/${bookingResponse.body.appointment.id}`
@@ -2471,7 +2475,8 @@ describe('Client platform API', () => {
     expect(rescheduleResponse.status).toBe(200);
     expect(rescheduleResponse.body.appointment.appointmentTime).toBe('10:00');
     expect(rescheduleResponse.body.notifications).toEqual([
-      expect.objectContaining({ recipient: 'customer', status: 'skipped' })
+      expect.objectContaining({ recipient: 'customer', channel: 'sms', status: 'skipped' }),
+      expect.objectContaining({ recipient: 'customer', channel: 'email', status: 'skipped' })
     ]);
 
     const duplicateSlotResponse = await request(app)
@@ -2571,7 +2576,7 @@ describe('Client platform API', () => {
       bookingDate.getMonth() + 1
     ).padStart(2, '0')}-${String(bookingDate.getDate()).padStart(2, '0')}`;
 
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'channels@example.com',
       provider: 'email'
     });
@@ -2627,7 +2632,7 @@ describe('Client platform API', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(Date.UTC(2026, 2, 11, 8, 0, 0)));
 
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'commerce@example.com',
       provider: 'email'
     });
@@ -2776,7 +2781,7 @@ describe('Client platform API', () => {
   });
 
   it('stores selected published package details on a public booking and includes them in the SMS body', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'public-package-booking@example.com',
       provider: 'email'
     });
@@ -2853,7 +2858,7 @@ describe('Client platform API', () => {
   });
 
   it('highlights services that belong to active packages and removes the highlight when the package is removed', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'package-highlight@example.com',
       provider: 'email'
     });
@@ -2984,7 +2989,7 @@ describe('Client platform API', () => {
   });
 
   it('hides expired package plans from public booking and prevents selling them', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'package-expiry@example.com',
       provider: 'email'
     });
@@ -3069,7 +3074,7 @@ describe('Client platform API', () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(Date.UTC(2026, 2, 11, 8, 0, 0)));
 
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'eid-package-order@example.com',
       provider: 'email'
     });
@@ -3139,7 +3144,7 @@ describe('Client platform API', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(Date.UTC(2026, 2, 11, 10, 30, 0)));
 
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'salon@example.com',
       provider: 'email'
     });
@@ -3202,7 +3207,7 @@ describe('Client platform API', () => {
   });
 
   it('accepts reviews for completed appointments and exposes them publicly', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'reviews@example.com',
       provider: 'email'
     });
@@ -3314,7 +3319,7 @@ describe('Client platform API', () => {
       bookingDate.getMonth() + 1
     ).padStart(2, '0')}-${String(bookingDate.getDate()).padStart(2, '0')}`;
 
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'waitlist@example.com',
       provider: 'email'
     });
@@ -3479,7 +3484,7 @@ describe('Client platform API', () => {
       ])
     );
 
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'billing-owner@example.com',
       provider: 'email'
     });
@@ -3596,7 +3601,7 @@ describe('Client platform API', () => {
   });
 
   it('keeps services open on the solo plan while appointment credits remain', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'solo-credits@example.com',
       provider: 'email'
     });
@@ -3697,7 +3702,7 @@ describe('Client platform API', () => {
   });
 
   it('blocks public booking when an active subscription runs out of appointment credits', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'credit-block@example.com',
       provider: 'email'
     });
@@ -3797,7 +3802,7 @@ describe('Client platform API', () => {
   });
 
   it('restores the previous plan when demo checkout fails after the existing subscription is cancelled', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'billing-rollback@example.com',
       provider: 'email'
     });
@@ -3855,7 +3860,7 @@ describe('Client platform API', () => {
   });
 
   it('restores appointment credits when booking persistence fails before the appointment is saved', async () => {
-    const createResponse = await request(app).post('/api/platform/clients').send({
+    const createResponse = await createTestClient(app, {
       email: 'billing-credit-rollback@example.com',
       provider: 'email'
     });

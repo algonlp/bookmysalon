@@ -444,7 +444,7 @@ const resolvedEnv = {
   SENDGRID_API_KEY: normalizeOptionalEnv(process.env.SENDGRID_API_KEY),
   SENDGRID_FROM_EMAIL: normalizeOptionalEnv(process.env.SENDGRID_FROM_EMAIL),
   SMTP_HOST: normalizeOptionalEnv(process.env.SMTP_HOST),
-  SMTP_PORT: process.env.SMTP_PORT,
+  SMTP_PORT: normalizeOptionalEnv(process.env.SMTP_PORT),
   SMTP_SECURE: parseBooleanEnv(process.env.SMTP_SECURE, false),
   SMTP_USER: normalizeOptionalEnv(process.env.SMTP_USER),
   SMTP_PASS: normalizeOptionalEnv(process.env.SMTP_PASS),

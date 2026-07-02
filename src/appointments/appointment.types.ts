@@ -253,7 +253,7 @@ export interface PaymentSnapshot {
 
 export interface NotificationDispatchResult {
   recipient: 'customer' | 'admin';
-  channel: 'sms';
+  channel: 'sms' | 'email';
   status: 'sent' | 'failed' | 'skipped';
   messageId?: string;
   reason?: string;

@@ -2,9 +2,10 @@ import request from 'supertest';
 import { app } from '../../src/app';
 import { resetClientPlatformRepositoryForTests } from '../../src/platform/clientPlatform.repository';
 import { resetSmsLogRepositoryForTests } from '../../src/notifications/smsLog.repository';
+import { createTestClient } from '../helpers/createTestClient';
 
 const createAdminSession = async (): Promise<{ clientId: string; adminCookie: string[] }> => {
-  const response = await request(app).post('/api/platform/clients').send({
+  const response = await createTestClient(app, {
     email: 'homepage-admin@example.com',
     provider: 'email'
   });

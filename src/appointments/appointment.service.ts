@@ -32,6 +32,8 @@ import type {
 import { clientPlatformRepository } from '../platform/clientPlatform.repository';
 import { HttpError } from '../shared/errors/httpError';
 import { twilioSmsService } from '../notifications/twilioSms.service';
+import { emailService } from '../notifications/email.service';
+import { renderEmailLayout } from '../notifications/emailTemplate';
 import type { DashboardCommerceViewModel } from '../platform/clientPlatform.types';
 import type { PackagePlanRecord } from '../platform/clientPlatform.types';
 import {
@@ -1559,18 +1561,55 @@ const sendAppointmentConfirmationNotification = async (
           appointment.packageTotalUses || appointment.packagePriceLabel ? ').' : '.'
         }`
       : '';
+  const appointmentDateLabel = formatSmsDate(appointment.appointmentDate, appointment.appointmentTime);
   const customerMessage =
     `Your appointment at ${appointment.businessName} ${statusLabel} for ` +
-    `${formatSmsDate(appointment.appointmentDate, appointment.appointmentTime)}. ` +
+    `${appointmentDateLabel}. ` +
     `Service: ${appointment.serviceName}.${packageDetail} Ref: ${appointment.id.slice(0, 8)}. ` +
     `Open your live booking link for the countdown and updates: ${manageLink}`;
+
+  const emailSubject = `Your appointment at ${appointment.businessName} ${statusLabel}`;
+  const emailText = customerMessage;
+  const detailRow = (label: string, value: string): string => `
+    <tr>
+      <td style="padding:10px 0;border-bottom:1px solid #f0eeeb;font-size:0.85rem;color:#9c9490">${label}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #f0eeeb;font-size:0.92rem;font-weight:700;
+                 color:#1f1a17;text-align:right">${value}</td>
+    </tr>
+  `;
+  const emailHtml = renderEmailLayout({
+    preheader: `Your appointment at ${appointment.businessName} ${statusLabel}.`,
+    eyebrow: mode === 'rescheduled' ? 'Booking updated' : 'Booking confirmed',
+    heading: `You're booked at ${appointment.businessName}`,
+    bodyHtml: `
+      <p style="margin:0 0 18px">Your appointment ${statusLabel}. Here are the details:</p>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 4px">
+        ${detailRow('Service', appointment.serviceName)}
+        ${detailRow('Date &amp; time', appointmentDateLabel)}
+        ${appointment.packageName ? detailRow('Package', appointment.packageName) : ''}
+        ${detailRow('Reference', `#${appointment.id.slice(0, 8)}`)}
+      </table>
+    `,
+    button: { label: 'View your booking', url: manageLink },
+    footerNote: "If you didn't request this booking, you can safely ignore this email."
+  });
 
   return Promise.all([
     twilioSmsService.sendSms(appointment.customerPhone, customerMessage, 'customer', {
       appointmentId: appointment.id,
       businessId: appointment.businessId,
       source: mode === 'rescheduled' ? 'appointment_rescheduled' : 'appointment_confirmation'
-    })
+    }),
+    emailService.sendEmail({
+      to: appointment.customerEmail,
+      subject: emailSubject,
+      text: emailText,
+      html: emailHtml
+    }).then((result): NotificationDispatchResult => ({
+      recipient: 'customer',
+      channel: 'email',
+      status: result.status
+    }))
   ]);
 };
 

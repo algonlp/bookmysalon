@@ -10,11 +10,15 @@ import {
 import { serviceLocationValues } from '../../platform/serviceLocation.constants';
 import {
   buildPlatformClientPagePath,
+  platformClientAuthMessages,
   platformClientPagePaths
 } from '../../platform/clientPlatform.paths';
 import { preferredLanguageValues } from '../../platform/clientPlatform.types';
 import { appointmentService } from '../../appointments/appointment.service';
 import { twilioSmsService } from '../../notifications/twilioSms.service';
+import { emailOtpService } from '../../notifications/emailOtp.service';
+import { emailService } from '../../notifications/email.service';
+import { renderEmailLayout } from '../../notifications/emailTemplate';
 import { hashPassword, verifyPassword } from '../../shared/hashToken';
 import { clearAdminSessionCookie, getRequestOrigin, setAdminSessionCookie } from '../../shared/http';
 
@@ -23,6 +27,7 @@ interface AdminOtpRecord {
   expiresAt: number;
   attempts: number;
   clientId: string;
+  rememberMe: boolean;
 }
 
 const adminOtpStore = new Map<string, AdminOtpRecord>();
@@ -49,6 +54,48 @@ const maskPhone = (phone: string): string => {
   return digits.length > 4
     ? '****' + digits.slice(-4)
     : '****' + digits;
+};
+
+const maskEmail = (email: string): string => {
+  const [local, domain] = email.split('@');
+  if (!domain) {
+    return email;
+  }
+  const visible = local.slice(0, 2) || local;
+  return `${visible}${'*'.repeat(Math.max(local.length - visible.length, 1))}@${domain}`;
+};
+
+const isPlaceholderEmail = (email: string): boolean => email.endsWith('@platform.local');
+
+const sendWelcomeEmail = async (client: { id: string; email: string; businessName: string }, origin: string): Promise<void> => {
+  if (!client.email || isPlaceholderEmail(client.email)) {
+    return;
+  }
+
+  const dashboardLink = `${origin}${buildPlatformClientPagePath(platformClientPagePaths.calendar, client.id)}`;
+  const businessLabel = client.businessName || 'your workspace';
+
+  await emailService.sendEmail({
+    to: client.email,
+    subject: `Welcome to QR Schedule, ${businessLabel}!`,
+    text:
+      `Your workspace for ${businessLabel} is ready. ` +
+      `Open your dashboard to manage bookings, services and your team: ${dashboardLink}`,
+    html: renderEmailLayout({
+      preheader: `Your workspace for ${businessLabel} is ready.`,
+      eyebrow: 'Welcome',
+      heading: `You're all set, ${businessLabel}!`,
+      bodyHtml: `
+        <p style="margin:0 0 14px">Your QR Schedule workspace is live. From your dashboard you can:</p>
+        <ul style="margin:0 0 4px;padding-left:20px">
+          <li style="margin:0 0 6px">Manage bookings and your calendar</li>
+          <li style="margin:0 0 6px">Add services, pricing and team members</li>
+          <li style="margin:0 0 6px">Share your booking link and QR code with customers</li>
+        </ul>
+      `,
+      button: { label: 'Open your dashboard', url: dashboardLink }
+    })
+  });
 };
 
 const isValidProfileImageValue = (value: string): boolean => {
@@ -89,7 +136,8 @@ const googleAuthSchema = z.object({
 const loginClientSchema = z.object({
   email: z.string().trim().email().optional(),
   mobileNumber: z.string().trim().min(7, 'Mobile number is required').optional(),
-  password: z.string().trim().optional()
+  password: z.string().trim().optional(),
+  rememberMe: z.boolean().default(true)
 }).refine(
   (value) => Boolean(value.email || value.mobileNumber),
   {
@@ -104,8 +152,11 @@ const verifyAdminOtpSchema = z.object({
 });
 
 const verifySignupOtpSchema = z.object({
-  phone: z.string().trim().min(7, 'Mobile number is required'),
+  phone: z.string().trim().min(7).optional(),
+  email: z.string().trim().email().optional(),
   code: z.string().trim().regex(/^\d{6}$/, 'Enter the 6 digit code')
+}).refine((value) => Boolean(value.phone || value.email), {
+  message: 'Phone or email is required'
 });
 
 const businessProfileSchema = z.object({
@@ -369,7 +420,42 @@ export const clientPlatformController = {
       res.status(200).json({
         otpRequired: true,
         maskedPhone: maskPhone(mobileNumber),
-        smsStatus: smsResult.status
+        smsStatus: smsResult.status,
+        ...(shouldExposeAdminTokenForTests() ? { otpCode: code } : {})
+      });
+      return;
+    }
+
+    const email = input.email?.trim();
+
+    if (email) {
+      const existing = await clientPlatformService.findClientForLogin({ email });
+
+      if (existing) {
+        throw new HttpError(409, platformClientAuthMessages.accountExists);
+      }
+
+      const code = createOtpCode();
+      const emailKey = email.toLowerCase();
+
+      signupOtpStore.set(emailKey, {
+        code,
+        expiresAt: Date.now() + OTP_TTL_MS,
+        attempts: 0,
+        email,
+        mobileNumber: '',
+        password: input.password?.trim() || '',
+        businessName: input.businessName?.trim() || '',
+        provider: input.provider
+      });
+
+      const emailResult = await emailOtpService.sendOtp(email, code);
+
+      res.status(200).json({
+        otpRequired: true,
+        maskedEmail: maskEmail(email),
+        emailStatus: emailResult.status,
+        ...(shouldExposeAdminTokenForTests() ? { otpCode: code } : {})
       });
       return;
     }
@@ -385,17 +471,19 @@ export const clientPlatformController = {
 
   async verifySignupOtp(req: Request, res: Response, _next: NextFunction): Promise<void> {
     const input = verifySignupOtpSchema.parse(req.body);
-    const phoneKey = input.phone.replace(/[^\d+]/g, '');
-    const record = signupOtpStore.get(phoneKey);
+    const storeKey = input.phone
+      ? input.phone.replace(/[^\d+]/g, '')
+      : (input.email as string).trim().toLowerCase();
+    const record = signupOtpStore.get(storeKey);
 
     if (!record || record.expiresAt < Date.now()) {
-      signupOtpStore.delete(phoneKey);
+      signupOtpStore.delete(storeKey);
       res.status(400).json({ error: 'Verification code expired. Request a new code.' });
       return;
     }
 
     if (record.attempts >= MAX_VERIFY_ATTEMPTS) {
-      signupOtpStore.delete(phoneKey);
+      signupOtpStore.delete(storeKey);
       res.status(429).json({ error: 'Too many attempts. Request a new code.' });
       return;
     }
@@ -406,7 +494,7 @@ export const clientPlatformController = {
       return;
     }
 
-    signupOtpStore.delete(phoneKey);
+    signupOtpStore.delete(storeKey);
 
     const { client, plainAdminToken } = await clientPlatformService.createClient({
       email: record.email || undefined,
@@ -447,7 +535,7 @@ export const clientPlatformController = {
 
     if (!client.mobileNumber) {
       const payload = await clientPlatformService.loginClient(input);
-      setAdminSessionCookie(res, payload.plainAdminToken);
+      setAdminSessionCookie(res, payload.plainAdminToken, input.rememberMe);
       res.status(200).json({
         client: serializeClientForResponse(payload.client),
         ...(shouldExposeAdminTokenForTests() ? { adminToken: payload.plainAdminToken } : {}),
@@ -461,7 +549,8 @@ export const clientPlatformController = {
       code,
       expiresAt: Date.now() + OTP_TTL_MS,
       attempts: 0,
-      clientId: client.id
+      clientId: client.id,
+      rememberMe: input.rememberMe
     });
 
     const smsResult = await twilioSmsService.sendSms(
@@ -503,7 +592,7 @@ export const clientPlatformController = {
     adminOtpStore.delete(input.clientId);
 
     const payload = await clientPlatformService.loginClientById(input.clientId);
-    setAdminSessionCookie(res, payload.plainAdminToken);
+    setAdminSessionCookie(res, payload.plainAdminToken, record.rememberMe);
     res.status(200).json({
       client: serializeClientForResponse(payload.client),
       ...(shouldExposeAdminTokenForTests() ? { adminToken: payload.plainAdminToken } : {}),
@@ -817,6 +906,7 @@ export const clientPlatformController = {
 
   async completeOnboarding(req: Request, res: Response, _next: NextFunction): Promise<void> {
     const client = await clientPlatformService.completeOnboarding(getClientId(req));
+    await sendWelcomeEmail(client, getRequestOrigin(req));
     res.status(200).json({
       client: serializeClientForResponse(client),
       nextStep: buildPlatformClientPagePath(platformClientPagePaths.onboarding.complete, client.id)

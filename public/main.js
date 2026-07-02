@@ -2257,7 +2257,9 @@ const getFavouriteSalonIds = () => {
 
 const getCustomerSession = () => {
   try {
-    const storedValue = window.localStorage.getItem(CUSTOMER_SESSION_STORAGE_KEY);
+    const storedValue =
+      window.localStorage.getItem(CUSTOMER_SESSION_STORAGE_KEY) ||
+      window.sessionStorage.getItem(CUSTOMER_SESSION_STORAGE_KEY);
     const parsedValue = storedValue ? JSON.parse(storedValue) : null;
     return parsedValue && typeof parsedValue === 'object' ? parsedValue : null;
   } catch (_error) {
@@ -2282,7 +2284,7 @@ const createCustomerSession = () => {
   return session;
 };
 
-const storeCustomerSession = (customer) => {
+const storeCustomerSession = (customer, remember = true) => {
   const session = {
     id: customer?.id || `customer-${Date.now()}`,
     phone: typeof customer?.phone === 'string' ? customer.phone.trim() : '',
@@ -2299,7 +2301,10 @@ const storeCustomerSession = (customer) => {
   };
 
   try {
-    window.localStorage.setItem(CUSTOMER_SESSION_STORAGE_KEY, JSON.stringify(session));
+    const persistentStorage = remember ? window.localStorage : window.sessionStorage;
+    const sessionOnlyStorage = remember ? window.sessionStorage : window.localStorage;
+    persistentStorage.setItem(CUSTOMER_SESSION_STORAGE_KEY, JSON.stringify(session));
+    sessionOnlyStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
   } catch (_error) {
     // Keep navigation working even when storage is unavailable.
   }
@@ -2309,11 +2314,22 @@ const storeCustomerSession = (customer) => {
 
 const updateStoredCustomerSession = (updates = {}) => {
   const currentSession = getCustomerSession() ?? {};
-  return storeCustomerSession({
-    ...currentSession,
-    ...updates,
-    id: currentSession.id || updates.id || `customer-${Date.now()}`
-  });
+  const isRemembered = (() => {
+    try {
+      return window.localStorage.getItem(CUSTOMER_SESSION_STORAGE_KEY) !== null;
+    } catch (_error) {
+      return true;
+    }
+  })();
+
+  return storeCustomerSession(
+    {
+      ...currentSession,
+      ...updates,
+      id: currentSession.id || updates.id || `customer-${Date.now()}`
+    },
+    isRemembered
+  );
 };
 
 const getCustomerAuthHeaders = () => {
@@ -5383,6 +5399,8 @@ const initSignup = () => {
   const mobileWrap = document.querySelector('#professional-mobile-wrap');
   const googleSigninHost = document.querySelector('#google-signin-host');
   const mobileInput = document.querySelector('#professional-mobile');
+  const rememberMeInput = document.querySelector('#pro-signup-remember-me');
+  const rememberMeWrap = document.querySelector('#pro-signup-remember-me-wrap');
   const providerButtons = document.querySelectorAll('[data-auth-provider]');
   const otpPanel = document.querySelector('#pro-signup-otp-panel');
   const otpCodeInput = document.querySelector('#pro-signup-otp-code');
@@ -5432,6 +5450,7 @@ const initSignup = () => {
 
   let pendingOtpClientId = '';
   let pendingOtpPhone = '';
+  let pendingOtpEmail = '';
   let pendingOtpType = '';
   let formMode = 'login';
 
@@ -5446,6 +5465,10 @@ const initSignup = () => {
 
     if (mobileWrap instanceof HTMLElement) {
       mobileWrap.classList.toggle('is-hidden', !isSignup);
+    }
+
+    if (rememberMeWrap instanceof HTMLElement) {
+      rememberMeWrap.classList.toggle('is-hidden', isSignup);
     }
 
     if (headingText instanceof HTMLElement) {
@@ -5516,6 +5539,7 @@ const initSignup = () => {
 
     if (payload.otpRequired) {
       pendingOtpPhone = mobileNumber.trim();
+      pendingOtpEmail = mobileNumber.trim() ? '' : email.trim();
       pendingOtpType = 'signup';
 
       if (otpPanel instanceof HTMLElement) {
@@ -5523,7 +5547,8 @@ const initSignup = () => {
       }
 
       if (otpMessage instanceof HTMLElement) {
-        otpMessage.textContent = `Enter the verification code sent to ${payload.maskedPhone || 'your mobile number'}.`;
+        const destination = payload.maskedPhone || payload.maskedEmail || 'your mobile number or email';
+        otpMessage.textContent = `Enter the verification code sent to ${destination}.`;
       }
 
       if (otpCodeInput instanceof HTMLInputElement) {
@@ -5531,7 +5556,8 @@ const initSignup = () => {
         otpCodeInput.focus();
       }
 
-      setStatus(payload.smsStatus === 'sent' ? 'Verification code sent.' : 'Verification code created.');
+      const deliveryStatus = payload.smsStatus ?? payload.emailStatus;
+      setStatus(deliveryStatus === 'sent' ? 'Verification code sent.' : 'Verification code created.');
       return;
     }
 
@@ -5545,7 +5571,8 @@ const initSignup = () => {
       body: JSON.stringify({
         email: email.trim() || undefined,
         mobileNumber: mobileNumber.trim() || undefined,
-        password: password.trim() || undefined
+        password: password.trim() || undefined,
+        rememberMe: rememberMeInput instanceof HTMLInputElement ? rememberMeInput.checked : true
       })
     });
   };
@@ -5814,10 +5841,14 @@ const initSignup = () => {
       setStatus('Verifying...');
 
       try {
-        if (pendingOtpType === 'signup' && pendingOtpPhone && verifySignupOtpEndpoint) {
+        if (pendingOtpType === 'signup' && (pendingOtpPhone || pendingOtpEmail) && verifySignupOtpEndpoint) {
           const payload = await apiRequest(verifySignupOtpEndpoint, {
             method: 'POST',
-            body: JSON.stringify({ phone: pendingOtpPhone, code })
+            body: JSON.stringify({
+              phone: pendingOtpPhone || undefined,
+              email: pendingOtpEmail || undefined,
+              code
+            })
           });
 
           setAdminSession(payload.client.id);
@@ -5903,6 +5934,7 @@ const initCustomerOtpLogin = () => {
   const otpSubtitle = document.querySelector('#login-otp-subtitle');
   const codeInput = document.querySelector('#customer-login-code');
   const verifyBtn = document.querySelector('#customer-login-verify');
+  const rememberMeInput = document.querySelector('#customer-login-remember-me');
   const resendBtn = document.querySelector('#customer-login-resend');
   const status = document.querySelector('#customer-login-status');
   const backLink = document.querySelector('#customer-login-back');
@@ -6040,7 +6072,10 @@ const initCustomerOtpLogin = () => {
 
       const payload = await apiRequest(verifyEndpoint, { method: 'POST', body });
 
-      storeCustomerSession({ ...payload?.customer, sessionToken: payload?.sessionToken });
+      storeCustomerSession(
+        { ...payload?.customer, sessionToken: payload?.sessionToken },
+        rememberMeInput instanceof HTMLInputElement ? rememberMeInput.checked : true
+      );
       window.location.assign(safeRedirectPath);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Unable to verify code.', true);
@@ -6124,6 +6159,7 @@ const initCustomerAccountMenu = () => {
     }
 
     window.localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
+    window.sessionStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
     window.sessionStorage.removeItem(PENDING_SALON_FAVOURITE_STORAGE_KEY);
     window.location.reload();
   });
@@ -7453,6 +7489,15 @@ const initCalendar = () => {
   const hasSideDrawers =
     hasSalesDrawer || hasClientsDrawer || hasCatalogDrawer || hasTeamDrawer;
   let publicBookingPath = '';
+  const openPublicBookingPage = () => {
+    if (!publicBookingPath) {
+      return;
+    }
+
+    const url = new URL(publicBookingPath, window.location.origin);
+    url.searchParams.set('ownerTab', '1');
+    window.open(url.toString(), '_blank', 'noopener,noreferrer');
+  };
   let instagramBookingPath = '';
   let facebookBookingPath = '';
   let appleMapsBookingPath = '';
@@ -8740,9 +8785,7 @@ const createTrendCard = (
           actions: [
             createToolActionButton('Open booking page', () => {
               closeToolModal();
-              if (publicBookingPath) {
-                window.open(publicBookingPath, '_blank', 'noopener,noreferrer');
-              }
+              openPublicBookingPage();
             })
           ]
         }
@@ -9877,9 +9920,7 @@ const createTrendCard = (
         }),
         createToolActionButton('Open booking page', () => {
           closeToolModal();
-          if (publicBookingPath) {
-            window.open(publicBookingPath, '_blank', 'noopener,noreferrer');
-          }
+          openPublicBookingPage();
         })
       ]
     });
@@ -12207,9 +12248,7 @@ const createTrendCard = (
         }),
         createToolActionButton(openBookingActionLabel, () => {
           closeToolModal();
-          if (publicBookingPath) {
-            window.open(publicBookingPath, '_blank', 'noopener,noreferrer');
-          }
+          openPublicBookingPage();
         }),
         createToolActionButton(stayInCatalogActionLabel, () => {
           closeToolModal();
@@ -13114,9 +13153,7 @@ const createTrendCard = (
         }),
         createToolActionButton('Open booking page', () => {
           closeToolModal();
-          if (publicBookingPath) {
-            window.open(publicBookingPath, '_blank', 'noopener,noreferrer');
-          }
+          openPublicBookingPage();
         })
       ]
     });
@@ -14440,7 +14477,7 @@ const createTrendCard = (
         }
 
         closeAddMenu();
-        window.open(publicBookingPath, '_blank', 'noopener,noreferrer');
+        openPublicBookingPage();
       });
     }
 
@@ -14462,9 +14499,7 @@ const createTrendCard = (
           actions: [
             createToolActionButton('Open booking page', () => {
               closeToolModal();
-              if (publicBookingPath) {
-                window.open(publicBookingPath, '_blank', 'noopener,noreferrer');
-              }
+              openPublicBookingPage();
             })
           ]
         });
@@ -15252,9 +15287,7 @@ const createTrendCard = (
         actions: [
           createToolActionButton('Open booking page', () => {
             closeToolModal();
-            if (publicBookingPath) {
-              window.open(publicBookingPath, '_blank', 'noopener,noreferrer');
-            }
+            openPublicBookingPage();
           }),
           createToolActionButton('Show QR code', async () => {
             closeToolModal();
@@ -15445,6 +15478,7 @@ const createTrendCard = (
     }
 
     brand.textContent = payload.dashboard.businessName;
+    brand.title = payload.dashboard.businessName;
     setupLabel.textContent = payload.dashboard.setupButtonLabel;
     setupButton.href = buildPathWithClientId(payload.dashboard.setupButtonPath, clientId);
     renderCalendarAvatar(
@@ -15622,6 +15656,11 @@ const createTrendCard = (
 
 const initPublicBooking = () => {
   const bookingForm = document.querySelector('#public-booking-form');
+  const bookingSubmitButton = bookingForm instanceof HTMLFormElement
+    ? bookingForm.querySelector('.booking-submit')
+    : null;
+  const bookingSubmitButtonDefaultText =
+    bookingSubmitButton instanceof HTMLButtonElement ? bookingSubmitButton.textContent : '';
   const businessName = document.querySelector('#booking-business-name');
   const businessCopy = document.querySelector('#booking-business-copy');
   const serviceTypes = document.querySelector('#booking-service-types');
@@ -15688,6 +15727,16 @@ const initPublicBooking = () => {
   const stepBackButton = document.querySelector('#booking-step-back');
   const stepContinueButton = document.querySelector('#booking-step-continue');
   const bookingBackLink = document.querySelector('#booking-back-link');
+  const isOwnerBookingTab = new URLSearchParams(window.location.search).get('ownerTab') === '1';
+
+  if (bookingBackLink instanceof HTMLAnchorElement) {
+    bookingBackLink.addEventListener('click', (event) => {
+      if (isOwnerBookingTab && bookingBackLink.getAttribute('href') === '/activity') {
+        event.preventDefault();
+        window.close();
+      }
+    });
+  }
   const serviceTabs = document.querySelector('#booking-service-tabs');
   const serviceCards = document.querySelector('#booking-service-cards');
   const teamMemberCards = document.querySelector('#booking-team-member-cards');
@@ -15880,12 +15929,32 @@ const initPublicBooking = () => {
       'aria-label',
       bookingUiCopy.phoneCountryCodeLabel || bookingUiCopy.phoneLabel
     );
-    customerPhoneCountryCodeInput.placeholder = bookingUiCopy.phoneCountryCode;
-    if (!customerPhoneCountryCodeInput.value.trim()) {
-      customerPhoneCountryCodeInput.value = bookingUiCopy.phoneCountryCode;
+    if (bookingUiCopy.phoneCountryCode) {
+      selectPhoneCountryCode(bookingUiCopy.phoneCountryCode);
     }
     customerPhoneInput.placeholder = bookingUiCopy.phoneNumberPlaceholder;
     customerPhoneHelp.textContent = bookingUiCopy.phoneHelp;
+  };
+
+  const selectPhoneCountryCode = (code) => {
+    const normalizedCode = normalizePhoneCountryCode(code);
+
+    if (!normalizedCode) {
+      return;
+    }
+
+    const hasOption = [...customerPhoneCountryCodeInput.options].some(
+      (option) => option.value === normalizedCode
+    );
+
+    if (!hasOption) {
+      const option = document.createElement('option');
+      option.value = normalizedCode;
+      option.textContent = normalizedCode;
+      customerPhoneCountryCodeInput.appendChild(option);
+    }
+
+    customerPhoneCountryCodeInput.value = normalizedCode;
   };
 
   const getBookingCustomerPhoneValue = () => {
@@ -15906,7 +15975,7 @@ const initPublicBooking = () => {
 
   const setBookingCustomerPhoneValue = (phoneValue) => {
     const phoneParts = splitPhoneNumberParts(phoneValue, bookingUiCopy.phoneCountryCode);
-    customerPhoneCountryCodeInput.value = phoneParts.countryCode;
+    selectPhoneCountryCode(phoneParts.countryCode);
     customerPhoneInput.value = phoneParts.number;
   };
 
@@ -17582,7 +17651,7 @@ const initPublicBooking = () => {
     });
   }
 
-  customerPhoneCountryCodeInput.addEventListener('input', refreshBookingPhoneDetails);
+  customerPhoneCountryCodeInput.addEventListener('change', refreshBookingPhoneDetails);
 
   customerPhoneInput.addEventListener('input', () => {
     refreshBookingPhoneDetails();
@@ -17659,7 +17728,7 @@ const initPublicBooking = () => {
       successPanel.classList.remove('is-hidden');
       if (bookingBackLink instanceof HTMLAnchorElement) {
         bookingBackLink.href = '/activity';
-        bookingBackLink.setAttribute('aria-label', 'Go to dashboard');
+        bookingBackLink.setAttribute('aria-label', isOwnerBookingTab ? 'Close and return to dashboard' : 'Go to dashboard');
       }
       successCopy.textContent =
         `You joined the waitlist for ${payload.waitlistEntry.serviceName} on ${formatDateForDisplay(payload.waitlistEntry.appointmentDate)}.` +
@@ -17682,6 +17751,12 @@ const initPublicBooking = () => {
     if (!timeSelect.value) {
       safeAlert('Please select a time slot before confirming.');
       return;
+    }
+
+    if (bookingSubmitButton instanceof HTMLButtonElement) {
+      bookingSubmitButton.disabled = true;
+      bookingSubmitButton.classList.add('is-loading');
+      bookingSubmitButton.textContent = 'Confirming...';
     }
 
     try {
@@ -17724,7 +17799,7 @@ const initPublicBooking = () => {
       successPanel.classList.remove('is-hidden');
       if (bookingBackLink instanceof HTMLAnchorElement) {
         bookingBackLink.href = '/activity';
-        bookingBackLink.setAttribute('aria-label', 'Go to dashboard');
+        bookingBackLink.setAttribute('aria-label', isOwnerBookingTab ? 'Close and return to dashboard' : 'Go to dashboard');
       }
       latestAppointmentReference = payload.appointment.id;
       reviewReferenceInput.value = latestAppointmentReference;
@@ -17750,6 +17825,12 @@ const initPublicBooking = () => {
       successPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to create appointment');
+    } finally {
+      if (bookingSubmitButton instanceof HTMLButtonElement) {
+        bookingSubmitButton.disabled = false;
+        bookingSubmitButton.classList.remove('is-loading');
+        bookingSubmitButton.textContent = bookingSubmitButtonDefaultText;
+      }
     }
   });
 

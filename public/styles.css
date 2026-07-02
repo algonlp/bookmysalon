@@ -4573,6 +4573,22 @@ textarea:focus-visible {
   line-height: 1.55;
 }
 
+.pro-signup-remember-me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #665f5a;
+  cursor: pointer;
+  user-select: none;
+}
+
+.pro-signup-remember-me input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
 .pro-signup-otp {
   margin-top: 16px;
 }
@@ -6986,9 +7002,13 @@ textarea:focus-visible {
 }
 
 .calendar-brand {
-  font-size: 1.05rem;
+  display: block;
+  width: 56px;
+  font-size: 0.92rem;
   font-weight: 800;
-  letter-spacing: -0.06em;
+  letter-spacing: -0.02em;
+  line-height: 1.28;
+  overflow-wrap: break-word;
 }
 
 .calendar-nav {
@@ -9998,9 +10018,35 @@ button.calendar-reports-summary-card {
 }
 
 .booking-phone-inputs {
-  display: grid;
-  grid-template-columns: minmax(96px, 132px) minmax(0, 1fr);
-  gap: 12px;
+  display: flex;
+  align-items: stretch;
+  border: 1px solid rgba(17, 17, 17, 0.1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+}
+
+.booking-phone-inputs #booking-customer-phone-country-code {
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 110px;
+  min-height: 56px;
+  padding: 0 8px 0 14px;
+  border: none;
+  border-right: 1px solid rgba(17, 17, 17, 0.1);
+  border-radius: 0;
+  background: transparent;
+  font-weight: 700;
+}
+
+.booking-phone-inputs #booking-customer-phone {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 56px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
 }
 
 .booking-field textarea {
@@ -12319,10 +12365,13 @@ button.calendar-reports-summary-card {
   .calendar-qr-header,
   .booking-shell,
   .booking-wizard-layout,
-  .booking-field-row,
-  .booking-phone-inputs {
+  .booking-field-row {
     flex-direction: column;
     grid-template-columns: 1fr;
+  }
+
+  .booking-phone-inputs #booking-customer-phone-country-code {
+    max-width: 92px;
   }
 
   .booking-page {
@@ -12739,19 +12788,19 @@ button.calendar-reports-summary-card {
 
 .cl-page {
   min-height: 100vh;
-  background: #f5f5f5;
   display: flex;
   flex-direction: column;
   font-family: inherit;
+  background:
+    radial-gradient(circle at top left, rgba(108, 76, 245, 0.08), transparent 20%),
+    #f7ecdf;
 }
 
 .cl-topbar {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 16px 24px;
-  background: #fff;
-  border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+  padding: 22px 28px;
 }
 
 .cl-topbar-back {
@@ -12761,12 +12810,19 @@ button.calendar-reports-summary-card {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  color: #111;
-  transition: background 0.15s;
+  color: var(--ink);
+  transition:
+    transform 180ms ease,
+    color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .cl-topbar-back:hover {
-  background: rgba(17, 17, 17, 0.06);
+  transform: translateY(-1px);
+  color: #4f46d8;
+  background: rgba(108, 76, 245, 0.08);
+  box-shadow: 0 12px 22px rgba(108, 76, 245, 0.12);
 }
 
 .cl-topbar-back svg {
@@ -12782,7 +12838,7 @@ button.calendar-reports-summary-card {
 .cl-topbar-brand {
   font-size: 1.05rem;
   font-weight: 800;
-  color: #111;
+  color: var(--ink);
   text-decoration: none;
   letter-spacing: -0.01em;
 }
@@ -12792,18 +12848,19 @@ button.calendar-reports-summary-card {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px 16px 56px;
+  padding: 16px 16px 56px;
 }
 
 .cl-card {
   width: 100%;
   max-width: 460px;
-  background: #fff;
-  border: 1px solid rgba(17, 17, 17, 0.1);
-  border-radius: 20px;
+  background: rgba(255, 248, 240, 0.95);
+  border: 1px solid rgba(16, 16, 16, 0.1);
+  border-radius: 28px;
   padding: 40px 40px 32px;
   display: grid;
   gap: 14px;
+  box-shadow: 0 24px 46px rgba(98, 88, 82, 0.1);
 }
 
 .cl-heading {
@@ -12812,12 +12869,12 @@ button.calendar-reports-summary-card {
   letter-spacing: -0.03em;
   text-align: center;
   margin: 0 0 4px;
-  color: #111;
+  color: var(--ink);
 }
 
 .cl-subheading {
   font-size: 0.9rem;
-  color: #6b7280;
+  color: var(--muted);
   text-align: center;
   margin: -4px 0 4px;
   line-height: 1.5;
@@ -12827,14 +12884,36 @@ button.calendar-reports-summary-card {
   position: relative;
   display: flex;
   align-items: center;
+  border: 1px solid rgba(17, 17, 17, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 252, 247, 0.96);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease,
+    background-color 180ms ease;
+}
+
+.cl-input-wrap:hover {
+  border-color: rgba(89, 79, 226, 0.26);
+  background: rgba(255, 255, 255, 0.98);
+  transform: translateY(-1px);
+}
+
+.cl-input-wrap:focus-within {
+  border-color: #594fe2;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 4px rgba(89, 79, 226, 0.12),
+    0 16px 28px rgba(89, 79, 226, 0.08);
 }
 
 .cl-input-icon {
   position: absolute;
-  left: 14px;
+  left: 16px;
   display: flex;
   align-items: center;
-  color: #9ca3af;
+  color: var(--muted);
   pointer-events: none;
   z-index: 1;
 }
@@ -12851,50 +12930,52 @@ button.calendar-reports-summary-card {
 
 .cl-input {
   width: 100%;
-  height: 52px;
-  padding: 0 16px 0 46px;
-  border: 1.5px solid rgba(17, 17, 17, 0.2);
-  border-radius: 10px;
+  min-height: 58px;
+  padding: 0 18px 0 46px;
+  border: 0;
+  border-radius: 16px;
   font-family: inherit;
   font-size: 1rem;
-  color: #111;
-  background: #fff;
+  color: var(--ink);
+  background: transparent;
   outline: none;
   box-sizing: border-box;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.cl-input:focus {
-  border-color: #14a800;
-  box-shadow: 0 0 0 3px rgba(20, 168, 0, 0.12);
 }
 
 .cl-input::placeholder {
-  color: #9ca3af;
+  color: var(--muted);
   font-weight: 500;
 }
 
 .cl-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  height: 52px;
-  background: #14a800;
-  color: #fff;
+  min-height: 52px;
+  background: linear-gradient(180deg, var(--primary), var(--primary-strong));
+  color: var(--white);
   border: none;
-  border-radius: 10px;
+  border-radius: 999px;
   font-family: inherit;
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
-  transition: background 0.15s;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
   letter-spacing: 0.01em;
+  box-shadow: 0 14px 26px rgba(108, 76, 245, 0.2);
 }
 
-.cl-btn-primary:hover {
-  background: #0f9100;
+.cl-btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 20px 34px rgba(108, 76, 245, 0.28);
 }
 
-.cl-btn-primary:active {
-  background: #0c7a00;
+.cl-btn-primary:active:not(:disabled) {
+  transform: translateY(0) scale(1);
 }
 
 .cl-btn-primary:disabled {
@@ -12907,7 +12988,7 @@ button.calendar-reports-summary-card {
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 12px;
-  color: #9ca3af;
+  color: var(--muted);
   font-size: 0.85rem;
   margin: 2px 0;
 }
@@ -12926,33 +13007,28 @@ button.calendar-reports-summary-card {
   justify-content: center;
   gap: 12px;
   width: 100%;
-  height: 52px;
-  border-radius: 10px;
+  min-height: 52px;
+  border-radius: 16px;
+  background: rgba(255, 252, 247, 0.96);
+  border: 1px solid rgba(16, 16, 16, 0.1);
+  color: var(--ink);
   font-family: inherit;
   font-size: 0.97rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease,
+    background-color 180ms ease;
 }
 
-.cl-btn-google {
-  background: #e8f0fe;
-  border: 1.5px solid #c5d3f8;
-  color: #1a1a1a;
-}
-
-.cl-btn-google:hover:not(:disabled) {
-  background: #dce5fd;
-}
-
-.cl-btn-apple {
-  background: #fff;
-  border: 1.5px solid rgba(17, 17, 17, 0.2);
-  color: #111;
-}
-
+.cl-btn-google:hover:not(:disabled),
 .cl-btn-apple:hover:not(:disabled) {
-  background: #f7f7f7;
+  border-color: rgba(89, 79, 226, 0.24);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 16px 30px rgba(89, 79, 226, 0.08);
+  transform: translateY(-2px);
 }
 
 .cl-btn-google:disabled,
@@ -12972,7 +13048,7 @@ button.calendar-reports-summary-card {
 
 .cl-signup-section p {
   margin: 0;
-  color: #6b7280;
+  color: var(--muted);
   font-size: 0.9rem;
 }
 
@@ -12981,19 +13057,36 @@ button.calendar-reports-summary-card {
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 46px;
-  border: 1.5px solid #14a800;
-  border-radius: 10px;
-  color: #14a800;
+  min-height: 46px;
+  border: 1.5px solid var(--primary);
+  border-radius: 999px;
+  color: var(--primary-strong);
   font-family: inherit;
   font-size: 0.97rem;
   font-weight: 700;
   text-decoration: none;
-  transition: background 0.15s;
+  transition: background-color 180ms ease;
 }
 
 .cl-btn-signup:hover {
-  background: rgba(20, 168, 0, 0.07);
+  background: rgba(108, 76, 245, 0.08);
+}
+
+.cl-remember-me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+  margin: -4px 0 4px;
+}
+
+.cl-remember-me input {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
 }
 
 .cl-btn-resend {
@@ -13004,7 +13097,7 @@ button.calendar-reports-summary-card {
   border: none;
   font-family: inherit;
   font-size: 0.88rem;
-  color: #14a800;
+  color: var(--primary-strong);
   cursor: pointer;
   text-align: center;
   text-decoration: underline;
@@ -13012,25 +13105,26 @@ button.calendar-reports-summary-card {
 
 .cl-status {
   font-size: 0.85rem;
-  color: #6b7280;
+  color: var(--muted);
   text-align: center;
   min-height: 18px;
 }
 
 .cl-status.is-error {
-  color: #b42318;
+  color: #c4321c;
 }
 
 .cl-pro-link {
   text-align: center;
   font-size: 0.82rem;
-  color: #9ca3af;
+  color: var(--muted);
   margin: 4px 0 0;
 }
 
 .cl-pro-link a {
   color: #4f46d8;
   text-decoration: none;
+  font-weight: 700;
 }
 
 .cl-pro-link a:hover {

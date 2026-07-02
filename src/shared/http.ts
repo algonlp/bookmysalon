@@ -32,19 +32,29 @@ export const getCookieValue = (req: Request, cookieName: string): string | undef
   return undefined;
 };
 
-export const getAdminSessionCookieOptions = (): CookieOptions => ({
-  httpOnly: true,
-  sameSite: 'lax',
-  secure: secureCookies,
-  path: '/',
-  maxAge: env.ADMIN_SESSION_TTL_DAYS * 24 * 60 * 60 * 1000
-});
+export const getAdminSessionCookieOptions = (persistent = true): CookieOptions => {
+  const baseOptions: CookieOptions = {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: secureCookies,
+    path: '/'
+  };
 
-export const setAdminSessionCookie = (res: Response, adminToken: string): void => {
+  if (!persistent) {
+    return baseOptions;
+  }
+
+  return {
+    ...baseOptions,
+    maxAge: env.ADMIN_SESSION_TTL_DAYS * 24 * 60 * 60 * 1000
+  };
+};
+
+export const setAdminSessionCookie = (res: Response, adminToken: string, persistent = true): void => {
   res.cookie(
     env.PLATFORM_ADMIN_COOKIE_NAME,
     adminToken,
-    getAdminSessionCookieOptions()
+    getAdminSessionCookieOptions(persistent)
   );
 };
 
