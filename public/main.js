@@ -15230,6 +15230,10 @@ const createTrendCard = (
             closeToolModal();
             window.location.assign(buildPathWithClientId('/sms-logs', clientId));
           }),
+          createToolActionButton('Open email logs', () => {
+            closeToolModal();
+            window.location.assign(buildPathWithClientId('/email-logs', clientId));
+          }),
           createToolActionButton('Set up online payments', () => {
             void openStripeConnectModal();
           }),
@@ -19029,6 +19033,175 @@ const initSmsLogs = () => {
     });
 };
 
+const initEmailLogs = () => {
+  const logsFeed = document.querySelector('#email-logs-feed');
+  const backLink = document.querySelector('#email-logs-back-link');
+  const totalMetric = document.querySelector('#email-logs-total');
+  const sentMetric = document.querySelector('#email-logs-sent');
+  const failedMetric = document.querySelector('#email-logs-failed');
+  const skippedMetric = document.querySelector('#email-logs-skipped');
+
+  if (!(logsFeed instanceof HTMLElement)) {
+    return;
+  }
+
+  const clientId = requireClientId();
+
+  if (!clientId) {
+    return;
+  }
+
+  if (backLink instanceof HTMLAnchorElement) {
+    backLink.href = buildPathWithClientId('/calendar', clientId);
+  }
+
+  const formatEmailLogSourceLabel = (sourceValue) => {
+    const sourceLabelMap = {
+      appointment_confirmation: 'Appointment confirmation',
+      appointment_rescheduled: 'Appointment rescheduled',
+      welcome: 'Welcome email',
+      unknown: 'Email event'
+    };
+
+    return sourceLabelMap[sourceValue] ?? 'Email event';
+  };
+
+  const formatEmailLogTimestamp = (createdAt) => {
+    if (typeof createdAt !== 'string' || !createdAt) {
+      return 'Unknown time';
+    }
+
+    const parsedDate = new Date(createdAt);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return createdAt;
+    }
+
+    return new Intl.DateTimeFormat(getDashboardUiCopy().locale || 'en-GB', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(parsedDate);
+  };
+
+  const renderEmptyState = (title, description) => {
+    logsFeed.replaceChildren();
+
+    const card = document.createElement('article');
+    card.className = 'sms-log-empty';
+
+    const heading = document.createElement('h2');
+    heading.textContent = title;
+
+    const copy = document.createElement('p');
+    copy.textContent = description;
+
+    card.append(heading, copy);
+    logsFeed.append(card);
+  };
+
+  apiRequest(`/api/platform/clients/${clientId}/email-logs`)
+    .then((payload) => {
+      const logs = Array.isArray(payload.logs) ? payload.logs : [];
+      const sentCount = logs.filter((entry) => entry.status === 'sent').length;
+      const failedCount = logs.filter((entry) => entry.status === 'failed').length;
+      const skippedCount = logs.filter((entry) => entry.status === 'skipped').length;
+
+      if (totalMetric instanceof HTMLElement) {
+        totalMetric.textContent = String(logs.length);
+      }
+
+      if (sentMetric instanceof HTMLElement) {
+        sentMetric.textContent = String(sentCount);
+      }
+
+      if (failedMetric instanceof HTMLElement) {
+        failedMetric.textContent = String(failedCount);
+      }
+
+      if (skippedMetric instanceof HTMLElement) {
+        skippedMetric.textContent = String(skippedCount);
+      }
+
+      if (logs.length === 0) {
+        renderEmptyState(
+          'No email logs yet',
+          'Send a booking confirmation or welcome email to start seeing delivery history here.'
+        );
+        return;
+      }
+
+      const cards = logs.map((entry) => {
+        const card = document.createElement('article');
+        card.className = 'sms-log-card';
+
+        const top = document.createElement('div');
+        top.className = 'sms-log-card-top';
+
+        const meta = document.createElement('div');
+        meta.className = 'sms-log-meta';
+
+        const title = document.createElement('strong');
+        title.textContent = formatEmailLogSourceLabel(entry.source);
+
+        const subtitle = document.createElement('p');
+        subtitle.textContent = `${formatEmailLogTimestamp(entry.createdAt)} • ${entry.recipient} • ${entry.destination || 'No destination'}`;
+
+        meta.append(title, subtitle);
+
+        const status = document.createElement('span');
+        status.className = `sms-log-status is-${entry.status}`;
+        status.textContent = entry.status;
+
+        top.append(meta, status);
+
+        const grid = document.createElement('div');
+        grid.className = 'sms-log-grid';
+
+        const details = [
+          ['Channel', 'email'],
+          ['Appointment', entry.appointmentId || 'Not linked'],
+          ['Reason', entry.reason || 'Delivered without reported errors']
+        ];
+
+        for (const [label, value] of details) {
+          const pill = document.createElement('div');
+          pill.className = 'sms-log-pill';
+
+          const pillLabel = document.createElement('span');
+          pillLabel.textContent = label;
+
+          const pillValue = document.createElement('strong');
+          pillValue.textContent = value;
+
+          pill.append(pillLabel, pillValue);
+          grid.append(pill);
+        }
+
+        const message = document.createElement('div');
+        message.className = 'sms-log-message';
+
+        const messageLabel = document.createElement('span');
+        messageLabel.textContent = 'Subject';
+
+        const messageBody = document.createElement('p');
+        messageBody.textContent = entry.subject || 'No subject saved.';
+
+        message.append(messageLabel, messageBody);
+
+        card.append(top, grid, message);
+        return card;
+      });
+
+      logsFeed.replaceChildren(...cards);
+    })
+    .catch((error) => {
+      renderEmptyState(
+        'Unable to load email logs',
+        error instanceof Error ? error.message : 'Email log history is not available right now.'
+      );
+    });
+};
+
 syncClientIdFromQuery();
 initCustomerLogin();
 initCustomerOtpLogin();
@@ -19054,6 +19227,7 @@ if (guardAdminPages()) {
 
 initPricingPage();
 initSmsLogs();
+initEmailLogs();
 initHomeSalonSearch();
 initSalonDetailTabs();
 initSalonProfilePage().catch((error) => {

@@ -177,3 +177,8 @@ clientPlatformRouter.get(
   asyncHandler(requirePlatformAdminAccess),
   asyncHandler(clientPlatformController.getSmsLogs)
 );
+clientPlatformRouter.get(
+  '/platform/clients/:clientId/email-logs',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.getEmailLogs)
+);

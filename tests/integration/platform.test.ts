@@ -6,6 +6,7 @@ import { resetAppointmentRepositoryForTests } from '../../src/appointments/appoi
 import { billingRepository } from '../../src/billing/billing.repository';
 import { env } from '../../src/config/env';
 import { resetSmsLogRepositoryForTests, smsLogRepository } from '../../src/notifications/smsLog.repository';
+import { resetEmailLogRepositoryForTests, emailLogRepository } from '../../src/notifications/emailLog.repository';
 import {
   clientPlatformRepository,
   resetClientPlatformRepositoryForTests
@@ -43,6 +44,7 @@ describe('Client platform API', () => {
     await resetAppointmentRepositoryForTests();
     await resetBillingRepositoryForTests();
     await resetSmsLogRepositoryForTests();
+    await resetEmailLogRepositoryForTests();
   });
 
   it('blocks online package checkout until the salon completes Stripe Connect onboarding', async () => {
@@ -938,6 +940,54 @@ describe('Client platform API', () => {
       businessId: clientId,
       status: 'failed',
       destination: '+1234567890'
+    });
+  });
+
+  it('returns email logs for the current business only', async () => {
+    const createResponse = await createTestClient(app, {
+      email: 'email-log-owner@example.com',
+      provider: 'email'
+    });
+    const otherClientResponse = await createTestClient(app, {
+      email: 'other-email-log-owner@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    await emailLogRepository.saveEmailLog({
+      id: 'email-log-1',
+      businessId: clientId,
+      recipient: 'customer',
+      destination: 'customer@example.com',
+      status: 'failed',
+      source: 'appointment_confirmation',
+      subject: 'Your appointment is confirmed',
+      reason: 'SMTP email failed',
+      createdAt: '2026-01-02T10:00:00.000Z'
+    });
+    await emailLogRepository.saveEmailLog({
+      id: 'email-log-2',
+      businessId: otherClientResponse.body.client.id as string,
+      recipient: 'admin',
+      destination: 'owner@example.com',
+      status: 'sent',
+      source: 'welcome',
+      subject: 'Welcome to QR Schedule',
+      createdAt: '2026-01-03T10:00:00.000Z'
+    });
+
+    const response = await request(app)
+      .get(`/api/platform/clients/${clientId}/email-logs`)
+      .set('x-admin-token', adminToken);
+
+    expect(response.status).toBe(200);
+    expect(response.body.logs).toHaveLength(1);
+    expect(response.body.logs[0]).toMatchObject({
+      id: 'email-log-1',
+      businessId: clientId,
+      status: 'failed',
+      destination: 'customer@example.com'
     });
   });
 
@@ -2445,6 +2495,23 @@ describe('Client platform API', () => {
     );
     expect(bookingResponse.body.manageLink).toContain(
       `accessToken=${encodeURIComponent(bookingResponse.body.publicAccessToken)}`
+    );
+
+    const emailLogsResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}/email-logs`)
+      .set('x-admin-token', adminToken);
+
+    expect(emailLogsResponse.status).toBe(200);
+    expect(emailLogsResponse.body.logs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          businessId: clientId,
+          appointmentId: bookingResponse.body.appointment.id,
+          recipient: 'customer',
+          status: 'skipped',
+          source: 'appointment_confirmation'
+        })
+      ])
     );
 
     const appointmentId = bookingResponse.body.appointment.id as string;

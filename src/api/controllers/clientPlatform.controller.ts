@@ -75,27 +75,31 @@ const sendWelcomeEmail = async (client: { id: string; email: string; businessNam
   const dashboardLink = `${origin}${buildPlatformClientPagePath(platformClientPagePaths.calendar, client.id)}`;
   const businessLabel = client.businessName || 'your workspace';
 
-  await emailService.sendEmail({
-    to: client.email,
-    subject: `Welcome to QR Schedule, ${businessLabel}!`,
-    text:
-      `Your workspace for ${businessLabel} is ready. ` +
-      `Open your dashboard to manage bookings, services and your team: ${dashboardLink}`,
-    html: renderEmailLayout({
-      preheader: `Your workspace for ${businessLabel} is ready.`,
-      eyebrow: 'Welcome',
-      heading: `You're all set, ${businessLabel}!`,
-      bodyHtml: `
-        <p style="margin:0 0 14px">Your QR Schedule workspace is live. From your dashboard you can:</p>
-        <ul style="margin:0 0 4px;padding-left:20px">
-          <li style="margin:0 0 6px">Manage bookings and your calendar</li>
-          <li style="margin:0 0 6px">Add services, pricing and team members</li>
-          <li style="margin:0 0 6px">Share your booking link and QR code with customers</li>
-        </ul>
-      `,
-      button: { label: 'Open your dashboard', url: dashboardLink }
-    })
-  });
+  await emailService.sendEmail(
+    {
+      to: client.email,
+      subject: `Welcome to QR Schedule, ${businessLabel}!`,
+      text:
+        `Your workspace for ${businessLabel} is ready. ` +
+        `Open your dashboard to manage bookings, services and your team: ${dashboardLink}`,
+      html: renderEmailLayout({
+        preheader: `Your workspace for ${businessLabel} is ready.`,
+        eyebrow: 'Welcome',
+        heading: `You're all set, ${businessLabel}!`,
+        bodyHtml: `
+          <p style="margin:0 0 14px">Your QR Schedule workspace is live. From your dashboard you can:</p>
+          <ul style="margin:0 0 4px;padding-left:20px">
+            <li style="margin:0 0 6px">Manage bookings and your calendar</li>
+            <li style="margin:0 0 6px">Add services, pricing and team members</li>
+            <li style="margin:0 0 6px">Share your booking link and QR code with customers</li>
+          </ul>
+        `,
+        button: { label: 'Open your dashboard', url: dashboardLink }
+      })
+    },
+    'admin',
+    { businessId: client.id, source: 'welcome' }
+  );
 };
 
 const isValidProfileImageValue = (value: string): boolean => {
@@ -930,6 +934,12 @@ export const clientPlatformController = {
   async getSmsLogs(req: Request, res: Response, _next: NextFunction): Promise<void> {
     res.status(200).json({
       logs: await clientPlatformService.getSmsLogs(getClientId(req))
+    });
+  },
+
+  async getEmailLogs(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    res.status(200).json({
+      logs: await clientPlatformService.getEmailLogs(getClientId(req))
     });
   },
 

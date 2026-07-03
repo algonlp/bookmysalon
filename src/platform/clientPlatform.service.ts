@@ -6,6 +6,7 @@ import { clientPlatformRepository } from './clientPlatform.repository';
 import { appointmentService } from '../appointments/appointment.service';
 import { googleIdentityService } from '../auth/googleIdentity.service';
 import { smsLogRepository } from '../notifications/smsLog.repository';
+import { emailLogRepository } from '../notifications/emailLog.repository';
 import {
   buildPlatformClientPagePath,
   platformClientAuthMessages,
@@ -2324,6 +2325,16 @@ export const clientPlatformService = {
     const smsLogs = await smsLogRepository.listSmsLogs();
 
     return smsLogs
+      .filter((entry) => entry.businessId === clientId)
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+  },
+
+  async getEmailLogs(clientId: string) {
+    await getClientOrThrow(clientId);
+
+    const emailLogs = await emailLogRepository.listEmailLogs();
+
+    return emailLogs
       .filter((entry) => entry.businessId === clientId)
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
   },

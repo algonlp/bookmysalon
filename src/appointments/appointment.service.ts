@@ -1600,12 +1600,20 @@ const sendAppointmentConfirmationNotification = async (
       businessId: appointment.businessId,
       source: mode === 'rescheduled' ? 'appointment_rescheduled' : 'appointment_confirmation'
     }),
-    emailService.sendEmail({
-      to: appointment.customerEmail,
-      subject: emailSubject,
-      text: emailText,
-      html: emailHtml
-    }).then((result): NotificationDispatchResult => ({
+    emailService.sendEmail(
+      {
+        to: appointment.customerEmail,
+        subject: emailSubject,
+        text: emailText,
+        html: emailHtml
+      },
+      'customer',
+      {
+        appointmentId: appointment.id,
+        businessId: appointment.businessId,
+        source: mode === 'rescheduled' ? 'appointment_rescheduled' : 'appointment_confirmation'
+      }
+    ).then((result): NotificationDispatchResult => ({
       recipient: 'customer',
       channel: 'email',
       status: result.status

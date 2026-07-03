@@ -1,7 +1,11 @@
+import { randomUUID } from 'crypto';
 import nodemailer from 'nodemailer';
 import { env } from '../config/env';
 import { logger } from '../shared/logger';
 import { isTestEnvironment } from '../shared/runtimeEnv';
+import { emailLogRepository } from './emailLog.repository';
+import type { EmailDispatchContext } from './emailLog.types';
+import type { NotificationDispatchResult } from '../appointments/appointment.types';
 
 export interface EmailMessage {
   to: string;
@@ -12,6 +16,7 @@ export interface EmailMessage {
 
 export interface EmailSendResult {
   status: 'sent' | 'skipped' | 'failed';
+  reason?: string;
 }
 
 const isSmtpEnabled = (): boolean =>
@@ -38,7 +43,7 @@ const getSmtpTransport = () => {
   return smtpTransport;
 };
 
-const sendViaSendgrid = async (message: EmailMessage): Promise<{ status: 'sent' | 'failed' }> => {
+const sendViaSendgrid = async (message: EmailMessage): Promise<EmailSendResult> => {
   const abortController = new AbortController();
   const timeout = setTimeout(() => abortController.abort(), 10000);
 
@@ -67,20 +72,19 @@ const sendViaSendgrid = async (message: EmailMessage): Promise<{ status: 'sent' 
 
     if (!response.ok) {
       logger.error('SendGrid email failed', { status: response.status, to: message.to });
-      return { status: 'failed' };
+      return { status: 'failed', reason: `SendGrid request failed with status ${response.status}` };
     }
 
     return { status: 'sent' };
   } catch (error) {
     clearTimeout(timeout);
-    logger.error('SendGrid network error', {
-      error: error instanceof Error ? error.message : String(error)
-    });
-    return { status: 'failed' };
+    const reason = error instanceof Error ? error.message : String(error);
+    logger.error('SendGrid network error', { error: reason });
+    return { status: 'failed', reason };
   }
 };
 
-const sendViaSmtp = async (message: EmailMessage): Promise<{ status: 'sent' | 'failed' }> => {
+const sendViaSmtp = async (message: EmailMessage): Promise<EmailSendResult> => {
   try {
     const transporter = getSmtpTransport();
     const fromAddress = env.SMTP_FROM ?? env.SMTP_USER ?? 'noreply@qrschedule.com';
@@ -95,29 +99,67 @@ const sendViaSmtp = async (message: EmailMessage): Promise<{ status: 'sent' | 'f
 
     return { status: 'sent' };
   } catch (error) {
-    logger.error('SMTP email failed', {
-      error: error instanceof Error ? error.message : String(error),
-      to: message.to
+    const reason = error instanceof Error ? error.message : String(error);
+    logger.error('SMTP email failed', { error: reason, to: message.to });
+    return { status: 'failed', reason };
+  }
+};
+
+const persistEmailLog = async (
+  result: EmailSendResult,
+  message: EmailMessage,
+  recipient: NotificationDispatchResult['recipient'],
+  context?: EmailDispatchContext
+): Promise<void> => {
+  if (!context?.businessId) {
+    return;
+  }
+
+  try {
+    await emailLogRepository.saveEmailLog({
+      id: randomUUID(),
+      businessId: context.businessId,
+      appointmentId: context.appointmentId,
+      recipient,
+      destination: message.to.trim(),
+      status: result.status,
+      source: context.source ?? 'unknown',
+      subject: message.subject,
+      reason: result.reason,
+      createdAt: new Date().toISOString()
     });
-    return { status: 'failed' };
+  } catch (error) {
+    logger.error('Failed to persist email log', {
+      error: error instanceof Error ? error.message : String(error),
+      businessId: context.businessId
+    });
   }
 };
 
 export const emailService = {
-  async sendEmail(message: EmailMessage): Promise<EmailSendResult> {
+  async sendEmail(
+    message: EmailMessage,
+    recipient: NotificationDispatchResult['recipient'] = 'customer',
+    context?: EmailDispatchContext
+  ): Promise<EmailSendResult> {
     if (!message.to.trim()) {
-      return { status: 'skipped' };
+      const result: EmailSendResult = { status: 'skipped', reason: 'Recipient email is missing' };
+      await persistEmailLog(result, message, recipient, context);
+      return result;
     }
+
+    let result: EmailSendResult;
 
     if (isSmtpEnabled()) {
-      return sendViaSmtp(message);
+      result = await sendViaSmtp(message);
+    } else if (isSendgridEnabled()) {
+      result = await sendViaSendgrid(message);
+    } else {
+      logger.info('Email skipped: no SMTP or SendGrid configured', { to: message.to });
+      result = { status: 'skipped', reason: 'No SMTP or SendGrid configured' };
     }
 
-    if (isSendgridEnabled()) {
-      return sendViaSendgrid(message);
-    }
-
-    logger.info('Email skipped: no SMTP or SendGrid configured', { to: message.to });
-    return { status: 'skipped' };
+    await persistEmailLog(result, message, recipient, context);
+    return result;
   }
 };

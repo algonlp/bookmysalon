@@ -182,6 +182,10 @@ app.get('/sms-logs', requirePlatformAdminPageAccess, (_req, res) => {
   res.sendFile(resolve(publicDir, 'sms-logs.html'));
 });
 
+app.get('/email-logs', requirePlatformAdminPageAccess, (_req, res) => {
+  res.sendFile(resolve(publicDir, 'email-logs.html'));
+});
+
 app.get('/book/:clientId', (_req, res) => {
   res.sendFile(resolve(publicDir, 'book.html'));
 });
