@@ -15,6 +15,7 @@ import { resetBillingRepositoryForTests } from '../../src/billing/billing.reposi
 import { stripePaymentService } from '../../src/payments/stripePayment.service';
 import { appointmentService } from '../../src/appointments/appointment.service';
 import { createTestClient } from '../helpers/createTestClient';
+import { loginTestClient } from '../helpers/loginTestClient';
 
 describe('Client platform API', () => {
   const uploadedProfileImage = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB';
@@ -790,7 +791,7 @@ describe('Client platform API', () => {
 
     expect(completeResponse.status).toBe(200);
 
-    const loginResponse = await request(app).post('/api/platform/clients/login').send({
+    const loginResponse = await loginTestClient(app, {
       email: 'login-owner@example.com'
     });
 
@@ -821,7 +822,7 @@ describe('Client platform API', () => {
 
     expect(businessProfileResponse.status).toBe(200);
 
-    const loginResponse = await request(app).post('/api/platform/clients/login').send({
+    const loginResponse = await loginTestClient(app, {
       email: 'resume-owner@example.com'
     });
 
@@ -1547,7 +1548,7 @@ describe('Client platform API', () => {
       'Complete the required onboarding steps before finishing setup'
     );
 
-    const loginResponse = await request(app).post('/api/platform/clients/login').send({
+    const loginResponse = await loginTestClient(app, {
       email: 'incomplete-complete@example.com'
     });
 

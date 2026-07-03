@@ -537,17 +537,6 @@ export const clientPlatformController = {
       throw new HttpError(404, 'Account not found. Sign up to create a new workspace.');
     }
 
-    if (!client.mobileNumber) {
-      const payload = await clientPlatformService.loginClient(input);
-      setAdminSessionCookie(res, payload.plainAdminToken, input.rememberMe);
-      res.status(200).json({
-        client: serializeClientForResponse(payload.client),
-        ...(shouldExposeAdminTokenForTests() ? { adminToken: payload.plainAdminToken } : {}),
-        nextStep: payload.nextStep
-      });
-      return;
-    }
-
     const code = createOtpCode();
     adminOtpStore.set(client.id, {
       code,
@@ -557,17 +546,31 @@ export const clientPlatformController = {
       rememberMe: input.rememberMe
     });
 
-    const smsResult = await twilioSmsService.sendSms(
-      client.mobileNumber,
-      `Your QR Schedule verification code is ${code}. It expires in 10 minutes.`,
-      'customer'
-    );
+    if (client.mobileNumber) {
+      const smsResult = await twilioSmsService.sendSms(
+        client.mobileNumber,
+        `Your QR Schedule verification code is ${code}. It expires in 10 minutes.`,
+        'customer'
+      );
+
+      res.status(200).json({
+        otpRequired: true,
+        clientId: client.id,
+        maskedPhone: maskPhone(client.mobileNumber),
+        smsStatus: smsResult.status,
+        ...(shouldExposeAdminTokenForTests() ? { otpCode: code } : {})
+      });
+      return;
+    }
+
+    const emailResult = await emailOtpService.sendOtp(client.email, code);
 
     res.status(200).json({
       otpRequired: true,
       clientId: client.id,
-      maskedPhone: maskPhone(client.mobileNumber),
-      smsStatus: smsResult.status
+      maskedEmail: maskEmail(client.email),
+      emailStatus: emailResult.status,
+      ...(shouldExposeAdminTokenForTests() ? { otpCode: code } : {})
     });
   },
 

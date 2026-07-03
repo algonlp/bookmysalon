@@ -2070,29 +2070,6 @@ export const clientPlatformService = {
     return findClientByLoginInput(input);
   },
 
-  async loginClient(
-    input: Pick<CreateClientInput, 'email' | 'mobileNumber'>
-  ): Promise<{ client: ClientRecord; plainAdminToken: string; nextStep: string }> {
-    const client = await findClientByLoginInput(input);
-
-    if (!client) {
-      throw new HttpError(404, platformClientAuthMessages.accountNotFound);
-    }
-
-    const plainAdminToken = randomUUID();
-    const updatedClient = await updateClient(client.id, (current) => ({
-      ...current,
-      adminToken: hashAdminToken(plainAdminToken),
-      updatedAt: new Date().toISOString()
-    }));
-
-    return {
-      client: updatedClient,
-      plainAdminToken,
-      nextStep: getNextClientStep(updatedClient)
-    };
-  },
-
   async loginClientById(
     clientId: string
   ): Promise<{ client: ClientRecord; plainAdminToken: string; nextStep: string }> {

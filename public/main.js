@@ -5639,7 +5639,8 @@ const initSignup = () => {
         }
 
         if (otpMessage instanceof HTMLElement) {
-          otpMessage.textContent = `Enter the verification code sent to ${result.maskedPhone || 'your mobile number'}.`;
+          const destination = result.maskedPhone || result.maskedEmail || 'your mobile number or email';
+          otpMessage.textContent = `Enter the verification code sent to ${destination}.`;
         }
 
         if (otpCodeInput instanceof HTMLInputElement) {
@@ -5647,7 +5648,8 @@ const initSignup = () => {
           otpCodeInput.focus();
         }
 
-        setStatus(result.smsStatus === 'sent' ? 'Verification code sent.' : 'Verification code created.');
+        const deliveryStatus = result.smsStatus ?? result.emailStatus;
+        setStatus(deliveryStatus === 'sent' ? 'Verification code sent.' : 'Verification code created.');
         return;
       }
 
