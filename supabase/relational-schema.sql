@@ -185,6 +185,46 @@ create index if not exists waitlist_records_business_id_idx
 create index if not exists waitlist_records_customer_phone_idx
   on waitlist_records (customer_phone);
 
+create table if not exists customer_account_records (
+  id text primary key,
+  phone text not null default '',
+  email text not null default '',
+  email_lower text not null default '',
+  session_token text not null default '',
+  payload jsonb not null
+);
+
+create index if not exists customer_account_records_phone_idx
+  on customer_account_records (phone);
+
+create index if not exists customer_account_records_email_lower_idx
+  on customer_account_records (email_lower);
+
+create unique index if not exists customer_account_records_session_token_idx
+  on customer_account_records (session_token)
+  where session_token <> '';
+
+create table if not exists email_log_records (
+  id text primary key,
+  business_id text not null default '',
+  appointment_id text not null default '',
+  payload jsonb not null
+);
+
+create index if not exists email_log_records_business_id_idx
+  on email_log_records (business_id);
+
+create table if not exists sms_log_records (
+  id text primary key,
+  business_id text not null default '',
+  appointment_id text not null default '',
+  waitlist_entry_id text not null default '',
+  payload jsonb not null
+);
+
+create index if not exists sms_log_records_business_id_idx
+  on sms_log_records (business_id);
+
 -- Normalized relational tables used by the relational mirror layer.
 
 do $$

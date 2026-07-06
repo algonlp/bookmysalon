@@ -15,7 +15,8 @@
     "format:fix": "prettier --write .",
     "train": "tsx src/nlp/pipelines/trainingPipeline.ts",
     "sync:supabase": "tsx scripts/sync-supabase.ts",
-    "sync:supabase:relational": "tsx scripts/sync-supabase-relational.ts"
+    "sync:supabase:relational": "tsx scripts/sync-supabase-relational.ts",
+    "sync:supabase:notifications": "tsx scripts/sync-supabase-notifications.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.103.2",
