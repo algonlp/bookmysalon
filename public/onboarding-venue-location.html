@@ -14,6 +14,12 @@
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin="anonymous"
+    />
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -125,25 +131,7 @@
 
             <section class="venue-map-card" aria-label="Location preview map">
               <div class="map-surface">
-                <span class="map-road map-road-a"></span>
-                <span class="map-road map-road-b"></span>
-                <span class="map-road map-road-c"></span>
-                <span class="map-road map-road-d"></span>
-                <span class="map-park map-park-a"></span>
-                <span class="map-park map-park-b"></span>
-                <span class="map-water"></span>
-                <span class="map-block map-block-a"></span>
-                <span class="map-block map-block-b"></span>
-                <span class="map-block map-block-c"></span>
-                <span class="map-block map-block-d"></span>
-                <span class="map-block map-block-e"></span>
-                <span class="map-block map-block-f"></span>
-
-                <div class="map-pin" id="venue-map-pin">
-                  <span class="map-pin-dot"></span>
-                </div>
-
-                <div class="map-label" id="venue-map-label">Your venue</div>
+                <div class="map-live-surface" id="venue-map"></div>
 
                 <div class="venue-map-summary">
                   <p class="venue-map-summary-eyebrow">Client-facing location</p>
@@ -173,6 +161,11 @@
       </div>
     </div>
 
-    <script src="/main.js"></script>
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin="anonymous"
+    ></script>
+    <script src="/main.js?v=real-time-map-20260706"></script>
   </body>
 </html>

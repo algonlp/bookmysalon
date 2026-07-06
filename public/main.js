@@ -4406,17 +4406,68 @@ const initHomeSalonSearch = () => {
     return latitude === null || longitude === null ? null : { latitude, longitude };
   };
 
-  const buildMapMarkerStyle = (center, coordinates, index, total) => {
-    const centerLatitude = toFiniteNumber(center?.latitude) ?? 0;
-    const centerLongitude = toFiniteNumber(center?.longitude) ?? 0;
-    const latitude = toFiniteNumber(coordinates?.latitude) ?? centerLatitude;
-    const longitude = toFiniteNumber(coordinates?.longitude) ?? centerLongitude;
-    const scale = Math.max(0.012, Math.abs(latitude - centerLatitude), Math.abs(longitude - centerLongitude));
-    const left = 50 + ((longitude - centerLongitude) / scale) * 28;
-    const top = 50 - ((latitude - centerLatitude) / scale) * 28;
-    const fallbackAngle = (index / Math.max(total, 1)) * Math.PI * 2;
+  const renderNearbySalonMapTiles = (mapSurface, nearbySalons, center) => {
+    if (typeof window.L === 'undefined' || !center) {
+      return;
+    }
 
-    return `left: ${Math.min(88, Math.max(12, Number.isFinite(left) ? left : 50 + Math.cos(fallbackAngle) * 24))}%; top: ${Math.min(84, Math.max(12, Number.isFinite(top) ? top : 50 + Math.sin(fallbackAngle) * 24))}%;`;
+    const map = window.L.map(mapSurface, { scrollWheelZoom: false }).setView(
+      [center.latitude, center.longitude],
+      13
+    );
+
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    const centerIcon = window.L.divIcon({
+      className: 'nearby-map-center-pin',
+      html: 'You',
+      iconSize: [58, 58],
+      iconAnchor: [29, 29]
+    });
+    const centerMarker = window.L.marker([center.latitude, center.longitude], {
+      icon: centerIcon,
+      interactive: false
+    }).addTo(map);
+
+    const salonMarkers = [];
+
+    nearbySalons.forEach((entry, index) => {
+      const latitude = toFiniteNumber(entry.coordinates?.latitude);
+      const longitude = toFiniteNumber(entry.coordinates?.longitude);
+
+      if (latitude === null || longitude === null) {
+        return;
+      }
+
+      const salonIcon = window.L.divIcon({
+        className: 'nearby-map-salon-pin',
+        html: String(index + 1),
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
+      });
+
+      const marker = window.L.marker([latitude, longitude], { icon: salonIcon })
+        .addTo(map)
+        .bindTooltip(
+          `${entry.salon.businessName || 'Salon'} - ${formatDistanceLabel(entry.distanceKilometers)}`
+        );
+
+      marker.on('click', () => {
+        window.location.assign(`/salon/${encodeURIComponent(entry.salon.clientId)}`);
+      });
+
+      salonMarkers.push(marker);
+    });
+
+    if (salonMarkers.length > 0) {
+      const group = window.L.featureGroup([centerMarker, ...salonMarkers]);
+      map.fitBounds(group.getBounds().pad(0.25));
+    }
+
+    window.requestAnimationFrame(() => map.invalidateSize());
   };
 
   const createNearbySalonMap = (nearbySalons, center) => {
@@ -4426,31 +4477,6 @@ const initHomeSalonSearch = () => {
     const mapSurface = document.createElement('div');
     mapSurface.className = 'nearby-salon-map';
     mapSurface.setAttribute('aria-label', 'Nearby salons map');
-
-    ['a', 'b', 'c', 'd'].forEach((road) => {
-      const roadLine = document.createElement('span');
-      roadLine.className = `nearby-map-road nearby-map-road-${road}`;
-      mapSurface.append(roadLine);
-    });
-
-    const centerPin = document.createElement('span');
-    centerPin.className = 'nearby-map-center-pin';
-    centerPin.textContent = 'You';
-    mapSurface.append(centerPin);
-
-    nearbySalons.forEach((entry, index) => {
-      const salonUrl = `/salon/${encodeURIComponent(entry.salon.clientId)}`;
-      const marker = document.createElement('a');
-      marker.className = 'nearby-map-salon-pin';
-      marker.href = salonUrl;
-      marker.style.cssText = buildMapMarkerStyle(center, entry.coordinates, index, nearbySalons.length);
-      marker.setAttribute(
-        'aria-label',
-        `${entry.salon.businessName || 'Salon'} ${formatDistanceLabel(entry.distanceKilometers)}`
-      );
-      marker.textContent = String(index + 1);
-      mapSurface.append(marker);
-    });
 
     const list = document.createElement('div');
     list.className = 'nearby-salon-list';
@@ -4503,6 +4529,7 @@ const initHomeSalonSearch = () => {
     });
 
     mapSection.append(mapSurface, list);
+    window.requestAnimationFrame(() => renderNearbySalonMapTiles(mapSurface, nearbySalons, center));
     return mapSection;
   };
 
@@ -6868,7 +6895,7 @@ const initVenueLocation = () => {
   const venueSearchResults = document.querySelector('#venue-search-results');
   const venueSearchResultsTitle = document.querySelector('#venue-search-results-title');
   const venueSearchResultsStatus = document.querySelector('#venue-search-results-status');
-  const venueMapLabel = document.querySelector('#venue-map-label');
+  const venueMapContainer = document.querySelector('#venue-map');
   const venueMapTitle = document.querySelector('#venue-map-title');
   const venueMapAddress = document.querySelector('#venue-map-address');
 
@@ -6879,7 +6906,7 @@ const initVenueLocation = () => {
     !(venueSearchResults instanceof HTMLDivElement) ||
     !(venueSearchResultsTitle instanceof HTMLElement) ||
     !(venueSearchResultsStatus instanceof HTMLElement) ||
-    !(venueMapLabel instanceof HTMLDivElement) ||
+    !(venueMapContainer instanceof HTMLDivElement) ||
     !(venueMapTitle instanceof HTMLElement) ||
     !(venueMapAddress instanceof HTMLParagraphElement)
   ) {
@@ -6895,6 +6922,114 @@ const initVenueLocation = () => {
   let activeSearchAbortController = null;
   let latestSearchRequestId = 0;
   let locationCountryLabel = '';
+  let venueMap = null;
+  let venueMarker = null;
+  let venueMarkerLabelText = 'Your venue';
+
+  const DEFAULT_VENUE_MAP_CENTER = { latitude: 20, longitude: 0 };
+
+  const setVenueMarkerLabel = (text) => {
+    venueMarkerLabelText = text?.trim() || 'Your venue';
+
+    if (venueMarker) {
+      venueMarker.setTooltipContent(venueMarkerLabelText);
+    }
+  };
+
+  const setVenueMapPosition = (latitude, longitude, { zoom = 16 } = {}) => {
+    if (!venueMap || !venueMarker || latitude === null || longitude === null) {
+      return;
+    }
+
+    venueMarker.setLatLng([latitude, longitude]);
+    venueMap.setView([latitude, longitude], zoom);
+  };
+
+  const applyDraggedVenueMarker = async (latitude, longitude) => {
+    setLocationStatus('Updating address for the pin location...');
+
+    try {
+      const params = new URLSearchParams({
+        latitude: String(latitude),
+        longitude: String(longitude)
+      });
+      const payload = await apiRequest(`/api/public/locations/reverse?${params.toString()}`);
+      const detectedLocation = payload?.location?.label?.trim() ?? '';
+
+      if (!detectedLocation) {
+        setLocationStatus('Pin moved, but no address could be resolved. You can enter it manually.');
+        return;
+      }
+
+      venueAddressInput.value = detectedLocation;
+      syncVenuePreview(detectedLocation);
+      setVenueMarkerLabel(detectedLocation.split(',')[0] || 'Your venue');
+      clearSearchResults();
+      setLocationStatus('Address updated to match the pin location.');
+    } catch (error) {
+      setLocationStatus(
+        error instanceof Error ? error.message : 'Unable to update the address for this pin.'
+      );
+    }
+  };
+
+  const initVenueMap = () => {
+    if (typeof window.L === 'undefined') {
+      return;
+    }
+
+    venueMap = window.L.map(venueMapContainer, { zoomControl: true }).setView(
+      [DEFAULT_VENUE_MAP_CENTER.latitude, DEFAULT_VENUE_MAP_CENTER.longitude],
+      2
+    );
+
+    window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(venueMap);
+    venueMap.attributionControl.setPosition('topright');
+
+    venueMarker = window.L.marker(
+      [DEFAULT_VENUE_MAP_CENTER.latitude, DEFAULT_VENUE_MAP_CENTER.longitude],
+      {
+        icon: window.L.divIcon({
+          className: 'map-live-pin',
+          html: '<span class="map-live-pin-dot"></span>',
+          iconSize: [34, 34],
+          iconAnchor: [17, 34]
+        }),
+        draggable: true
+      }
+    )
+      .addTo(venueMap)
+      .bindTooltip(venueMarkerLabelText, {
+        permanent: true,
+        direction: 'top',
+        className: 'map-live-tooltip'
+      });
+
+    venueMarker.on('dragend', () => {
+      const position = venueMarker.getLatLng();
+      void applyDraggedVenueMarker(position.lat, position.lng);
+    });
+
+    window.requestAnimationFrame(() => venueMap.invalidateSize());
+  };
+
+  const geocodeVenueAddress = async (address) => {
+    try {
+      const payload = await apiRequest(
+        `/api/public/locations/search?${new URLSearchParams({ q: address }).toString()}`
+      );
+      const suggestion = Array.isArray(payload?.suggestions) ? payload.suggestions[0] : null;
+      const latitude = toFiniteNumber(suggestion?.latitude);
+      const longitude = toFiniteNumber(suggestion?.longitude);
+
+      return latitude === null || longitude === null ? null : { latitude, longitude };
+    } catch (_error) {
+      return null;
+    }
+  };
 
   const setLocationStatus = (message) => {
     if (venueLocationStatus instanceof HTMLParagraphElement) {
@@ -6927,12 +7062,12 @@ const initVenueLocation = () => {
     venueAddressContinue.disabled = disabled;
   };
 
-  const syncVenuePreview = (nextVenue) => {
+  const syncVenuePreview = (nextVenue, coordinates = null) => {
     selectedVenue = nextVenue.trim();
 
     if (!selectedVenue) {
       selectedVenueAddress.textContent = 'Start typing your venue address to preview it here.';
-      venueMapLabel.textContent = 'Your venue';
+      setVenueMarkerLabel('Your venue');
       venueMapTitle.textContent = 'Your venue';
       venueMapAddress.textContent =
         'Start typing your address to preview how it will appear on your booking page.';
@@ -6941,10 +7076,15 @@ const initVenueLocation = () => {
     }
 
     setMultilineAddress(selectedVenueAddress, selectedVenue);
-    venueMapLabel.textContent = selectedVenue.split(',')[0]?.trim() || 'Your venue';
-    venueMapTitle.textContent = venueMapLabel.textContent;
+    const shortLabel = selectedVenue.split(',')[0]?.trim() || 'Your venue';
+    setVenueMarkerLabel(shortLabel);
+    venueMapTitle.textContent = shortLabel;
     venueMapAddress.textContent = selectedVenue;
     updateContinue();
+
+    if (coordinates) {
+      setVenueMapPosition(coordinates.latitude, coordinates.longitude);
+    }
   };
 
   const applyLocationConfig = (config) => {
@@ -6957,9 +7097,9 @@ const initVenueLocation = () => {
       : 'Example: Shop number, street, area, city, province, country';
   };
 
-  const applySuggestedVenue = (nextVenue) => {
+  const applySuggestedVenue = (nextVenue, coordinates = null) => {
     venueAddressInput.value = nextVenue;
-    syncVenuePreview(nextVenue);
+    syncVenuePreview(nextVenue, coordinates);
     clearSearchResults();
     setResultsStatus(
       locationCountryLabel
@@ -6990,7 +7130,12 @@ const initVenueLocation = () => {
         <span>${escapeHtml(suggestion.secondaryLabel || suggestion.label || '')}</span>
       `;
       resultButton.addEventListener('click', () => {
-        applySuggestedVenue(suggestion.label || '');
+        const latitude = toFiniteNumber(suggestion.latitude);
+        const longitude = toFiniteNumber(suggestion.longitude);
+        applySuggestedVenue(
+          suggestion.label || '',
+          latitude === null || longitude === null ? null : { latitude, longitude }
+        );
         venueAddressInput.focus();
       });
       venueSearchResults.append(resultButton);
@@ -7079,19 +7224,22 @@ const initVenueLocation = () => {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
           const params = new URLSearchParams({
-            latitude: String(position.coords.latitude),
-            longitude: String(position.coords.longitude)
+            latitude: String(latitude),
+            longitude: String(longitude)
           });
           const payload = await apiRequest(`/api/public/locations/reverse?${params.toString()}`);
           const detectedLocation = payload?.location?.label?.trim() ?? '';
 
           if (!detectedLocation) {
+            setVenueMapPosition(latitude, longitude);
             setLocationStatus('Location detected, but no address could be resolved. You can enter it manually.');
             return;
           }
 
-          applySuggestedVenue(detectedLocation);
+          applySuggestedVenue(detectedLocation, { latitude, longitude });
           setLocationStatus('Current location detected. You can edit the address if you need changes.');
         } catch (error) {
           setLocationStatus(
@@ -7123,6 +7271,8 @@ const initVenueLocation = () => {
       }
     );
   };
+
+  initVenueMap();
 
   venueAddressInput.addEventListener('input', () => {
     syncVenuePreview(venueAddressInput.value);
@@ -7183,6 +7333,11 @@ const initVenueLocation = () => {
         venueAddressInput.value = savedVenue;
         syncVenuePreview(savedVenue);
         setLocationStatus('Saved location loaded. You can edit it or use your current location.');
+        void geocodeVenueAddress(savedVenue).then((coordinates) => {
+          if (coordinates) {
+            setVenueMapPosition(coordinates.latitude, coordinates.longitude);
+          }
+        });
         return;
       }
 
