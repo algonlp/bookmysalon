@@ -2482,6 +2482,59 @@ const shareSalonProfile = async (salon) => {
   safeAlert(shareUrl);
 };
 
+const REVIEW_AVATAR_PALETTE = [
+  '#dce3ff',
+  '#ffe1cf',
+  '#d9f2df',
+  '#ffe0ec',
+  '#e6e0ff',
+  '#fff1c9'
+];
+
+const getAvatarColorForName = (name) => {
+  const seed = String(name || '').trim();
+  let hash = 0;
+
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) % REVIEW_AVATAR_PALETTE.length;
+  }
+
+  return REVIEW_AVATAR_PALETTE[Math.abs(hash) % REVIEW_AVATAR_PALETTE.length];
+};
+
+const buildStarRatingMarkup = (rating, { max = 5 } = {}) => {
+  const normalizedRating = Math.max(0, Math.min(max, Number(rating) || 0));
+  const roundedRating = Math.round(normalizedRating);
+  const wrap = document.createElement('span');
+  wrap.className = 'star-rating';
+  wrap.setAttribute('role', 'img');
+  wrap.setAttribute('aria-label', `${normalizedRating.toFixed(1)} out of ${max} stars`);
+
+  for (let index = 1; index <= max; index += 1) {
+    const star = document.createElement('span');
+    star.className = index <= roundedRating ? 'star-rating-icon is-filled' : 'star-rating-icon';
+    star.textContent = '★';
+    star.setAttribute('aria-hidden', 'true');
+    wrap.append(star);
+  }
+
+  return wrap;
+};
+
+const formatReviewDate = (isoDate) => {
+  const parsed = new Date(isoDate);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return '';
+  }
+
+  return parsed.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
 const getSalonReviewSummaryText = (salon) => {
   const totalReviews = Number(salon.reviewSummary?.totalReviews) || 0;
   const averageRating = Number(salon.reviewSummary?.averageRating) || 0;
@@ -2508,9 +2561,11 @@ const createSalonDetailMeta = (salon) => {
   ratingGroup.className = 'salon-detail-meta-rating';
 
   if (totalReviews > 0 && averageRating > 0) {
+    const stars = buildStarRatingMarkup(averageRating);
+    stars.classList.add('salon-detail-meta-stars');
     ratingGroup.append(
       createDetailText('strong', '', averageRating.toFixed(1)),
-      createDetailText('span', 'salon-detail-meta-stars', '★★★★★'),
+      stars,
       createDetailText('a', 'salon-detail-meta-reviews', `(${totalReviews})`)
     );
     ratingGroup.querySelector('a')?.setAttribute('href', '#reviews');
@@ -2990,24 +3045,95 @@ const renderSalonDetailPanel = (salon) => {
   reviewsSection.className = 'salon-detail-section';
   reviewsSection.dataset.detailSection = 'reviews';
   reviewsSection.id = 'reviews';
-  reviewsSection.append(
-    createDetailText('h3', '', 'Reviews'),
-    createDetailText('p', 'salon-detail-rating-line', `${getSalonReviewSummaryText(salon)} *****`)
-  );
+
+  const reviewsRatingLine = document.createElement('p');
+  reviewsRatingLine.className = 'salon-detail-rating-line';
+  const reviewSummaryTotal = Number(salon.reviewSummary?.totalReviews) || 0;
+  const reviewSummaryAverage = Number(salon.reviewSummary?.averageRating) || 0;
+
+  if (reviewSummaryTotal > 0 && reviewSummaryAverage > 0) {
+    reviewsRatingLine.append(
+      document.createTextNode(`${reviewSummaryAverage.toFixed(1)} `),
+      buildStarRatingMarkup(reviewSummaryAverage),
+      document.createTextNode(` (${reviewSummaryTotal})`)
+    );
+  } else {
+    reviewsRatingLine.textContent = 'No reviews yet';
+  }
+
+  reviewsSection.append(createDetailText('h3', '', 'Reviews'), reviewsRatingLine);
+
   const reviewsGrid = document.createElement('div');
   reviewsGrid.className = 'salon-detail-review-grid';
-  ['Great service and easy booking.', 'Clean place with friendly staff.', 'Simple online appointment flow.'].forEach((copy, index) => {
-    const review = document.createElement('article');
-    review.className = 'salon-detail-review-item';
-    review.append(
-      createDetailText('span', '', ['A', 'M', 'S'][index]),
-      createDetailText('strong', '', ['Abeer A', 'Marwa A', 'Sreesha S'][index]),
-      createDetailText('small', '', 'Verified booking'),
-      createDetailText('p', '', copy)
-    );
-    reviewsGrid.append(review);
-  });
+  reviewsGrid.append(createDetailText('p', 'salon-detail-review-status', 'Loading reviews...'));
   reviewsSection.append(reviewsGrid);
+
+  const businessIdForReviews = getSalonDetailId(salon);
+
+  if (businessIdForReviews) {
+    apiRequest(`/api/public/book/${encodeURIComponent(businessIdForReviews)}/reviews`)
+      .then((payload) => {
+        const reviews = Array.isArray(payload?.reviews) ? payload.reviews : [];
+        reviewsGrid.replaceChildren();
+
+        if (reviews.length === 0) {
+          reviewsGrid.append(
+            createDetailText(
+              'p',
+              'salon-detail-review-status',
+              'No reviews yet. Be the first to book and share your experience.'
+            )
+          );
+          return;
+        }
+
+        reviews.forEach((review) => {
+          const reviewerName = typeof review?.customerName === 'string' && review.customerName.trim()
+            ? review.customerName.trim()
+            : 'Customer';
+          const initial = reviewerName.charAt(0).toUpperCase() || 'C';
+
+          const card = document.createElement('article');
+          card.className = 'salon-detail-review-card';
+
+          const top = document.createElement('div');
+          top.className = 'salon-detail-review-top';
+
+          const avatar = createDetailText('span', 'salon-detail-review-avatar', initial);
+          avatar.style.background = getAvatarColorForName(reviewerName);
+
+          const identity = document.createElement('div');
+          identity.className = 'salon-detail-review-identity';
+          identity.append(
+            createDetailText('strong', '', reviewerName),
+            createDetailText('span', 'salon-detail-review-date', formatReviewDate(review.createdAt))
+          );
+
+          top.append(avatar, identity);
+
+          card.append(top, buildStarRatingMarkup(review.rating));
+
+          const comment = typeof review?.comment === 'string' ? review.comment.trim() : '';
+
+          if (comment) {
+            card.append(createDetailText('p', 'salon-detail-review-comment', comment));
+          }
+
+          card.append(createDetailText('small', 'salon-detail-review-badge', 'Verified booking'));
+
+          reviewsGrid.append(card);
+        });
+      })
+      .catch(() => {
+        reviewsGrid.replaceChildren(
+          createDetailText('p', 'salon-detail-review-status', 'Unable to load reviews right now.')
+        );
+      });
+  } else {
+    reviewsGrid.replaceChildren(
+      createDetailText('p', 'salon-detail-review-status', 'No reviews yet.')
+    );
+  }
 
   const aboutSection = document.createElement('section');
   aboutSection.className = 'salon-detail-section';

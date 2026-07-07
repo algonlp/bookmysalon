@@ -2805,13 +2805,6 @@ textarea:focus-visible {
   font-weight: 700;
 }
 
-.salon-detail-meta-stars {
-  color: #f5a623;
-  font-size: 0.78rem;
-  letter-spacing: 1px;
-  line-height: 1;
-}
-
 .salon-detail-meta-reviews,
 .salon-detail-directions-link {
   color: #2448a8;
@@ -3119,8 +3112,7 @@ textarea:focus-visible {
   gap: 16px;
 }
 
-.salon-detail-team-member,
-.salon-detail-review-item {
+.salon-detail-team-member {
   position: relative;
   display: grid;
   gap: 10px;
@@ -3137,16 +3129,14 @@ textarea:focus-visible {
     background-color 180ms ease;
 }
 
-.salon-detail-team-member:hover,
-.salon-detail-review-item:hover {
+.salon-detail-team-member:hover {
   transform: translateY(-3px);
   border-color: rgba(108, 76, 245, 0.16);
   background: rgba(255, 255, 255, 0.94);
   box-shadow: 0 20px 38px rgba(31, 26, 23, 0.1);
 }
 
-.salon-detail-team-member span,
-.salon-detail-review-item span {
+.salon-detail-team-member span {
   display: inline-grid;
   place-items: center;
   width: 42px;
@@ -3160,15 +3150,13 @@ textarea:focus-visible {
 }
 
 .salon-detail-team-member p,
-.salon-detail-review-item p,
 .salon-detail-muted {
   margin: 0;
   color: #6a635d;
   line-height: 1.5;
 }
 
-.salon-detail-team-member small,
-.salon-detail-review-item small {
+.salon-detail-team-member small {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -3178,8 +3166,7 @@ textarea:focus-visible {
   font-weight: 900;
 }
 
-.salon-detail-team-member small::before,
-.salon-detail-review-item small::before {
+.salon-detail-team-member small::before {
   content: '';
   width: 9px;
   height: 9px;
@@ -3190,8 +3177,121 @@ textarea:focus-visible {
 }
 
 .salon-detail-rating-line {
-  color: #f5a623 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #171411;
+  font-weight: 800;
+}
+
+.star-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+  font-size: 0.92rem;
+}
+
+.salon-detail-meta-stars {
+  font-size: 0.78rem;
+}
+
+.star-rating-icon {
+  color: #d3cabb;
+}
+
+.star-rating-icon.is-filled {
+  color: #f5a623;
+}
+
+.salon-detail-review-card {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  border: 1px solid rgba(31, 26, 23, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 12px 26px rgba(31, 26, 23, 0.06);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.salon-detail-review-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(108, 76, 245, 0.16);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 20px 38px rgba(31, 26, 23, 0.1);
+}
+
+.salon-detail-review-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.salon-detail-review-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  color: #2c2620;
   font-weight: 900;
+  font-size: 1.05rem;
+}
+
+.salon-detail-review-identity {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.salon-detail-review-identity strong {
+  font-size: 0.98rem;
+  letter-spacing: -0.01em;
+}
+
+.salon-detail-review-date {
+  color: #8a827a;
+  font-size: 0.8rem;
+}
+
+.salon-detail-review-comment {
+  margin: 0;
+  color: #4a443f;
+  line-height: 1.6;
+}
+
+.salon-detail-review-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  color: #123b29;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.salon-detail-review-badge::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #14b86f;
+}
+
+.salon-detail-review-status {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 32px 20px;
+  color: #8a827a;
+  font-weight: 600;
+  text-align: center;
 }
 
 .salon-detail-map {
