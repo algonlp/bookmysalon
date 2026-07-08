@@ -1,3 +1,34 @@
 {
-  "emailLogs": []
+  "emailLogs": [
+    {
+      "id": "61b6ba97-8847-408d-8baf-292e46e49a69",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "recipient": "customer",
+      "destination": "maneeq201@gmail.com",
+      "status": "sent",
+      "source": "marketing_campaign",
+      "subject": "20% off at styleone_fsd",
+      "createdAt": "2026-07-07T15:53:58.128Z"
+    },
+    {
+      "id": "ed42b06b-aa92-4951-8a28-f6ea62839780",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "recipient": "customer",
+      "destination": "maqsoodparacha1479@gmail.com",
+      "status": "sent",
+      "source": "marketing_campaign",
+      "subject": "20% off at styleone_fsd",
+      "createdAt": "2026-07-07T15:53:58.455Z"
+    },
+    {
+      "id": "779a1608-e11d-4379-b504-df68989e0a23",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "recipient": "customer",
+      "destination": "abdullaharain914@gmail.com",
+      "status": "sent",
+      "source": "marketing_campaign",
+      "subject": "20% off at styleone_fsd",
+      "createdAt": "2026-07-07T15:53:58.913Z"
+    }
+  ]
 }

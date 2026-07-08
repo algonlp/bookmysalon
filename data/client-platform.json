@@ -2,7 +2,7 @@
   "clients": [
     {
       "id": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
-      "adminToken": "b1dea7952f2828fab2ccf6a4a8ea3dea3263378b1b936cd32769495bf0034f88",
+      "adminToken": "c704417ed6bb1605ab098c54fc8377fd51be82c4d51c905811b68d3821a6cf33",
       "email": "maqsoodparacha1479@gmail.com",
       "mobileNumber": "",
       "businessPhoneNumber": "",
@@ -226,7 +226,34 @@
           "updatedAt": "2026-07-02T07:05:29.020Z"
         }
       ],
-      "teamMembers": [],
+      "teamMembers": [
+        {
+          "id": "954ee6a3-907c-4f87-89bc-be0f5be28c2e",
+          "name": "rabia queen",
+          "role": "Barber",
+          "phone": "+923494548161",
+          "expertise": "Hair salon",
+          "openingTime": "09:00",
+          "closingTime": "18:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-07-08T05:05:56.948Z",
+          "updatedAt": "2026-07-08T05:05:56.948Z"
+        },
+        {
+          "id": "bf08a480-fc03-4c3a-b181-42858d787c29",
+          "name": "ramisha",
+          "role": "Barber",
+          "phone": "+923478690281",
+          "expertise": "Nails",
+          "openingTime": "09:00",
+          "closingTime": "18:00",
+          "offDays": [],
+          "isActive": true,
+          "createdAt": "2026-07-08T05:18:43.691Z",
+          "updatedAt": "2026-07-08T05:18:43.691Z"
+        }
+      ],
       "accountType": "team",
       "serviceLocation": [
         "physical"
@@ -235,7 +262,7 @@
       "preferredLanguage": "english",
       "onboardingCompleted": true,
       "createdAt": "2026-07-02T05:36:48.237Z",
-      "updatedAt": "2026-07-02T17:36:32.579Z"
+      "updatedAt": "2026-07-08T06:31:57.097Z"
     }
   ]
 }

@@ -832,3 +832,176 @@ create index if not exists waitlist_entries_business_id_idx on waitlist_entries 
 create index if not exists waitlist_entries_customer_phone_idx on waitlist_entries (customer_phone);
 create index if not exists waitlist_entries_date_idx on waitlist_entries (appointment_date);
 create index if not exists waitlist_entries_status_idx on waitlist_entries (status);
+
+-- Marketing campaigns: idle-time discount blasts (SMS/email) to a business's
+-- existing clients and/or an uploaded CSV contact list, with booking
+-- attribution back to the campaign that drove it.
+
+do $$
+begin
+  create type marketing_template_type as enum (
+    'percent_off',
+    'flat_amount_off',
+    'free_service',
+    'happy_hour',
+    'last_minute_fill'
+  );
+exception
+  when duplicate_object then null;
+end $$;
+
+alter type marketing_template_type add value if not exists 'happy_hour';
+alter type marketing_template_type add value if not exists 'last_minute_fill';
+
+do $$
+begin
+  create type marketing_channel as enum ('sms', 'email', 'both');
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  create type marketing_recipient_source as enum ('existing_clients', 'csv_upload', 'both', 'random_batch');
+exception
+  when duplicate_object then null;
+end $$;
+
+alter type marketing_recipient_source add value if not exists 'random_batch';
+
+do $$
+begin
+  create type marketing_campaign_status as enum ('draft', 'sending', 'sent', 'failed', 'partially_sent');
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  create type marketing_dispatch_status as enum ('pending', 'sent', 'failed', 'skipped', 'not_applicable');
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$
+begin
+  create type marketing_recipient_origin as enum ('existing_client', 'csv_upload');
+exception
+  when duplicate_object then null;
+end $$;
+
+create table if not exists marketing_campaign_templates (
+  id text primary key,
+  business_id text not null references businesses (id) on delete cascade,
+  template_type marketing_template_type not null,
+  sms_body text not null default '',
+  email_subject text not null default '',
+  email_body_text text not null default '',
+  default_discount_percent numeric(5, 2) null check (default_discount_percent is null or (default_discount_percent > 0 and default_discount_percent <= 100)),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (business_id, template_type)
+);
+
+alter table marketing_campaign_templates add column if not exists default_discount_percent numeric(5, 2) null;
+
+create index if not exists marketing_campaign_templates_business_id_idx
+  on marketing_campaign_templates (business_id);
+
+create table if not exists marketing_campaigns (
+  id text primary key,
+  business_id text not null references businesses (id) on delete cascade,
+  name text not null default '',
+  template_type marketing_template_type not null,
+  discount_percent numeric(5, 2) null check (discount_percent is null or (discount_percent > 0 and discount_percent <= 100)),
+  discount_amount_cents integer null check (discount_amount_cents is null or discount_amount_cents > 0),
+  currency_code text not null default '',
+  target_service_id text null references services (id) on delete set null,
+  target_service_name text not null default '',
+  free_service_id text null references services (id) on delete set null,
+  free_service_name text not null default '',
+  happy_hour_start_time time null,
+  happy_hour_end_time time null,
+  offer_name text not null default '',
+  original_price_cents integer null check (original_price_cents is null or original_price_cents > 0),
+  discounted_price_cents integer null check (discounted_price_cents is null or discounted_price_cents > 0),
+  fill_slot_date date null,
+  fill_slot_time time null,
+  is_auto_generated boolean not null default false,
+  sms_body text not null default '',
+  email_subject text not null default '',
+  email_body_text text not null default '',
+  channel marketing_channel not null,
+  recipient_source marketing_recipient_source not null,
+  status marketing_campaign_status not null default 'draft',
+  recipients_total integer not null default 0,
+  recipients_sent integer not null default 0,
+  recipients_failed integer not null default 0,
+  recipients_skipped integer not null default 0,
+  link_opens_count integer not null default 0,
+  booking_link text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  sent_at timestamptz null
+);
+
+alter table marketing_campaigns add column if not exists link_opens_count integer not null default 0;
+alter table marketing_campaigns add column if not exists happy_hour_start_time time null;
+alter table marketing_campaigns add column if not exists happy_hour_end_time time null;
+alter table marketing_campaigns add column if not exists offer_name text not null default '';
+alter table marketing_campaigns add column if not exists original_price_cents integer null;
+alter table marketing_campaigns add column if not exists discounted_price_cents integer null;
+alter table marketing_campaigns add column if not exists fill_slot_date date null;
+alter table marketing_campaigns add column if not exists fill_slot_time time null;
+alter table marketing_campaigns add column if not exists is_auto_generated boolean not null default false;
+
+create index if not exists marketing_campaigns_business_id_idx on marketing_campaigns (business_id);
+create index if not exists marketing_campaigns_status_idx on marketing_campaigns (status);
+
+create table if not exists marketing_campaign_recipients (
+  id text primary key,
+  campaign_id text not null references marketing_campaigns (id) on delete cascade,
+  business_id text not null references businesses (id) on delete cascade,
+  origin marketing_recipient_origin not null,
+  customer_profile_id text null references customer_profiles (id) on delete set null,
+  customer_name text not null default '',
+  customer_phone text not null default '',
+  customer_email text not null default '',
+  dedupe_key text not null default '',
+  sms_status marketing_dispatch_status not null default 'pending',
+  sms_reason text not null default '',
+  sms_message_id text not null default '',
+  email_status marketing_dispatch_status not null default 'pending',
+  email_reason text not null default '',
+  converted_appointment_id text null references appointments (id) on delete set null,
+  converted_at timestamptz null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (campaign_id, dedupe_key)
+);
+
+create index if not exists marketing_campaign_recipients_campaign_id_idx
+  on marketing_campaign_recipients (campaign_id);
+create index if not exists marketing_campaign_recipients_business_id_idx
+  on marketing_campaign_recipients (business_id);
+create index if not exists marketing_campaign_recipients_phone_idx
+  on marketing_campaign_recipients (customer_phone);
+create index if not exists marketing_campaign_recipients_email_idx
+  on marketing_campaign_recipients (customer_email);
+create index if not exists marketing_campaign_recipients_converted_appointment_idx
+  on marketing_campaign_recipients (converted_appointment_id);
+
+alter table appointments add column if not exists campaign_id text null;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'appointments_campaign_id_fkey'
+  ) then
+    alter table appointments
+      add constraint appointments_campaign_id_fkey
+      foreign key (campaign_id) references marketing_campaigns (id) on delete set null;
+  end if;
+end $$;
+
+create index if not exists appointments_campaign_id_idx on appointments (campaign_id);

@@ -98,6 +98,45 @@
       "updatedAt": "2026-01-01T00:00:00.000Z"
     }
   ],
-  "businessSubscriptions": [],
-  "billingInvoices": []
+  "businessSubscriptions": [
+    {
+      "id": "a415f876-479d-430b-9bbb-7842e67102de",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "planId": "plan_solo",
+      "status": "active",
+      "provider": "demo",
+      "providerCustomerId": "demo_customer_4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "providerSubscriptionId": "demo_subscription_bb503137-8ce2-4b1b-8391-35ae66b1365a",
+      "demoCard": {
+        "brand": "visa",
+        "last4": "4242",
+        "expMonth": 12,
+        "expYear": 2030,
+        "holderName": "Test Owner"
+      },
+      "appointmentCreditsGranted": 50,
+      "appointmentCreditsRemaining": 50,
+      "appointmentCreditsUsed": 0,
+      "currentPeriodStart": "2026-07-07T10:46:30.477Z",
+      "currentPeriodEnd": "2026-08-07T10:46:30.477Z",
+      "createdAt": "2026-07-07T10:46:30.477Z",
+      "updatedAt": "2026-07-07T10:46:30.477Z"
+    }
+  ],
+  "billingInvoices": [
+    {
+      "id": "e313808d-4194-4691-a75c-3f312288e299",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "subscriptionId": "a415f876-479d-430b-9bbb-7842e67102de",
+      "planId": "plan_solo",
+      "amountCents": 40000,
+      "currencyCode": "PKR",
+      "status": "paid",
+      "periodStart": "2026-07-07T10:46:30.477Z",
+      "periodEnd": "2026-08-07T10:46:30.477Z",
+      "paidAt": "2026-07-07T10:46:30.477Z",
+      "createdAt": "2026-07-07T10:46:30.477Z",
+      "updatedAt": "2026-07-07T10:46:30.477Z"
+    }
+  ]
 }

@@ -4,6 +4,7 @@ export type EmailLogSource =
   | 'appointment_confirmation'
   | 'appointment_rescheduled'
   | 'welcome'
+  | 'marketing_campaign'
   | 'unknown';
 
 export interface EmailLogRecord {

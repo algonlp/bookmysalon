@@ -67,6 +67,7 @@ export interface AppointmentRecord {
   packageTotalUses?: number;
   loyaltyRewardId?: string;
   loyaltyRewardLabel?: string;
+  campaignId?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -149,6 +150,7 @@ export interface CreateAppointmentInput {
   loyaltyRewardId?: string;
   waitlistEntryId?: string;
   waitlistOfferToken?: string;
+  campaignId?: string;
 }
 
 export interface PublicBookingPage {

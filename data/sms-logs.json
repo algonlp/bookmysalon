@@ -51,6 +51,18 @@
       "body": "Your appointment at styleone_fsd is confirmed for 2026-07-02 at 17:00. Service: Cut and style. Ref: 6ead350e. Open your live booking link for the countdown and updates: http://localhost:8003/book/4a3b9419-7244-4fb5-99f8-771afb24ce7f/manage/6ead350e-6727-466b-b5a5-ce50684b11fb?accessToken=9fcddd07-7d10-4384-83a5-6564aa210891",
       "messageId": "SM09cacdbbbf12f9b449c8820c0647e0be",
       "createdAt": "2026-07-02T10:49:46.457Z"
+    },
+    {
+      "id": "2af9fc28-f2c4-4dc4-8925-6194723725ec",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "recipient": "customer",
+      "channel": "sms",
+      "destination": "+923494548161",
+      "status": "sent",
+      "source": "marketing_campaign",
+      "body": "Hi sir! styleone_fsd has 20% off Deep tissue massage this week. Book now: http://localhost:8003/book/4a3b9419-7244-4fb5-99f8-771afb24ce7f?campaign=1e559a60-708a-4f9d-bec2-657415929cba",
+      "messageId": "SM6ff1a1023211374185653b78089f57b5",
+      "createdAt": "2026-07-07T15:53:55.485Z"
     }
   ]
 }

@@ -5,6 +5,7 @@ export type SmsLogSource =
   | 'appointment_rescheduled'
   | 'running_late'
   | 'waitlist_offer'
+  | 'marketing_campaign'
   | 'unknown';
 
 export interface SmsLogRecord {

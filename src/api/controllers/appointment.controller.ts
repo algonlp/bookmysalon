@@ -42,7 +42,8 @@ const createAppointmentSchema = z.object({
   packagePurchaseId: z.string().trim().optional().or(z.literal('')),
   loyaltyRewardId: z.string().trim().optional().or(z.literal('')),
   waitlistEntryId: z.string().uuid().optional().or(z.literal('')),
-  waitlistOfferToken: z.string().uuid().optional().or(z.literal(''))
+  waitlistOfferToken: z.string().uuid().optional().or(z.literal('')),
+  campaignId: z.string().trim().optional().or(z.literal(''))
 }).superRefine((value, context) => {
   if (value.serviceLocation && serviceLocationRequiresAddress(value.serviceLocation) && !value.customerAddress?.trim()) {
     context.addIssue({

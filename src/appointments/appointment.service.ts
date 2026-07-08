@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { appointmentRepository } from './appointment.repository';
+import { marketingService } from '../marketing/marketing.service';
 import type {
   AppointmentPaymentBalance,
   AppointmentRunningLateInput,
@@ -2201,6 +2202,7 @@ export const appointmentService = {
       packageTotalUses: packageSnapshot?.packageTotalUses,
       loyaltyRewardId: updatedLoyaltyReward?.id,
       loyaltyRewardLabel: updatedLoyaltyReward?.label,
+      campaignId: input.campaignId?.trim() || undefined,
       createdAt: now,
       updatedAt: now
     };
@@ -2233,6 +2235,10 @@ export const appointmentService = {
         offerClaimToken: undefined,
         updatedAt: now
       });
+    }
+
+    if (appointment.campaignId) {
+      void marketingService.recordConversionForAppointment(appointment).catch(() => {});
     }
 
     return {
@@ -2404,6 +2410,10 @@ export const appointmentService = {
     }
 
     const waitlistOffers = await processWaitlistForOpenSlot(openSlot, origin);
+
+    void marketingService
+      .createAutoFillCampaignForCancelledAppointment(updatedAppointment, origin)
+      .catch(() => {});
 
     return {
       appointment: updatedAppointment,

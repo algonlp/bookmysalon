@@ -117,40 +117,85 @@ const getLatestSubscription = (subscriptions: BusinessSubscription[]): BusinessS
 const getLatestInvoice = (invoices: BillingInvoice[]): BillingInvoice | null =>
   [...invoices].sort((left, right) => right.createdAt.localeCompare(left.createdAt))[0] ?? null;
 
-const getPlanIncludedCredits = (plan: SubscriptionPlan | null | undefined): number => {
-  const includedCredits = Number(plan?.entitlements.includedAppointmentCredits);
+const getPlanIncludedEntitlement = (
+  plan: SubscriptionPlan | null | undefined,
+  entitlementKey: 'includedAppointmentCredits' | 'includedMessages' | 'includedMarketingEmails'
+): number => {
+  const includedCredits = Number(plan?.entitlements[entitlementKey]);
   if (Number.isFinite(includedCredits) && includedCredits > 0) {
     return Math.floor(includedCredits);
   }
 
   const defaultPlan = defaultSubscriptionPlans.find((entry) => entry.key === plan?.key);
-  const defaultIncludedCredits = Number(defaultPlan?.entitlements.includedAppointmentCredits);
+  const defaultIncludedCredits = Number(defaultPlan?.entitlements[entitlementKey]);
   return Number.isFinite(defaultIncludedCredits) && defaultIncludedCredits > 0
     ? Math.floor(defaultIncludedCredits)
     : 0;
+};
+
+const getPlanIncludedCredits = (plan: SubscriptionPlan | null | undefined): number =>
+  getPlanIncludedEntitlement(plan, 'includedAppointmentCredits');
+
+const getPlanIncludedMessages = (plan: SubscriptionPlan | null | undefined): number =>
+  getPlanIncludedEntitlement(plan, 'includedMessages');
+
+const getPlanIncludedMarketingEmails = (plan: SubscriptionPlan | null | undefined): number =>
+  getPlanIncludedEntitlement(plan, 'includedMarketingEmails');
+
+const normalizeCreditTriplet = (
+  granted: unknown,
+  used: unknown,
+  remaining: unknown,
+  fallbackGranted: number
+): { granted: number; used: number; remaining: number } => {
+  const grantedNumber = Number(granted);
+  const usedNumber = Number(used);
+  const remainingNumber = Number(remaining);
+  const normalizedGranted =
+    Number.isFinite(grantedNumber) && grantedNumber >= 0 ? Math.floor(grantedNumber) : fallbackGranted;
+  const normalizedUsed = Number.isFinite(usedNumber) && usedNumber >= 0 ? Math.floor(usedNumber) : 0;
+  const normalizedRemaining =
+    Number.isFinite(remainingNumber) && remainingNumber >= 0
+      ? Math.floor(remainingNumber)
+      : Math.max(0, normalizedGranted - normalizedUsed);
+
+  return { granted: normalizedGranted, used: normalizedUsed, remaining: normalizedRemaining };
 };
 
 const hydrateSubscriptionCredits = (
   subscription: BusinessSubscription,
   plan: SubscriptionPlan | null | undefined
 ): BusinessSubscription => {
-  const fallbackCredits = getPlanIncludedCredits(plan);
-  const granted = Number(subscription.appointmentCreditsGranted);
-  const used = Number(subscription.appointmentCreditsUsed);
-  const remaining = Number(subscription.appointmentCreditsRemaining);
-  const normalizedGranted =
-    Number.isFinite(granted) && granted >= 0 ? Math.floor(granted) : fallbackCredits;
-  const normalizedUsed = Number.isFinite(used) && used >= 0 ? Math.floor(used) : 0;
-  const normalizedRemaining =
-    Number.isFinite(remaining) && remaining >= 0
-      ? Math.floor(remaining)
-      : Math.max(0, normalizedGranted - normalizedUsed);
+  const appointmentCredits = normalizeCreditTriplet(
+    subscription.appointmentCreditsGranted,
+    subscription.appointmentCreditsUsed,
+    subscription.appointmentCreditsRemaining,
+    getPlanIncludedCredits(plan)
+  );
+  const messageCredits = normalizeCreditTriplet(
+    subscription.messageCreditsGranted,
+    subscription.messageCreditsUsed,
+    subscription.messageCreditsRemaining,
+    getPlanIncludedMessages(plan)
+  );
+  const marketingEmailCredits = normalizeCreditTriplet(
+    subscription.marketingEmailCreditsGranted,
+    subscription.marketingEmailCreditsUsed,
+    subscription.marketingEmailCreditsRemaining,
+    getPlanIncludedMarketingEmails(plan)
+  );
 
   return {
     ...subscription,
-    appointmentCreditsGranted: normalizedGranted,
-    appointmentCreditsRemaining: normalizedRemaining,
-    appointmentCreditsUsed: normalizedUsed
+    appointmentCreditsGranted: appointmentCredits.granted,
+    appointmentCreditsRemaining: appointmentCredits.remaining,
+    appointmentCreditsUsed: appointmentCredits.used,
+    messageCreditsGranted: messageCredits.granted,
+    messageCreditsRemaining: messageCredits.remaining,
+    messageCreditsUsed: messageCredits.used,
+    marketingEmailCreditsGranted: marketingEmailCredits.granted,
+    marketingEmailCreditsRemaining: marketingEmailCredits.remaining,
+    marketingEmailCreditsUsed: marketingEmailCredits.used
   };
 };
 
@@ -273,6 +318,16 @@ export const billingService = {
         remaining: subscription?.appointmentCreditsRemaining ?? 0,
         used: subscription?.appointmentCreditsUsed ?? 0
       },
+      messageCreditBalance: {
+        granted: subscription?.messageCreditsGranted ?? 0,
+        remaining: subscription?.messageCreditsRemaining ?? 0,
+        used: subscription?.messageCreditsUsed ?? 0
+      },
+      marketingEmailCreditBalance: {
+        granted: subscription?.marketingEmailCreditsGranted ?? 0,
+        remaining: subscription?.marketingEmailCreditsRemaining ?? 0,
+        used: subscription?.marketingEmailCreditsUsed ?? 0
+      },
       featureAccess,
       lockedFeatureKeys: featureAccess
         .filter((feature) => !feature.isEnabled)
@@ -313,8 +368,20 @@ export const billingService = {
       const subscriptionPlan = plans.find((entry) => entry.id === subscription.planId);
       return sum + hydrateSubscriptionCredits(subscription, subscriptionPlan).appointmentCreditsRemaining;
     }, 0);
+    const existingMessageCreditRemainder = existingSubscriptions.reduce((sum, subscription) => {
+      const subscriptionPlan = plans.find((entry) => entry.id === subscription.planId);
+      return sum + hydrateSubscriptionCredits(subscription, subscriptionPlan).messageCreditsRemaining;
+    }, 0);
+    const existingMarketingEmailCreditRemainder = existingSubscriptions.reduce((sum, subscription) => {
+      const subscriptionPlan = plans.find((entry) => entry.id === subscription.planId);
+      return sum + hydrateSubscriptionCredits(subscription, subscriptionPlan).marketingEmailCreditsRemaining;
+    }, 0);
     const includedCredits = getPlanIncludedCredits(plan);
+    const includedMessages = getPlanIncludedMessages(plan);
+    const includedMarketingEmails = getPlanIncludedMarketingEmails(plan);
     const appointmentCreditsGranted = existingCreditRemainder + includedCredits;
+    const messageCreditsGranted = existingMessageCreditRemainder + includedMessages;
+    const marketingEmailCreditsGranted = existingMarketingEmailCreditRemainder + includedMarketingEmails;
 
     const subscription: BusinessSubscription = {
       id: randomUUID(),
@@ -328,6 +395,12 @@ export const billingService = {
       appointmentCreditsGranted,
       appointmentCreditsRemaining: appointmentCreditsGranted,
       appointmentCreditsUsed: 0,
+      messageCreditsGranted,
+      messageCreditsRemaining: messageCreditsGranted,
+      messageCreditsUsed: 0,
+      marketingEmailCreditsGranted,
+      marketingEmailCreditsRemaining: marketingEmailCreditsGranted,
+      marketingEmailCreditsUsed: 0,
       currentPeriodStart: nowIso,
       currentPeriodEnd: periodEnd,
       trialEndsAt,
@@ -509,8 +582,20 @@ export const billingService = {
       const subscriptionPlan = plans.find((entry) => entry.id === subscription.planId);
       return sum + hydrateSubscriptionCredits(subscription, subscriptionPlan).appointmentCreditsRemaining;
     }, 0);
+    const existingMessageCreditRemainder = existingSubscriptions.reduce((sum, subscription) => {
+      const subscriptionPlan = plans.find((entry) => entry.id === subscription.planId);
+      return sum + hydrateSubscriptionCredits(subscription, subscriptionPlan).messageCreditsRemaining;
+    }, 0);
+    const existingMarketingEmailCreditRemainder = existingSubscriptions.reduce((sum, subscription) => {
+      const subscriptionPlan = plans.find((entry) => entry.id === subscription.planId);
+      return sum + hydrateSubscriptionCredits(subscription, subscriptionPlan).marketingEmailCreditsRemaining;
+    }, 0);
     const includedCredits = getPlanIncludedCredits(plan);
+    const includedMessages = getPlanIncludedMessages(plan);
+    const includedMarketingEmails = getPlanIncludedMarketingEmails(plan);
     const appointmentCreditsGranted = existingCreditRemainder + includedCredits;
+    const messageCreditsGranted = existingMessageCreditRemainder + includedMessages;
+    const marketingEmailCreditsGranted = existingMarketingEmailCreditRemainder + includedMarketingEmails;
 
     const duplicateSubscription = businessSubscriptions.find(
       (subscription) =>
@@ -555,6 +640,12 @@ export const billingService = {
       appointmentCreditsGranted,
       appointmentCreditsRemaining: appointmentCreditsGranted,
       appointmentCreditsUsed: 0,
+      messageCreditsGranted,
+      messageCreditsRemaining: messageCreditsGranted,
+      messageCreditsUsed: 0,
+      marketingEmailCreditsGranted,
+      marketingEmailCreditsRemaining: marketingEmailCreditsGranted,
+      marketingEmailCreditsUsed: 0,
       currentPeriodStart: nowIso,
       currentPeriodEnd: periodEnd,
       trialEndsAt,
@@ -638,6 +729,8 @@ export const billingService = {
     const periodEnd = input.periodEnd ?? subscription.currentPeriodEnd;
     const isNewerPeriod = periodEnd.localeCompare(subscription.currentPeriodEnd) > 0;
     const includedCredits = isNewerPeriod && !existingInvoice ? getPlanIncludedCredits(plan) : 0;
+    const includedMessages = isNewerPeriod && !existingInvoice ? getPlanIncludedMessages(plan) : 0;
+    const includedMarketingEmails = isNewerPeriod && !existingInvoice ? getPlanIncludedMarketingEmails(plan) : 0;
     const paidAt = input.paidAt ?? new Date().toISOString();
 
     const updatedSubscription: BusinessSubscription = {
@@ -646,6 +739,10 @@ export const billingService = {
       providerCustomerId: input.providerCustomerId ?? subscription.providerCustomerId,
       appointmentCreditsGranted: subscription.appointmentCreditsGranted + includedCredits,
       appointmentCreditsRemaining: subscription.appointmentCreditsRemaining + includedCredits,
+      messageCreditsGranted: subscription.messageCreditsGranted + includedMessages,
+      messageCreditsRemaining: subscription.messageCreditsRemaining + includedMessages,
+      marketingEmailCreditsGranted: subscription.marketingEmailCreditsGranted + includedMarketingEmails,
+      marketingEmailCreditsRemaining: subscription.marketingEmailCreditsRemaining + includedMarketingEmails,
       currentPeriodStart: periodStart,
       currentPeriodEnd: periodEnd,
       cancelledAt: undefined,
@@ -771,6 +868,65 @@ export const billingService = {
     }
 
     await billingRepository.saveBusinessSubscription(subscription);
+  },
+
+  // Returns false (and consumes nothing) when the business has no active
+  // subscription or no message credits remain, so callers can skip the send
+  // instead of throwing mid-batch.
+  async consumeMessageCredit(businessId: string): Promise<boolean> {
+    const [plans, businessSubscriptions] = await Promise.all([
+      listNormalizedSubscriptionPlans(),
+      billingRepository.listBusinessSubscriptionsByBusinessId(businessId)
+    ]);
+    const rawSubscription = getLatestSubscription(businessSubscriptions);
+
+    if (!rawSubscription) {
+      return false;
+    }
+
+    const currentPlan = plans.find((plan) => plan.id === rawSubscription.planId) ?? null;
+    const subscription = hydrateSubscriptionCredits(rawSubscription, currentPlan);
+
+    if (subscription.messageCreditsRemaining <= 0) {
+      return false;
+    }
+
+    await billingRepository.saveBusinessSubscription({
+      ...subscription,
+      messageCreditsRemaining: subscription.messageCreditsRemaining - 1,
+      messageCreditsUsed: subscription.messageCreditsUsed + 1,
+      updatedAt: new Date().toISOString()
+    });
+
+    return true;
+  },
+
+  async consumeMarketingEmailCredit(businessId: string): Promise<boolean> {
+    const [plans, businessSubscriptions] = await Promise.all([
+      listNormalizedSubscriptionPlans(),
+      billingRepository.listBusinessSubscriptionsByBusinessId(businessId)
+    ]);
+    const rawSubscription = getLatestSubscription(businessSubscriptions);
+
+    if (!rawSubscription) {
+      return false;
+    }
+
+    const currentPlan = plans.find((plan) => plan.id === rawSubscription.planId) ?? null;
+    const subscription = hydrateSubscriptionCredits(rawSubscription, currentPlan);
+
+    if (subscription.marketingEmailCreditsRemaining <= 0) {
+      return false;
+    }
+
+    await billingRepository.saveBusinessSubscription({
+      ...subscription,
+      marketingEmailCreditsRemaining: subscription.marketingEmailCreditsRemaining - 1,
+      marketingEmailCreditsUsed: subscription.marketingEmailCreditsUsed + 1,
+      updatedAt: new Date().toISOString()
+    });
+
+    return true;
   },
 
   async getPublicBookingAvailability(
