@@ -597,6 +597,7 @@ export const syncClientRecordToRelational = async (clientRecord: ClientRecord): 
         venue_address: asText(clientRecord.venueAddress),
         preferred_language: clientRecord.preferredLanguage,
         onboarding_completed: asBoolean(clientRecord.onboardingCompleted),
+        linked_business_ids: asStringArray(clientRecord.linkedBusinessIds),
         created_at: asTimestamp(clientRecord.createdAt),
         updated_at: asTimestamp(clientRecord.updatedAt)
       }

@@ -194,6 +194,7 @@ export interface ClientRecord {
   venueAddress: string;
   preferredLanguage: PreferredLanguage | null;
   onboardingCompleted: boolean;
+  linkedBusinessIds: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -222,6 +223,7 @@ export interface PublicClientRecord {
   venueAddress: string;
   preferredLanguage: PreferredLanguage | null;
   onboardingCompleted: boolean;
+  linkedBusinessIds: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -236,6 +238,15 @@ export interface CreateClientInput {
 
 export interface AuthenticateGoogleClientInput {
   idToken: string;
+}
+
+export interface AddBranchInput {
+  businessName: string;
+}
+
+export interface BranchSummary {
+  id: string;
+  businessName: string;
 }
 
 export interface BusinessProfileInput {

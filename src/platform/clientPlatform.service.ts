@@ -26,7 +26,9 @@ import { formatInTimeZone } from '../shared/time';
 import { stripePaymentService } from '../payments/stripePayment.service';
 import type {
   AccountTypeInput,
+  AddBranchInput,
   AuthenticateGoogleClientInput,
+  BranchSummary,
   BusinessProfileInput,
   BusinessSettingsRecord,
   ClientRecord,
@@ -1612,6 +1614,7 @@ const toPublicClientRecord = (client: ClientRecord): PublicClientRecord => ({
   venueAddress: client.venueAddress,
   preferredLanguage: normalizePreferredLanguage(client.preferredLanguage),
   onboardingCompleted: client.onboardingCompleted,
+  linkedBusinessIds: Array.isArray(client.linkedBusinessIds) ? client.linkedBusinessIds : [],
   createdAt: client.createdAt,
   updatedAt: client.updatedAt
 });
@@ -1966,7 +1969,8 @@ const hydrateClientRecord = (client: ClientRecord): ClientRecord => {
     loyaltyProgram: normalizeLoyaltyProgram(client.loyaltyProgram),
     customerProfiles: normalizeCustomerProfiles(client.customerProfiles ?? []),
     teamMembers: normalizeTeamMembers(client.teamMembers ?? [], businessSettings),
-    preferredLanguage: normalizePreferredLanguage(client.preferredLanguage)
+    preferredLanguage: normalizePreferredLanguage(client.preferredLanguage),
+    linkedBusinessIds: Array.isArray(client.linkedBusinessIds) ? client.linkedBusinessIds : []
   };
 };
 
@@ -2118,6 +2122,7 @@ const createClientRecord = async (input: CreateClientInput): Promise<{ client: C
     venueAddress: '',
     preferredLanguage: null,
     onboardingCompleted: false,
+    linkedBusinessIds: [],
     createdAt: now,
     updatedAt: now
   };
@@ -2168,6 +2173,62 @@ export const clientPlatformService = {
       plainAdminToken,
       nextStep: getNextClientStep(updatedClient)
     };
+  },
+
+  async addBranch(sourceClientId: string, input: AddBranchInput): Promise<{ branch: ClientRecord }> {
+    const sourceClient = await getClientOrThrow(sourceClientId);
+
+    const { client: branch } = await createClientRecord({
+      businessName: input.businessName,
+      provider: 'email'
+    });
+
+    const siblingIds = [sourceClientId, ...sourceClient.linkedBusinessIds];
+
+    await updateClient(branch.id, (current) => ({
+      ...current,
+      linkedBusinessIds: siblingIds,
+      updatedAt: new Date().toISOString()
+    }));
+
+    for (const siblingId of siblingIds) {
+      await updateClient(siblingId, (current) => ({
+        ...current,
+        linkedBusinessIds: [
+          ...current.linkedBusinessIds.filter((id) => id !== branch.id),
+          branch.id
+        ],
+        updatedAt: new Date().toISOString()
+      }));
+    }
+
+    return { branch: await getClientOrThrow(branch.id) };
+  },
+
+  async switchToLinkedBranch(
+    currentClientId: string,
+    targetBranchId: string
+  ): Promise<{ client: ClientRecord; plainAdminToken: string; nextStep: string }> {
+    const currentClient = await getClientOrThrow(currentClientId);
+
+    if (!currentClient.linkedBusinessIds.includes(targetBranchId)) {
+      throw new HttpError(403, 'This business is not linked to your account');
+    }
+
+    return clientPlatformService.loginClientById(targetBranchId);
+  },
+
+  async listLinkedBranches(clientId: string): Promise<BranchSummary[]> {
+    const client = await getClientOrThrow(clientId);
+
+    const branches = await Promise.all(
+      client.linkedBusinessIds.map(async (branchId) => {
+        const branch = await clientPlatformRepository.getClientById(branchId);
+        return branch ? { id: branch.id, businessName: branch.businessName } : null;
+      })
+    );
+
+    return branches.filter((branch): branch is BranchSummary => branch !== null);
   },
 
   async authenticateGoogleClient(

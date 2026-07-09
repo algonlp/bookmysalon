@@ -320,9 +320,12 @@ create table if not exists businesses (
   venue_address text not null default '',
   preferred_language preferred_language null,
   onboarding_completed boolean not null default false,
+  linked_business_ids text[] not null default '{}',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table businesses add column if not exists linked_business_ids text[] not null default '{}';
 
 create index if not exists businesses_email_idx on businesses (email);
 create index if not exists businesses_mobile_number_idx on businesses (mobile_number);

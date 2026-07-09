@@ -27,6 +27,21 @@ clientPlatformRouter.get(
   asyncHandler(requirePlatformAdminAccess),
   asyncHandler(clientPlatformController.getClient)
 );
+clientPlatformRouter.get(
+  '/platform/clients/:clientId/branches',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.listBranches)
+);
+clientPlatformRouter.post(
+  '/platform/clients/:clientId/branches',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.addBranch)
+);
+clientPlatformRouter.post(
+  '/platform/clients/:clientId/branches/:targetBranchId/switch',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.switchBranch)
+);
 clientPlatformRouter.patch(
   '/platform/clients/:clientId/business-profile',
   asyncHandler(requirePlatformAdminAccess),

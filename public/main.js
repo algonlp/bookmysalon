@@ -8098,6 +8098,113 @@ const initCalendar = () => {
     }
   };
 
+  const switchToBranch = async (targetBranchId) => {
+    const payload = await apiRequest(
+      `/api/platform/clients/${encodeURIComponent(clientId)}/branches/${encodeURIComponent(targetBranchId)}/switch`,
+      { method: 'POST' }
+    );
+
+    setAdminSession(targetBranchId);
+    window.location.assign(payload.nextStep || buildPathWithClientId('/calendar', targetBranchId));
+  };
+
+  const openBranchesModal = async () => {
+    openToolModal({
+      eyebrow: 'Branches',
+      title: 'My branches',
+      description: 'Loading your linked branches.'
+    });
+
+    try {
+      const payload = await apiRequest(`/api/platform/clients/${encodeURIComponent(clientId)}/branches`);
+      const branches = Array.isArray(payload?.branches) ? payload.branches : [];
+
+      const list = document.createElement('div');
+      list.className = 'calendar-tool-form';
+
+      if (branches.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'calendar-tool-help';
+        empty.textContent = 'No other branches linked yet.';
+        list.append(empty);
+      } else {
+        for (const branch of branches) {
+          const row = document.createElement('div');
+          row.className = 'calendar-tool-checkbox-field';
+
+          const label = document.createElement('span');
+          label.textContent = branch.businessName || 'Untitled branch';
+          row.append(label);
+
+          const switchButton = createToolActionButton('Switch', async () => {
+            switchButton.disabled = true;
+            switchButton.textContent = 'Switching...';
+
+            try {
+              await switchToBranch(branch.id);
+            } catch (error) {
+              switchButton.disabled = false;
+              switchButton.textContent = 'Switch';
+              safeAlert(error instanceof Error ? error.message : 'Unable to switch branch');
+            }
+          });
+          row.append(switchButton);
+
+          list.append(row);
+        }
+      }
+
+      const addBranchField = document.createElement('label');
+      addBranchField.className = 'calendar-tool-field';
+      const addBranchLabel = document.createElement('span');
+      addBranchLabel.textContent = 'New branch name';
+      const addBranchInput = document.createElement('input');
+      addBranchInput.type = 'text';
+      addBranchInput.placeholder = 'e.g. Downtown Branch';
+      addBranchField.append(addBranchLabel, addBranchInput);
+
+      const addBranchButton = createToolActionButton('+ Add branch', async () => {
+        const businessName = addBranchInput.value.trim();
+
+        if (!businessName) {
+          safeAlert('Enter a name for the new branch.');
+          return;
+        }
+
+        addBranchButton.disabled = true;
+        addBranchButton.textContent = 'Creating...';
+
+        try {
+          const createPayload = await apiRequest(
+            `/api/platform/clients/${encodeURIComponent(clientId)}/branches`,
+            {
+              method: 'POST',
+              body: JSON.stringify({ businessName })
+            }
+          );
+          await switchToBranch(createPayload.branch.id);
+        } catch (error) {
+          addBranchButton.disabled = false;
+          addBranchButton.textContent = '+ Add branch';
+          safeAlert(error instanceof Error ? error.message : 'Unable to add branch');
+        }
+      });
+
+      openToolModal({
+        eyebrow: 'Branches',
+        title: 'My branches',
+        description: 'Switch between your branches, or add a new one — each branch has its own services, team, and bookings.',
+        actions: [list, addBranchField, addBranchButton]
+      });
+    } catch (error) {
+      openToolModal({
+        eyebrow: 'Branches',
+        title: 'Unable to load branches',
+        description: error instanceof Error ? error.message : 'Failed to load your branches.'
+      });
+    }
+  };
+
   const getDashboardAppointments = () => {
     const appointments = dashboardPayload?.dashboard?.appointments;
     return Array.isArray(appointments) ? appointments : [];
@@ -15785,6 +15892,9 @@ const createTrendCard = (
           }),
           createToolActionButton('Set up online payments', () => {
             void openStripeConnectModal();
+          }),
+          createToolActionButton('My branches', () => {
+            void openBranchesModal();
           }),
           createToolActionButton('Open team panel', () => {
             closeToolModal();

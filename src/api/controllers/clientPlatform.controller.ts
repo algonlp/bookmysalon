@@ -185,6 +185,10 @@ const googleAuthSchema = z.object({
   credential: z.string().trim().min(1, 'Google credential is required')
 });
 
+const addBranchSchema = z.object({
+  businessName: z.string().trim().min(1, 'Business name is required')
+});
+
 const loginClientSchema = z.object({
   email: z.string().trim().email().optional(),
   mobileNumber: z.string().trim().min(7, 'Mobile number is required').optional(),
@@ -411,6 +415,14 @@ const getTeamMemberId = (req: Request): string => {
   }
 
   return req.params.teamMemberId;
+};
+
+const getTargetBranchId = (req: Request): string => {
+  if (!req.params.targetBranchId) {
+    throw new HttpError(400, 'Target branch id is required');
+  }
+
+  return req.params.targetBranchId;
 };
 
 const getServiceId = (req: Request): string => {
@@ -670,6 +682,37 @@ export const clientPlatformController = {
   async getClient(req: Request, res: Response, _next: NextFunction): Promise<void> {
     res.status(200).json({
       client: serializeClientForResponse(await clientPlatformService.getClient(getClientId(req)))
+    });
+  },
+
+  async listBranches(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    res.status(200).json({
+      branches: await clientPlatformService.listLinkedBranches(getClientId(req))
+    });
+  },
+
+  async addBranch(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const { branch } = await clientPlatformService.addBranch(
+      getClientId(req),
+      addBranchSchema.parse(req.body)
+    );
+
+    res.status(201).json({
+      branch: { id: branch.id, businessName: branch.businessName }
+    });
+  },
+
+  async switchBranch(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const payload = await clientPlatformService.switchToLinkedBranch(
+      getClientId(req),
+      getTargetBranchId(req)
+    );
+
+    setAdminSessionCookie(res, payload.plainAdminToken);
+    res.status(200).json({
+      client: serializeClientForResponse(payload.client),
+      ...(shouldExposeAdminTokenForTests() ? { adminToken: payload.plainAdminToken } : {}),
+      nextStep: payload.nextStep
     });
   },
 
