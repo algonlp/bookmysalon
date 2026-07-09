@@ -11396,10 +11396,94 @@ const createTrendCard = (
     openTeamMembersModal();
   };
 
+  const createCredentialRow = (label, value) => {
+    const row = document.createElement('div');
+    row.className = 'staff-credentials-row';
+
+    const info = document.createElement('div');
+    info.className = 'staff-credentials-row-info';
+
+    const labelEl = document.createElement('span');
+    labelEl.className = 'staff-credentials-row-label';
+    labelEl.textContent = label;
+
+    const valueEl = document.createElement('code');
+    valueEl.className = 'staff-credentials-row-value';
+    valueEl.textContent = value;
+
+    info.append(labelEl, valueEl);
+
+    const copyButton = document.createElement('button');
+    copyButton.type = 'button';
+    copyButton.className = 'staff-credentials-copy';
+    copyButton.textContent = 'Copy';
+    copyButton.addEventListener('click', async (event) => {
+      event.stopPropagation();
+
+      try {
+        if (!navigator.clipboard?.writeText) {
+          throw new Error('Clipboard unavailable');
+        }
+
+        await navigator.clipboard.writeText(value);
+        copyButton.textContent = 'Copied';
+        copyButton.classList.add('is-copied');
+        setTimeout(() => {
+          copyButton.textContent = 'Copy';
+          copyButton.classList.remove('is-copied');
+        }, 1500);
+      } catch (error) {
+        safeAlert(value);
+      }
+    });
+
+    row.append(info, copyButton);
+    return row;
+  };
+
+  const showStaffCredentialsModal = (teamMemberName, credentials, { isReset = false } = {}) => {
+    const card = document.createElement('div');
+    card.className = 'staff-credentials-card';
+
+    const note = document.createElement('p');
+    note.className = 'staff-credentials-note';
+    note.textContent = isReset
+      ? "Their old password stops working immediately. Share this new one with them - it won't be shown again."
+      : "Share this with them now - the password won't be shown again.";
+
+    const linkRow = document.createElement('p');
+    linkRow.className = 'staff-credentials-link';
+    const link = document.createElement('a');
+    link.href = '/barber-login';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = `${window.location.origin}/barber-login`;
+    linkRow.append(document.createTextNode('They can log in at '), link);
+
+    card.append(
+      createCredentialRow('Username', credentials.username),
+      createCredentialRow('Password', credentials.password),
+      note,
+      linkRow
+    );
+
+    const doneButton = createToolActionButton('Done', () => {
+      openTeamMembersModal();
+    });
+
+    openToolModal({
+      eyebrow: 'Team login',
+      title: isReset ? `New login for ${teamMemberName}` : `Login created for ${teamMemberName}`,
+      description: 'Their login is ready to share.',
+      actions: [card, doneButton]
+    });
+  };
+
   const addTeamMember = async ({
     name,
     role,
     phone,
+    email,
     expertise,
     openingTime,
     closingTime,
@@ -11410,12 +11494,13 @@ const createTrendCard = (
       return;
     }
 
-    await apiRequest(`/api/platform/clients/${clientId}/team-members`, {
+    const response = await apiRequest(`/api/platform/clients/${clientId}/team-members`, {
       method: 'POST',
       body: JSON.stringify({
         name: name.trim(),
         role: role.trim(),
         phone: phone.trim(),
+        email: (email || '').trim(),
         expertise: expertise.trim(),
         openingTime: openingTime.trim(),
         closingTime: closingTime.trim(),
@@ -11425,11 +11510,32 @@ const createTrendCard = (
     });
 
     await refreshTeamMembersView();
+
+    if (response?.generatedCredentials) {
+      showStaffCredentialsModal(name.trim(), response.generatedCredentials, { isReset: false });
+    }
+  };
+
+  const resetTeamMemberCredentials = async (teamMemberId, teamMemberName) => {
+    if (!clientId) {
+      return;
+    }
+
+    const response = await apiRequest(
+      `/api/platform/clients/${clientId}/team-members/${encodeURIComponent(teamMemberId)}/credentials/reset`,
+      { method: 'POST' }
+    );
+
+    await refreshTeamMembersView();
+
+    if (response?.generatedCredentials) {
+      showStaffCredentialsModal(teamMemberName, response.generatedCredentials, { isReset: true });
+    }
   };
 
   const updateTeamMember = async (
     teamMemberId,
-    { name, role, phone, expertise, openingTime, closingTime, offDays, isActive }
+    { name, role, phone, email, expertise, openingTime, closingTime, offDays, isActive }
   ) => {
     if (!clientId) {
       return;
@@ -11441,6 +11547,7 @@ const createTrendCard = (
         name: name.trim(),
         role: role.trim(),
         phone: phone.trim(),
+        email: (email || '').trim(),
         expertise: expertise.trim(),
         openingTime: openingTime.trim(),
         closingTime: closingTime.trim(),
@@ -11586,6 +11693,17 @@ const createTrendCard = (
     phoneInput.value = teamMember?.phone ?? '';
     phoneField.append(phoneLabel, phoneInput);
 
+    const emailField = document.createElement('label');
+    emailField.className = 'calendar-tool-field';
+    const emailLabel = document.createElement('span');
+    emailLabel.textContent = 'Email (optional)';
+    const emailInput = document.createElement('input');
+    emailInput.type = 'email';
+    emailInput.name = 'email';
+    emailInput.placeholder = 'e.g. barber@example.com';
+    emailInput.value = teamMember?.email ?? '';
+    emailField.append(emailLabel, emailInput);
+
     const openingTimeField = document.createElement('label');
     openingTimeField.className = 'calendar-tool-field';
     const openingTimeLabel = document.createElement('span');
@@ -11729,6 +11847,7 @@ const createTrendCard = (
       nameField,
       roleField,
       phoneField,
+      emailField,
       statusField,
       openingTimeField,
       closingTimeField,
@@ -11766,6 +11885,7 @@ const createTrendCard = (
             name: nameInput.value,
             role: roleInput.value,
             phone: phoneInput.value,
+            email: emailInput.value,
             expertise: expertiseValue,
             openingTime: openingTimeInput.value,
             closingTime: closingTimeInput.value,
@@ -11777,6 +11897,7 @@ const createTrendCard = (
             name: nameInput.value,
             role: roleInput.value,
             phone: phoneInput.value,
+            email: emailInput.value,
             expertise: expertiseValue,
             openingTime: openingTimeInput.value,
             closingTime: closingTimeInput.value,
@@ -11838,7 +11959,8 @@ const createTrendCard = (
       teamMember.role || getDefaultTeamMemberRole(),
       `Mobile: ${teamMember.phone || '-'}`,
       teamMember.expertise ? `Expertise: ${teamMember.expertise}` : null,
-      scheduleSummary || null
+      scheduleSummary || null,
+      teamMember.hasLoginAccess ? `Login: ${teamMember.username}` : 'Login: not set up yet'
     ]
       .filter(Boolean)
       .join(' | ');
@@ -11862,6 +11984,7 @@ const createTrendCard = (
             name: teamMember.name || '',
             role: teamMember.role || getDefaultTeamMemberRole(),
             phone: teamMember.phone || '',
+            email: teamMember.email || '',
             expertise: teamMember.expertise || '',
             openingTime: teamMember.openingTime || '',
             closingTime: teamMember.closingTime || '',
@@ -11902,14 +12025,32 @@ const createTrendCard = (
     });
     removeButton.classList.add('calendar-tool-action-danger');
 
-    actions.append(editButton, toggleStatusButton, removeButton);
+    const resetLoginButton = createToolActionButton(
+      teamMember.hasLoginAccess ? 'Reset login' : 'Set up login',
+      async () => {
+        resetLoginButton.disabled = true;
+        resetLoginButton.textContent = 'Working...';
+
+        try {
+          await resetTeamMemberCredentials(teamMember.id, teamMember.name);
+        } catch (error) {
+          resetLoginButton.disabled = false;
+          resetLoginButton.textContent = teamMember.hasLoginAccess ? 'Reset login' : 'Set up login';
+          safeAlert(
+            error instanceof Error ? error.message : `Unable to reset login for ${teamMember.name}`
+          );
+        }
+      }
+    );
+
+    actions.append(editButton, toggleStatusButton, resetLoginButton, removeButton);
     card.append(header, copy, actions);
     return card;
   };
 
   const updateBusinessService = async (
     serviceId,
-    { name, categoryName, durationMinutes, priceLabel, description }
+    { name, categoryName, durationMinutes, priceLabel, description, isSpecialService }
   ) => {
     if (!clientId) {
       return;
@@ -11922,7 +12063,8 @@ const createTrendCard = (
         categoryName: categoryName.trim(),
         durationMinutes: Math.round(durationMinutes),
         priceLabel: priceLabel.trim(),
-        description: description.trim()
+        description: description.trim(),
+        isSpecialService: isSpecialService === true
       })
     });
 
@@ -12036,12 +12178,30 @@ const createTrendCard = (
     descriptionInput.value = service?.description ?? '';
     descriptionField.append(descriptionLabel, descriptionInput);
 
+    const specialField = document.createElement('label');
+    specialField.className = 'calendar-tool-checkbox-field';
+    const specialInput = document.createElement('input');
+    specialInput.type = 'checkbox';
+    specialInput.checked = service?.isSpecialService === true;
+    const specialLabel = document.createElement('span');
+    specialLabel.textContent =
+      'Special service (bridal, groom, mehndi, events) — requires a 5% advance deposit to confirm';
+    specialField.append(specialInput, specialLabel);
+
     const submitButton = document.createElement('button');
     submitButton.className = 'calendar-tool-action calendar-tool-submit';
     submitButton.type = 'submit';
     submitButton.textContent = mode === 'edit' ? updateActionLabel : saveActionLabel;
 
-    form.append(nameField, categoryField, durationField, priceField, descriptionField, submitButton);
+    form.append(
+      nameField,
+      categoryField,
+      durationField,
+      priceField,
+      specialField,
+      descriptionField,
+      submitButton
+    );
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -12071,7 +12231,8 @@ const createTrendCard = (
             categoryName: categoryInput.value,
             durationMinutes,
             priceLabel: priceInput.value,
-            description: descriptionInput.value
+            description: descriptionInput.value,
+            isSpecialService: specialInput.checked
           });
         } else {
           await apiRequest(`/api/platform/clients/${clientId}/services`, {
@@ -12081,7 +12242,8 @@ const createTrendCard = (
               categoryName: categoryInput.value.trim(),
               durationMinutes: Math.round(durationMinutes),
               priceLabel: priceInput.value.trim(),
-              description: descriptionInput.value.trim()
+              description: descriptionInput.value.trim(),
+              isSpecialService: specialInput.checked
             })
           });
 
@@ -12133,6 +12295,17 @@ const createTrendCard = (
     const heading = document.createElement('strong');
     heading.textContent = service.name;
 
+    const headerRow = document.createElement('div');
+    headerRow.className = 'calendar-team-member-card-header';
+    headerRow.append(heading);
+
+    if (service.isSpecialService) {
+      const specialBadge = document.createElement('span');
+      specialBadge.className = 'special-service-badge';
+      specialBadge.textContent = '✨ Special · 5% deposit';
+      headerRow.append(specialBadge);
+    }
+
     const copy = document.createElement('p');
     copy.textContent = `${service.priceLabel} | ${service.durationMinutes} min | ${service.categoryName}${service.description ? ` | ${service.description}` : ''}`;
 
@@ -12143,9 +12316,9 @@ const createTrendCard = (
         highlightedPackageNames.length === 1
           ? `Highlighted in package: ${highlightedPackageNames[0]}`
           : `Highlighted in packages: ${highlightedPackageNames.join(', ')}`;
-      card.append(heading, copy, highlight);
+      card.append(headerRow, copy, highlight);
     } else {
-      card.append(heading, copy);
+      card.append(headerRow, copy);
     }
 
     const actions = document.createElement('div');
@@ -17389,6 +17562,9 @@ const initPublicBooking = () => {
     }).catch(() => {});
   }
   const packageCheckoutStatus = new URLSearchParams(window.location.search).get('packageCheckout');
+  const specialServiceCheckoutStatus = new URLSearchParams(window.location.search).get(
+    'specialServiceCheckout'
+  );
   const packageCheckoutStorageKey = `qr-booking-package-checkout:${businessId}`;
   const today = new Date();
   dateInput.value = getLocalDateValue(today);
@@ -17819,6 +17995,18 @@ const initPublicBooking = () => {
       price.textContent = service.priceLabel || 'Price on booking';
 
       copy.append(title, meta, price);
+
+      if (service.isSpecialService) {
+        const specialBadge = document.createElement('span');
+        specialBadge.className = 'special-service-badge booking-choice-special-badge';
+        specialBadge.textContent = '✨ Special';
+        copy.append(specialBadge);
+
+        const depositNote = document.createElement('span');
+        depositNote.className = 'booking-choice-deposit-note';
+        depositNote.textContent = '5% advance payment required to confirm';
+        copy.append(depositNote);
+      }
 
       const marker = document.createElement('span');
       marker.className = 'booking-choice-marker';
@@ -18736,6 +18924,16 @@ const initPublicBooking = () => {
         );
       } else if (packageCheckoutStatus === 'cancelled') {
         showPackageToast('Checkout cancelled', 'No package was added because payment was not completed.');
+      } else if (specialServiceCheckoutStatus === 'success') {
+        showPackageToast(
+          'Deposit received',
+          'Your advance deposit was received and your booking is confirmed. Check your phone or email for details.'
+        );
+      } else if (specialServiceCheckoutStatus === 'cancelled') {
+        showPackageToast(
+          'Checkout cancelled',
+          'No booking was made because the deposit payment was not completed. Your slot was released — feel free to try again.'
+        );
       }
     })
     .catch((error) => {
@@ -19041,6 +19239,8 @@ const initPublicBooking = () => {
       bookingSubmitButton.textContent = 'Confirming...';
     }
 
+    let isRedirectingToCheckout = false;
+
     try {
       const selectedBookingLocation = getSelectedBookingLocation();
       const customerAddressValue = customerAddressInput.value.trim();
@@ -19079,6 +19279,15 @@ const initPublicBooking = () => {
         })
       });
 
+      if (payload?.checkoutUrl) {
+        isRedirectingToCheckout = true;
+        if (bookingSubmitButton instanceof HTMLButtonElement) {
+          bookingSubmitButton.textContent = 'Redirecting to payment...';
+        }
+        window.location.href = payload.checkoutUrl;
+        return;
+      }
+
       successPanel.classList.remove('is-hidden');
       if (bookingBackLink instanceof HTMLAnchorElement) {
         bookingBackLink.href = '/activity';
@@ -19109,7 +19318,7 @@ const initPublicBooking = () => {
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to create appointment');
     } finally {
-      if (bookingSubmitButton instanceof HTMLButtonElement) {
+      if (!isRedirectingToCheckout && bookingSubmitButton instanceof HTMLButtonElement) {
         bookingSubmitButton.disabled = false;
         bookingSubmitButton.classList.remove('is-loading');
         bookingSubmitButton.textContent = bookingSubmitButtonDefaultText;
@@ -20077,6 +20286,376 @@ const initPricingPage = () => {
     });
 };
 
+const STAFF_SESSION_STORAGE_KEY = 'staffSession';
+
+const getStaffSession = () => {
+  try {
+    const raw = window.localStorage.getItem(STAFF_SESSION_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const setStaffSession = (session) => {
+  try {
+    window.localStorage.setItem(STAFF_SESSION_STORAGE_KEY, JSON.stringify(session));
+  } catch (error) {
+    // ignore storage errors
+  }
+};
+
+const clearStaffSession = () => {
+  try {
+    window.localStorage.removeItem(STAFF_SESSION_STORAGE_KEY);
+  } catch (error) {
+    // ignore storage errors
+  }
+};
+
+const staffApiRequest = async (path, options = {}) => {
+  const response = await fetch(path, {
+    credentials: 'include',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers ?? {})
+    }
+  });
+
+  const responseType = response.headers.get('content-type') ?? '';
+  const payload = responseType.includes('application/json') ? await response.json() : null;
+
+  if (response.status === 403) {
+    clearStaffSession();
+    window.location.assign('/barber-login');
+    throw new Error(payload?.error ?? 'Staff access is required');
+  }
+
+  if (!response.ok) {
+    const error = new Error(payload?.error ?? 'Request failed');
+    error.statusCode = response.status;
+    throw error;
+  }
+
+  return payload;
+};
+
+const formatBarberMoneyValue = (amountValue, currencyCode) => {
+  const normalizedAmountValue = Number.isFinite(Number(amountValue)) ? Number(amountValue) : 0;
+  const normalizedCurrencyCode =
+    typeof currencyCode === 'string' && currencyCode.trim() ? currencyCode.trim().toUpperCase() : '';
+  const formatter = new Intl.NumberFormat(getDashboardUiCopy().locale || 'en-GB', {
+    maximumFractionDigits: 0
+  });
+  const formattedAmount = formatter.format(Math.round(normalizedAmountValue));
+  return normalizedCurrencyCode ? `${normalizedCurrencyCode} ${formattedAmount}` : formattedAmount;
+};
+
+const initBarberLoginForm = () => {
+  const form = document.querySelector('#barber-login-form');
+  const usernameInput = document.querySelector('#barber-login-username');
+  const passwordInput = document.querySelector('#barber-login-password');
+  const rememberMeInput = document.querySelector('#barber-login-remember-me');
+  const submitBtn = document.querySelector('#barber-login-submit');
+  const status = document.querySelector('#barber-login-status');
+
+  if (
+    !(form instanceof HTMLFormElement) ||
+    !(usernameInput instanceof HTMLInputElement) ||
+    !(passwordInput instanceof HTMLInputElement) ||
+    !(submitBtn instanceof HTMLButtonElement)
+  ) {
+    return;
+  }
+
+  const loginEndpoint = form.dataset.loginEndpoint?.trim();
+
+  const setStatus = (message = '', isError = false) => {
+    if (!(status instanceof HTMLElement)) return;
+    status.textContent = message;
+    status.classList.toggle('is-error', isError);
+  };
+
+  const submitLogin = async () => {
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+
+    if (!username || !password) {
+      setStatus('Enter your username and password.', true);
+      return;
+    }
+
+    if (!loginEndpoint) {
+      setStatus('Login is not configured.', true);
+      return;
+    }
+
+    submitBtn.disabled = true;
+    setStatus('Logging in...');
+
+    try {
+      const payload = await staffApiRequest(loginEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          username,
+          password,
+          rememberMe: rememberMeInput instanceof HTMLInputElement ? rememberMeInput.checked : true
+        })
+      });
+
+      setStaffSession({
+        clientId: payload.clientId,
+        teamMemberId: payload.teamMemberId,
+        teamMemberName: payload.teamMemberName,
+        businessName: payload.businessName
+      });
+
+      const params = new URLSearchParams({
+        clientId: payload.clientId,
+        teamMemberId: payload.teamMemberId
+      });
+      window.location.assign(`/barber-dashboard?${params.toString()}`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Unable to log in.', true);
+    } finally {
+      submitBtn.disabled = false;
+    }
+  };
+
+  submitBtn.addEventListener('click', () => {
+    void submitLogin();
+  });
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    void submitLogin();
+  });
+
+  passwordInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      void submitLogin();
+    }
+  });
+};
+
+const initBarberDashboard = () => {
+  const appointmentsFeed = document.querySelector('#barber-dashboard-appointments-feed');
+  const tipsFeed = document.querySelector('#barber-dashboard-tips-feed');
+
+  if (!(appointmentsFeed instanceof HTMLElement) || !(tipsFeed instanceof HTMLElement)) {
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const clientId = params.get('clientId')?.trim();
+  const teamMemberId = params.get('teamMemberId')?.trim();
+
+  if (!clientId || !teamMemberId) {
+    window.location.assign('/barber-login');
+    return;
+  }
+
+  const nameHeading = document.querySelector('#barber-dashboard-name');
+  const businessNameLabel = document.querySelector('#barber-dashboard-business-name');
+  const logoutBtn = document.querySelector('#barber-dashboard-logout');
+  const totalAppointmentsMetric = document.querySelector('#barber-dashboard-total-appointments');
+  const upcomingAppointmentsMetric = document.querySelector('#barber-dashboard-upcoming-appointments');
+  const completedAppointmentsMetric = document.querySelector('#barber-dashboard-completed-appointments');
+  const totalTipsMetric = document.querySelector('#barber-dashboard-total-tips');
+
+  const session = getStaffSession();
+
+  if (session?.teamMemberName && nameHeading instanceof HTMLElement) {
+    nameHeading.textContent = `${session.teamMemberName}'s appointments`;
+  }
+
+  if (session?.businessName && businessNameLabel instanceof HTMLElement) {
+    businessNameLabel.textContent = session.businessName;
+  }
+
+  if (logoutBtn instanceof HTMLButtonElement) {
+    logoutBtn.addEventListener('click', () => {
+      staffApiRequest(`/api/platform/clients/${clientId}/staff/${teamMemberId}/logout`, {
+        method: 'POST'
+      })
+        .catch(() => {})
+        .finally(() => {
+          clearStaffSession();
+          window.location.assign('/barber-login');
+        });
+    });
+  }
+
+  const formatBarberDateTime = (dateValue, timeValue) => {
+    if (!dateValue) return 'Unknown date';
+
+    const parsed = new Date(`${dateValue}T${timeValue || '00:00'}`);
+
+    if (Number.isNaN(parsed.getTime())) {
+      return `${dateValue} ${timeValue || ''}`.trim();
+    }
+
+    return new Intl.DateTimeFormat(getDashboardUiCopy().locale || 'en-GB', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(parsed);
+  };
+
+  const renderEmptyFeed = (feed, title, description) => {
+    feed.replaceChildren();
+
+    const card = document.createElement('article');
+    card.className = 'sms-log-empty';
+
+    const heading = document.createElement('h2');
+    heading.textContent = title;
+
+    const copy = document.createElement('p');
+    copy.textContent = description;
+
+    card.append(heading, copy);
+    feed.append(card);
+  };
+
+  const appointmentStatusVariant = (status) => {
+    if (status === 'completed') return 'sent';
+    if (status === 'cancelled') return 'failed';
+    return 'skipped';
+  };
+
+  staffApiRequest(`/api/platform/clients/${clientId}/staff/${teamMemberId}/appointments`)
+    .then((payload) => {
+      const appointments = Array.isArray(payload.appointments) ? payload.appointments : [];
+      const completedCount = appointments.filter((appointment) => appointment.status === 'completed').length;
+      const upcomingCount = appointments.filter(
+        (appointment) => appointment.status === 'booked' || appointment.status === 'confirmed'
+      ).length;
+
+      if (totalAppointmentsMetric instanceof HTMLElement) {
+        totalAppointmentsMetric.textContent = String(appointments.length);
+      }
+
+      if (upcomingAppointmentsMetric instanceof HTMLElement) {
+        upcomingAppointmentsMetric.textContent = String(upcomingCount);
+      }
+
+      if (completedAppointmentsMetric instanceof HTMLElement) {
+        completedAppointmentsMetric.textContent = String(completedCount);
+      }
+
+      if (appointments.length === 0) {
+        renderEmptyFeed(
+          appointmentsFeed,
+          'No appointments yet',
+          'Appointments assigned to you will show up here.'
+        );
+        return;
+      }
+
+      const sorted = [...appointments].sort((left, right) =>
+        (right.startAt || '').localeCompare(left.startAt || '')
+      );
+
+      const cards = sorted.map((appointment) => {
+        const card = document.createElement('article');
+        card.className = 'sms-log-card';
+
+        const top = document.createElement('div');
+        top.className = 'sms-log-card-top';
+
+        const meta = document.createElement('div');
+        meta.className = 'sms-log-meta';
+
+        const title = document.createElement('strong');
+        title.textContent = `${appointment.customerName || 'Customer'} - ${appointment.serviceName || 'Service'}`;
+
+        const subtitle = document.createElement('p');
+        subtitle.textContent = formatBarberDateTime(appointment.appointmentDate, appointment.appointmentTime);
+
+        meta.append(title, subtitle);
+
+        const status = document.createElement('span');
+        status.className = `sms-log-status is-${appointmentStatusVariant(appointment.status)}`;
+        status.textContent = appointment.status || 'booked';
+
+        top.append(meta, status);
+        card.append(top);
+        return card;
+      });
+
+      appointmentsFeed.replaceChildren(...cards);
+    })
+    .catch((error) => {
+      renderEmptyFeed(
+        appointmentsFeed,
+        'Unable to load appointments',
+        error instanceof Error ? error.message : 'Your appointments are not available right now.'
+      );
+    });
+
+  staffApiRequest(`/api/platform/clients/${clientId}/staff/${teamMemberId}/tips`)
+    .then((payload) => {
+      const payments = Array.isArray(payload.payments) ? payload.payments : [];
+      const tipPayments = payments.filter((payment) => Number(payment.tipAmountValue) > 0);
+      const totalTipAmount = tipPayments.reduce(
+        (sum, payment) => sum + (Number(payment.tipAmountValue) || 0),
+        0
+      );
+      const currencyCode = payload.summary?.currencyCode || tipPayments[0]?.currencyCode || '';
+
+      if (totalTipsMetric instanceof HTMLElement) {
+        totalTipsMetric.textContent = formatBarberMoneyValue(totalTipAmount, currencyCode);
+      }
+
+      if (tipPayments.length === 0) {
+        renderEmptyFeed(tipsFeed, 'No tips yet', 'Tips collected on your appointments will show up here.');
+        return;
+      }
+
+      const sorted = [...tipPayments].sort((left, right) =>
+        (right.createdAt || '').localeCompare(left.createdAt || '')
+      );
+
+      const cards = sorted.map((payment) => {
+        const card = document.createElement('article');
+        card.className = 'sms-log-card';
+
+        const top = document.createElement('div');
+        top.className = 'sms-log-card-top';
+
+        const meta = document.createElement('div');
+        meta.className = 'sms-log-meta';
+
+        const title = document.createElement('strong');
+        title.textContent = `${payment.customerName || 'Customer'} - ${payment.serviceName || 'Service'}`;
+
+        const subtitle = document.createElement('p');
+        subtitle.textContent = formatBarberDateTime(payment.appointmentDate, payment.appointmentTime);
+
+        meta.append(title, subtitle);
+
+        const tipAmount = document.createElement('span');
+        tipAmount.className = 'sms-log-status is-sent';
+        tipAmount.textContent = formatBarberMoneyValue(payment.tipAmountValue, payment.currencyCode);
+
+        top.append(meta, tipAmount);
+        card.append(top);
+        return card;
+      });
+
+      tipsFeed.replaceChildren(...cards);
+    })
+    .catch((error) => {
+      renderEmptyFeed(
+        tipsFeed,
+        'Unable to load tips',
+        error instanceof Error ? error.message : 'Your tips are not available right now.'
+      );
+    });
+};
+
 const initSmsLogs = () => {
   const logsFeed = document.querySelector('#sms-logs-feed');
   const backLink = document.querySelector('#sms-logs-back-link');
@@ -20420,6 +20999,8 @@ const initEmailLogs = () => {
 syncClientIdFromQuery();
 initCustomerLogin();
 initCustomerOtpLogin();
+initBarberLoginForm();
+initBarberDashboard();
 initCustomerAccountMenu();
 initCustomerProfilePage();
 

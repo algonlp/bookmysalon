@@ -67,13 +67,32 @@ export interface TeamMemberRecord {
   name: string;
   role: string;
   phone: string;
+  email?: string;
   expertise: string;
   openingTime: string;
   closingTime: string;
   offDays: WeekdayId[];
   isActive: boolean;
+  username?: string;
+  passwordHash?: string;
+  staffToken?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export type PublicTeamMemberRecord = Omit<TeamMemberRecord, 'passwordHash' | 'staffToken'> & {
+  hasLoginAccess: boolean;
+};
+
+export interface GeneratedStaffCredentials {
+  username: string;
+  password: string;
+}
+
+export interface StaffLoginInput {
+  username: string;
+  password: string;
+  rememberMe?: boolean;
 }
 
 export interface ProductRecord {
@@ -197,7 +216,7 @@ export interface PublicClientRecord {
   loyaltyProgram: LoyaltyProgramRecord | null;
   businessSettings: BusinessSettingsRecord;
   customerProfiles: CustomerProfileRecord[];
-  teamMembers: TeamMemberRecord[];
+  teamMembers: PublicTeamMemberRecord[];
   accountType: AccountType | null;
   serviceLocation: ServiceLocation[];
   venueAddress: string;
@@ -263,6 +282,7 @@ export interface CreateTeamMemberInput {
   name: string;
   role?: string;
   phone?: string;
+  email?: string;
   expertise?: string;
   openingTime?: string;
   closingTime?: string;
@@ -274,6 +294,7 @@ export interface UpdateTeamMemberInput {
   name: string;
   role?: string;
   phone?: string;
+  email?: string;
   expertise?: string;
   openingTime?: string;
   closingTime?: string;
@@ -287,6 +308,7 @@ export interface CreateBusinessServiceInput {
   durationMinutes: number;
   priceLabel: string;
   description?: string;
+  isSpecialService?: boolean;
 }
 
 export interface CreateProductInput {
@@ -313,6 +335,7 @@ export interface UpdateBusinessServiceInput {
   durationMinutes: number;
   priceLabel: string;
   description?: string;
+  isSpecialService?: boolean;
 }
 
 export interface CreatePackagePlanInput {
@@ -480,7 +503,7 @@ export interface DashboardAppointmentViewModel {
   loyaltyRewardLabel?: string;
   appointmentDate: string;
   appointmentTime: string;
-  status: 'booked' | 'cancelled' | 'completed';
+  status: 'booked' | 'cancelled' | 'completed' | 'pending_deposit';
   source: AppointmentSource;
 }
 

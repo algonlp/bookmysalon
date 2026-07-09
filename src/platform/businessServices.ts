@@ -1,7 +1,7 @@
 import type { AppointmentServiceOption, BusinessService } from '../appointments/appointment.types';
 import { env } from '../config/env';
 
-type BusinessServiceSeed = Omit<BusinessService, 'id' | 'isActive'>;
+type BusinessServiceSeed = Omit<BusinessService, 'id' | 'isActive' | 'isSpecialService'>;
 
 interface ServiceTemplateOptions {
   currencyCode?: string;
@@ -195,7 +195,8 @@ const sanitizeService = (
     categoryName,
     priceLabel,
     description: typeof service.description === 'string' ? service.description.trim() : '',
-    isActive: service.isActive !== false
+    isActive: service.isActive !== false,
+    isSpecialService: service.isSpecialService === true
   };
 };
 
@@ -230,7 +231,8 @@ const createServicesFromSeeds = (
         options.currencyLocale
       ),
       description: service.description,
-      isActive: true
+      isActive: true,
+      isSpecialService: false
     }))
   );
 
@@ -310,7 +312,8 @@ export const toAppointmentServiceOptions = (
       durationMinutes: service.durationMinutes,
       categoryName: service.categoryName,
       priceLabel: service.priceLabel,
-      description: service.description
+      description: service.description,
+      isSpecialService: service.isSpecialService
     }));
 
 export const createFallbackAppointmentService = (

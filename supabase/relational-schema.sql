@@ -243,10 +243,12 @@ end $$;
 
 do $$
 begin
-  create type appointment_status as enum ('booked', 'cancelled', 'completed');
+  create type appointment_status as enum ('booked', 'cancelled', 'completed', 'pending_deposit');
 exception
   when duplicate_object then null;
 end $$;
+
+alter type appointment_status add value if not exists 'pending_deposit';
 
 do $$
 begin
@@ -498,17 +500,23 @@ create table if not exists team_members (
   name text not null,
   role text not null default '',
   phone text not null default '',
+  email text null,
   expertise text not null default '',
   opening_time time not null default '09:00',
   closing_time time not null default '18:00',
   off_days weekday_id[] not null default '{}'::weekday_id[],
   is_active boolean not null default true,
+  username text null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
+alter table team_members add column if not exists email text null;
+alter table team_members add column if not exists username text null;
+
 create index if not exists team_members_business_id_idx on team_members (business_id);
 create index if not exists team_members_business_active_idx on team_members (business_id, is_active);
+create unique index if not exists team_members_username_idx on team_members (lower(username)) where username is not null;
 
 create table if not exists services (
   id text primary key,
@@ -519,9 +527,12 @@ create table if not exists services (
   price_label text not null default '',
   description text not null default '',
   is_active boolean not null default true,
+  is_special_service boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table services add column if not exists is_special_service boolean not null default false;
 
 create index if not exists services_business_id_idx on services (business_id);
 create index if not exists services_business_active_idx on services (business_id, is_active);
@@ -720,6 +731,10 @@ create table if not exists appointments (
   package_total_uses integer null check (package_total_uses is null or package_total_uses >= 0),
   loyalty_reward_id text null references loyalty_rewards (id) on delete set null,
   loyalty_reward_label text not null default '',
+  deposit_amount_value numeric(12, 2) null,
+  deposit_currency_code text null,
+  deposit_checkout_session_id text null,
+  deposit_paid_at timestamptz null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -732,6 +747,18 @@ alter table appointments
 
 alter table appointments
   add column if not exists package_total_uses integer null;
+
+alter table appointments
+  add column if not exists deposit_amount_value numeric(12, 2) null;
+
+alter table appointments
+  add column if not exists deposit_currency_code text null;
+
+alter table appointments
+  add column if not exists deposit_checkout_session_id text null;
+
+alter table appointments
+  add column if not exists deposit_paid_at timestamptz null;
 
 do $$
 begin

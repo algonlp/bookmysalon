@@ -65,3 +65,37 @@ export const clearAdminSessionCookie = (res: Response): void => {
     cookieOptions
   );
 };
+
+export const getStaffSessionCookieOptions = (persistent = true): CookieOptions => {
+  const baseOptions: CookieOptions = {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: secureCookies,
+    path: '/'
+  };
+
+  if (!persistent) {
+    return baseOptions;
+  }
+
+  return {
+    ...baseOptions,
+    maxAge: env.STAFF_SESSION_TTL_DAYS * 24 * 60 * 60 * 1000
+  };
+};
+
+export const setStaffSessionCookie = (res: Response, staffToken: string, persistent = true): void => {
+  res.cookie(
+    env.STAFF_SESSION_COOKIE_NAME,
+    staffToken,
+    getStaffSessionCookieOptions(persistent)
+  );
+};
+
+export const clearStaffSessionCookie = (res: Response): void => {
+  const { maxAge: _maxAge, ...cookieOptions } = getStaffSessionCookieOptions();
+  res.clearCookie(
+    env.STAFF_SESSION_COOKIE_NAME,
+    cookieOptions
+  );
+};

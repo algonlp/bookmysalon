@@ -2,7 +2,7 @@
   "clients": [
     {
       "id": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
-      "adminToken": "c704417ed6bb1605ab098c54fc8377fd51be82c4d51c905811b68d3821a6cf33",
+      "adminToken": "d91420e8c0a5e1a956f10743a190d4d1f09da2fa2b593f8d933351cd141e2c61",
       "email": "maqsoodparacha1479@gmail.com",
       "mobileNumber": "",
       "businessPhoneNumber": "",
@@ -30,7 +30,8 @@
           "categoryName": "Hair salon",
           "priceLabel": "$2,200",
           "description": "Signature haircut finished with a professional blow-dry.",
-          "isActive": true
+          "isActive": true,
+          "isSpecialService": false
         },
         {
           "id": "hair-salon-blow-dry",
@@ -39,7 +40,8 @@
           "categoryName": "Hair salon",
           "priceLabel": "$1,500",
           "description": "Smooth blow-dry with styling tailored to the guest.",
-          "isActive": true
+          "isActive": true,
+          "isSpecialService": false
         },
         {
           "id": "nails-manicure",
@@ -48,7 +50,8 @@
           "categoryName": "Nails",
           "priceLabel": "$1,600",
           "description": "Nail shaping, cuticle care, and polish refresh.",
-          "isActive": true
+          "isActive": true,
+          "isSpecialService": false
         },
         {
           "id": "nails-pedicure",
@@ -57,7 +60,8 @@
           "categoryName": "Nails",
           "priceLabel": "$2,100",
           "description": "Foot soak, nail care, exfoliation, and polish refresh.",
-          "isActive": true
+          "isActive": true,
+          "isSpecialService": false
         },
         {
           "id": "eyebrows-lashes-brow-shaping",
@@ -66,7 +70,8 @@
           "categoryName": "Eyebrows & lashes",
           "priceLabel": "$900",
           "description": "Precision brow shaping to suit the guest’s natural features.",
-          "isActive": true
+          "isActive": true,
+          "isSpecialService": false
         },
         {
           "id": "eyebrows-lashes-lash-lift",
@@ -75,7 +80,8 @@
           "categoryName": "Eyebrows & lashes",
           "priceLabel": "$1,800",
           "description": "Lift and curl natural lashes for a brighter eye look.",
-          "isActive": true
+          "isActive": true,
+          "isSpecialService": false
         },
         {
           "id": "beauty-salon-facial-treatment",
@@ -84,7 +90,8 @@
           "categoryName": "Beauty salon",
           "priceLabel": "$2,700",
           "description": "Glow-focused facial treatment with cleanse, exfoliation, and mask.",
-          "isActive": true
+          "isActive": true,
+          "isSpecialService": false
         },
         {
           "id": "medspa-skin-consultation",
@@ -93,7 +100,8 @@
           "categoryName": "Medspa",
           "priceLabel": "$2,400",
           "description": "Professional consultation to recommend the right skin treatments.",
-          "isActive": true
+          "isActive": true,
+          "isSpecialService": false
         },
         {
           "id": "barber-haircut",
@@ -102,7 +110,8 @@
           "categoryName": "Barber",
           "priceLabel": "$1,200",
           "description": "Classic barber haircut with clipper and scissor finishing.",
-          "isActive": true
+          "isActive": true,
+          "isSpecialService": false
         },
         {
           "id": "barber-beard-trim",
@@ -111,7 +120,8 @@
           "categoryName": "Barber",
           "priceLabel": "$800",
           "description": "Shape, line-up, and beard tidy-up for a clean finish.",
-          "isActive": true
+          "isActive": true,
+          "isSpecialService": false
         },
         {
           "id": "massage-deep-tissue-massage",
@@ -120,7 +130,8 @@
           "categoryName": "Massage",
           "priceLabel": "$3,200",
           "description": "Targeted pressure massage designed for muscle recovery.",
-          "isActive": true
+          "isActive": true,
+          "isSpecialService": false
         },
         {
           "id": "massage-relaxation-massage",
@@ -129,7 +140,8 @@
           "categoryName": "Massage",
           "priceLabel": "$2,900",
           "description": "Full-body relaxation massage to reduce stress and tension.",
-          "isActive": true
+          "isActive": true,
+          "isSpecialService": false
         },
         {
           "id": "spa-sauna-spa-session",
@@ -138,7 +150,8 @@
           "categoryName": "Spa & sauna",
           "priceLabel": "$3,500",
           "description": "Unwind with a restorative spa session in a calm setting.",
-          "isActive": true
+          "isActive": true,
+          "isSpecialService": false
         },
         {
           "id": "waxing-salon-full-arm-waxing",
@@ -147,7 +160,228 @@
           "categoryName": "Waxing salon",
           "priceLabel": "$1,700",
           "description": "Full arm waxing service for a smooth, polished result.",
-          "isActive": true
+          "isActive": true,
+          "isSpecialService": false
+        },
+        {
+          "id": "groom-packages-groom-facial",
+          "name": "Groom Facial",
+          "durationMinutes": 60,
+          "categoryName": "Groom Packages",
+          "priceLabel": "$3,500",
+          "description": "Deep-cleansing facial to refresh and prep the groom's skin.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "groom-packages-groom-hair-styling",
+          "name": "Groom Hair Styling",
+          "durationMinutes": 45,
+          "categoryName": "Groom Packages",
+          "priceLabel": "$2,000",
+          "description": "Event-ready haircut and styling for the groom.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "groom-packages-beard-styling",
+          "name": "Beard Styling",
+          "durationMinutes": 30,
+          "categoryName": "Groom Packages",
+          "priceLabel": "$1,500",
+          "description": "Precision beard shaping and grooming for a sharp finish.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "groom-packages-beard-color",
+          "name": "Beard Color",
+          "durationMinutes": 30,
+          "categoryName": "Groom Packages",
+          "priceLabel": "$2,000",
+          "description": "Beard coloring to cover grey and add definition.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "groom-packages-shaving",
+          "name": "Shaving",
+          "durationMinutes": 20,
+          "categoryName": "Groom Packages",
+          "priceLabel": "$1,000",
+          "description": "Traditional close shave for a clean, smooth look.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "groom-packages-hair-spa",
+          "name": "Hair Spa",
+          "durationMinutes": 45,
+          "categoryName": "Groom Packages",
+          "priceLabel": "$3,000",
+          "description": "Nourishing hair spa treatment to condition and add shine.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "groom-packages-groom-makeup",
+          "name": "Groom Makeup",
+          "durationMinutes": 90,
+          "categoryName": "Groom Packages",
+          "priceLabel": "$15,000",
+          "description": "Full groom makeup and finishing touches for the big day.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "bridal-packages-bridal-makeup",
+          "name": "Bridal Makeup",
+          "durationMinutes": 120,
+          "categoryName": "Bridal Packages",
+          "priceLabel": "$25,000",
+          "description": "Full bridal makeup application for the wedding day.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "bridal-packages-bridal-hairstyle",
+          "name": "Bridal Hairstyle",
+          "durationMinutes": 90,
+          "categoryName": "Bridal Packages",
+          "priceLabel": "$12,000",
+          "description": "Custom bridal hairstyling to complement the look.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "bridal-packages-dupatta-setting",
+          "name": "Dupatta Setting",
+          "durationMinutes": 20,
+          "categoryName": "Bridal Packages",
+          "priceLabel": "$3,000",
+          "description": "Professional dupatta draping and pinning for the bridal outfit.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "bridal-packages-jewelry-setting",
+          "name": "Jewelry Setting",
+          "durationMinutes": 15,
+          "categoryName": "Bridal Packages",
+          "priceLabel": "$2,000",
+          "description": "Careful placement and setting of bridal jewelry.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "bridal-packages-mehndi",
+          "name": "Mehndi",
+          "durationMinutes": 120,
+          "categoryName": "Bridal Packages",
+          "priceLabel": "$10,000",
+          "description": "Intricate bridal mehndi (henna) application.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "bridal-packages-facial",
+          "name": "Facial",
+          "durationMinutes": 60,
+          "categoryName": "Bridal Packages",
+          "priceLabel": "$4,000",
+          "description": "Pre-bridal glow facial as part of the bridal package.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "bridal-packages-manicure",
+          "name": "Manicure",
+          "durationMinutes": 45,
+          "categoryName": "Bridal Packages",
+          "priceLabel": "$2,500",
+          "description": "Bridal manicure for polished, event-ready hands.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "bridal-packages-pedicure",
+          "name": "Pedicure",
+          "durationMinutes": 60,
+          "categoryName": "Bridal Packages",
+          "priceLabel": "$3,000",
+          "description": "Bridal pedicure for polished, event-ready feet.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "bridal-packages-waxing",
+          "name": "Waxing",
+          "durationMinutes": 30,
+          "categoryName": "Bridal Packages",
+          "priceLabel": "$2,500",
+          "description": "Full-body waxing as part of the bridal package.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "bridal-packages-threading",
+          "name": "Threading",
+          "durationMinutes": 15,
+          "categoryName": "Bridal Packages",
+          "priceLabel": "$800",
+          "description": "Eyebrow and facial threading for a clean finish.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "bridal-packages-dressing-assistance",
+          "name": "Dressing Assistance",
+          "durationMinutes": 30,
+          "categoryName": "Bridal Packages",
+          "priceLabel": "$3,000",
+          "description": "On-site help getting into the bridal outfit before the event.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "event-makeup-walima-makeup",
+          "name": "Walima Makeup",
+          "durationMinutes": 90,
+          "categoryName": "Event Makeup",
+          "priceLabel": "$18,000",
+          "description": "Full makeup look for the walima reception.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "event-makeup-nikkah-makeup",
+          "name": "Nikkah Makeup",
+          "durationMinutes": 90,
+          "categoryName": "Event Makeup",
+          "priceLabel": "$15,000",
+          "description": "Elegant makeup look for the nikkah ceremony.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "event-makeup-party-makeup",
+          "name": "Party Makeup",
+          "durationMinutes": 60,
+          "categoryName": "Event Makeup",
+          "priceLabel": "$6,000",
+          "description": "Event-ready makeup for parties and celebrations.",
+          "isActive": true,
+          "isSpecialService": true
+        },
+        {
+          "id": "event-makeup-engagement-makeup",
+          "name": "Engagement Makeup",
+          "durationMinutes": 90,
+          "categoryName": "Event Makeup",
+          "priceLabel": "$12,000",
+          "description": "Full makeup look for the engagement function.",
+          "isActive": true,
+          "isSpecialService": true
         }
       ],
       "products": [],
@@ -176,20 +410,20 @@
       "customerProfiles": [
         {
           "id": "phone:+923494548161",
-          "customerName": "sir",
+          "customerName": "maqsood",
           "customerPhone": "+923494548161",
-          "customerEmail": "abdullaharain914@gmail.com",
-          "totalVisits": 2,
+          "customerEmail": "",
+          "totalVisits": 3,
           "bookedVisits": 0,
-          "completedVisits": 2,
+          "completedVisits": 3,
           "cancelledVisits": 0,
           "lastService": "Cut and style",
-          "lastAppointmentDate": "2026-07-02",
-          "lastAppointmentTime": "17:00",
+          "lastAppointmentDate": "2026-07-08",
+          "lastAppointmentTime": "14:00",
           "firstSeenAt": "2026-07-02T10:45:36.387Z",
-          "lastSeenAt": "2026-07-02T17:35:32.645Z",
+          "lastSeenAt": "2026-07-08T10:00:21.747Z",
           "createdAt": "2026-07-02T10:45:36.387Z",
-          "updatedAt": "2026-07-02T17:35:32.645Z"
+          "updatedAt": "2026-07-08T10:00:21.747Z"
         },
         {
           "id": "phone:03230785312",
@@ -236,9 +470,9 @@
           "openingTime": "09:00",
           "closingTime": "18:00",
           "offDays": [],
-          "isActive": true,
+          "isActive": false,
           "createdAt": "2026-07-08T05:05:56.948Z",
-          "updatedAt": "2026-07-08T05:05:56.948Z"
+          "updatedAt": "2026-07-08T09:46:35.736Z"
         },
         {
           "id": "bf08a480-fc03-4c3a-b181-42858d787c29",
@@ -252,6 +486,54 @@
           "isActive": true,
           "createdAt": "2026-07-08T05:18:43.691Z",
           "updatedAt": "2026-07-08T05:18:43.691Z"
+        },
+        {
+          "id": "30db0db0-09f6-4ee1-abc0-ca4807673959",
+          "name": "shumaila",
+          "role": "Barber",
+          "phone": "123456677789",
+          "expertise": "Lash lift",
+          "openingTime": "09:00",
+          "closingTime": "18:00",
+          "offDays": [],
+          "isActive": true,
+          "username": "shumaila408",
+          "passwordHash": "00836f8b0e6d923d4304c4a32684728c:406357a0075df566e27a1556ff0b21dc4bf7182c0b8afa3103ca7d7db755b793",
+          "createdAt": "2026-07-08T07:50:51.399Z",
+          "updatedAt": "2026-07-08T07:50:51.399Z"
+        },
+        {
+          "id": "f9ffb3d2-1df3-4690-9ebd-b46ed2719ec2",
+          "name": "parii",
+          "role": "Barber",
+          "phone": "098765432111",
+          "expertise": "Massage",
+          "openingTime": "09:00",
+          "closingTime": "18:00",
+          "offDays": [],
+          "isActive": true,
+          "username": "parii193",
+          "passwordHash": "7a9aa8e247c25265eef0395911f869d5:e2990e54d040ba076457794d6af6f4d381a1c147fbade56597e165034614f010",
+          "staffToken": "013eb0d91a2e36c215e8b9026af79d9f66f40069bd1f46771c5511fa8e601f33",
+          "createdAt": "2026-07-08T08:07:38.888Z",
+          "updatedAt": "2026-07-08T08:09:46.026Z"
+        },
+        {
+          "id": "08f944f4-72f7-40e7-89a0-5fbd19e3dd84",
+          "name": "nisha khan",
+          "role": "Barber",
+          "phone": "+923230785312",
+          "email": "maqsoodparacha1479@gmail.com",
+          "expertise": "Full arm waxing",
+          "openingTime": "09:00",
+          "closingTime": "18:00",
+          "offDays": [],
+          "isActive": true,
+          "username": "nisha.khan977",
+          "passwordHash": "b5c01175e04ad1b83a7ba3caead1b88e:e43d41afc6a49577240f556fe9974ef7979772810cf4e11e3bfabc2ffcf6ca8f",
+          "staffToken": "3769b116706cfd28d7732fda712fbc3277fdcf28e8b29749e3b48218b072405f",
+          "createdAt": "2026-07-08T09:47:46.806Z",
+          "updatedAt": "2026-07-08T09:51:00.898Z"
         }
       ],
       "accountType": "team",
@@ -262,7 +544,7 @@
       "preferredLanguage": "english",
       "onboardingCompleted": true,
       "createdAt": "2026-07-02T05:36:48.237Z",
-      "updatedAt": "2026-07-08T06:31:57.097Z"
+      "updatedAt": "2026-07-08T10:54:54.198Z"
     }
   ]
 }

@@ -6,6 +6,7 @@ export type SmsLogSource =
   | 'running_late'
   | 'waitlist_offer'
   | 'marketing_campaign'
+  | 'staff_credentials'
   | 'unknown';
 
 export interface SmsLogRecord {

@@ -4996,6 +4996,13 @@ textarea:focus-visible {
   margin-top: 28px;
 }
 
+.barber-dashboard-section-title {
+  margin: 32px 0 0;
+  color: #171d2c;
+  font-size: 1.3rem;
+  letter-spacing: -0.03em;
+}
+
 .sms-log-card {
   display: grid;
   gap: 16px;
@@ -9239,6 +9246,45 @@ button.calendar-reports-summary-card {
   line-height: 1.45;
 }
 
+.calendar-tool-checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 14px;
+  background: #ffffff;
+  color: #3a352f;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+}
+
+.calendar-tool-checkbox-field input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+.calendar-tool-checkbox-field span {
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.special-service-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(212, 145, 20, 0.14);
+  color: #a3690f;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
 .calendar-tool-field input,
 .calendar-tool-field select {
   width: 100%;
@@ -9902,6 +9948,90 @@ button.calendar-reports-summary-card {
   background: rgba(173, 51, 51, 0.06);
 }
 
+.staff-credentials-card {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 420px);
+}
+
+.staff-credentials-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.staff-credentials-row-info {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.staff-credentials-row-label {
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a8480;
+}
+
+.staff-credentials-row-value {
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #1f1a17;
+  overflow-wrap: anywhere;
+}
+
+.staff-credentials-copy {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 1px solid rgba(31, 51, 93, 0.16);
+  border-radius: 999px;
+  background: rgba(31, 51, 93, 0.06);
+  color: #1f335d;
+  font-size: 0.8rem;
+  font-weight: 800;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.staff-credentials-copy:hover {
+  background: rgba(31, 51, 93, 0.14);
+}
+
+.staff-credentials-copy.is-copied {
+  background: rgba(14, 125, 64, 0.14);
+  border-color: rgba(14, 125, 64, 0.2);
+  color: #0e7d40;
+}
+
+.staff-credentials-note {
+  margin: 0;
+  color: #8a8480;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.staff-credentials-link {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #3a352f;
+}
+
+.staff-credentials-link a {
+  color: #1f335d;
+  font-weight: 700;
+}
+
 .booking-page {
   min-height: 100vh;
   padding: 28px;
@@ -10364,6 +10494,16 @@ button.calendar-reports-summary-card {
 
 .booking-choice-copy b {
   font-size: 0.9rem;
+}
+
+.booking-choice-special-badge {
+  justify-self: start;
+}
+
+.booking-choice-deposit-note {
+  color: #a3690f !important;
+  font-size: 0.78rem !important;
+  font-weight: 700;
 }
 
 .booking-choice-marker {

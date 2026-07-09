@@ -102,6 +102,13 @@ export const stripeWebhookController = {
         );
       }
 
+      if (session.metadata?.kind === 'special_service_deposit' && session.payment_status === 'paid') {
+        await appointmentService.activateSpecialServiceDeposit(
+          session.id,
+          getStringId(session.payment_intent)
+        );
+      }
+
       if (
         event.type === 'checkout.session.completed' &&
         session.payment_status === 'paid' &&
@@ -127,6 +134,10 @@ export const stripeWebhookController = {
 
       if (session.metadata?.kind === 'package_purchase') {
         await appointmentService.markStripePackagePurchasePaymentFailed(session.id);
+      }
+
+      if (session.metadata?.kind === 'special_service_deposit') {
+        await appointmentService.markSpecialServiceDepositFailed(session.id);
       }
     }
 

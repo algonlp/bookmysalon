@@ -374,11 +374,13 @@ const syncTeamMembers = async (businessId: string, teamMembers: TeamMemberRecord
       name: asText(teamMember.name),
       role: asText(teamMember.role),
       phone: asText(teamMember.phone),
+      email: asNullableText(teamMember.email),
       expertise: asText(teamMember.expertise),
       opening_time: asTime(teamMember.openingTime, '09:00'),
       closing_time: asTime(teamMember.closingTime, '18:00'),
       off_days: asStringArray(teamMember.offDays),
       is_active: asBoolean(teamMember.isActive, true),
+      username: asNullableText(teamMember.username),
       created_at: asTimestamp(teamMember.createdAt),
       updated_at: asTimestamp(teamMember.updatedAt)
     })),
@@ -398,6 +400,7 @@ const syncServices = async (businessId: string, services: ClientRecord['services
       price_label: asText(service.priceLabel),
       description: asText(service.description),
       is_active: asBoolean(service.isActive, true),
+      is_special_service: asBoolean(service.isSpecialService, false),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })),
@@ -776,6 +779,10 @@ export const syncAppointmentToRelational = async (
         package_total_uses: asNullableNumber(appointment.packageTotalUses),
         loyalty_reward_id: loyaltyRewardId,
         loyalty_reward_label: asText(appointment.loyaltyRewardLabel),
+        deposit_amount_value: appointment.depositAmountValue ?? null,
+        deposit_currency_code: asNullableText(appointment.depositCurrencyCode),
+        deposit_checkout_session_id: asNullableText(appointment.depositCheckoutSessionId),
+        deposit_paid_at: appointment.depositPaidAt ? asTimestamp(appointment.depositPaidAt) : null,
         created_at: asTimestamp(appointment.createdAt),
         updated_at: asTimestamp(appointment.updatedAt)
       }

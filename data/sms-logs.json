@@ -63,6 +63,70 @@
       "body": "Hi sir! styleone_fsd has 20% off Deep tissue massage this week. Book now: http://localhost:8003/book/4a3b9419-7244-4fb5-99f8-771afb24ce7f?campaign=1e559a60-708a-4f9d-bec2-657415929cba",
       "messageId": "SM6ff1a1023211374185653b78089f57b5",
       "createdAt": "2026-07-07T15:53:55.485Z"
+    },
+    {
+      "id": "26a566aa-d21c-47bc-8ae3-e610c317f192",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "appointmentId": "34611967-4d63-4c06-8ab1-246828f88928",
+      "recipient": "customer",
+      "channel": "sms",
+      "destination": "+923494548161",
+      "status": "sent",
+      "source": "appointment_confirmation",
+      "body": "Your appointment at styleone_fsd is confirmed for 2026-07-08 at 14:00. Service: Cut and style. Ref: 34611967. Open your live booking link for the countdown and updates: http://localhost:8003/book/4a3b9419-7244-4fb5-99f8-771afb24ce7f/manage/34611967-4d63-4c06-8ab1-246828f88928?accessToken=ea51b334-0cb5-492d-a502-b1add08abd8f",
+      "messageId": "SM10c5df2f0dd95499ad3aa12b23bd0e79",
+      "createdAt": "2026-07-08T08:10:49.556Z"
+    },
+    {
+      "id": "888e0341-d737-4e43-8544-6be62eb3b041",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "recipient": "admin",
+      "channel": "sms",
+      "destination": "+923230785312",
+      "status": "sent",
+      "source": "staff_credentials",
+      "body": "Welcome to styleone_fsd! Your staff login - Username: nisha.khan977 Password: 9YBL6QPhxy. Log in at http://localhost:8003/barber-login",
+      "messageId": "SM1d4569e755eba2057873d0b9a38a1cd0",
+      "createdAt": "2026-07-08T09:47:47.987Z"
+    },
+    {
+      "id": "ed539f0e-f264-4b19-a3d0-f6b07e9b7835",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "appointmentId": "2f58edab-232b-4d95-a3fe-9897599db553",
+      "recipient": "customer",
+      "channel": "sms",
+      "destination": "+9212345678909",
+      "status": "failed",
+      "source": "appointment_confirmation",
+      "body": "Your appointment at styleone_fsd is confirmed for 2026-07-09 at 12:00. Service: Manicure. Ref: 2f58edab. Open your live booking link for the countdown and updates: http://localhost:8003/book/4a3b9419-7244-4fb5-99f8-771afb24ce7f/manage/2f58edab-232b-4d95-a3fe-9897599db553?accessToken=910914d4-361f-4c74-96fd-80b67b2d9b96",
+      "reason": "Twilio error 21211: Invalid 'To' Phone Number: +921234567XXXX",
+      "createdAt": "2026-07-09T06:08:09.472Z"
+    },
+    {
+      "id": "35884633-fc09-470e-afce-79c801f96934",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "appointmentId": "5bdc6a61-7ca9-4e94-8f1a-062ca7f9a1d5",
+      "recipient": "customer",
+      "channel": "sms",
+      "destination": "+923494548161",
+      "status": "sent",
+      "source": "appointment_confirmation",
+      "body": "Your appointment at styleone_fsd is confirmed for 2026-07-09 at 14:00. Service: Manicure. Ref: 5bdc6a61. Open your live booking link for the countdown and updates: http://localhost:8003/book/4a3b9419-7244-4fb5-99f8-771afb24ce7f/manage/5bdc6a61-7ca9-4e94-8f1a-062ca7f9a1d5?accessToken=6d374ec7-8341-4d59-bdfa-ec44458df7c4",
+      "messageId": "SMd5a683db4ae5a6785b5f7cdcb74045c8",
+      "createdAt": "2026-07-09T06:16:53.291Z"
+    },
+    {
+      "id": "74ec4899-33f7-4053-8149-b5c5f152c777",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "appointmentId": "abd53b35-16e6-4a23-b73e-942f55b4ee90",
+      "recipient": "customer",
+      "channel": "sms",
+      "destination": "+9212345678909",
+      "status": "failed",
+      "source": "appointment_confirmation",
+      "body": "Your appointment at styleone_fsd is confirmed for 2026-07-09 at 15:00. Service: Manicure. Ref: abd53b35. Open your live booking link for the countdown and updates: http://localhost:8003/book/4a3b9419-7244-4fb5-99f8-771afb24ce7f/manage/abd53b35-16e6-4a23-b73e-942f55b4ee90?accessToken=e9b69020-36ad-404f-b503-dbbd9dcd6b79",
+      "reason": "Twilio error 21211: Invalid 'To' Phone Number: +921234567XXXX",
+      "createdAt": "2026-07-09T06:37:41.853Z"
     }
   ]
 }

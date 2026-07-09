@@ -83,6 +83,11 @@ clientPlatformRouter.delete(
   asyncHandler(clientPlatformController.removeTeamMember)
 );
 clientPlatformRouter.post(
+  '/platform/clients/:clientId/team-members/:teamMemberId/credentials/reset',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(clientPlatformController.resetTeamMemberCredentials)
+);
+clientPlatformRouter.post(
   '/platform/clients/:clientId/services',
   asyncHandler(requirePlatformAdminAccess),
   asyncHandler(clientPlatformController.addService)

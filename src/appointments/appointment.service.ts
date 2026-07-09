@@ -135,6 +135,49 @@ const allowPlatformPackagePaymentsInStripeTestMode = (): boolean =>
   env.STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE &&
   env.STRIPE_SECRET_KEY?.startsWith('sk_test_') === true;
 
+const resolveDefaultOrigin = (): string => env.PUBLIC_BASE_URL || `http://localhost:${env.PORT}`;
+
+const resolveStripeDestinationAccountId = async (
+  business: Awaited<ReturnType<typeof getBusinessOrThrow>>
+): Promise<string | undefined> => {
+  const stripeConnectAccount = business.stripeConnectAccount;
+
+  if (!stripeConnectAccount?.accountId) {
+    if (!allowPlatformPackagePaymentsInStripeTestMode()) {
+      throw new HttpError(
+        409,
+        'This salon must complete Stripe Connect onboarding before accepting online payments'
+      );
+    }
+
+    return undefined;
+  }
+
+  const liveStripeAccount = stripePaymentService.toConnectAccountStatus(
+    await stripePaymentService.retrieveConnectAccount(stripeConnectAccount.accountId)
+  );
+
+  if (!liveStripeAccount.chargesEnabled || !liveStripeAccount.payoutsEnabled) {
+    throw new HttpError(
+      409,
+      'This salon must complete Stripe Connect onboarding before accepting online payments'
+    );
+  }
+
+  const stripeStatusUpdatedAt = new Date().toISOString();
+  await clientPlatformRepository.saveClient({
+    ...business,
+    stripeConnectAccount: {
+      ...liveStripeAccount,
+      createdAt: stripeConnectAccount.createdAt,
+      updatedAt: stripeStatusUpdatedAt
+    },
+    updatedAt: stripeStatusUpdatedAt
+  });
+
+  return liveStripeAccount.accountId;
+};
+
 const getBusinessDisplayName = (
   business: Awaited<ReturnType<typeof getBusinessOrThrow>>
 ): string => {
@@ -1078,7 +1121,7 @@ const createSlotBlockSets = (
   for (const appointment of appointments) {
     if (
       appointment.appointmentDate !== appointmentDate ||
-      appointment.status !== 'booked' ||
+      (appointment.status !== 'booked' && appointment.status !== 'pending_deposit') ||
       appointment.id === excludeAppointmentId
     ) {
       continue;
@@ -1943,9 +1986,10 @@ export const appointmentService = {
     origin: string
   ): Promise<{
     appointment: AppointmentRecord;
-    notifications: NotificationDispatchResult[];
-    publicAccessToken: string;
-    manageLink: string;
+    notifications?: NotificationDispatchResult[];
+    publicAccessToken?: string;
+    manageLink?: string;
+    checkoutUrl?: string;
   }> {
     await ensurePublicBookingIsEnabled(businessId);
     const business = await getBusinessOrThrow(businessId);
@@ -2050,6 +2094,16 @@ export const appointmentService = {
       if (activeWaitlistClaim.customerKey !== customerKey) {
         throw new HttpError(409, 'This waitlist offer belongs to a different customer');
       }
+    }
+
+    if (
+      selectedService.isSpecialService &&
+      (input.packagePurchaseId || input.packagePlanId || input.loyaltyRewardId || activeWaitlistClaim)
+    ) {
+      throw new HttpError(
+        400,
+        'Special services require a direct deposit payment and can’t be combined with packages or rewards'
+      );
     }
 
     if (input.packagePurchaseId) {
@@ -2206,6 +2260,76 @@ export const appointmentService = {
       createdAt: now,
       updatedAt: now
     };
+
+    if (selectedService.isSpecialService) {
+      if (!env.STRIPE_SECRET_KEY) {
+        throw new HttpError(503, 'Stripe is not configured');
+      }
+
+      const fullPriceCents = parseAmountCentsFromPriceLabel(selectedService.priceLabel);
+
+      if (!fullPriceCents) {
+        throw new HttpError(
+          400,
+          'Service price must include a numeric amount before a deposit can be collected'
+        );
+      }
+
+      const depositAmountCents = Math.max(1, Math.round(fullPriceCents * 0.05));
+      const depositCurrencyCode = (
+        serviceMoney.currencyCode ||
+        business.businessSettings?.currencyCode ||
+        env.STRIPE_PACKAGE_PAYMENT_CURRENCY_CODE ||
+        env.DEFAULT_BUSINESS_CURRENCY_CODE
+      ).toUpperCase();
+
+      const pendingAppointment: AppointmentRecord = {
+        ...appointment,
+        status: 'pending_deposit',
+        depositAmountValue: depositAmountCents / 100,
+        depositCurrencyCode
+      };
+
+      await appointmentRepository.saveAppointment(pendingAppointment);
+
+      const checkoutSession = await stripePaymentService
+        .createSpecialServiceDepositCheckoutSession({
+          appointmentId: pendingAppointment.id,
+          businessId,
+          serviceName: selectedService.name,
+          customerEmail,
+          businessName: business.businessName,
+          amountCents: depositAmountCents,
+          currencyCode: depositCurrencyCode,
+          successUrl: `${origin}/book/${businessId}?specialServiceCheckout=success&session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${origin}/book/${businessId}?specialServiceCheckout=cancelled`
+        })
+        .catch(async (error: unknown) => {
+          await appointmentRepository.saveAppointment({
+            ...pendingAppointment,
+            status: 'cancelled',
+            updatedAt: new Date().toISOString()
+          });
+          throw error;
+        });
+
+      if (!checkoutSession.url) {
+        throw new HttpError(502, 'Stripe checkout session did not return a checkout URL');
+      }
+
+      const updatedAppointment: AppointmentRecord = {
+        ...pendingAppointment,
+        depositCheckoutSessionId: checkoutSession.id,
+        updatedAt: new Date().toISOString()
+      };
+
+      await appointmentRepository.saveAppointment(updatedAppointment);
+
+      return {
+        appointment: updatedAppointment,
+        checkoutUrl: checkoutSession.url
+      };
+    }
 
     const consumedSubscription = await billingService.consumeAppointmentCreditForBooking(businessId);
 
@@ -2739,38 +2863,7 @@ export const appointmentService = {
       throw new HttpError(503, 'Stripe is not configured');
     }
 
-    const stripeConnectAccount = business.stripeConnectAccount;
-    let destinationAccountId: string | undefined;
-
-    if (stripeConnectAccount?.accountId) {
-      const liveStripeAccount = stripePaymentService.toConnectAccountStatus(
-        await stripePaymentService.retrieveConnectAccount(stripeConnectAccount.accountId)
-      );
-
-      if (!liveStripeAccount.chargesEnabled || !liveStripeAccount.payoutsEnabled) {
-        throw new HttpError(
-          409,
-          'This salon must complete Stripe Connect onboarding before accepting online payments'
-        );
-      }
-
-      destinationAccountId = liveStripeAccount.accountId;
-      const stripeStatusUpdatedAt = new Date().toISOString();
-      await clientPlatformRepository.saveClient({
-        ...business,
-        stripeConnectAccount: {
-          ...liveStripeAccount,
-          createdAt: stripeConnectAccount.createdAt,
-          updatedAt: stripeStatusUpdatedAt
-        },
-        updatedAt: stripeStatusUpdatedAt
-      });
-    } else if (!allowPlatformPackagePaymentsInStripeTestMode()) {
-      throw new HttpError(
-        409,
-        'This salon must complete Stripe Connect onboarding before accepting online payments'
-      );
-    }
+    const destinationAccountId = await resolveStripeDestinationAccountId(business);
 
     const packagePurchase: PackagePurchaseRecord = {
       id: randomUUID(),
@@ -2888,6 +2981,79 @@ export const appointmentService = {
     return { packagePurchase: updatedPackagePurchase };
   },
 
+  async activateSpecialServiceDeposit(
+    checkoutSessionId: string,
+    _paymentIntentId?: string
+  ): Promise<{ appointment: AppointmentRecord | null }> {
+    const appointment = (await appointmentRepository.listAppointments()).find(
+      (entry) => entry.depositCheckoutSessionId === checkoutSessionId
+    );
+
+    if (!appointment) {
+      return { appointment: null };
+    }
+
+    if (appointment.status === 'booked') {
+      return { appointment };
+    }
+
+    const now = new Date().toISOString();
+    const updatedAppointment: AppointmentRecord = {
+      ...appointment,
+      status: 'booked',
+      depositPaidAt: now,
+      updatedAt: now
+    };
+
+    await appointmentRepository.saveAppointment(updatedAppointment);
+
+    await appointmentRepository.savePaymentRecord({
+      id: randomUUID(),
+      businessId: updatedAppointment.businessId,
+      appointmentId: updatedAppointment.id,
+      customerName: updatedAppointment.customerName,
+      serviceName: updatedAppointment.serviceName,
+      teamMemberName: updatedAppointment.teamMemberName,
+      appointmentDate: updatedAppointment.appointmentDate,
+      appointmentTime: updatedAppointment.appointmentTime,
+      currencyCode: updatedAppointment.depositCurrencyCode || updatedAppointment.currencyCode || '',
+      amountValue: updatedAppointment.depositAmountValue ?? 0,
+      entryType: 'payment',
+      method: 'card',
+      status: 'posted',
+      note: 'Advance deposit (5%)',
+      createdAt: now,
+      updatedAt: now
+    });
+
+    await billingService.consumeAppointmentCreditForBooking(updatedAppointment.businessId);
+
+    await sendAppointmentConfirmationNotification(updatedAppointment, resolveDefaultOrigin(), 'booked');
+
+    return { appointment: updatedAppointment };
+  },
+
+  async markSpecialServiceDepositFailed(
+    checkoutSessionId: string
+  ): Promise<{ appointment: AppointmentRecord | null }> {
+    const appointment = (await appointmentRepository.listAppointments()).find(
+      (entry) => entry.depositCheckoutSessionId === checkoutSessionId
+    );
+
+    if (!appointment || appointment.status !== 'pending_deposit') {
+      return { appointment: appointment ?? null };
+    }
+
+    const updatedAppointment: AppointmentRecord = {
+      ...appointment,
+      status: 'cancelled',
+      updatedAt: new Date().toISOString()
+    };
+
+    await appointmentRepository.saveAppointment(updatedAppointment);
+    return { appointment: updatedAppointment };
+  },
+
   async getDashboardCommerce(businessId: string): Promise<DashboardCommerceViewModel> {
     const business = await getBusinessOrThrow(businessId);
     const [packagePurchases, loyaltyRewards] = await Promise.all([
@@ -2915,6 +3081,47 @@ export const appointmentService = {
   async listAppointmentsForBusiness(businessId: string): Promise<AppointmentRecord[]> {
     await getBusinessOrThrow(businessId);
     return normalizeAppointmentsForBusiness(businessId);
+  },
+
+  async listAppointmentsForTeamMember(
+    businessId: string,
+    teamMemberId: string
+  ): Promise<AppointmentRecord[]> {
+    await getBusinessOrThrow(businessId);
+    const appointments = await normalizeAppointmentsForBusiness(businessId);
+    return appointments.filter((appointment) => appointment.teamMemberId === teamMemberId);
+  },
+
+  async listPaymentsForTeamMember(
+    businessId: string,
+    teamMemberId: string
+  ): Promise<{
+    summary: PaymentSnapshot;
+    balances: AppointmentPaymentBalance[];
+    payments: PaymentRecord[];
+  }> {
+    await getBusinessOrThrow(businessId);
+    const [allAppointments, allPaymentRecords] = await Promise.all([
+      normalizeAppointmentsForBusiness(businessId),
+      listBusinessPaymentRecords(businessId)
+    ]);
+    const memberAppointments = allAppointments.filter(
+      (appointment) => appointment.teamMemberId === teamMemberId
+    );
+    const memberAppointmentIds = new Set(memberAppointments.map((appointment) => appointment.id));
+    const memberPaymentRecords = allPaymentRecords.filter((payment) =>
+      memberAppointmentIds.has(payment.appointmentId)
+    );
+    const { summary, balances } = buildPaymentSnapshotForAppointments(
+      memberAppointments,
+      memberPaymentRecords
+    );
+
+    return {
+      summary,
+      balances,
+      payments: memberPaymentRecords.sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+    };
   },
 
   async listWaitlistForBusiness(

@@ -8,6 +8,7 @@ import { healthRouter } from './health.route';
 import { locationRouter } from './location.route';
 import { marketingRouter } from './marketing.route';
 import { publicConfigRouter } from './publicConfig.route';
+import { staffAuthRouter } from './staffAuth.route';
 
 export const apiRouter = Router();
 
@@ -20,3 +21,4 @@ apiRouter.use('/', customerAuthRouter);
 apiRouter.use('/', customerAccountRouter);
 apiRouter.use('/', clientPlatformRouter);
 apiRouter.use('/', marketingRouter);
+apiRouter.use('/', staffAuthRouter);

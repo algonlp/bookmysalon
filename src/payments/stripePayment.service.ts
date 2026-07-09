@@ -25,6 +25,19 @@ interface CreatePackageCheckoutSessionInput {
   destinationAccountId?: string;
 }
 
+interface CreateSpecialServiceDepositCheckoutSessionInput {
+  appointmentId: string;
+  businessId: string;
+  serviceName: string;
+  customerEmail?: string;
+  businessName?: string;
+  amountCents: number;
+  currencyCode: string;
+  successUrl: string;
+  cancelUrl: string;
+  destinationAccountId?: string;
+}
+
 interface CreateSubscriptionCheckoutSessionInput {
   businessId: string;
   businessName?: string;
@@ -57,6 +70,20 @@ const getStripeChargeMoney = (
 
     return {
       amountCents: Math.max(1, Math.round(amountCents * env.STRIPE_PKR_TO_GBP_RATE)),
+      currencyCode: chargeCurrencyCode
+    };
+  }
+
+  if (sourceCurrencyCode === 'USD' && chargeCurrencyCode === 'GBP') {
+    if (!env.STRIPE_USD_TO_GBP_RATE) {
+      throw new HttpError(
+        503,
+        'STRIPE_USD_TO_GBP_RATE is required when charging USD prices in GBP'
+      );
+    }
+
+    return {
+      amountCents: Math.max(1, Math.round(amountCents * env.STRIPE_USD_TO_GBP_RATE)),
       currencyCode: chargeCurrencyCode
     };
   }
@@ -270,6 +297,72 @@ export const stripePaymentService = {
         businessId: input.packagePurchase.businessId,
         packagePurchaseId: input.packagePurchase.id,
         packagePlanId: input.packagePurchase.packagePlanId,
+        sourceAmountCents: String(input.amountCents),
+        sourceCurrencyCode: input.currencyCode,
+        chargeAmountCents: String(chargeMoney.amountCents),
+        chargeCurrencyCode: chargeMoney.currencyCode
+      },
+      payment_intent_data: paymentIntentData,
+      success_url: input.successUrl,
+      cancel_url: input.cancelUrl
+    });
+  },
+
+  async createSpecialServiceDepositCheckoutSession(
+    input: CreateSpecialServiceDepositCheckoutSessionInput
+  ): Promise<StripeCheckoutSession> {
+    const chargeMoney = getStripeChargeMoney(input.amountCents, input.currencyCode);
+    const paymentIntentData: StripePaymentIntentData = {
+      metadata: {
+        businessId: input.businessId,
+        appointmentId: input.appointmentId,
+        sourceAmountCents: String(input.amountCents),
+        sourceCurrencyCode: input.currencyCode,
+        chargeAmountCents: String(chargeMoney.amountCents),
+        chargeCurrencyCode: chargeMoney.currencyCode
+      }
+    };
+
+    if (input.destinationAccountId) {
+      paymentIntentData.transfer_data = {
+        destination: input.destinationAccountId
+      };
+      paymentIntentData.on_behalf_of = input.destinationAccountId;
+    }
+
+    const salonLabel = input.businessName?.trim() || input.businessId;
+
+    return getStripeClient().checkout.sessions.create({
+      mode: 'payment',
+      customer_email: input.customerEmail || undefined,
+      client_reference_id: input.appointmentId,
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: chargeMoney.currencyCode.toLowerCase(),
+            unit_amount: chargeMoney.amountCents,
+            product_data: {
+              name: `${input.serviceName} — 5% advance deposit at ${salonLabel}`,
+              metadata: {
+                businessId: input.businessId,
+                appointmentId: input.appointmentId,
+                sourceAmountCents: String(input.amountCents),
+                sourceCurrencyCode: input.currencyCode
+              }
+            }
+          }
+        }
+      ],
+      custom_text: {
+        submit: {
+          message: `QRSchedule — advance deposit for ${input.serviceName} at ${salonLabel}`
+        }
+      },
+      metadata: {
+        kind: 'special_service_deposit',
+        businessId: input.businessId,
+        appointmentId: input.appointmentId,
         sourceAmountCents: String(input.amountCents),
         sourceCurrencyCode: input.currencyCode,
         chargeAmountCents: String(chargeMoney.amountCents),

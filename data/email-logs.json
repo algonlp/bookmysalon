@@ -29,6 +29,63 @@
       "source": "marketing_campaign",
       "subject": "20% off at styleone_fsd",
       "createdAt": "2026-07-07T15:53:58.913Z"
+    },
+    {
+      "id": "61d417a6-07e7-44bf-b450-31a978951fc7",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "appointmentId": "34611967-4d63-4c06-8ab1-246828f88928",
+      "recipient": "customer",
+      "destination": "",
+      "status": "skipped",
+      "source": "appointment_confirmation",
+      "subject": "Your appointment at styleone_fsd is confirmed",
+      "reason": "Recipient email is missing",
+      "createdAt": "2026-07-08T08:10:48.685Z"
+    },
+    {
+      "id": "6937dc1c-c8e8-458f-bfbd-38ef7e683a46",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "recipient": "admin",
+      "destination": "maqsoodparacha1479@gmail.com",
+      "status": "sent",
+      "source": "welcome",
+      "subject": "Welcome to styleone_fsd, nisha khan!",
+      "createdAt": "2026-07-08T09:47:51.393Z"
+    },
+    {
+      "id": "afec321e-8a6b-4afc-b1d8-1f0d631a898c",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "appointmentId": "2f58edab-232b-4d95-a3fe-9897599db553",
+      "recipient": "customer",
+      "destination": "",
+      "status": "skipped",
+      "source": "appointment_confirmation",
+      "subject": "Your appointment at styleone_fsd is confirmed",
+      "reason": "Recipient email is missing",
+      "createdAt": "2026-07-09T06:08:08.525Z"
+    },
+    {
+      "id": "95e5a2cf-d566-4cf8-ae71-5a7b17f95b54",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "appointmentId": "5bdc6a61-7ca9-4e94-8f1a-062ca7f9a1d5",
+      "recipient": "customer",
+      "destination": "maqsoodparacha1479@gmail.com",
+      "status": "sent",
+      "source": "appointment_confirmation",
+      "subject": "Your appointment at styleone_fsd is confirmed",
+      "createdAt": "2026-07-09T06:16:56.061Z"
+    },
+    {
+      "id": "0a87f807-62d0-4822-874e-151d2f1a361b",
+      "businessId": "4a3b9419-7244-4fb5-99f8-771afb24ce7f",
+      "appointmentId": "abd53b35-16e6-4a23-b73e-942f55b4ee90",
+      "recipient": "customer",
+      "destination": "",
+      "status": "skipped",
+      "source": "appointment_confirmation",
+      "subject": "Your appointment at styleone_fsd is confirmed",
+      "reason": "Recipient email is missing",
+      "createdAt": "2026-07-09T06:37:41.268Z"
     }
   ]
 }
