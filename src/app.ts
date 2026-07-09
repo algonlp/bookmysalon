@@ -7,6 +7,7 @@ import { errorHandler } from './api/middlewares/errorHandler';
 import { notFoundHandler } from './api/middlewares/notFound';
 import { asyncHandler } from './api/middlewares/asyncHandler';
 import { requirePlatformAdminPageAccess } from './api/middlewares/requirePlatformAdminAccess';
+import { requireStaffPageAccess } from './api/middlewares/requireStaffAccess';
 import { stripeWebhookController } from './api/controllers/stripeWebhook.controller';
 
 export const app = express();
@@ -88,6 +89,14 @@ app.get('/login', (_req, res) => {
 
 app.get('/customer-login', (_req, res) => {
   res.sendFile(resolve(publicDir, 'customer-login.html'));
+});
+
+app.get('/barber-login', (_req, res) => {
+  res.sendFile(resolve(publicDir, 'barber-login.html'));
+});
+
+app.get('/barber-dashboard', requireStaffPageAccess, (_req, res) => {
+  res.sendFile(resolve(publicDir, 'barber-dashboard.html'));
 });
 
 app.get('/profile', (_req, res) => {

@@ -1,6 +1,6 @@
 import type { ServiceLocation } from '../platform/serviceLocation.constants';
 
-export type AppointmentStatus = 'booked' | 'cancelled' | 'completed';
+export type AppointmentStatus = 'booked' | 'cancelled' | 'completed' | 'pending_deposit';
 
 export type AppointmentSource =
   | 'qr'
@@ -34,6 +34,7 @@ export interface BusinessService {
   priceLabel: string;
   description: string;
   isActive: boolean;
+  isSpecialService: boolean;
 }
 
 export interface AppointmentRecord {
@@ -67,6 +68,11 @@ export interface AppointmentRecord {
   packageTotalUses?: number;
   loyaltyRewardId?: string;
   loyaltyRewardLabel?: string;
+  campaignId?: string;
+  depositAmountValue?: number;
+  depositCurrencyCode?: string;
+  depositCheckoutSessionId?: string;
+  depositPaidAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -80,6 +86,7 @@ export interface AppointmentServiceOption {
   description: string;
   isPackageHighlighted?: boolean;
   highlightedPackageNames?: string[];
+  isSpecialService?: boolean;
 }
 
 export interface AppointmentTeamMemberOption {
@@ -149,6 +156,7 @@ export interface CreateAppointmentInput {
   loyaltyRewardId?: string;
   waitlistEntryId?: string;
   waitlistOfferToken?: string;
+  campaignId?: string;
 }
 
 export interface PublicBookingPage {

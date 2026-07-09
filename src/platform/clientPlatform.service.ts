@@ -1,4 +1,4 @@
-import { randomUUID } from 'crypto';
+import { randomInt, randomUUID } from 'crypto';
 import { env } from '../config/env';
 import { HttpError } from '../shared/errors/httpError';
 import { hashAdminToken, hashPassword } from '../shared/hashToken';
@@ -26,7 +26,9 @@ import { formatInTimeZone } from '../shared/time';
 import { stripePaymentService } from '../payments/stripePayment.service';
 import type {
   AccountTypeInput,
+  AddBranchInput,
   AuthenticateGoogleClientInput,
+  BranchSummary,
   BusinessProfileInput,
   BusinessSettingsRecord,
   ClientRecord,
@@ -40,6 +42,7 @@ import type {
   DashboardCommerceViewModel,
   DashboardUiCopy,
   DashboardViewModel,
+  GeneratedStaffCredentials,
   LaunchLinksViewModel,
   LoyaltyProgramRecord,
   PackagePlanRecord,
@@ -47,6 +50,7 @@ import type {
   ProductSaleRecord,
   PublicClientRecord,
   PublicSalonShowcaseItem,
+  PublicTeamMemberRecord,
   PreferredLanguage,
   ReportMetadataRecord,
   SalonImagesInput,
@@ -1158,12 +1162,19 @@ const sanitizeTeamMember = (
         ? teamMember.role.trim()
         : 'Barber',
     phone: typeof teamMember.phone === 'string' ? teamMember.phone.trim() : '',
+    email:
+      typeof teamMember.email === 'string' && teamMember.email.trim().length > 0
+        ? teamMember.email.trim()
+        : undefined,
     expertise:
       typeof teamMember.expertise === 'string' ? teamMember.expertise.trim() : '',
     openingTime: hasValidTimeRange ? openingTime : defaultTimeRange.openingTime,
     closingTime: hasValidTimeRange ? closingTime : defaultTimeRange.closingTime,
     offDays: normalizeTeamMemberOffDays(teamMember.offDays),
     isActive: teamMember.isActive !== false,
+    username: typeof teamMember.username === 'string' ? teamMember.username : undefined,
+    passwordHash: typeof teamMember.passwordHash === 'string' ? teamMember.passwordHash : undefined,
+    staffToken: typeof teamMember.staffToken === 'string' ? teamMember.staffToken : undefined,
     createdAt:
       typeof teamMember.createdAt === 'string' && teamMember.createdAt.trim().length > 0
         ? teamMember.createdAt
@@ -1182,6 +1193,21 @@ const normalizeTeamMembers = (
   teamMembers
     .map((teamMember, index) => sanitizeTeamMember(teamMember, index, businessSettings))
     .filter((teamMember): teamMember is TeamMemberRecord => !!teamMember);
+
+const toPublicTeamMember = (teamMember: TeamMemberRecord): PublicTeamMemberRecord => {
+  const { passwordHash: _passwordHash, staffToken: _staffToken, ...publicFields } = teamMember;
+
+  return {
+    ...publicFields,
+    hasLoginAccess: Boolean(teamMember.passwordHash)
+  };
+};
+
+const toPublicTeamMembers = (
+  teamMembers: TeamMemberRecord[],
+  businessSettings: BusinessSettingsRecord | null | undefined
+): PublicTeamMemberRecord[] =>
+  normalizeTeamMembers(teamMembers, businessSettings).map(toPublicTeamMember);
 
 const sanitizePackagePlan = (
   packagePlan: Partial<PackagePlanRecord>,
@@ -1582,12 +1608,13 @@ const toPublicClientRecord = (client: ClientRecord): PublicClientRecord => ({
   loyaltyProgram: normalizeLoyaltyProgram(client.loyaltyProgram),
   businessSettings: normalizeBusinessSettings(client.businessSettings),
   customerProfiles: normalizeCustomerProfiles(client.customerProfiles ?? []),
-  teamMembers: normalizeTeamMembers(client.teamMembers ?? [], client.businessSettings),
+  teamMembers: toPublicTeamMembers(client.teamMembers ?? [], client.businessSettings),
   accountType: client.accountType,
   serviceLocation: normalizeServiceLocations(client.serviceLocation),
   venueAddress: client.venueAddress,
   preferredLanguage: normalizePreferredLanguage(client.preferredLanguage),
   onboardingCompleted: client.onboardingCompleted,
+  linkedBusinessIds: Array.isArray(client.linkedBusinessIds) ? client.linkedBusinessIds : [],
   createdAt: client.createdAt,
   updatedAt: client.updatedAt
 });
@@ -1942,7 +1969,8 @@ const hydrateClientRecord = (client: ClientRecord): ClientRecord => {
     loyaltyProgram: normalizeLoyaltyProgram(client.loyaltyProgram),
     customerProfiles: normalizeCustomerProfiles(client.customerProfiles ?? []),
     teamMembers: normalizeTeamMembers(client.teamMembers ?? [], businessSettings),
-    preferredLanguage: normalizePreferredLanguage(client.preferredLanguage)
+    preferredLanguage: normalizePreferredLanguage(client.preferredLanguage),
+    linkedBusinessIds: Array.isArray(client.linkedBusinessIds) ? client.linkedBusinessIds : []
   };
 };
 
@@ -2000,6 +2028,57 @@ const findClientByLoginInput = async (
   return null;
 };
 
+const normalizeStaffUsername = (value: string | undefined): string =>
+  typeof value === 'string' ? value.trim().toLowerCase() : '';
+
+const slugifyStaffUsername = (name: string): string =>
+  name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '.')
+    .replace(/^\.+|\.+$/g, '') || 'barber';
+
+const generateStaffPassword = (): string => String(randomInt(0, 1000000)).padStart(6, '0');
+
+const findTeamMemberByUsername = async (
+  username: string
+): Promise<{ client: ClientRecord; teamMember: TeamMemberRecord } | null> => {
+  const normalized = normalizeStaffUsername(username);
+
+  if (!normalized) {
+    return null;
+  }
+
+  const clients = (await clientPlatformRepository.listClients()).map(hydrateClientRecord);
+
+  for (const client of clients) {
+    const teamMember = client.teamMembers.find(
+      (member) => normalizeStaffUsername(member.username) === normalized
+    );
+
+    if (teamMember) {
+      return { client, teamMember };
+    }
+  }
+
+  return null;
+};
+
+const generateUniqueStaffUsername = async (name: string): Promise<string> => {
+  const base = slugifyStaffUsername(name);
+
+  for (let attempt = 0; attempt < 25; attempt += 1) {
+    const suffix = Math.floor(100 + Math.random() * 900);
+    const candidate = `${base}${suffix}`;
+
+    if (!(await findTeamMemberByUsername(candidate))) {
+      return candidate;
+    }
+  }
+
+  return `${base}${randomUUID().slice(0, 8)}`;
+};
+
 const createClientRecord = async (input: CreateClientInput): Promise<{ client: ClientRecord; plainAdminToken: string }> => {
   const now = new Date().toISOString();
   const normalizedEmail = normalizeClientEmail(input.email);
@@ -2043,6 +2122,7 @@ const createClientRecord = async (input: CreateClientInput): Promise<{ client: C
     venueAddress: '',
     preferredLanguage: null,
     onboardingCompleted: false,
+    linkedBusinessIds: [],
     createdAt: now,
     updatedAt: now
   };
@@ -2093,6 +2173,62 @@ export const clientPlatformService = {
       plainAdminToken,
       nextStep: getNextClientStep(updatedClient)
     };
+  },
+
+  async addBranch(sourceClientId: string, input: AddBranchInput): Promise<{ branch: ClientRecord }> {
+    const sourceClient = await getClientOrThrow(sourceClientId);
+
+    const { client: branch } = await createClientRecord({
+      businessName: input.businessName,
+      provider: 'email'
+    });
+
+    const siblingIds = [sourceClientId, ...sourceClient.linkedBusinessIds];
+
+    await updateClient(branch.id, (current) => ({
+      ...current,
+      linkedBusinessIds: siblingIds,
+      updatedAt: new Date().toISOString()
+    }));
+
+    for (const siblingId of siblingIds) {
+      await updateClient(siblingId, (current) => ({
+        ...current,
+        linkedBusinessIds: [
+          ...current.linkedBusinessIds.filter((id) => id !== branch.id),
+          branch.id
+        ],
+        updatedAt: new Date().toISOString()
+      }));
+    }
+
+    return { branch: await getClientOrThrow(branch.id) };
+  },
+
+  async switchToLinkedBranch(
+    currentClientId: string,
+    targetBranchId: string
+  ): Promise<{ client: ClientRecord; plainAdminToken: string; nextStep: string }> {
+    const currentClient = await getClientOrThrow(currentClientId);
+
+    if (!currentClient.linkedBusinessIds.includes(targetBranchId)) {
+      throw new HttpError(403, 'This business is not linked to your account');
+    }
+
+    return clientPlatformService.loginClientById(targetBranchId);
+  },
+
+  async listLinkedBranches(clientId: string): Promise<BranchSummary[]> {
+    const client = await getClientOrThrow(clientId);
+
+    const branches = await Promise.all(
+      client.linkedBusinessIds.map(async (branchId) => {
+        const branch = await clientPlatformRepository.getClientById(branchId);
+        return branch ? { id: branch.id, businessName: branch.businessName } : null;
+      })
+    );
+
+    return branches.filter((branch): branch is BranchSummary => branch !== null);
   },
 
   async authenticateGoogleClient(
@@ -2427,35 +2563,57 @@ export const clientPlatformService = {
     }));
   },
 
-  addTeamMember(clientId: string, input: CreateTeamMemberInput): Promise<ClientRecord> {
-    return updateClient(clientId, (client) => {
+  async addTeamMember(
+    clientId: string,
+    input: CreateTeamMemberInput
+  ): Promise<{
+    client: ClientRecord;
+    teamMember: TeamMemberRecord;
+    generatedCredentials: GeneratedStaffCredentials;
+  }> {
+    const username = await generateUniqueStaffUsername(input.name);
+    const plainPassword = generateStaffPassword();
+    const newTeamMemberId = randomUUID();
+
+    const client = await updateClient(clientId, (current) => {
       const now = new Date().toISOString();
       const nextTeamMember = sanitizeTeamMember(
         {
-          id: randomUUID(),
+          id: newTeamMemberId,
           name: input.name,
-          role: input.role?.trim() || getDefaultTeamMemberRole(client),
+          role: input.role?.trim() || getDefaultTeamMemberRole(current),
           phone: input.phone,
+          email: input.email,
           expertise: input.expertise,
           openingTime: input.openingTime,
           closingTime: input.closingTime,
           offDays: input.offDays,
           isActive: input.isActive !== false,
+          username,
+          passwordHash: hashPassword(plainPassword),
           createdAt: now,
           updatedAt: now
         },
-        client.teamMembers.length,
-        client.businessSettings
+        current.teamMembers.length,
+        current.businessSettings
       );
 
       return {
-        ...client,
+        ...current,
         teamMembers: nextTeamMember
-          ? [...client.teamMembers, nextTeamMember]
-          : [...client.teamMembers],
+          ? [...current.teamMembers, nextTeamMember]
+          : [...current.teamMembers],
         updatedAt: now
       };
     });
+
+    const teamMember = client.teamMembers.find((member) => member.id === newTeamMemberId);
+
+    if (!teamMember) {
+      throw new HttpError(400, 'Team member name is required');
+    }
+
+    return { client, teamMember, generatedCredentials: { username, password: plainPassword } };
   },
 
   updateTeamMember(
@@ -2477,6 +2635,7 @@ export const clientPlatformService = {
           name: input.name,
           role: input.role?.trim() || existingTeamMember.role || getDefaultTeamMemberRole(client),
           phone: input.phone,
+          email: input.email,
           expertise: input.expertise,
           openingTime: input.openingTime,
           closingTime: input.closingTime,
@@ -2500,6 +2659,112 @@ export const clientPlatformService = {
         updatedAt: now
       };
     });
+  },
+
+  async resetTeamMemberCredentials(
+    clientId: string,
+    teamMemberId: string
+  ): Promise<{
+    client: ClientRecord;
+    teamMember: TeamMemberRecord;
+    generatedCredentials: GeneratedStaffCredentials;
+  }> {
+    const existingClient = await getClientOrThrow(clientId);
+    const existingTeamMember = existingClient.teamMembers.find(
+      (teamMember) => teamMember.id === teamMemberId
+    );
+
+    if (!existingTeamMember) {
+      throw new HttpError(404, 'Team member not found');
+    }
+
+    const existingUsername = existingTeamMember.username;
+    const username =
+      typeof existingUsername === 'string' && normalizeStaffUsername(existingUsername)
+        ? existingUsername
+        : await generateUniqueStaffUsername(existingTeamMember.name);
+    const plainPassword = generateStaffPassword();
+
+    const client = await updateClient(clientId, (current) => {
+      const now = new Date().toISOString();
+
+      return {
+        ...current,
+        teamMembers: current.teamMembers.map((teamMember) =>
+          teamMember.id === teamMemberId
+            ? {
+                ...teamMember,
+                username,
+                passwordHash: hashPassword(plainPassword),
+                staffToken: hashAdminToken(randomUUID()),
+                updatedAt: now
+              }
+            : teamMember
+        ),
+        updatedAt: now
+      };
+    });
+
+    const teamMember = client.teamMembers.find((member) => member.id === teamMemberId);
+
+    if (!teamMember) {
+      throw new HttpError(404, 'Team member not found');
+    }
+
+    return { client, teamMember, generatedCredentials: { username, password: plainPassword } };
+  },
+
+  async findTeamMemberForLogin(
+    username: string
+  ): Promise<{ client: ClientRecord; teamMember: TeamMemberRecord } | null> {
+    const match = await findTeamMemberByUsername(username);
+
+    if (!match || match.teamMember.isActive === false || !match.teamMember.passwordHash) {
+      return null;
+    }
+
+    return match;
+  },
+
+  async loginTeamMember(
+    clientId: string,
+    teamMemberId: string
+  ): Promise<{ client: ClientRecord; teamMember: TeamMemberRecord; plainStaffToken: string }> {
+    const plainStaffToken = randomUUID();
+
+    const client = await updateClient(clientId, (current) => {
+      const now = new Date().toISOString();
+
+      return {
+        ...current,
+        teamMembers: current.teamMembers.map((teamMember) =>
+          teamMember.id === teamMemberId
+            ? { ...teamMember, staffToken: hashAdminToken(plainStaffToken), updatedAt: now }
+            : teamMember
+        ),
+        updatedAt: now
+      };
+    });
+
+    const teamMember = client.teamMembers.find((member) => member.id === teamMemberId);
+
+    if (!teamMember) {
+      throw new HttpError(404, 'Team member not found');
+    }
+
+    return { client, teamMember, plainStaffToken };
+  },
+
+  logoutTeamMember(clientId: string, teamMemberId: string): Promise<ClientRecord> {
+    return updateClient(clientId, (client) => ({
+      ...client,
+      teamMembers: client.teamMembers.map((teamMember) =>
+        teamMember.id === teamMemberId
+          ? { ...teamMember, staffToken: hashAdminToken(randomUUID()), updatedAt: new Date().toISOString() }
+          : teamMember
+      ),
+      updatedAt: new Date().toISOString()
+    }));
   },
 
   removeTeamMember(clientId: string, teamMemberId: string): Promise<ClientRecord> {
@@ -2542,7 +2807,8 @@ export const clientPlatformService = {
             categoryName: input.categoryName?.trim() || client.serviceTypes[0]?.trim() || 'General',
             priceLabel: input.priceLabel.trim(),
             description: input.description?.trim() ?? '',
-            isActive: true
+            isActive: true,
+            isSpecialService: input.isSpecialService === true
           }
         ],
         getServiceTemplateOptions(client.businessSettings)
@@ -2577,7 +2843,8 @@ export const clientPlatformService = {
                     input.categoryName?.trim() || existingService.categoryName || client.serviceTypes[0]?.trim() || 'General',
                   priceLabel: input.priceLabel.trim(),
                   description: input.description?.trim() ?? '',
-                  isActive: service.isActive !== false
+                  isActive: service.isActive !== false,
+                  isSpecialService: input.isSpecialService === true
                 }
               : service
           ),

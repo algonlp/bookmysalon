@@ -52,7 +52,7 @@ const normalizePhoneCountryCode = (phoneValue: string | undefined): string => {
   return compactValue.startsWith('+') ? `+${digitsOnly}` : `+${digitsOnly}`;
 };
 
-const normalizeSmsDestination = (phoneValue: string): string => {
+export const normalizeSmsDestination = (phoneValue: string): string => {
   const compactValue =
     typeof phoneValue === 'string' ? phoneValue.trim().replace(/[^\d+]/g, '') : '';
 
@@ -83,7 +83,8 @@ const normalizeSmsDestination = (phoneValue: string): string => {
   return `${defaultCountryCode}${digitsOnly.replace(/^0+/, '')}`;
 };
 
-const isValidE164PhoneNumber = (phoneValue: string): boolean => /^\+[1-9]\d{7,14}$/.test(phoneValue);
+export const isValidE164PhoneNumber = (phoneValue: string): boolean =>
+  /^\+[1-9]\d{7,14}$/.test(phoneValue);
 
 const buildAuthHeader = (): string => {
   const authToken = Buffer.from(

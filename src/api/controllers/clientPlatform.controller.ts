@@ -102,6 +102,54 @@ const sendWelcomeEmail = async (client: { id: string; email: string; businessNam
   );
 };
 
+const sendStaffCredentialsNotification = async (
+  business: { id: string; businessName: string },
+  teamMember: { name: string; phone: string; email?: string },
+  credentials: { username: string; password: string },
+  origin: string
+): Promise<void> => {
+  const businessLabel = business.businessName || 'your salon';
+  const loginLink = `${origin}/barber-login`;
+  const smsBody =
+    `Welcome to ${businessLabel}! Your staff login - ` +
+    `Username: ${credentials.username} Password: ${credentials.password}. ` +
+    `Log in at ${loginLink}`;
+
+  await twilioSmsService.sendSms(teamMember.phone, smsBody, 'admin', {
+    businessId: business.id,
+    source: 'staff_credentials'
+  });
+
+  if (!teamMember.email) {
+    return;
+  }
+
+  await emailService.sendEmail(
+    {
+      to: teamMember.email,
+      subject: `Welcome to ${businessLabel}, ${teamMember.name}!`,
+      text:
+        `You've been added as a team member at ${businessLabel} on QR Schedule. ` +
+        `Username: ${credentials.username} Password: ${credentials.password}. ` +
+        `Log in at ${loginLink}`,
+      html: renderEmailLayout({
+        preheader: `Your ${businessLabel} staff login is ready.`,
+        eyebrow: 'Welcome',
+        heading: `You're all set, ${teamMember.name}!`,
+        bodyHtml: `
+          <p style="margin:0 0 14px">You've been added as a team member at ${businessLabel}. Use the login details below to see your own appointments and tips.</p>
+          <p style="margin:0 0 6px"><strong>Username:</strong> ${credentials.username}</p>
+          <p style="margin:0 0 14px"><strong>Password:</strong> ${credentials.password}</p>
+          <p style="margin:0">Keep this password safe - ask your admin to reset it anytime if you forget it.</p>
+        `,
+        button: { label: 'Log in to your dashboard', url: loginLink }
+      })
+    },
+    'admin',
+    { businessId: business.id, source: 'welcome' }
+  );
+};
+
 const isValidProfileImageValue = (value: string): boolean => {
   if (!value) {
     return true;
@@ -135,6 +183,10 @@ const createClientSchema = z.object({
 
 const googleAuthSchema = z.object({
   credential: z.string().trim().min(1, 'Google credential is required')
+});
+
+const addBranchSchema = z.object({
+  businessName: z.string().trim().min(1, 'Business name is required')
 });
 
 const loginClientSchema = z.object({
@@ -247,6 +299,7 @@ const createTeamMemberSchema = z.object({
   name: z.string().trim().min(1, 'Team member name is required'),
   role: z.string().trim().min(1, 'Role is required').optional(),
   phone: z.string().trim().optional(),
+  email: z.string().trim().email().optional().or(z.literal('')),
   expertise: z.string().trim().optional(),
   openingTime: teamMemberTimeSchema,
   closingTime: teamMemberTimeSchema,
@@ -267,6 +320,7 @@ const updateTeamMemberSchema = z.object({
   name: z.string().trim().min(1, 'Team member name is required'),
   role: z.string().trim().min(1, 'Role is required').optional(),
   phone: z.string().trim().optional(),
+  email: z.string().trim().email().optional().or(z.literal('')),
   expertise: z.string().trim().optional(),
   openingTime: teamMemberTimeSchema,
   closingTime: teamMemberTimeSchema,
@@ -288,7 +342,8 @@ const createBusinessServiceSchema = z.object({
   categoryName: z.string().trim().optional(),
   durationMinutes: z.number().int().min(15).max(480),
   priceLabel: z.string().trim().min(1, 'Price is required'),
-  description: z.string().trim().optional()
+  description: z.string().trim().optional(),
+  isSpecialService: z.boolean().optional()
 });
 
 const updateBusinessServiceSchema = createBusinessServiceSchema;
@@ -360,6 +415,14 @@ const getTeamMemberId = (req: Request): string => {
   }
 
   return req.params.teamMemberId;
+};
+
+const getTargetBranchId = (req: Request): string => {
+  if (!req.params.targetBranchId) {
+    throw new HttpError(400, 'Target branch id is required');
+  }
+
+  return req.params.targetBranchId;
 };
 
 const getServiceId = (req: Request): string => {
@@ -622,6 +685,37 @@ export const clientPlatformController = {
     });
   },
 
+  async listBranches(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    res.status(200).json({
+      branches: await clientPlatformService.listLinkedBranches(getClientId(req))
+    });
+  },
+
+  async addBranch(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const { branch } = await clientPlatformService.addBranch(
+      getClientId(req),
+      addBranchSchema.parse(req.body)
+    );
+
+    res.status(201).json({
+      branch: { id: branch.id, businessName: branch.businessName }
+    });
+  },
+
+  async switchBranch(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const payload = await clientPlatformService.switchToLinkedBranch(
+      getClientId(req),
+      getTargetBranchId(req)
+    );
+
+    setAdminSessionCookie(res, payload.plainAdminToken);
+    res.status(200).json({
+      client: serializeClientForResponse(payload.client),
+      ...(shouldExposeAdminTokenForTests() ? { adminToken: payload.plainAdminToken } : {}),
+      nextStep: payload.nextStep
+    });
+  },
+
   async updateBusinessProfile(req: Request, res: Response, _next: NextFunction): Promise<void> {
     const client = await clientPlatformService.updateBusinessProfile(
       getClientId(req),
@@ -719,13 +813,21 @@ export const clientPlatformController = {
   },
 
   async addTeamMember(req: Request, res: Response, _next: NextFunction): Promise<void> {
-    const client = await clientPlatformService.addTeamMember(
+    const { client, teamMember, generatedCredentials } = await clientPlatformService.addTeamMember(
       getClientId(req),
       createTeamMemberSchema.parse(req.body)
     );
 
+    await sendStaffCredentialsNotification(
+      client,
+      teamMember,
+      generatedCredentials,
+      getRequestOrigin(req)
+    );
+
     res.status(201).json({
-      client: serializeClientForResponse(client)
+      client: serializeClientForResponse(client),
+      generatedCredentials
     });
   },
 
@@ -749,6 +851,23 @@ export const clientPlatformController = {
 
     res.status(200).json({
       client: serializeClientForResponse(client)
+    });
+  },
+
+  async resetTeamMemberCredentials(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const { client, teamMember, generatedCredentials } =
+      await clientPlatformService.resetTeamMemberCredentials(getClientId(req), getTeamMemberId(req));
+
+    await sendStaffCredentialsNotification(
+      client,
+      teamMember,
+      generatedCredentials,
+      getRequestOrigin(req)
+    );
+
+    res.status(200).json({
+      client: serializeClientForResponse(client),
+      generatedCredentials
     });
   },
 

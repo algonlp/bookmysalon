@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { appointmentController } from '../controllers/appointment.controller';
 import { asyncHandler } from '../middlewares/asyncHandler';
 import { requirePlatformAdminAccess } from '../middlewares/requirePlatformAdminAccess';
+import { requireStaffAccess } from '../middlewares/requireStaffAccess';
 
 export const appointmentRouter = Router();
 
@@ -71,6 +72,16 @@ appointmentRouter.get(
   '/platform/clients/:clientId/payments',
   asyncHandler(requirePlatformAdminAccess),
   asyncHandler(appointmentController.listPayments)
+);
+appointmentRouter.get(
+  '/platform/clients/:clientId/staff/:teamMemberId/appointments',
+  asyncHandler(requireStaffAccess),
+  asyncHandler(appointmentController.listAppointmentsForStaff)
+);
+appointmentRouter.get(
+  '/platform/clients/:clientId/staff/:teamMemberId/tips',
+  asyncHandler(requireStaffAccess),
+  asyncHandler(appointmentController.listTipsForStaff)
 );
 appointmentRouter.patch(
   '/platform/clients/:clientId/appointments/:appointmentId',

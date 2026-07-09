@@ -62,6 +62,12 @@ export interface BusinessSubscription {
   appointmentCreditsGranted: number;
   appointmentCreditsRemaining: number;
   appointmentCreditsUsed: number;
+  messageCreditsGranted: number;
+  messageCreditsRemaining: number;
+  messageCreditsUsed: number;
+  marketingEmailCreditsGranted: number;
+  marketingEmailCreditsRemaining: number;
+  marketingEmailCreditsUsed: number;
   currentPeriodStart: string;
   currentPeriodEnd: string;
   trialEndsAt?: string;
@@ -112,6 +118,16 @@ export interface BillingOverview {
   currentPlan: SubscriptionPlan | null;
   latestInvoice: BillingInvoice | null;
   creditBalance: {
+    granted: number;
+    remaining: number;
+    used: number;
+  };
+  messageCreditBalance: {
+    granted: number;
+    remaining: number;
+    used: number;
+  };
+  marketingEmailCreditBalance: {
     granted: number;
     remaining: number;
     used: number;

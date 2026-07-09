@@ -2805,13 +2805,6 @@ textarea:focus-visible {
   font-weight: 700;
 }
 
-.salon-detail-meta-stars {
-  color: #f5a623;
-  font-size: 0.78rem;
-  letter-spacing: 1px;
-  line-height: 1;
-}
-
 .salon-detail-meta-reviews,
 .salon-detail-directions-link {
   color: #2448a8;
@@ -3119,8 +3112,7 @@ textarea:focus-visible {
   gap: 16px;
 }
 
-.salon-detail-team-member,
-.salon-detail-review-item {
+.salon-detail-team-member {
   position: relative;
   display: grid;
   gap: 10px;
@@ -3137,16 +3129,14 @@ textarea:focus-visible {
     background-color 180ms ease;
 }
 
-.salon-detail-team-member:hover,
-.salon-detail-review-item:hover {
+.salon-detail-team-member:hover {
   transform: translateY(-3px);
   border-color: rgba(108, 76, 245, 0.16);
   background: rgba(255, 255, 255, 0.94);
   box-shadow: 0 20px 38px rgba(31, 26, 23, 0.1);
 }
 
-.salon-detail-team-member span,
-.salon-detail-review-item span {
+.salon-detail-team-member span {
   display: inline-grid;
   place-items: center;
   width: 42px;
@@ -3160,15 +3150,13 @@ textarea:focus-visible {
 }
 
 .salon-detail-team-member p,
-.salon-detail-review-item p,
 .salon-detail-muted {
   margin: 0;
   color: #6a635d;
   line-height: 1.5;
 }
 
-.salon-detail-team-member small,
-.salon-detail-review-item small {
+.salon-detail-team-member small {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -3178,8 +3166,7 @@ textarea:focus-visible {
   font-weight: 900;
 }
 
-.salon-detail-team-member small::before,
-.salon-detail-review-item small::before {
+.salon-detail-team-member small::before {
   content: '';
   width: 9px;
   height: 9px;
@@ -3190,8 +3177,121 @@ textarea:focus-visible {
 }
 
 .salon-detail-rating-line {
-  color: #f5a623 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #171411;
+  font-weight: 800;
+}
+
+.star-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+  font-size: 0.92rem;
+}
+
+.salon-detail-meta-stars {
+  font-size: 0.78rem;
+}
+
+.star-rating-icon {
+  color: #d3cabb;
+}
+
+.star-rating-icon.is-filled {
+  color: #f5a623;
+}
+
+.salon-detail-review-card {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+  border: 1px solid rgba(31, 26, 23, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 12px 26px rgba(31, 26, 23, 0.06);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.salon-detail-review-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(108, 76, 245, 0.16);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 20px 38px rgba(31, 26, 23, 0.1);
+}
+
+.salon-detail-review-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.salon-detail-review-avatar {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  color: #2c2620;
   font-weight: 900;
+  font-size: 1.05rem;
+}
+
+.salon-detail-review-identity {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.salon-detail-review-identity strong {
+  font-size: 0.98rem;
+  letter-spacing: -0.01em;
+}
+
+.salon-detail-review-date {
+  color: #8a827a;
+  font-size: 0.8rem;
+}
+
+.salon-detail-review-comment {
+  margin: 0;
+  color: #4a443f;
+  line-height: 1.6;
+}
+
+.salon-detail-review-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  color: #123b29;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.salon-detail-review-badge::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #14b86f;
+}
+
+.salon-detail-review-status {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 32px 20px;
+  color: #8a827a;
+  font-weight: 600;
+  text-align: center;
 }
 
 .salon-detail-map {
@@ -4894,6 +4994,13 @@ textarea:focus-visible {
   display: grid;
   gap: 16px;
   margin-top: 28px;
+}
+
+.barber-dashboard-section-title {
+  margin: 32px 0 0;
+  color: #171d2c;
+  font-size: 1.3rem;
+  letter-spacing: -0.03em;
 }
 
 .sms-log-card {
@@ -7481,6 +7588,280 @@ textarea:focus-visible {
   display: none;
 }
 
+.calendar-marketing-view {
+  display: none;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 18px;
+  padding: 28px;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 28px;
+  background: rgba(255, 252, 248, 0.96);
+  min-height: calc(100vh - 180px);
+}
+
+.calendar-main[data-main-view='marketing'] .calendar-marketing-view {
+  display: flex;
+}
+
+.calendar-main[data-main-view='marketing'] .calendar-toolbar,
+.calendar-main[data-main-view='marketing'] .calendar-board {
+  display: none;
+}
+
+.calendar-marketing-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.calendar-marketing-header h1 {
+  margin: 0 0 6px;
+  color: #232220;
+  letter-spacing: -0.03em;
+}
+
+.calendar-marketing-header p {
+  margin: 0;
+  color: #6f6963;
+}
+
+.calendar-marketing-new-button {
+  flex-shrink: 0;
+  padding: 12px 22px;
+  border: none;
+  border-radius: 999px;
+  background: #6c4cf5;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.calendar-marketing-new-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 26px rgba(108, 76, 245, 0.28);
+}
+
+.calendar-marketing-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.calendar-marketing-builder {
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.calendar-marketing-builder h2 {
+  margin: 0;
+  color: #232220;
+  letter-spacing: -0.02em;
+}
+
+.calendar-marketing-template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.calendar-marketing-template-card {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 252, 248, 0.96);
+  text-align: left;
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.calendar-marketing-template-card:hover,
+.calendar-marketing-template-card:focus-visible {
+  transform: translateY(-3px);
+  border-color: rgba(108, 76, 245, 0.24);
+  box-shadow: 0 16px 28px rgba(31, 26, 23, 0.1);
+}
+
+.calendar-marketing-template-card strong {
+  color: #232220;
+}
+
+.calendar-marketing-template-card span {
+  color: #6f6963;
+  font-size: 0.88rem;
+}
+
+.calendar-marketing-form {
+  display: grid;
+  gap: 14px;
+}
+
+.calendar-marketing-field {
+  display: grid;
+  gap: 6px;
+}
+
+.calendar-marketing-field span {
+  color: #4a443f;
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+
+.calendar-marketing-field input,
+.calendar-marketing-field select,
+.calendar-marketing-field textarea {
+  padding: 10px 14px;
+  border: 1px solid rgba(18, 18, 18, 0.12);
+  border-radius: 12px;
+  background: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+}
+
+.calendar-marketing-csv-wrap {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px dashed rgba(18, 18, 18, 0.16);
+  border-radius: 14px;
+}
+
+.calendar-marketing-csv-status {
+  margin: 0;
+  color: #6f6963;
+  font-size: 0.86rem;
+}
+
+.calendar-marketing-placeholder-hint {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(108, 76, 245, 0.08);
+  color: #4a443f;
+  font-size: 0.82rem;
+}
+
+.calendar-marketing-form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.calendar-marketing-builder-cancel {
+  padding: 10px 20px;
+  border: 1px solid rgba(18, 18, 18, 0.14);
+  border-radius: 999px;
+  background: transparent;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.calendar-marketing-continue-button {
+  padding: 10px 22px;
+  border: none;
+  border-radius: 999px;
+  background: #6c4cf5;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.calendar-marketing-continue-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.calendar-marketing-form-status {
+  margin: 0;
+  color: #c4321c;
+  font-weight: 700;
+  text-align: right;
+}
+
+.calendar-marketing-form-status-success {
+  margin: 0;
+  color: #116549;
+  font-weight: 700;
+  text-align: right;
+}
+
+.calendar-marketing-campaign-row-auto {
+  border-color: rgba(255, 171, 0, 0.4);
+  background: linear-gradient(180deg, rgba(255, 244, 214, 0.9), rgba(255, 252, 248, 0.96));
+  box-shadow: 0 12px 24px rgba(255, 171, 0, 0.12);
+}
+
+.calendar-marketing-recipient-sample {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 252, 248, 0.96);
+  list-style: none;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.calendar-marketing-recipient-sample li {
+  color: #4a443f;
+  font-size: 0.9rem;
+}
+
+.calendar-marketing-list {
+  display: grid;
+  gap: 12px;
+}
+
+.calendar-marketing-empty {
+  padding: 32px 20px;
+  color: #6f6963;
+  text-align: center;
+}
+
+.calendar-marketing-campaign-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 252, 248, 0.96);
+}
+
+.calendar-marketing-campaign-info {
+  display: grid;
+  gap: 4px;
+}
+
+.calendar-marketing-campaign-info span {
+  color: #6f6963;
+  font-size: 0.86rem;
+}
+
+.calendar-marketing-campaign-stats {
+  display: flex;
+  gap: 20px;
+  color: #4a443f;
+}
+
+.calendar-marketing-campaign-progress {
+  color: #5b53d8;
+  font-weight: 700;
+  font-size: 0.86rem;
+}
+
 .calendar-reports-sidebar,
 .calendar-reports-main {
   border: 1px solid rgba(18, 18, 18, 0.08);
@@ -8865,6 +9246,45 @@ button.calendar-reports-summary-card {
   line-height: 1.45;
 }
 
+.calendar-tool-checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 14px;
+  background: #ffffff;
+  color: #3a352f;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+}
+
+.calendar-tool-checkbox-field input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+.calendar-tool-checkbox-field span {
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.special-service-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(212, 145, 20, 0.14);
+  color: #a3690f;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
 .calendar-tool-field input,
 .calendar-tool-field select {
   width: 100%;
@@ -9528,6 +9948,90 @@ button.calendar-reports-summary-card {
   background: rgba(173, 51, 51, 0.06);
 }
 
+.staff-credentials-card {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 420px);
+}
+
+.staff-credentials-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.staff-credentials-row-info {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.staff-credentials-row-label {
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8a8480;
+}
+
+.staff-credentials-row-value {
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #1f1a17;
+  overflow-wrap: anywhere;
+}
+
+.staff-credentials-copy {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 1px solid rgba(31, 51, 93, 0.16);
+  border-radius: 999px;
+  background: rgba(31, 51, 93, 0.06);
+  color: #1f335d;
+  font-size: 0.8rem;
+  font-weight: 800;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.staff-credentials-copy:hover {
+  background: rgba(31, 51, 93, 0.14);
+}
+
+.staff-credentials-copy.is-copied {
+  background: rgba(14, 125, 64, 0.14);
+  border-color: rgba(14, 125, 64, 0.2);
+  color: #0e7d40;
+}
+
+.staff-credentials-note {
+  margin: 0;
+  color: #8a8480;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.staff-credentials-link {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #3a352f;
+}
+
+.staff-credentials-link a {
+  color: #1f335d;
+  font-weight: 700;
+}
+
 .booking-page {
   min-height: 100vh;
   padding: 28px;
@@ -9990,6 +10494,16 @@ button.calendar-reports-summary-card {
 
 .booking-choice-copy b {
   font-size: 0.9rem;
+}
+
+.booking-choice-special-badge {
+  justify-self: start;
+}
+
+.booking-choice-deposit-note {
+  color: #a3690f !important;
+  font-size: 0.78rem !important;
+  font-weight: 700;
 }
 
 .booking-choice-marker {

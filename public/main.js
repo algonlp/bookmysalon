@@ -1,5 +1,6 @@
 const CLIENT_STORAGE_KEY = 'qr-platform-client-id';
 const NOTIFICATION_READ_STORAGE_KEY = 'qr-platform-read-notifications';
+const AUTO_FILL_SEEN_STORAGE_KEY = 'qr-platform-seen-auto-fill-campaigns';
 const REPORTS_WORKSPACE_STORAGE_KEY = 'qr-platform-reports-workspace';
 const GOOGLE_PROFILE_STORAGE_KEY = 'qr-platform-google-profile';
 const CUSTOMER_SESSION_STORAGE_KEY = 'qr-customer-session';
@@ -517,6 +518,38 @@ const setReadNotificationIds = (clientId, notificationIds) => {
   }
 };
 
+const getSeenAutoFillCampaignIds = (clientId) => {
+  if (!clientId) {
+    return new Set();
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(AUTO_FILL_SEEN_STORAGE_KEY);
+    const parsedValue = rawValue ? JSON.parse(rawValue) : {};
+    const ids = Array.isArray(parsedValue?.[clientId]) ? parsedValue[clientId] : [];
+    return new Set(ids.filter((value) => typeof value === 'string' && value));
+  } catch (_error) {
+    return new Set();
+  }
+};
+
+const markAutoFillCampaignSeen = (clientId, campaignId) => {
+  if (!clientId || !campaignId) {
+    return;
+  }
+
+  try {
+    const seenIds = getSeenAutoFillCampaignIds(clientId);
+    seenIds.add(campaignId);
+    const rawValue = window.localStorage.getItem(AUTO_FILL_SEEN_STORAGE_KEY);
+    const parsedValue = rawValue ? JSON.parse(rawValue) : {};
+    parsedValue[clientId] = [...seenIds];
+    window.localStorage.setItem(AUTO_FILL_SEEN_STORAGE_KEY, JSON.stringify(parsedValue));
+  } catch (_error) {
+    // Non-critical — worst case the same prompt shows again next load.
+  }
+};
+
 const getReportsWorkspaceState = (clientId) => {
   if (!clientId) {
     return {
@@ -1015,6 +1048,9 @@ const getPublicWaitlistClaim = () => {
     waitlistOfferToken: searchParams.get('waitlistOfferToken')?.trim() ?? ''
   };
 };
+
+const getPublicCampaignId = () =>
+  new URLSearchParams(window.location.search).get('campaign')?.trim() ?? '';
 
 const createSvgIcon = (pathData) => {
   const icon = document.createElement('span');
@@ -1528,7 +1564,14 @@ const createToolActionButton = (label, onClick) => {
   button.className = 'calendar-tool-action';
   button.type = 'button';
   button.textContent = label;
-  button.addEventListener('click', onClick);
+  button.addEventListener('click', (event) => {
+    // Tool-modal actions often open a side drawer (setActiveDrawer(...)).
+    // Without stopping propagation, this same click bubbles to the
+    // document-level "click outside closes the drawer" listener, which
+    // immediately undoes what the action just did.
+    event.stopPropagation();
+    onClick(event);
+  });
   return button;
 };
 
@@ -2482,6 +2525,59 @@ const shareSalonProfile = async (salon) => {
   safeAlert(shareUrl);
 };
 
+const REVIEW_AVATAR_PALETTE = [
+  '#dce3ff',
+  '#ffe1cf',
+  '#d9f2df',
+  '#ffe0ec',
+  '#e6e0ff',
+  '#fff1c9'
+];
+
+const getAvatarColorForName = (name) => {
+  const seed = String(name || '').trim();
+  let hash = 0;
+
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) % REVIEW_AVATAR_PALETTE.length;
+  }
+
+  return REVIEW_AVATAR_PALETTE[Math.abs(hash) % REVIEW_AVATAR_PALETTE.length];
+};
+
+const buildStarRatingMarkup = (rating, { max = 5 } = {}) => {
+  const normalizedRating = Math.max(0, Math.min(max, Number(rating) || 0));
+  const roundedRating = Math.round(normalizedRating);
+  const wrap = document.createElement('span');
+  wrap.className = 'star-rating';
+  wrap.setAttribute('role', 'img');
+  wrap.setAttribute('aria-label', `${normalizedRating.toFixed(1)} out of ${max} stars`);
+
+  for (let index = 1; index <= max; index += 1) {
+    const star = document.createElement('span');
+    star.className = index <= roundedRating ? 'star-rating-icon is-filled' : 'star-rating-icon';
+    star.textContent = '★';
+    star.setAttribute('aria-hidden', 'true');
+    wrap.append(star);
+  }
+
+  return wrap;
+};
+
+const formatReviewDate = (isoDate) => {
+  const parsed = new Date(isoDate);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return '';
+  }
+
+  return parsed.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
 const getSalonReviewSummaryText = (salon) => {
   const totalReviews = Number(salon.reviewSummary?.totalReviews) || 0;
   const averageRating = Number(salon.reviewSummary?.averageRating) || 0;
@@ -2508,9 +2604,11 @@ const createSalonDetailMeta = (salon) => {
   ratingGroup.className = 'salon-detail-meta-rating';
 
   if (totalReviews > 0 && averageRating > 0) {
+    const stars = buildStarRatingMarkup(averageRating);
+    stars.classList.add('salon-detail-meta-stars');
     ratingGroup.append(
       createDetailText('strong', '', averageRating.toFixed(1)),
-      createDetailText('span', 'salon-detail-meta-stars', '★★★★★'),
+      stars,
       createDetailText('a', 'salon-detail-meta-reviews', `(${totalReviews})`)
     );
     ratingGroup.querySelector('a')?.setAttribute('href', '#reviews');
@@ -2990,24 +3088,95 @@ const renderSalonDetailPanel = (salon) => {
   reviewsSection.className = 'salon-detail-section';
   reviewsSection.dataset.detailSection = 'reviews';
   reviewsSection.id = 'reviews';
-  reviewsSection.append(
-    createDetailText('h3', '', 'Reviews'),
-    createDetailText('p', 'salon-detail-rating-line', `${getSalonReviewSummaryText(salon)} *****`)
-  );
+
+  const reviewsRatingLine = document.createElement('p');
+  reviewsRatingLine.className = 'salon-detail-rating-line';
+  const reviewSummaryTotal = Number(salon.reviewSummary?.totalReviews) || 0;
+  const reviewSummaryAverage = Number(salon.reviewSummary?.averageRating) || 0;
+
+  if (reviewSummaryTotal > 0 && reviewSummaryAverage > 0) {
+    reviewsRatingLine.append(
+      document.createTextNode(`${reviewSummaryAverage.toFixed(1)} `),
+      buildStarRatingMarkup(reviewSummaryAverage),
+      document.createTextNode(` (${reviewSummaryTotal})`)
+    );
+  } else {
+    reviewsRatingLine.textContent = 'No reviews yet';
+  }
+
+  reviewsSection.append(createDetailText('h3', '', 'Reviews'), reviewsRatingLine);
+
   const reviewsGrid = document.createElement('div');
   reviewsGrid.className = 'salon-detail-review-grid';
-  ['Great service and easy booking.', 'Clean place with friendly staff.', 'Simple online appointment flow.'].forEach((copy, index) => {
-    const review = document.createElement('article');
-    review.className = 'salon-detail-review-item';
-    review.append(
-      createDetailText('span', '', ['A', 'M', 'S'][index]),
-      createDetailText('strong', '', ['Abeer A', 'Marwa A', 'Sreesha S'][index]),
-      createDetailText('small', '', 'Verified booking'),
-      createDetailText('p', '', copy)
-    );
-    reviewsGrid.append(review);
-  });
+  reviewsGrid.append(createDetailText('p', 'salon-detail-review-status', 'Loading reviews...'));
   reviewsSection.append(reviewsGrid);
+
+  const businessIdForReviews = getSalonDetailId(salon);
+
+  if (businessIdForReviews) {
+    apiRequest(`/api/public/book/${encodeURIComponent(businessIdForReviews)}/reviews`)
+      .then((payload) => {
+        const reviews = Array.isArray(payload?.reviews) ? payload.reviews : [];
+        reviewsGrid.replaceChildren();
+
+        if (reviews.length === 0) {
+          reviewsGrid.append(
+            createDetailText(
+              'p',
+              'salon-detail-review-status',
+              'No reviews yet. Be the first to book and share your experience.'
+            )
+          );
+          return;
+        }
+
+        reviews.forEach((review) => {
+          const reviewerName = typeof review?.customerName === 'string' && review.customerName.trim()
+            ? review.customerName.trim()
+            : 'Customer';
+          const initial = reviewerName.charAt(0).toUpperCase() || 'C';
+
+          const card = document.createElement('article');
+          card.className = 'salon-detail-review-card';
+
+          const top = document.createElement('div');
+          top.className = 'salon-detail-review-top';
+
+          const avatar = createDetailText('span', 'salon-detail-review-avatar', initial);
+          avatar.style.background = getAvatarColorForName(reviewerName);
+
+          const identity = document.createElement('div');
+          identity.className = 'salon-detail-review-identity';
+          identity.append(
+            createDetailText('strong', '', reviewerName),
+            createDetailText('span', 'salon-detail-review-date', formatReviewDate(review.createdAt))
+          );
+
+          top.append(avatar, identity);
+
+          card.append(top, buildStarRatingMarkup(review.rating));
+
+          const comment = typeof review?.comment === 'string' ? review.comment.trim() : '';
+
+          if (comment) {
+            card.append(createDetailText('p', 'salon-detail-review-comment', comment));
+          }
+
+          card.append(createDetailText('small', 'salon-detail-review-badge', 'Verified booking'));
+
+          reviewsGrid.append(card);
+        });
+      })
+      .catch(() => {
+        reviewsGrid.replaceChildren(
+          createDetailText('p', 'salon-detail-review-status', 'Unable to load reviews right now.')
+        );
+      });
+  } else {
+    reviewsGrid.replaceChildren(
+      createDetailText('p', 'salon-detail-review-status', 'No reviews yet.')
+    );
+  }
 
   const aboutSection = document.createElement('section');
   aboutSection.className = 'salon-detail-section';
@@ -7723,9 +7892,15 @@ const initCalendar = () => {
   let activeReportsFolderId = '';
   let reportsDateRange = '30d';
 
-  const isBillingFeatureLocked = (featureKey) =>
-    Array.isArray(billingPayload?.lockedFeatureKeys) &&
-    billingPayload.lockedFeatureKeys.includes(featureKey);
+  const isBillingFeatureLocked = (featureKey) => {
+    if (!Array.isArray(billingPayload?.lockedFeatureKeys)) {
+      // Billing data hasn't loaded yet — fail closed (treat as locked) rather
+      // than letting a gated feature open before entitlements are known.
+      return true;
+    }
+
+    return billingPayload.lockedFeatureKeys.includes(featureKey);
+  };
 
   const getBillingFeatureLabel = (featureKey) => {
     const matchedFeature = Array.isArray(billingPayload?.featureAccess)
@@ -7919,6 +8094,113 @@ const initCalendar = () => {
         eyebrow: 'Online payments',
         title: 'Stripe status unavailable',
         description: error instanceof Error ? error.message : 'Unable to load Stripe Connect status.'
+      });
+    }
+  };
+
+  const switchToBranch = async (targetBranchId) => {
+    const payload = await apiRequest(
+      `/api/platform/clients/${encodeURIComponent(clientId)}/branches/${encodeURIComponent(targetBranchId)}/switch`,
+      { method: 'POST' }
+    );
+
+    setAdminSession(targetBranchId);
+    window.location.assign(payload.nextStep || buildPathWithClientId('/calendar', targetBranchId));
+  };
+
+  const openBranchesModal = async () => {
+    openToolModal({
+      eyebrow: 'Branches',
+      title: 'My branches',
+      description: 'Loading your linked branches.'
+    });
+
+    try {
+      const payload = await apiRequest(`/api/platform/clients/${encodeURIComponent(clientId)}/branches`);
+      const branches = Array.isArray(payload?.branches) ? payload.branches : [];
+
+      const list = document.createElement('div');
+      list.className = 'calendar-tool-form';
+
+      if (branches.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'calendar-tool-help';
+        empty.textContent = 'No other branches linked yet.';
+        list.append(empty);
+      } else {
+        for (const branch of branches) {
+          const row = document.createElement('div');
+          row.className = 'calendar-tool-checkbox-field';
+
+          const label = document.createElement('span');
+          label.textContent = branch.businessName || 'Untitled branch';
+          row.append(label);
+
+          const switchButton = createToolActionButton('Switch', async () => {
+            switchButton.disabled = true;
+            switchButton.textContent = 'Switching...';
+
+            try {
+              await switchToBranch(branch.id);
+            } catch (error) {
+              switchButton.disabled = false;
+              switchButton.textContent = 'Switch';
+              safeAlert(error instanceof Error ? error.message : 'Unable to switch branch');
+            }
+          });
+          row.append(switchButton);
+
+          list.append(row);
+        }
+      }
+
+      const addBranchField = document.createElement('label');
+      addBranchField.className = 'calendar-tool-field';
+      const addBranchLabel = document.createElement('span');
+      addBranchLabel.textContent = 'New branch name';
+      const addBranchInput = document.createElement('input');
+      addBranchInput.type = 'text';
+      addBranchInput.placeholder = 'e.g. Downtown Branch';
+      addBranchField.append(addBranchLabel, addBranchInput);
+
+      const addBranchButton = createToolActionButton('+ Add branch', async () => {
+        const businessName = addBranchInput.value.trim();
+
+        if (!businessName) {
+          safeAlert('Enter a name for the new branch.');
+          return;
+        }
+
+        addBranchButton.disabled = true;
+        addBranchButton.textContent = 'Creating...';
+
+        try {
+          const createPayload = await apiRequest(
+            `/api/platform/clients/${encodeURIComponent(clientId)}/branches`,
+            {
+              method: 'POST',
+              body: JSON.stringify({ businessName })
+            }
+          );
+          await switchToBranch(createPayload.branch.id);
+        } catch (error) {
+          addBranchButton.disabled = false;
+          addBranchButton.textContent = '+ Add branch';
+          safeAlert(error instanceof Error ? error.message : 'Unable to add branch');
+        }
+      });
+
+      openToolModal({
+        eyebrow: 'Branches',
+        title: 'My branches',
+        description: 'Switch between your branches, or add a new one — each branch has its own services, team, and bookings.',
+        actions: [list, addBranchField, addBranchButton]
+      });
+    } catch (error) {
+      openToolModal({
+        eyebrow: 'Branches',
+        title: 'Unable to load branches',
+        description: error instanceof Error ? error.message : 'Failed to load your branches.'
       });
     }
   };
@@ -8636,6 +8918,30 @@ const initCalendar = () => {
     return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="${stroke}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="${points}"></polyline></svg>`;
   };
 
+  const buildComparisonBarsSvg = (values, stroke = '#1f335d') => {
+    const width = 180;
+    const height = 48;
+    const safeValues = values.length > 0 ? values : [0];
+    const max = Math.max(...safeValues, 1);
+    const usableHeight = height - 8;
+    const gap = 14;
+    const barWidth = Math.max(14, (width - gap * (safeValues.length - 1)) / safeValues.length - 6);
+    const totalWidth = barWidth * safeValues.length + gap * (safeValues.length - 1);
+    const startX = (width - totalWidth) / 2;
+    const opacities = [0.9, 0.55, 0.32];
+
+    const bars = safeValues
+      .map((value, index) => {
+        const barHeight = Math.max(4, (value / max) * usableHeight);
+        const x = startX + index * (barWidth + gap);
+        const opacity = opacities[index] ?? 0.3;
+        return `<rect x="${x}" y="${height - barHeight}" width="${barWidth}" height="${barHeight}" rx="4" fill="${stroke}" opacity="${opacity}"></rect>`;
+      })
+      .join('');
+
+    return `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true">${bars}</svg>`;
+  };
+
 const createTrendCard = (
   title,
   valueLabel,
@@ -8676,7 +8982,8 @@ const createTrendCard = (
 
     const chart = document.createElement('div');
     chart.className = 'calendar-reports-summary-chart';
-    chart.innerHTML = buildSparklineSvg(values, tones[tone] ?? tones.blue);
+    const chartBuilder = options.chartType === 'comparison' ? buildComparisonBarsSvg : buildSparklineSvg;
+    chart.innerHTML = chartBuilder(values, tones[tone] ?? tones.blue);
 
     card.append(titleElement, valueElement, metaElement, chart);
     return card;
@@ -11196,10 +11503,94 @@ const createTrendCard = (
     openTeamMembersModal();
   };
 
+  const createCredentialRow = (label, value) => {
+    const row = document.createElement('div');
+    row.className = 'staff-credentials-row';
+
+    const info = document.createElement('div');
+    info.className = 'staff-credentials-row-info';
+
+    const labelEl = document.createElement('span');
+    labelEl.className = 'staff-credentials-row-label';
+    labelEl.textContent = label;
+
+    const valueEl = document.createElement('code');
+    valueEl.className = 'staff-credentials-row-value';
+    valueEl.textContent = value;
+
+    info.append(labelEl, valueEl);
+
+    const copyButton = document.createElement('button');
+    copyButton.type = 'button';
+    copyButton.className = 'staff-credentials-copy';
+    copyButton.textContent = 'Copy';
+    copyButton.addEventListener('click', async (event) => {
+      event.stopPropagation();
+
+      try {
+        if (!navigator.clipboard?.writeText) {
+          throw new Error('Clipboard unavailable');
+        }
+
+        await navigator.clipboard.writeText(value);
+        copyButton.textContent = 'Copied';
+        copyButton.classList.add('is-copied');
+        setTimeout(() => {
+          copyButton.textContent = 'Copy';
+          copyButton.classList.remove('is-copied');
+        }, 1500);
+      } catch (error) {
+        safeAlert(value);
+      }
+    });
+
+    row.append(info, copyButton);
+    return row;
+  };
+
+  const showStaffCredentialsModal = (teamMemberName, credentials, { isReset = false } = {}) => {
+    const card = document.createElement('div');
+    card.className = 'staff-credentials-card';
+
+    const note = document.createElement('p');
+    note.className = 'staff-credentials-note';
+    note.textContent = isReset
+      ? "Their old password stops working immediately. Share this new one with them - it won't be shown again."
+      : "Share this with them now - the password won't be shown again.";
+
+    const linkRow = document.createElement('p');
+    linkRow.className = 'staff-credentials-link';
+    const link = document.createElement('a');
+    link.href = '/barber-login';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.textContent = `${window.location.origin}/barber-login`;
+    linkRow.append(document.createTextNode('They can log in at '), link);
+
+    card.append(
+      createCredentialRow('Username', credentials.username),
+      createCredentialRow('Password', credentials.password),
+      note,
+      linkRow
+    );
+
+    const doneButton = createToolActionButton('Done', () => {
+      openTeamMembersModal();
+    });
+
+    openToolModal({
+      eyebrow: 'Team login',
+      title: isReset ? `New login for ${teamMemberName}` : `Login created for ${teamMemberName}`,
+      description: 'Their login is ready to share.',
+      actions: [card, doneButton]
+    });
+  };
+
   const addTeamMember = async ({
     name,
     role,
     phone,
+    email,
     expertise,
     openingTime,
     closingTime,
@@ -11210,12 +11601,13 @@ const createTrendCard = (
       return;
     }
 
-    await apiRequest(`/api/platform/clients/${clientId}/team-members`, {
+    const response = await apiRequest(`/api/platform/clients/${clientId}/team-members`, {
       method: 'POST',
       body: JSON.stringify({
         name: name.trim(),
         role: role.trim(),
         phone: phone.trim(),
+        email: (email || '').trim(),
         expertise: expertise.trim(),
         openingTime: openingTime.trim(),
         closingTime: closingTime.trim(),
@@ -11225,11 +11617,32 @@ const createTrendCard = (
     });
 
     await refreshTeamMembersView();
+
+    if (response?.generatedCredentials) {
+      showStaffCredentialsModal(name.trim(), response.generatedCredentials, { isReset: false });
+    }
+  };
+
+  const resetTeamMemberCredentials = async (teamMemberId, teamMemberName) => {
+    if (!clientId) {
+      return;
+    }
+
+    const response = await apiRequest(
+      `/api/platform/clients/${clientId}/team-members/${encodeURIComponent(teamMemberId)}/credentials/reset`,
+      { method: 'POST' }
+    );
+
+    await refreshTeamMembersView();
+
+    if (response?.generatedCredentials) {
+      showStaffCredentialsModal(teamMemberName, response.generatedCredentials, { isReset: true });
+    }
   };
 
   const updateTeamMember = async (
     teamMemberId,
-    { name, role, phone, expertise, openingTime, closingTime, offDays, isActive }
+    { name, role, phone, email, expertise, openingTime, closingTime, offDays, isActive }
   ) => {
     if (!clientId) {
       return;
@@ -11241,6 +11654,7 @@ const createTrendCard = (
         name: name.trim(),
         role: role.trim(),
         phone: phone.trim(),
+        email: (email || '').trim(),
         expertise: expertise.trim(),
         openingTime: openingTime.trim(),
         closingTime: closingTime.trim(),
@@ -11386,6 +11800,17 @@ const createTrendCard = (
     phoneInput.value = teamMember?.phone ?? '';
     phoneField.append(phoneLabel, phoneInput);
 
+    const emailField = document.createElement('label');
+    emailField.className = 'calendar-tool-field';
+    const emailLabel = document.createElement('span');
+    emailLabel.textContent = 'Email (optional)';
+    const emailInput = document.createElement('input');
+    emailInput.type = 'email';
+    emailInput.name = 'email';
+    emailInput.placeholder = 'e.g. barber@example.com';
+    emailInput.value = teamMember?.email ?? '';
+    emailField.append(emailLabel, emailInput);
+
     const openingTimeField = document.createElement('label');
     openingTimeField.className = 'calendar-tool-field';
     const openingTimeLabel = document.createElement('span');
@@ -11529,6 +11954,7 @@ const createTrendCard = (
       nameField,
       roleField,
       phoneField,
+      emailField,
       statusField,
       openingTimeField,
       closingTimeField,
@@ -11566,6 +11992,7 @@ const createTrendCard = (
             name: nameInput.value,
             role: roleInput.value,
             phone: phoneInput.value,
+            email: emailInput.value,
             expertise: expertiseValue,
             openingTime: openingTimeInput.value,
             closingTime: closingTimeInput.value,
@@ -11577,6 +12004,7 @@ const createTrendCard = (
             name: nameInput.value,
             role: roleInput.value,
             phone: phoneInput.value,
+            email: emailInput.value,
             expertise: expertiseValue,
             openingTime: openingTimeInput.value,
             closingTime: closingTimeInput.value,
@@ -11638,7 +12066,8 @@ const createTrendCard = (
       teamMember.role || getDefaultTeamMemberRole(),
       `Mobile: ${teamMember.phone || '-'}`,
       teamMember.expertise ? `Expertise: ${teamMember.expertise}` : null,
-      scheduleSummary || null
+      scheduleSummary || null,
+      teamMember.hasLoginAccess ? `Login: ${teamMember.username}` : 'Login: not set up yet'
     ]
       .filter(Boolean)
       .join(' | ');
@@ -11662,6 +12091,7 @@ const createTrendCard = (
             name: teamMember.name || '',
             role: teamMember.role || getDefaultTeamMemberRole(),
             phone: teamMember.phone || '',
+            email: teamMember.email || '',
             expertise: teamMember.expertise || '',
             openingTime: teamMember.openingTime || '',
             closingTime: teamMember.closingTime || '',
@@ -11702,14 +12132,32 @@ const createTrendCard = (
     });
     removeButton.classList.add('calendar-tool-action-danger');
 
-    actions.append(editButton, toggleStatusButton, removeButton);
+    const resetLoginButton = createToolActionButton(
+      teamMember.hasLoginAccess ? 'Reset login' : 'Set up login',
+      async () => {
+        resetLoginButton.disabled = true;
+        resetLoginButton.textContent = 'Working...';
+
+        try {
+          await resetTeamMemberCredentials(teamMember.id, teamMember.name);
+        } catch (error) {
+          resetLoginButton.disabled = false;
+          resetLoginButton.textContent = teamMember.hasLoginAccess ? 'Reset login' : 'Set up login';
+          safeAlert(
+            error instanceof Error ? error.message : `Unable to reset login for ${teamMember.name}`
+          );
+        }
+      }
+    );
+
+    actions.append(editButton, toggleStatusButton, resetLoginButton, removeButton);
     card.append(header, copy, actions);
     return card;
   };
 
   const updateBusinessService = async (
     serviceId,
-    { name, categoryName, durationMinutes, priceLabel, description }
+    { name, categoryName, durationMinutes, priceLabel, description, isSpecialService }
   ) => {
     if (!clientId) {
       return;
@@ -11722,7 +12170,8 @@ const createTrendCard = (
         categoryName: categoryName.trim(),
         durationMinutes: Math.round(durationMinutes),
         priceLabel: priceLabel.trim(),
-        description: description.trim()
+        description: description.trim(),
+        isSpecialService: isSpecialService === true
       })
     });
 
@@ -11836,12 +12285,30 @@ const createTrendCard = (
     descriptionInput.value = service?.description ?? '';
     descriptionField.append(descriptionLabel, descriptionInput);
 
+    const specialField = document.createElement('label');
+    specialField.className = 'calendar-tool-checkbox-field';
+    const specialInput = document.createElement('input');
+    specialInput.type = 'checkbox';
+    specialInput.checked = service?.isSpecialService === true;
+    const specialLabel = document.createElement('span');
+    specialLabel.textContent =
+      'Special service (bridal, groom, mehndi, events) — requires a 5% advance deposit to confirm';
+    specialField.append(specialInput, specialLabel);
+
     const submitButton = document.createElement('button');
     submitButton.className = 'calendar-tool-action calendar-tool-submit';
     submitButton.type = 'submit';
     submitButton.textContent = mode === 'edit' ? updateActionLabel : saveActionLabel;
 
-    form.append(nameField, categoryField, durationField, priceField, descriptionField, submitButton);
+    form.append(
+      nameField,
+      categoryField,
+      durationField,
+      priceField,
+      specialField,
+      descriptionField,
+      submitButton
+    );
 
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -11871,7 +12338,8 @@ const createTrendCard = (
             categoryName: categoryInput.value,
             durationMinutes,
             priceLabel: priceInput.value,
-            description: descriptionInput.value
+            description: descriptionInput.value,
+            isSpecialService: specialInput.checked
           });
         } else {
           await apiRequest(`/api/platform/clients/${clientId}/services`, {
@@ -11881,7 +12349,8 @@ const createTrendCard = (
               categoryName: categoryInput.value.trim(),
               durationMinutes: Math.round(durationMinutes),
               priceLabel: priceInput.value.trim(),
-              description: descriptionInput.value.trim()
+              description: descriptionInput.value.trim(),
+              isSpecialService: specialInput.checked
             })
           });
 
@@ -11933,6 +12402,17 @@ const createTrendCard = (
     const heading = document.createElement('strong');
     heading.textContent = service.name;
 
+    const headerRow = document.createElement('div');
+    headerRow.className = 'calendar-team-member-card-header';
+    headerRow.append(heading);
+
+    if (service.isSpecialService) {
+      const specialBadge = document.createElement('span');
+      specialBadge.className = 'special-service-badge';
+      specialBadge.textContent = '✨ Special · 5% deposit';
+      headerRow.append(specialBadge);
+    }
+
     const copy = document.createElement('p');
     copy.textContent = `${service.priceLabel} | ${service.durationMinutes} min | ${service.categoryName}${service.description ? ` | ${service.description}` : ''}`;
 
@@ -11943,9 +12423,9 @@ const createTrendCard = (
         highlightedPackageNames.length === 1
           ? `Highlighted in package: ${highlightedPackageNames[0]}`
           : `Highlighted in packages: ${highlightedPackageNames.join(', ')}`;
-      card.append(heading, copy, highlight);
+      card.append(headerRow, copy, highlight);
     } else {
-      card.append(heading, copy);
+      card.append(headerRow, copy);
     }
 
     const actions = document.createElement('div');
@@ -14173,6 +14653,8 @@ const createTrendCard = (
     } finally {
       isNotificationRefreshInFlight = false;
     }
+
+    void checkForNewAutoFillCampaigns();
   };
 
   const getFilteredAppointments = () => {
@@ -14619,17 +15101,34 @@ const createTrendCard = (
   };
 
   const setMainView = (viewName) => {
+    reportsToggle.classList.remove('is-active');
+    reportsToggle.setAttribute('aria-expanded', 'false');
+    calendarNavCalendar.classList.remove('is-active');
+
+    if (marketingAction instanceof HTMLButtonElement) {
+      marketingAction.classList.remove('is-active');
+      marketingAction.setAttribute('aria-expanded', 'false');
+    }
+
     if (viewName === 'reports') {
       calendarMain.dataset.mainView = 'reports';
       reportsToggle.classList.add('is-active');
       reportsToggle.setAttribute('aria-expanded', 'true');
-      calendarNavCalendar.classList.remove('is-active');
+      return;
+    }
+
+    if (viewName === 'marketing') {
+      calendarMain.dataset.mainView = 'marketing';
+
+      if (marketingAction instanceof HTMLButtonElement) {
+        marketingAction.classList.add('is-active');
+        marketingAction.setAttribute('aria-expanded', 'true');
+      }
+
       return;
     }
 
     delete calendarMain.dataset.mainView;
-    reportsToggle.classList.remove('is-active');
-    reportsToggle.setAttribute('aria-expanded', 'false');
     calendarNavCalendar.classList.add('is-active');
   };
 
@@ -15050,7 +15549,7 @@ const createTrendCard = (
   });
 
   calendarNavCalendar.addEventListener('click', (event) => {
-    if (getMainView() === 'reports') {
+    if (getMainView() !== 'calendar') {
       event.preventDefault();
       setMainView('calendar');
     }
@@ -15394,6 +15893,9 @@ const createTrendCard = (
           createToolActionButton('Set up online payments', () => {
             void openStripeConnectModal();
           }),
+          createToolActionButton('My branches', () => {
+            void openBranchesModal();
+          }),
           createToolActionButton('Open team panel', () => {
             closeToolModal();
             setMainView('calendar');
@@ -15490,28 +15992,858 @@ const createTrendCard = (
     window.location.assign(getPricingPath());
   });
 
+  const marketingSummaryEl = document.querySelector('#calendar-marketing-summary');
+  const marketingBuilderEl = document.querySelector('#calendar-marketing-builder');
+  const marketingListEl = document.querySelector('#calendar-marketing-list');
+  const marketingNewButton = document.querySelector('#calendar-marketing-new-button');
+
+  let marketingCampaigns = [];
+  let marketingCsvContacts = [];
+  let marketingActiveCampaignId = '';
+  let marketingPollTimer = null;
+
+  const marketingTemplateLabels = {
+    percent_off: 'Percent off',
+    flat_amount_off: 'Flat amount off',
+    free_service: 'Free service',
+    happy_hour: 'Happy hour',
+    last_minute_fill: 'Last-minute fill'
+  };
+
+  const marketingStatusLabels = {
+    draft: 'Draft',
+    sending: 'Sending...',
+    sent: 'Sent',
+    partially_sent: 'Partially sent',
+    failed: 'Failed'
+  };
+
+  const stopMarketingPolling = () => {
+    if (marketingPollTimer) {
+      window.clearInterval(marketingPollTimer);
+      marketingPollTimer = null;
+    }
+  };
+
+  const renderMarketingSummary = () => {
+    if (!(marketingSummaryEl instanceof HTMLElement)) {
+      return;
+    }
+
+    marketingSummaryEl.replaceChildren();
+
+    const totalSent = marketingCampaigns.reduce((sum, campaign) => sum + (campaign.recipientsSent || 0), 0);
+    const totalOpened = marketingCampaigns.reduce((sum, campaign) => sum + (campaign.linkOpensCount || 0), 0);
+    const totalConverted = marketingCampaigns.reduce((sum, campaign) => sum + (campaign.conversionsCount || 0), 0);
+    const conversionRate = totalSent > 0 ? Math.round((totalConverted / totalSent) * 100) : 0;
+    const sentCampaignsCount = marketingCampaigns.filter((campaign) => campaign.status !== 'draft').length;
+
+    marketingSummaryEl.append(
+      createTrendCard(
+        'Campaign reach',
+        `${totalSent} sent`,
+        `${totalOpened} opened the link · ${totalConverted} booked (${conversionRate}%)`,
+        [totalSent, totalOpened, totalConverted],
+        'green',
+        { chartType: 'comparison' }
+      ),
+      createTrendCard(
+        'Campaigns run',
+        String(sentCampaignsCount),
+        `${marketingCampaigns.length} total campaign${marketingCampaigns.length === 1 ? '' : 's'}`,
+        [marketingCampaigns.length, sentCampaignsCount],
+        'plum',
+        { chartType: 'comparison' }
+      )
+    );
+  };
+
+  const beginMarketingPolling = (campaignId) => {
+    stopMarketingPolling();
+    marketingPollTimer = window.setInterval(async () => {
+      try {
+        const payload = await apiRequest(`/api/platform/clients/${clientId}/campaigns/${campaignId}`);
+        const updatedCampaign = payload?.campaign;
+
+        if (!updatedCampaign) {
+          return;
+        }
+
+        const index = marketingCampaigns.findIndex((campaign) => campaign.id === campaignId);
+
+        if (index >= 0) {
+          marketingCampaigns[index] = updatedCampaign;
+        }
+
+        renderMarketingSummary();
+        renderMarketingList();
+
+        if (updatedCampaign.status !== 'sending') {
+          stopMarketingPolling();
+        }
+      } catch (_error) {
+        stopMarketingPolling();
+      }
+    }, 2000);
+  };
+
+  const renderMarketingList = () => {
+    if (!(marketingListEl instanceof HTMLElement)) {
+      return;
+    }
+
+    marketingListEl.replaceChildren();
+
+    if (marketingCampaigns.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'calendar-marketing-empty';
+      empty.textContent = 'No campaigns yet. Create one to fill your quiet hours.';
+      marketingListEl.append(empty);
+      return;
+    }
+
+    marketingCampaigns.forEach((campaign) => {
+      const row = document.createElement('article');
+      row.className = 'calendar-marketing-campaign-row';
+
+      if (campaign.isAutoGenerated && campaign.status === 'draft') {
+        row.classList.add('calendar-marketing-campaign-row-auto');
+      }
+
+      const info = document.createElement('div');
+      info.className = 'calendar-marketing-campaign-info';
+      const title = document.createElement('strong');
+      title.textContent = campaign.name || 'Untitled campaign';
+      const meta = document.createElement('span');
+      meta.textContent = `${marketingTemplateLabels[campaign.templateType] || campaign.templateType} • ${marketingStatusLabels[campaign.status] || campaign.status}${campaign.isAutoGenerated && campaign.status === 'draft' ? ' • Auto-generated, awaiting your confirmation' : ''}`;
+      info.append(title, meta);
+
+      const stats = document.createElement('div');
+      stats.className = 'calendar-marketing-campaign-stats';
+      const sentStat = document.createElement('span');
+      sentStat.innerHTML = `<strong>${campaign.recipientsSent || 0}</strong> sent`;
+      const openedStat = document.createElement('span');
+      openedStat.innerHTML = `<strong>${campaign.linkOpensCount || 0}</strong> opened`;
+      const bookedStat = document.createElement('span');
+      bookedStat.innerHTML = `<strong>${campaign.conversionsCount || 0}</strong> booked`;
+      stats.append(sentStat, openedStat, bookedStat);
+
+      row.append(info, stats);
+
+      if (campaign.status === 'sending') {
+        const attempted =
+          (campaign.recipientsSent || 0) + (campaign.recipientsFailed || 0) + (campaign.recipientsSkipped || 0);
+        const progress = document.createElement('span');
+        progress.className = 'calendar-marketing-campaign-progress';
+        progress.textContent = `Sending ${attempted}/${campaign.recipientsTotal || 0}...`;
+        row.append(progress);
+        beginMarketingPolling(campaign.id);
+      } else if (campaign.status === 'draft') {
+        const resumeButton = document.createElement('button');
+        resumeButton.type = 'button';
+        resumeButton.className = 'calendar-marketing-continue-button';
+        resumeButton.textContent = 'Continue → Send';
+        resumeButton.addEventListener('click', () => {
+          void resumeDraftCampaign(campaign);
+        });
+        row.append(resumeButton);
+      }
+
+      marketingListEl.append(row);
+    });
+  };
+
+  const resumeDraftCampaign = async (campaign) => {
+    if (!(marketingBuilderEl instanceof HTMLElement)) {
+      return;
+    }
+
+    marketingActiveCampaignId = campaign.id;
+    marketingCsvContacts = [];
+
+    if (campaign.recipientSource !== 'existing_clients') {
+      marketingBuilderEl.classList.remove('is-hidden');
+      marketingBuilderEl.replaceChildren();
+
+      const heading = document.createElement('h2');
+      heading.textContent = `Resume "${campaign.name || 'Untitled campaign'}"`;
+      const notice = document.createElement('p');
+      notice.textContent =
+        'This campaign used an uploaded contact list, which was not saved. Please re-upload the same CSV file to continue.';
+
+      const csvInput = document.createElement('input');
+      csvInput.type = 'file';
+      csvInput.accept = '.csv';
+      const csvStatus = document.createElement('p');
+      csvStatus.className = 'calendar-marketing-csv-status';
+      csvStatus.textContent = 'No file uploaded yet.';
+
+      csvInput.addEventListener('change', async () => {
+        const file = csvInput.files?.[0];
+
+        if (!file) {
+          return;
+        }
+
+        csvStatus.textContent = 'Uploading...';
+
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          const response = await fetch(`/api/platform/clients/${clientId}/campaigns/contacts/upload`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+          });
+          const payload = await response.json();
+
+          if (!response.ok) {
+            throw new Error(payload?.error || 'Unable to read this file.');
+          }
+
+          marketingCsvContacts = Array.isArray(payload?.contacts) ? payload.contacts : [];
+          csvStatus.textContent = `${marketingCsvContacts.length} contact${marketingCsvContacts.length === 1 ? '' : 's'} loaded.`;
+
+          const preview = await apiRequest(
+            `/api/platform/clients/${clientId}/campaigns/${marketingActiveCampaignId}/recipients/preview`,
+            {
+              method: 'POST',
+              body: JSON.stringify({ recipientSource: campaign.recipientSource, csvContacts: marketingCsvContacts })
+            }
+          );
+          renderMarketingPreviewStep(preview, campaign.recipientSource);
+        } catch (error) {
+          marketingCsvContacts = [];
+          csvStatus.textContent = error instanceof Error ? error.message : 'Unable to read this file.';
+        }
+      });
+
+      marketingBuilderEl.append(heading, notice, csvInput, csvStatus);
+      return;
+    }
+
+    try {
+      const preview = await apiRequest(
+        `/api/platform/clients/${clientId}/campaigns/${marketingActiveCampaignId}/recipients/preview`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ recipientSource: campaign.recipientSource, csvContacts: [] })
+        }
+      );
+
+      marketingBuilderEl.classList.remove('is-hidden');
+      renderMarketingPreviewStep(preview, campaign.recipientSource);
+    } catch (error) {
+      safeAlert(error instanceof Error ? error.message : 'Unable to load recipients for this campaign.');
+    }
+  };
+
+  const loadMarketingCampaigns = async () => {
+    try {
+      const payload = await apiRequest(`/api/platform/clients/${clientId}/campaigns`);
+      marketingCampaigns = Array.isArray(payload?.campaigns) ? payload.campaigns : [];
+      renderMarketingSummary();
+      renderMarketingList();
+    } catch (error) {
+      if (marketingListEl instanceof HTMLElement) {
+        marketingListEl.textContent = error instanceof Error ? error.message : 'Unable to load campaigns.';
+      }
+    }
+  };
+
+  // Runs on the same background poll cycle as new-booking notifications.
+  // When a cancellation frees up a slot with short notice, the backend
+  // auto-creates a draft "last minute fill" campaign (never auto-sent) —
+  // this surfaces it as a one-time prompt so the owner can review and send
+  // it, per "confirm every cancellation" rather than sending silently.
+  const checkForNewAutoFillCampaigns = async () => {
+    try {
+      const payload = await apiRequest(`/api/platform/clients/${clientId}/campaigns`);
+      const campaigns = Array.isArray(payload?.campaigns) ? payload.campaigns : [];
+
+      if (getMainView() === 'marketing') {
+        marketingCampaigns = campaigns;
+        renderMarketingSummary();
+        renderMarketingList();
+      }
+
+      const seenIds = getSeenAutoFillCampaignIds(clientId);
+      const pending = campaigns.filter(
+        (campaign) => campaign.isAutoGenerated && campaign.status === 'draft' && !seenIds.has(campaign.id)
+      );
+
+      if (
+        pending.length === 0 ||
+        document.visibilityState !== 'visible' ||
+        !(toolModal instanceof HTMLDivElement) ||
+        !toolModal.classList.contains('is-hidden')
+      ) {
+        return;
+      }
+
+      const campaign = pending[0];
+
+      openToolModal({
+        eyebrow: 'Last-minute fill',
+        title: `A slot just opened up${campaign.fillSlotTime ? ` at ${campaign.fillSlotTime}` : ''}`,
+        description: `${campaign.targetServiceName || 'A service'} slot was just cancelled. Send a ${campaign.discountPercent || 0}% off offer to a small batch of your existing clients to try to fill it? Nothing sends until you confirm.`,
+        actions: [
+          createToolActionButton('Review & send', () => {
+            markAutoFillCampaignSeen(clientId, campaign.id);
+            closeToolModal();
+            setMainView('marketing');
+            void loadMarketingCampaigns();
+          }),
+          createToolActionButton('Not now', () => {
+            markAutoFillCampaignSeen(clientId, campaign.id);
+            closeToolModal();
+          })
+        ]
+      });
+    } catch (_error) {
+      // Ignore — will retry on the next poll cycle.
+    }
+  };
+
+  const closeMarketingBuilder = () => {
+    if (marketingBuilderEl instanceof HTMLElement) {
+      marketingBuilderEl.classList.add('is-hidden');
+      marketingBuilderEl.replaceChildren();
+    }
+
+    marketingCsvContacts = [];
+    marketingActiveCampaignId = '';
+  };
+
+  const renderMarketingTemplatePicker = () => {
+    if (!(marketingBuilderEl instanceof HTMLElement)) {
+      return;
+    }
+
+    marketingBuilderEl.replaceChildren();
+
+    const heading = document.createElement('h2');
+    heading.textContent = 'Choose a discount type';
+    marketingBuilderEl.append(heading);
+
+    const grid = document.createElement('div');
+    grid.className = 'calendar-marketing-template-grid';
+
+    [
+      { type: 'percent_off', label: 'Percent off', description: 'e.g. 20% off any service' },
+      { type: 'flat_amount_off', label: 'Flat amount off', description: 'e.g. Rs 500 off' },
+      { type: 'free_service', label: 'Free service', description: 'e.g. a free add-on with any booking' },
+      { type: 'happy_hour', label: 'Happy hour', description: 'e.g. Rs 2500 -> Rs 1800, 12-3 PM only' },
+      { type: 'last_minute_fill', label: 'Last-minute fill', description: 'Discount blast when a slot opens up' }
+    ].forEach((template) => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'calendar-marketing-template-card';
+      card.innerHTML = `<strong>${escapeHtml(template.label)}</strong><span>${escapeHtml(template.description)}</span>`;
+      card.addEventListener('click', () => {
+        void renderMarketingCampaignForm(template.type);
+      });
+      grid.append(card);
+    });
+
+    marketingBuilderEl.append(grid);
+
+    const cancelButton = document.createElement('button');
+    cancelButton.type = 'button';
+    cancelButton.className = 'calendar-marketing-builder-cancel';
+    cancelButton.textContent = 'Cancel';
+    cancelButton.addEventListener('click', closeMarketingBuilder);
+    marketingBuilderEl.append(cancelButton);
+  };
+
+  const renderMarketingPreviewStep = (preview, recipientSource) => {
+    marketingBuilderEl.replaceChildren();
+
+    const heading = document.createElement('h2');
+    heading.textContent = 'Review recipients';
+    marketingBuilderEl.append(heading);
+
+    const summary = document.createElement('p');
+    summary.textContent = `${preview.total} recipient${preview.total === 1 ? '' : 's'} — ${preview.smsEligibleCount} reachable by SMS, ${preview.emailEligibleCount} reachable by email.`;
+    marketingBuilderEl.append(summary);
+
+    if (preview.total === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'calendar-marketing-form-status';
+      empty.textContent = 'No valid recipients found. Go back and check your contact list.';
+      marketingBuilderEl.append(empty);
+    } else {
+      const sampleList = document.createElement('ul');
+      sampleList.className = 'calendar-marketing-recipient-sample';
+      preview.recipients.slice(0, 10).forEach((recipient) => {
+        const item = document.createElement('li');
+        item.textContent = `${recipient.name || 'Unnamed'} — ${recipient.phone || recipient.email || 'no contact info'}`;
+        sampleList.append(item);
+      });
+      marketingBuilderEl.append(sampleList);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'calendar-marketing-form-actions';
+
+    const backButton = document.createElement('button');
+    backButton.type = 'button';
+    backButton.className = 'calendar-marketing-builder-cancel';
+    backButton.textContent = 'Cancel';
+    backButton.addEventListener('click', closeMarketingBuilder);
+
+    const sendButton = document.createElement('button');
+    sendButton.type = 'button';
+    sendButton.className = 'calendar-marketing-continue-button';
+    sendButton.textContent = 'Send campaign';
+    sendButton.disabled = preview.total === 0;
+
+    sendButton.addEventListener('click', () => {
+      openToolModal({
+        eyebrow: 'Confirm send',
+        title: `Send to ${preview.total} recipient${preview.total === 1 ? '' : 's'}?`,
+        description: 'This cannot be undone — messages send immediately once confirmed.',
+        actions: [
+          createToolActionButton('Send now', async () => {
+            closeToolModal();
+            await confirmMarketingSend(recipientSource);
+          }),
+          createToolActionButton('Cancel', () => closeToolModal())
+        ]
+      });
+    });
+
+    actions.append(backButton, sendButton);
+    marketingBuilderEl.append(actions);
+  };
+
+  const confirmMarketingSend = async (recipientSource) => {
+    try {
+      await apiRequest(`/api/platform/clients/${clientId}/campaigns/${marketingActiveCampaignId}/send`, {
+        method: 'POST',
+        body: JSON.stringify({ recipientSource, csvContacts: marketingCsvContacts })
+      });
+      closeMarketingBuilder();
+      await loadMarketingCampaigns();
+    } catch (error) {
+      safeAlert(error instanceof Error ? error.message : 'Unable to send this campaign.');
+    }
+  };
+
+  const renderMarketingCampaignForm = async (templateType) => {
+    if (!(marketingBuilderEl instanceof HTMLElement)) {
+      return;
+    }
+
+    marketingBuilderEl.replaceChildren();
+
+    let template = { smsBody: '', emailSubject: '', emailBodyText: '' };
+
+    try {
+      const payload = await apiRequest(`/api/platform/clients/${clientId}/campaign-templates/${templateType}`);
+      template = payload?.template || template;
+    } catch (_error) {
+      // fall back to blank fields if the template couldn't be loaded
+    }
+
+    const services = getDashboardServices().filter((service) => service.isActive);
+
+    const form = document.createElement('form');
+    form.className = 'calendar-marketing-form';
+    form.addEventListener('submit', (event) => event.preventDefault());
+
+    const heading = document.createElement('h2');
+    heading.textContent = marketingTemplateLabels[templateType] || 'New campaign';
+    form.append(heading);
+
+    const nameLabel = document.createElement('label');
+    nameLabel.className = 'calendar-marketing-field';
+    nameLabel.innerHTML = '<span>Campaign name</span>';
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.placeholder = 'e.g. Morning slow-hours discount';
+    nameLabel.append(nameInput);
+    form.append(nameLabel);
+
+    let discountPercentInput = null;
+    let discountAmountInput = null;
+    let targetServiceSelect = null;
+    let freeServiceSelect = null;
+    let offerNameInput = null;
+    let happyHourStartInput = null;
+    let happyHourEndInput = null;
+    let originalPriceInput = null;
+    let discountedPriceInput = null;
+
+    if (templateType === 'percent_off' || templateType === 'last_minute_fill') {
+      const label = document.createElement('label');
+      label.className = 'calendar-marketing-field';
+      label.innerHTML = '<span>Discount percent</span>';
+      discountPercentInput = document.createElement('input');
+      discountPercentInput.type = 'number';
+      discountPercentInput.min = '1';
+      discountPercentInput.max = '100';
+      discountPercentInput.placeholder = '20';
+      discountPercentInput.value = String(template.defaultDiscountPercent ?? '');
+      label.append(discountPercentInput);
+      form.append(label);
+    }
+
+    if (templateType === 'flat_amount_off') {
+      const label = document.createElement('label');
+      label.className = 'calendar-marketing-field';
+      label.innerHTML = '<span>Discount amount</span>';
+      discountAmountInput = document.createElement('input');
+      discountAmountInput.type = 'number';
+      discountAmountInput.min = '1';
+      discountAmountInput.placeholder = '500';
+      label.append(discountAmountInput);
+      form.append(label);
+    }
+
+    if (templateType === 'happy_hour') {
+      const offerLabel = document.createElement('label');
+      offerLabel.className = 'calendar-marketing-field';
+      offerLabel.innerHTML = '<span>Offer name</span>';
+      offerNameInput = document.createElement('input');
+      offerNameInput.type = 'text';
+      offerNameInput.placeholder = 'e.g. Lunch Special';
+      offerLabel.append(offerNameInput);
+      form.append(offerLabel);
+
+      const timeRow = document.createElement('div');
+      timeRow.className = 'calendar-marketing-field';
+      timeRow.innerHTML = '<span>Happy hour window</span>';
+      const timeInputsWrap = document.createElement('div');
+      timeInputsWrap.style.display = 'flex';
+      timeInputsWrap.style.gap = '10px';
+      happyHourStartInput = document.createElement('input');
+      happyHourStartInput.type = 'time';
+      happyHourEndInput = document.createElement('input');
+      happyHourEndInput.type = 'time';
+      timeInputsWrap.append(happyHourStartInput, happyHourEndInput);
+      timeRow.append(timeInputsWrap);
+      form.append(timeRow);
+
+      const priceRow = document.createElement('div');
+      priceRow.className = 'calendar-marketing-field';
+      priceRow.innerHTML = '<span>Price (original -&gt; discounted)</span>';
+      const priceInputsWrap = document.createElement('div');
+      priceInputsWrap.style.display = 'flex';
+      priceInputsWrap.style.gap = '10px';
+      originalPriceInput = document.createElement('input');
+      originalPriceInput.type = 'number';
+      originalPriceInput.min = '1';
+      originalPriceInput.placeholder = 'e.g. 2500';
+      discountedPriceInput = document.createElement('input');
+      discountedPriceInput.type = 'number';
+      discountedPriceInput.min = '1';
+      discountedPriceInput.placeholder = 'e.g. 1800';
+      priceInputsWrap.append(originalPriceInput, discountedPriceInput);
+      priceRow.append(priceInputsWrap);
+      form.append(priceRow);
+    }
+
+    if (templateType === 'free_service') {
+      const label = document.createElement('label');
+      label.className = 'calendar-marketing-field';
+      label.innerHTML = '<span>Free service</span>';
+      freeServiceSelect = document.createElement('select');
+      services.forEach((service) => {
+        const option = document.createElement('option');
+        option.value = service.id;
+        option.textContent = service.name;
+        freeServiceSelect.append(option);
+      });
+      label.append(freeServiceSelect);
+      form.append(label);
+    } else {
+      const label = document.createElement('label');
+      label.className = 'calendar-marketing-field';
+      label.innerHTML = `<span>Service${templateType === 'happy_hour' ? '' : ' (optional)'}</span>`;
+      targetServiceSelect = document.createElement('select');
+
+      if (templateType !== 'happy_hour') {
+        const anyOption = document.createElement('option');
+        anyOption.value = '';
+        anyOption.textContent = 'Any service';
+        targetServiceSelect.append(anyOption);
+      }
+
+      services.forEach((service) => {
+        const option = document.createElement('option');
+        option.value = service.id;
+        option.textContent = service.name;
+        targetServiceSelect.append(option);
+      });
+      label.append(targetServiceSelect);
+      form.append(label);
+    }
+
+    const channelLabel = document.createElement('label');
+    channelLabel.className = 'calendar-marketing-field';
+    channelLabel.innerHTML = '<span>Send via</span>';
+    const channelSelect = document.createElement('select');
+    [
+      ['sms', 'SMS only'],
+      ['email', 'Email only'],
+      ['both', 'SMS and email']
+    ].forEach(([value, label]) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      channelSelect.append(option);
+    });
+    channelLabel.append(channelSelect);
+    form.append(channelLabel);
+
+    const sourceLabel = document.createElement('label');
+    sourceLabel.className = 'calendar-marketing-field';
+    sourceLabel.innerHTML = '<span>Send to</span>';
+    const sourceSelect = document.createElement('select');
+    [
+      ['existing_clients', 'My existing clients'],
+      ['csv_upload', 'Uploaded contact list'],
+      ['both', 'Both']
+    ].forEach(([value, label]) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      sourceSelect.append(option);
+    });
+    sourceLabel.append(sourceSelect);
+    form.append(sourceLabel);
+
+    const csvWrap = document.createElement('div');
+    csvWrap.className = 'calendar-marketing-csv-wrap is-hidden';
+    const csvInput = document.createElement('input');
+    csvInput.type = 'file';
+    csvInput.accept = '.csv';
+    const csvStatus = document.createElement('p');
+    csvStatus.className = 'calendar-marketing-csv-status';
+    csvStatus.textContent = 'No file uploaded yet.';
+    csvWrap.append(csvInput, csvStatus);
+    form.append(csvWrap);
+
+    const toggleCsvVisibility = () => {
+      csvWrap.classList.toggle('is-hidden', sourceSelect.value === 'existing_clients');
+    };
+    sourceSelect.addEventListener('change', toggleCsvVisibility);
+    toggleCsvVisibility();
+
+    marketingCsvContacts = [];
+    csvInput.addEventListener('change', async () => {
+      const file = csvInput.files?.[0];
+
+      if (!file) {
+        return;
+      }
+
+      csvStatus.textContent = 'Uploading...';
+
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await fetch(`/api/platform/clients/${clientId}/campaigns/contacts/upload`, {
+          method: 'POST',
+          credentials: 'include',
+          body: formData
+        });
+        const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload?.error || 'Unable to read this file.');
+        }
+
+        marketingCsvContacts = Array.isArray(payload?.contacts) ? payload.contacts : [];
+        csvStatus.textContent = `${marketingCsvContacts.length} contact${marketingCsvContacts.length === 1 ? '' : 's'} loaded${payload.rejectedCount ? `, ${payload.rejectedCount} row${payload.rejectedCount === 1 ? '' : 's'} skipped` : ''}.`;
+      } catch (error) {
+        marketingCsvContacts = [];
+        csvStatus.textContent = error instanceof Error ? error.message : 'Unable to read this file.';
+      }
+    });
+
+    const smsLabel = document.createElement('label');
+    smsLabel.className = 'calendar-marketing-field';
+    smsLabel.innerHTML = '<span>SMS message</span>';
+    const smsTextarea = document.createElement('textarea');
+    smsTextarea.rows = 3;
+    smsTextarea.value = template.smsBody;
+    smsLabel.append(smsTextarea);
+    form.append(smsLabel);
+
+    const emailSubjectLabel = document.createElement('label');
+    emailSubjectLabel.className = 'calendar-marketing-field';
+    emailSubjectLabel.innerHTML = '<span>Email subject</span>';
+    const emailSubjectInput = document.createElement('input');
+    emailSubjectInput.type = 'text';
+    emailSubjectInput.value = template.emailSubject;
+    emailSubjectLabel.append(emailSubjectInput);
+    form.append(emailSubjectLabel);
+
+    const emailBodyLabel = document.createElement('label');
+    emailBodyLabel.className = 'calendar-marketing-field';
+    emailBodyLabel.innerHTML = '<span>Email body</span>';
+    const emailBodyTextarea = document.createElement('textarea');
+    emailBodyTextarea.rows = 4;
+    emailBodyTextarea.value = template.emailBodyText;
+    emailBodyLabel.append(emailBodyTextarea);
+    form.append(emailBodyLabel);
+
+    const hint = document.createElement('p');
+    hint.className = 'calendar-marketing-placeholder-hint';
+    hint.textContent =
+      templateType === 'happy_hour'
+        ? 'Placeholders: {{customerName}}, {{businessName}}, {{serviceName}}, {{startTime}}, {{endTime}}, {{offerName}}, {{originalPrice}}, {{discountedPrice}}, {{bookingLink}}'
+        : templateType === 'last_minute_fill'
+          ? 'Placeholders: {{customerName}}, {{businessName}}, {{discountLabel}}, {{serviceName}}, {{slotTime}}, {{seatsLeft}}, {{bookingLink}}'
+          : 'Placeholders: {{customerName}}, {{businessName}}, {{discountLabel}}, {{serviceName}}, {{bookingLink}}';
+    form.append(hint);
+
+    const status = document.createElement('p');
+    status.className = 'calendar-marketing-form-status';
+
+    const actions = document.createElement('div');
+    actions.className = 'calendar-marketing-form-actions';
+
+    const backButton = document.createElement('button');
+    backButton.type = 'button';
+    backButton.className = 'calendar-marketing-builder-cancel';
+    backButton.textContent = 'Back';
+    backButton.addEventListener('click', renderMarketingTemplatePicker);
+
+    const previewButton = document.createElement('button');
+    previewButton.type = 'button';
+    previewButton.className = 'calendar-marketing-continue-button';
+    previewButton.textContent = 'Continue to preview';
+
+    previewButton.addEventListener('click', async () => {
+      previewButton.disabled = true;
+      status.textContent = '';
+
+      try {
+        const input = {
+          name: nameInput.value,
+          templateType,
+          smsBody: smsTextarea.value,
+          emailSubject: emailSubjectInput.value,
+          emailBodyText: emailBodyTextarea.value,
+          channel: channelSelect.value,
+          recipientSource: sourceSelect.value
+        };
+
+        if (templateType === 'percent_off' || templateType === 'last_minute_fill') {
+          input.discountPercent = Number(discountPercentInput.value);
+        }
+
+        if (templateType === 'flat_amount_off') {
+          input.discountAmountCents = Math.round(Number(discountAmountInput.value) * 100);
+        }
+
+        if (templateType === 'happy_hour') {
+          input.offerName = offerNameInput.value;
+          input.happyHourStartTime = happyHourStartInput.value;
+          input.happyHourEndTime = happyHourEndInput.value;
+          input.originalPriceCents = Math.round(Number(originalPriceInput.value) * 100);
+          input.discountedPriceCents = Math.round(Number(discountedPriceInput.value) * 100);
+        }
+
+        if (templateType === 'free_service') {
+          input.freeServiceId = freeServiceSelect.value;
+        } else if (targetServiceSelect.value) {
+          input.targetServiceId = targetServiceSelect.value;
+        }
+
+        const created = await apiRequest(`/api/platform/clients/${clientId}/campaigns`, {
+          method: 'POST',
+          body: JSON.stringify(input)
+        });
+
+        marketingActiveCampaignId = created.campaign.id;
+
+        const preview = await apiRequest(
+          `/api/platform/clients/${clientId}/campaigns/${marketingActiveCampaignId}/recipients/preview`,
+          {
+            method: 'POST',
+            body: JSON.stringify({ recipientSource: sourceSelect.value, csvContacts: marketingCsvContacts })
+          }
+        );
+
+        renderMarketingPreviewStep(preview, sourceSelect.value);
+      } catch (error) {
+        status.textContent = error instanceof Error ? error.message : 'Unable to create this campaign.';
+      } finally {
+        previewButton.disabled = false;
+      }
+    });
+
+    const saveDefaultButton = document.createElement('button');
+    saveDefaultButton.type = 'button';
+    saveDefaultButton.className = 'calendar-marketing-builder-cancel';
+    saveDefaultButton.textContent = 'Save as default';
+    saveDefaultButton.title = 'Save this wording (and discount, for last-minute fill) as the default for next time';
+    saveDefaultButton.addEventListener('click', async () => {
+      saveDefaultButton.disabled = true;
+
+      try {
+        const patch = {
+          smsBody: smsTextarea.value,
+          emailSubject: emailSubjectInput.value,
+          emailBodyText: emailBodyTextarea.value
+        };
+
+        if (templateType === 'last_minute_fill' && discountPercentInput?.value) {
+          patch.defaultDiscountPercent = Number(discountPercentInput.value);
+        }
+
+        await apiRequest(`/api/platform/clients/${clientId}/campaign-templates/${templateType}`, {
+          method: 'PUT',
+          body: JSON.stringify(patch)
+        });
+        status.textContent = 'Saved as your default template for this offer type.';
+        status.classList.remove('calendar-marketing-form-status');
+        status.classList.add('calendar-marketing-form-status-success');
+      } catch (error) {
+        status.textContent = error instanceof Error ? error.message : 'Unable to save this template.';
+      } finally {
+        saveDefaultButton.disabled = false;
+      }
+    });
+
+    actions.append(backButton, saveDefaultButton, previewButton);
+    form.append(actions, status);
+
+    marketingBuilderEl.append(form);
+  };
+
+  const openMarketingBuilder = () => {
+    if (!(marketingBuilderEl instanceof HTMLElement)) {
+      return;
+    }
+
+    marketingBuilderEl.classList.remove('is-hidden');
+    renderMarketingTemplatePicker();
+  };
+
+  if (marketingNewButton instanceof HTMLButtonElement) {
+    marketingNewButton.addEventListener('click', () => {
+      openMarketingBuilder();
+    });
+  }
+
   if (marketingAction instanceof HTMLButtonElement) {
     marketingAction.addEventListener('click', () => {
       if (guardBillingFeature('marketing')) {
         return;
       }
 
-      openToolModal({
-        eyebrow: 'Marketing',
-        title: 'Marketing tools',
-        description:
-          'Use the booking link and QR code to bring in traffic today. Campaign builders can be added here later.',
-        actions: [
-          createToolActionButton('Open booking page', () => {
-            closeToolModal();
-            openPublicBookingPage();
-          }),
-          createToolActionButton('Show QR code', async () => {
-            closeToolModal();
-            await openQrModal();
-          })
-        ]
-      });
+      if (getMainView() !== 'marketing') {
+        setMainView('marketing');
+        void loadMarketingCampaigns();
+        return;
+      }
+
+      setMainView('calendar');
     });
   }
 
@@ -16330,8 +17662,19 @@ const initPublicBooking = () => {
   }
 
   const currentBookingSource = getPublicBookingSource();
+  const currentCampaignId = getPublicCampaignId();
   const currentWaitlistClaim = getPublicWaitlistClaim();
+
+  if (currentCampaignId) {
+    fetch(`/api/public/campaigns/${encodeURIComponent(currentCampaignId)}/open`, {
+      method: 'POST',
+      keepalive: true
+    }).catch(() => {});
+  }
   const packageCheckoutStatus = new URLSearchParams(window.location.search).get('packageCheckout');
+  const specialServiceCheckoutStatus = new URLSearchParams(window.location.search).get(
+    'specialServiceCheckout'
+  );
   const packageCheckoutStorageKey = `qr-booking-package-checkout:${businessId}`;
   const today = new Date();
   dateInput.value = getLocalDateValue(today);
@@ -16762,6 +18105,18 @@ const initPublicBooking = () => {
       price.textContent = service.priceLabel || 'Price on booking';
 
       copy.append(title, meta, price);
+
+      if (service.isSpecialService) {
+        const specialBadge = document.createElement('span');
+        specialBadge.className = 'special-service-badge booking-choice-special-badge';
+        specialBadge.textContent = '✨ Special';
+        copy.append(specialBadge);
+
+        const depositNote = document.createElement('span');
+        depositNote.className = 'booking-choice-deposit-note';
+        depositNote.textContent = '5% advance payment required to confirm';
+        copy.append(depositNote);
+      }
 
       const marker = document.createElement('span');
       marker.className = 'booking-choice-marker';
@@ -17679,6 +19034,16 @@ const initPublicBooking = () => {
         );
       } else if (packageCheckoutStatus === 'cancelled') {
         showPackageToast('Checkout cancelled', 'No package was added because payment was not completed.');
+      } else if (specialServiceCheckoutStatus === 'success') {
+        showPackageToast(
+          'Deposit received',
+          'Your advance deposit was received and your booking is confirmed. Check your phone or email for details.'
+        );
+      } else if (specialServiceCheckoutStatus === 'cancelled') {
+        showPackageToast(
+          'Checkout cancelled',
+          'No booking was made because the deposit payment was not completed. Your slot was released — feel free to try again.'
+        );
       }
     })
     .catch((error) => {
@@ -17984,6 +19349,8 @@ const initPublicBooking = () => {
       bookingSubmitButton.textContent = 'Confirming...';
     }
 
+    let isRedirectingToCheckout = false;
+
     try {
       const selectedBookingLocation = getSelectedBookingLocation();
       const customerAddressValue = customerAddressInput.value.trim();
@@ -18017,9 +19384,19 @@ const initPublicBooking = () => {
           packagePurchaseId: selectedBenefit?.type === 'package' ? selectedBenefit.id : '',
           loyaltyRewardId: selectedBenefit?.type === 'loyalty' ? selectedBenefit.id : '',
           waitlistEntryId: currentWaitlistClaim.waitlistEntryId,
-          waitlistOfferToken: currentWaitlistClaim.waitlistOfferToken
+          waitlistOfferToken: currentWaitlistClaim.waitlistOfferToken,
+          campaignId: currentCampaignId
         })
       });
+
+      if (payload?.checkoutUrl) {
+        isRedirectingToCheckout = true;
+        if (bookingSubmitButton instanceof HTMLButtonElement) {
+          bookingSubmitButton.textContent = 'Redirecting to payment...';
+        }
+        window.location.href = payload.checkoutUrl;
+        return;
+      }
 
       successPanel.classList.remove('is-hidden');
       if (bookingBackLink instanceof HTMLAnchorElement) {
@@ -18051,7 +19428,7 @@ const initPublicBooking = () => {
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to create appointment');
     } finally {
-      if (bookingSubmitButton instanceof HTMLButtonElement) {
+      if (!isRedirectingToCheckout && bookingSubmitButton instanceof HTMLButtonElement) {
         bookingSubmitButton.disabled = false;
         bookingSubmitButton.classList.remove('is-loading');
         bookingSubmitButton.textContent = bookingSubmitButtonDefaultText;
@@ -19019,6 +20396,376 @@ const initPricingPage = () => {
     });
 };
 
+const STAFF_SESSION_STORAGE_KEY = 'staffSession';
+
+const getStaffSession = () => {
+  try {
+    const raw = window.localStorage.getItem(STAFF_SESSION_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    return null;
+  }
+};
+
+const setStaffSession = (session) => {
+  try {
+    window.localStorage.setItem(STAFF_SESSION_STORAGE_KEY, JSON.stringify(session));
+  } catch (error) {
+    // ignore storage errors
+  }
+};
+
+const clearStaffSession = () => {
+  try {
+    window.localStorage.removeItem(STAFF_SESSION_STORAGE_KEY);
+  } catch (error) {
+    // ignore storage errors
+  }
+};
+
+const staffApiRequest = async (path, options = {}) => {
+  const response = await fetch(path, {
+    credentials: 'include',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers ?? {})
+    }
+  });
+
+  const responseType = response.headers.get('content-type') ?? '';
+  const payload = responseType.includes('application/json') ? await response.json() : null;
+
+  if (response.status === 403) {
+    clearStaffSession();
+    window.location.assign('/barber-login');
+    throw new Error(payload?.error ?? 'Staff access is required');
+  }
+
+  if (!response.ok) {
+    const error = new Error(payload?.error ?? 'Request failed');
+    error.statusCode = response.status;
+    throw error;
+  }
+
+  return payload;
+};
+
+const formatBarberMoneyValue = (amountValue, currencyCode) => {
+  const normalizedAmountValue = Number.isFinite(Number(amountValue)) ? Number(amountValue) : 0;
+  const normalizedCurrencyCode =
+    typeof currencyCode === 'string' && currencyCode.trim() ? currencyCode.trim().toUpperCase() : '';
+  const formatter = new Intl.NumberFormat(getDashboardUiCopy().locale || 'en-GB', {
+    maximumFractionDigits: 0
+  });
+  const formattedAmount = formatter.format(Math.round(normalizedAmountValue));
+  return normalizedCurrencyCode ? `${normalizedCurrencyCode} ${formattedAmount}` : formattedAmount;
+};
+
+const initBarberLoginForm = () => {
+  const form = document.querySelector('#barber-login-form');
+  const usernameInput = document.querySelector('#barber-login-username');
+  const passwordInput = document.querySelector('#barber-login-password');
+  const rememberMeInput = document.querySelector('#barber-login-remember-me');
+  const submitBtn = document.querySelector('#barber-login-submit');
+  const status = document.querySelector('#barber-login-status');
+
+  if (
+    !(form instanceof HTMLFormElement) ||
+    !(usernameInput instanceof HTMLInputElement) ||
+    !(passwordInput instanceof HTMLInputElement) ||
+    !(submitBtn instanceof HTMLButtonElement)
+  ) {
+    return;
+  }
+
+  const loginEndpoint = form.dataset.loginEndpoint?.trim();
+
+  const setStatus = (message = '', isError = false) => {
+    if (!(status instanceof HTMLElement)) return;
+    status.textContent = message;
+    status.classList.toggle('is-error', isError);
+  };
+
+  const submitLogin = async () => {
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
+
+    if (!username || !password) {
+      setStatus('Enter your username and password.', true);
+      return;
+    }
+
+    if (!loginEndpoint) {
+      setStatus('Login is not configured.', true);
+      return;
+    }
+
+    submitBtn.disabled = true;
+    setStatus('Logging in...');
+
+    try {
+      const payload = await staffApiRequest(loginEndpoint, {
+        method: 'POST',
+        body: JSON.stringify({
+          username,
+          password,
+          rememberMe: rememberMeInput instanceof HTMLInputElement ? rememberMeInput.checked : true
+        })
+      });
+
+      setStaffSession({
+        clientId: payload.clientId,
+        teamMemberId: payload.teamMemberId,
+        teamMemberName: payload.teamMemberName,
+        businessName: payload.businessName
+      });
+
+      const params = new URLSearchParams({
+        clientId: payload.clientId,
+        teamMemberId: payload.teamMemberId
+      });
+      window.location.assign(`/barber-dashboard?${params.toString()}`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Unable to log in.', true);
+    } finally {
+      submitBtn.disabled = false;
+    }
+  };
+
+  submitBtn.addEventListener('click', () => {
+    void submitLogin();
+  });
+
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    void submitLogin();
+  });
+
+  passwordInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      void submitLogin();
+    }
+  });
+};
+
+const initBarberDashboard = () => {
+  const appointmentsFeed = document.querySelector('#barber-dashboard-appointments-feed');
+  const tipsFeed = document.querySelector('#barber-dashboard-tips-feed');
+
+  if (!(appointmentsFeed instanceof HTMLElement) || !(tipsFeed instanceof HTMLElement)) {
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const clientId = params.get('clientId')?.trim();
+  const teamMemberId = params.get('teamMemberId')?.trim();
+
+  if (!clientId || !teamMemberId) {
+    window.location.assign('/barber-login');
+    return;
+  }
+
+  const nameHeading = document.querySelector('#barber-dashboard-name');
+  const businessNameLabel = document.querySelector('#barber-dashboard-business-name');
+  const logoutBtn = document.querySelector('#barber-dashboard-logout');
+  const totalAppointmentsMetric = document.querySelector('#barber-dashboard-total-appointments');
+  const upcomingAppointmentsMetric = document.querySelector('#barber-dashboard-upcoming-appointments');
+  const completedAppointmentsMetric = document.querySelector('#barber-dashboard-completed-appointments');
+  const totalTipsMetric = document.querySelector('#barber-dashboard-total-tips');
+
+  const session = getStaffSession();
+
+  if (session?.teamMemberName && nameHeading instanceof HTMLElement) {
+    nameHeading.textContent = `${session.teamMemberName}'s appointments`;
+  }
+
+  if (session?.businessName && businessNameLabel instanceof HTMLElement) {
+    businessNameLabel.textContent = session.businessName;
+  }
+
+  if (logoutBtn instanceof HTMLButtonElement) {
+    logoutBtn.addEventListener('click', () => {
+      staffApiRequest(`/api/platform/clients/${clientId}/staff/${teamMemberId}/logout`, {
+        method: 'POST'
+      })
+        .catch(() => {})
+        .finally(() => {
+          clearStaffSession();
+          window.location.assign('/barber-login');
+        });
+    });
+  }
+
+  const formatBarberDateTime = (dateValue, timeValue) => {
+    if (!dateValue) return 'Unknown date';
+
+    const parsed = new Date(`${dateValue}T${timeValue || '00:00'}`);
+
+    if (Number.isNaN(parsed.getTime())) {
+      return `${dateValue} ${timeValue || ''}`.trim();
+    }
+
+    return new Intl.DateTimeFormat(getDashboardUiCopy().locale || 'en-GB', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(parsed);
+  };
+
+  const renderEmptyFeed = (feed, title, description) => {
+    feed.replaceChildren();
+
+    const card = document.createElement('article');
+    card.className = 'sms-log-empty';
+
+    const heading = document.createElement('h2');
+    heading.textContent = title;
+
+    const copy = document.createElement('p');
+    copy.textContent = description;
+
+    card.append(heading, copy);
+    feed.append(card);
+  };
+
+  const appointmentStatusVariant = (status) => {
+    if (status === 'completed') return 'sent';
+    if (status === 'cancelled') return 'failed';
+    return 'skipped';
+  };
+
+  staffApiRequest(`/api/platform/clients/${clientId}/staff/${teamMemberId}/appointments`)
+    .then((payload) => {
+      const appointments = Array.isArray(payload.appointments) ? payload.appointments : [];
+      const completedCount = appointments.filter((appointment) => appointment.status === 'completed').length;
+      const upcomingCount = appointments.filter(
+        (appointment) => appointment.status === 'booked' || appointment.status === 'confirmed'
+      ).length;
+
+      if (totalAppointmentsMetric instanceof HTMLElement) {
+        totalAppointmentsMetric.textContent = String(appointments.length);
+      }
+
+      if (upcomingAppointmentsMetric instanceof HTMLElement) {
+        upcomingAppointmentsMetric.textContent = String(upcomingCount);
+      }
+
+      if (completedAppointmentsMetric instanceof HTMLElement) {
+        completedAppointmentsMetric.textContent = String(completedCount);
+      }
+
+      if (appointments.length === 0) {
+        renderEmptyFeed(
+          appointmentsFeed,
+          'No appointments yet',
+          'Appointments assigned to you will show up here.'
+        );
+        return;
+      }
+
+      const sorted = [...appointments].sort((left, right) =>
+        (right.startAt || '').localeCompare(left.startAt || '')
+      );
+
+      const cards = sorted.map((appointment) => {
+        const card = document.createElement('article');
+        card.className = 'sms-log-card';
+
+        const top = document.createElement('div');
+        top.className = 'sms-log-card-top';
+
+        const meta = document.createElement('div');
+        meta.className = 'sms-log-meta';
+
+        const title = document.createElement('strong');
+        title.textContent = `${appointment.customerName || 'Customer'} - ${appointment.serviceName || 'Service'}`;
+
+        const subtitle = document.createElement('p');
+        subtitle.textContent = formatBarberDateTime(appointment.appointmentDate, appointment.appointmentTime);
+
+        meta.append(title, subtitle);
+
+        const status = document.createElement('span');
+        status.className = `sms-log-status is-${appointmentStatusVariant(appointment.status)}`;
+        status.textContent = appointment.status || 'booked';
+
+        top.append(meta, status);
+        card.append(top);
+        return card;
+      });
+
+      appointmentsFeed.replaceChildren(...cards);
+    })
+    .catch((error) => {
+      renderEmptyFeed(
+        appointmentsFeed,
+        'Unable to load appointments',
+        error instanceof Error ? error.message : 'Your appointments are not available right now.'
+      );
+    });
+
+  staffApiRequest(`/api/platform/clients/${clientId}/staff/${teamMemberId}/tips`)
+    .then((payload) => {
+      const payments = Array.isArray(payload.payments) ? payload.payments : [];
+      const tipPayments = payments.filter((payment) => Number(payment.tipAmountValue) > 0);
+      const totalTipAmount = tipPayments.reduce(
+        (sum, payment) => sum + (Number(payment.tipAmountValue) || 0),
+        0
+      );
+      const currencyCode = payload.summary?.currencyCode || tipPayments[0]?.currencyCode || '';
+
+      if (totalTipsMetric instanceof HTMLElement) {
+        totalTipsMetric.textContent = formatBarberMoneyValue(totalTipAmount, currencyCode);
+      }
+
+      if (tipPayments.length === 0) {
+        renderEmptyFeed(tipsFeed, 'No tips yet', 'Tips collected on your appointments will show up here.');
+        return;
+      }
+
+      const sorted = [...tipPayments].sort((left, right) =>
+        (right.createdAt || '').localeCompare(left.createdAt || '')
+      );
+
+      const cards = sorted.map((payment) => {
+        const card = document.createElement('article');
+        card.className = 'sms-log-card';
+
+        const top = document.createElement('div');
+        top.className = 'sms-log-card-top';
+
+        const meta = document.createElement('div');
+        meta.className = 'sms-log-meta';
+
+        const title = document.createElement('strong');
+        title.textContent = `${payment.customerName || 'Customer'} - ${payment.serviceName || 'Service'}`;
+
+        const subtitle = document.createElement('p');
+        subtitle.textContent = formatBarberDateTime(payment.appointmentDate, payment.appointmentTime);
+
+        meta.append(title, subtitle);
+
+        const tipAmount = document.createElement('span');
+        tipAmount.className = 'sms-log-status is-sent';
+        tipAmount.textContent = formatBarberMoneyValue(payment.tipAmountValue, payment.currencyCode);
+
+        top.append(meta, tipAmount);
+        card.append(top);
+        return card;
+      });
+
+      tipsFeed.replaceChildren(...cards);
+    })
+    .catch((error) => {
+      renderEmptyFeed(
+        tipsFeed,
+        'Unable to load tips',
+        error instanceof Error ? error.message : 'Your tips are not available right now.'
+      );
+    });
+};
+
 const initSmsLogs = () => {
   const logsFeed = document.querySelector('#sms-logs-feed');
   const backLink = document.querySelector('#sms-logs-back-link');
@@ -19362,6 +21109,8 @@ const initEmailLogs = () => {
 syncClientIdFromQuery();
 initCustomerLogin();
 initCustomerOtpLogin();
+initBarberLoginForm();
+initBarberDashboard();
 initCustomerAccountMenu();
 initCustomerProfilePage();
 

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QR schedule.com | My dashboard</title>
+    <meta
+      name="description"
+      content="See your own appointments and tips."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="sms-logs-page">
+      <div class="sms-logs-shell">
+        <header class="sms-logs-header">
+          <div class="sms-logs-header-copy">
+            <p class="sms-logs-eyebrow" id="barber-dashboard-business-name">My dashboard</p>
+            <h1 id="barber-dashboard-name">My appointments</h1>
+            <p>Only your own appointments and tips show here.</p>
+          </div>
+          <button class="calendar-booking-link sms-logs-back-link" id="barber-dashboard-logout" type="button">
+            Log out
+          </button>
+        </header>
+
+        <section class="sms-logs-summary" id="barber-dashboard-summary">
+          <article class="sms-logs-metric">
+            <span>Appointments</span>
+            <strong id="barber-dashboard-total-appointments">0</strong>
+          </article>
+          <article class="sms-logs-metric">
+            <span>Upcoming</span>
+            <strong id="barber-dashboard-upcoming-appointments">0</strong>
+          </article>
+          <article class="sms-logs-metric">
+            <span>Completed</span>
+            <strong id="barber-dashboard-completed-appointments">0</strong>
+          </article>
+          <article class="sms-logs-metric">
+            <span>Tips collected</span>
+            <strong id="barber-dashboard-total-tips">0</strong>
+          </article>
+        </section>
+
+        <h2 class="barber-dashboard-section-title">My appointments</h2>
+        <section class="sms-logs-feed" id="barber-dashboard-appointments-feed" aria-live="polite">
+          <article class="sms-log-empty">
+            <h2>No appointments yet</h2>
+            <p>Appointments assigned to you will show up here.</p>
+          </article>
+        </section>
+
+        <h2 class="barber-dashboard-section-title">My tips</h2>
+        <section class="sms-logs-feed" id="barber-dashboard-tips-feed" aria-live="polite">
+          <article class="sms-log-empty">
+            <h2>No tips yet</h2>
+            <p>Tips collected on your appointments will show up here.</p>
+          </article>
+        </section>
+      </div>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>

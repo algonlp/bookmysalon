@@ -42,7 +42,8 @@ const createAppointmentSchema = z.object({
   packagePurchaseId: z.string().trim().optional().or(z.literal('')),
   loyaltyRewardId: z.string().trim().optional().or(z.literal('')),
   waitlistEntryId: z.string().uuid().optional().or(z.literal('')),
-  waitlistOfferToken: z.string().uuid().optional().or(z.literal(''))
+  waitlistOfferToken: z.string().uuid().optional().or(z.literal('')),
+  campaignId: z.string().trim().optional().or(z.literal(''))
 }).superRefine((value, context) => {
   if (value.serviceLocation && serviceLocationRequiresAddress(value.serviceLocation) && !value.customerAddress?.trim()) {
     context.addIssue({
@@ -118,6 +119,16 @@ const getBusinessId = (req: Request): string => {
   }
 
   return businessId;
+};
+
+const getTeamMemberId = (req: Request): string => {
+  const teamMemberId = req.params.teamMemberId;
+
+  if (!teamMemberId) {
+    throw new HttpError(400, 'Team member id is required');
+  }
+
+  return teamMemberId;
 };
 
 export const appointmentController = {
@@ -355,6 +366,21 @@ export const appointmentController = {
 
   async listPayments(req: Request, res: Response, _next: NextFunction): Promise<void> {
     res.status(200).json(await appointmentService.listPaymentsForBusiness(getBusinessId(req)));
+  },
+
+  async listAppointmentsForStaff(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    res.status(200).json({
+      appointments: await appointmentService.listAppointmentsForTeamMember(
+        getBusinessId(req),
+        getTeamMemberId(req)
+      )
+    });
+  },
+
+  async listTipsForStaff(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    res.status(200).json(
+      await appointmentService.listPaymentsForTeamMember(getBusinessId(req), getTeamMemberId(req))
+    );
   },
 
   async createPayment(req: Request, res: Response, _next: NextFunction): Promise<void> {
