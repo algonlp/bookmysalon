@@ -4796,6 +4796,27 @@ textarea:focus-visible {
   }
 }
 
+.is-busy {
+  pointer-events: none;
+  opacity: 0.75;
+  cursor: wait;
+}
+
+button.is-busy::after,
+a.is-busy::after,
+.is-busy[role='button']::after {
+  content: '';
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  margin-left: 0.5em;
+  vertical-align: -0.1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spinnerRotate 600ms linear infinite;
+}
+
 .divider-copy {
   margin-top: 26px;
   color: #6d6863;
@@ -9936,6 +9957,11 @@ button.calendar-reports-summary-card {
   background: rgba(31, 51, 93, 0.08);
 }
 
+.calendar-tool-action:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .calendar-tool-action-danger {
   width: 100%;
   border-color: rgba(148, 44, 44, 0.1);
@@ -10080,6 +10106,14 @@ button.calendar-reports-summary-card {
   color: #5d5752;
   font-size: 1rem;
   line-height: 1.5;
+}
+
+.booking-branch-field {
+  margin-bottom: 14px;
+}
+
+.booking-branch-field select {
+  min-height: 44px;
 }
 
 .booking-meta {
@@ -12181,6 +12215,36 @@ button.calendar-reports-summary-card {
 
 .pricing-checkout.is-hidden {
   display: none;
+}
+
+.pricing-trial-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.pricing-trial-form.is-hidden {
+  display: none;
+}
+
+.pricing-trial-note {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #4c443e;
+}
+
+.pricing-trial-form input {
+  min-height: 48px;
+  border: 1px solid rgba(16, 16, 16, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.78);
+  padding: 0 14px;
+  font: inherit;
+}
+
+.pricing-trial-form .pricing-cta {
+  margin-top: 4px;
 }
 
 .pricing-checkout h2 {

@@ -1595,7 +1595,7 @@ const sendAppointmentConfirmationNotification = async (
     appointment.packageName
       ? ` Package: ${appointment.packageName}${
           appointment.packageTotalUses
-            ? ` (${appointment.packageTotalUses} use${appointment.packageTotalUses === 1 ? '' : 's'}`
+            ? ` (${appointment.packageTotalUses} user${appointment.packageTotalUses === 1 ? '' : 's'}`
             : ''
         }${
           appointment.packagePriceLabel
@@ -1732,6 +1732,19 @@ export const appointmentService = {
       waitlistOfferToken
     );
 
+    const linkedBranches = await Promise.all(
+      business.linkedBusinessIds.map((branchId) => clientPlatformRepository.getClientById(branchId))
+    );
+    const branches =
+      business.linkedBusinessIds.length > 0
+        ? [
+            { id: business.id, businessName: getBusinessDisplayName(business) },
+            ...linkedBranches
+              .filter((branch): branch is NonNullable<typeof branch> => Boolean(branch))
+              .map((branch) => ({ id: branch.id, businessName: branch.businessName }))
+          ]
+        : [];
+
     return {
       businessId: business.id,
       businessName: getBusinessDisplayName(business),
@@ -1748,7 +1761,8 @@ export const appointmentService = {
       bookingDisabledReason: bookingAvailability.reason,
       reviews: reviews.slice(0, 5),
       reviewSummary: buildReviewSummary(reviews),
-      waitlistOffer: waitlistOffer ? toPublicWaitlistOffer(waitlistOffer) : null
+      waitlistOffer: waitlistOffer ? toPublicWaitlistOffer(waitlistOffer) : null,
+      branches
     };
   },
 

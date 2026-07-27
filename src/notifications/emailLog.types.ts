@@ -4,6 +4,7 @@ export type EmailLogSource =
   | 'appointment_confirmation'
   | 'appointment_rescheduled'
   | 'welcome'
+  | 'free_trial'
   | 'marketing_campaign'
   | 'unknown';
 

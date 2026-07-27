@@ -475,7 +475,7 @@ describe('Client platform API', () => {
         expect.objectContaining({
           businessId: clientId,
           providerSubscriptionId: 'sub_invoice_paid',
-          status: 'active',
+          status: 'trialing',
           currentPeriodEnd: '2027-02-01T00:00:00.000Z'
         })
       ])
@@ -3540,6 +3540,46 @@ describe('Client platform API', () => {
     );
   });
 
+  it('activates a Solo free trial with just a name and email', async () => {
+    const trialResponse = await request(app)
+      .post('/api/billing/solo-free-trial')
+      .send({ name: 'Trial Owner', email: 'solo-trial@example.com' });
+
+    expect(trialResponse.status).toBe(201);
+    expect(trialResponse.body).toEqual(
+      expect.objectContaining({
+        planKey: 'solo',
+        subscriptionStatus: 'trialing'
+      })
+    );
+    expect(trialResponse.body.clientId).toBeTruthy();
+    expect(trialResponse.body.trialEndsAt).toBeTruthy();
+
+    const clientId = trialResponse.body.clientId as string;
+    const sessionCookies = trialResponse.headers['set-cookie'];
+
+    expect(sessionCookies).toBeTruthy();
+
+    const overviewResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}/billing`)
+      .set('Cookie', sessionCookies);
+
+    expect(overviewResponse.status).toBe(200);
+    expect(overviewResponse.body.currentPlan).toEqual(
+      expect.objectContaining({ id: 'plan_solo', key: 'solo' })
+    );
+    expect(overviewResponse.body.subscription).toEqual(
+      expect.objectContaining({ status: 'trialing', provider: 'trial' })
+    );
+    expect(overviewResponse.body.lockedFeatureKeys).toEqual([]);
+
+    const duplicateResponse = await request(app)
+      .post('/api/billing/solo-free-trial')
+      .send({ name: 'Trial Owner', email: 'solo-trial@example.com' });
+
+    expect(duplicateResponse.status).toBe(409);
+  });
+
   it('lists subscription plans and stores a demo business subscription checkout', async () => {
     const plansResponse = await request(app).get('/api/billing/subscription-plans');
 
@@ -3587,7 +3627,7 @@ describe('Client platform API', () => {
       expect.objectContaining({
         businessId: clientId,
         planId: 'plan_single',
-        status: 'active',
+        status: 'trialing',
         demoCard: expect.objectContaining({
           brand: 'visa',
           last4: '4242'
@@ -3817,7 +3857,7 @@ describe('Client platform API', () => {
       });
 
     const activeSubscription = (await billingRepository.listBusinessSubscriptions()).find(
-      (subscription) => subscription.businessId === clientId && subscription.status === 'active'
+      (subscription) => subscription.businessId === clientId && subscription.status === 'trialing'
     );
 
     expect(activeSubscription).toBeTruthy();
@@ -3922,7 +3962,7 @@ describe('Client platform API', () => {
     expect(billingResponse.body.subscription).toEqual(
       expect.objectContaining({
         planId: 'plan_single',
-        status: 'active'
+        status: 'trialing'
       })
     );
   });

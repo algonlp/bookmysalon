@@ -1,6 +1,6 @@
 import type { SubscriptionPlan } from './billing.types';
 
-const timestamp = '2026-01-01T00:00:00.000Z';
+const timestamp = '2026-07-24T00:00:00.000Z';
 
 export const billingFeatureCatalog = [
   {
@@ -62,8 +62,8 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
     amountCents: 30000,
     currencyCode: 'PKR',
     billingInterval: 'month',
-    trialDays: 0,
-    badgeLabel: 'Monthly',
+    trialDays: 30,
+    badgeLabel: 'First month free',
     isActive: true,
     displayOrder: 10,
     entitlements: {
@@ -84,8 +84,8 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
     amountCents: 249000,
     currencyCode: 'PKR',
     billingInterval: 'month',
-    trialDays: 0,
-    badgeLabel: 'Popular',
+    trialDays: 30,
+    badgeLabel: 'First month free',
     isActive: true,
     displayOrder: 20,
     entitlements: {
@@ -115,8 +115,8 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
     amountCents: 84000,
     currencyCode: 'PKR',
     billingInterval: 'month',
-    trialDays: 0,
-    badgeLabel: 'Per team member',
+    trialDays: 30,
+    badgeLabel: 'First month free',
     isActive: true,
     displayOrder: 30,
     entitlements: {

@@ -60,7 +60,12 @@ export const requirePlatformAdminPageAccess = async (
   const adminToken = getAdminTokenFromRequest(req);
 
   if (!clientId || !adminToken) {
-    clearAdminSessionCookie(res);
+    // A missing clientId is just a link without the query param - keep the
+    // session cookie so the user is not logged out by a bad link.
+    if (!adminToken) {
+      clearAdminSessionCookie(res);
+    }
+
     res.redirect(platformClientPagePaths.signup);
     return;
   }

@@ -97,8 +97,8 @@ const DEFAULT_DASHBOARD_UI_COPY = {
 let currentDashboardUiCopy = DEFAULT_DASHBOARD_UI_COPY;
 const DEFAULT_CALENDAR_TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
 const DEFAULT_BUSINESS_SETTINGS = {
-  currencyCode: 'USD',
-  currencyLocale: 'en-US',
+  currencyCode: 'PKR',
+  currencyLocale: 'en-PK',
   slotTimes: DEFAULT_CALENDAR_TIME_SLOTS,
   useServiceTemplates: true,
   reportMetadata: {
@@ -328,7 +328,7 @@ const getAppointmentSummaryDetails = (appointment) =>
   [
     appointment.customerPhone,
     appointment.customerEmail,
-    appointment.servicePriceLabel,
+    formatPriceLabelForDisplay(appointment.servicePriceLabel),
     appointment.packageName ? `Package: ${appointment.packageName}` : '',
     appointment.loyaltyRewardLabel ? `Reward: ${appointment.loyaltyRewardLabel}` : '',
     formatAppointmentServiceLocation(appointment)
@@ -641,6 +641,37 @@ const redirectTo = (path, clientId) => {
   window.location.assign(buildPathWithClientId(path, clientId));
 };
 
+// Server-protected pages (see requirePlatformAdminPageAccess) reject any request
+// without ?clientId=..., so static links to them must carry it.
+const syncProtectedPageLinks = () => {
+  const clientId = getClientId();
+
+  if (!clientId) {
+    return;
+  }
+
+  const protectedPrefixes = ['/onboarding/', '/guides/'];
+  const protectedPaths = ['/calendar', '/sms-logs', '/email-logs'];
+
+  for (const link of document.querySelectorAll('a[href]')) {
+    const href = link.getAttribute('href') ?? '';
+
+    if (!href.startsWith('/')) {
+      continue;
+    }
+
+    const url = new URL(href, window.location.origin);
+    const isProtected =
+      protectedPrefixes.some((prefix) => url.pathname.startsWith(prefix)) ||
+      protectedPaths.includes(url.pathname);
+
+    if (isProtected && !url.searchParams.get('clientId')) {
+      url.searchParams.set('clientId', clientId);
+      link.setAttribute('href', `${url.pathname}${url.search}`);
+    }
+  }
+};
+
 const requireClientId = () => {
   const clientId = getClientId();
 
@@ -678,6 +709,67 @@ const apiRequest = async (path, options = {}) => {
   }
 
   return payload;
+};
+
+const busyButtonState = new WeakMap();
+
+const setButtonBusy = (button, busy, loadingText = '') => {
+  if (!(button instanceof HTMLElement)) {
+    return;
+  }
+
+  if (busy) {
+    if (busyButtonState.has(button)) {
+      return;
+    }
+
+    busyButtonState.set(button, {
+      html: button.innerHTML,
+      wasDisabled: button.disabled === true
+    });
+
+    if (loadingText) {
+      button.textContent = loadingText;
+    }
+
+    button.classList.add('is-busy');
+    button.setAttribute('aria-busy', 'true');
+
+    if ('disabled' in button) {
+      button.disabled = true;
+    }
+
+    return;
+  }
+
+  const saved = busyButtonState.get(button);
+
+  if (!saved) {
+    return;
+  }
+
+  busyButtonState.delete(button);
+  button.innerHTML = saved.html;
+  button.classList.remove('is-busy');
+  button.removeAttribute('aria-busy');
+
+  if ('disabled' in button) {
+    button.disabled = saved.wasDisabled;
+  }
+};
+
+const runWithButtonBusy = async (button, loadingText, action) => {
+  if (button instanceof HTMLElement && busyButtonState.has(button)) {
+    return undefined;
+  }
+
+  setButtonBusy(button, true, loadingText);
+
+  try {
+    return await action();
+  } finally {
+    setButtonBusy(button, false);
+  }
 };
 
 const getSetupGuideProgress = (client, appointments = []) => {
@@ -1468,9 +1560,7 @@ const renderDashboardAppointments = (
         const actionButton = createToolActionButton(
           getDashboardUiCopy().bookedAppointmentActionLabels?.[actionConfig.labelKey] ??
             actionConfig.fallbackLabel,
-          () => {
-          actionHandler(appointment);
-          }
+          () => actionHandler(appointment)
         );
 
         if (actionConfig.danger) {
@@ -1564,13 +1654,18 @@ const createToolActionButton = (label, onClick) => {
   button.className = 'calendar-tool-action';
   button.type = 'button';
   button.textContent = label;
-  button.addEventListener('click', (event) => {
+  button.addEventListener('click', async (event) => {
     // Tool-modal actions often open a side drawer (setActiveDrawer(...)).
     // Without stopping propagation, this same click bubbles to the
     // document-level "click outside closes the drawer" listener, which
     // immediately undoes what the action just did.
     event.stopPropagation();
-    onClick(event);
+
+    if (button.disabled) {
+      return;
+    }
+
+    await runWithButtonBusy(button, '', () => onClick(event));
   });
   return button;
 };
@@ -1850,6 +1945,26 @@ const parsePriceLabel = (priceLabel) => {
 const formatCurrencyLabel = (amount) => {
   const normalizedAmount = Number.isFinite(Number(amount)) ? Number(amount) : 0;
   return formatCurrencyExampleLabel(Math.round(normalizedAmount));
+};
+
+// Business-entered price labels are free text; labels typed with foreign
+// currency markers or bare numbers are re-rendered in the workspace currency
+// (PKR by default) so customers always see local prices.
+const formatPriceLabelForDisplay = (priceLabel) => {
+  if (typeof priceLabel !== 'string' || !priceLabel.trim()) {
+    return '';
+  }
+
+  const trimmedLabel = priceLabel.trim();
+  const hasForeignCurrencyMarker = /[$£€]|\b(usd|gbp|eur)\b/i.test(trimmedLabel);
+  const isBareAmount = /^[\d.,\s]+$/.test(trimmedLabel);
+
+  if (!hasForeignCurrencyMarker && !isBareAmount) {
+    return trimmedLabel;
+  }
+
+  const amount = parsePriceLabel(trimmedLabel);
+  return amount > 0 ? formatCurrencyLabel(amount) : trimmedLabel;
 };
 
 const formatMoneyValue = (amountValue, currencyCode = '') => {
@@ -2187,6 +2302,12 @@ const createSalonShowcaseCard = (salon) => {
       return;
     }
     if (isCustomerLoggedIn()) {
+      if (heart.disabled) {
+        return;
+      }
+
+      heart.disabled = true;
+      heart.classList.add('is-busy');
       addSalonFavourite(salon)
         .then((added) => {
           if (added) {
@@ -2195,7 +2316,11 @@ const createSalonShowcaseCard = (salon) => {
             heart.setAttribute('aria-label', 'Remove from favourites');
           }
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => {
+          heart.classList.remove('is-busy');
+          heart.disabled = false;
+        });
     } else {
       const salonPath = `/salon/${encodeURIComponent(salon?.clientId ?? salon?.id ?? '')}`;
       setPendingSalonFavourite(salon);
@@ -2938,9 +3063,19 @@ const renderSalonDetailPanel = (salon) => {
     }
 
     if (isCustomerLoggedIn()) {
+      if (saveButton.disabled) {
+        return;
+      }
+
+      saveButton.disabled = true;
+      saveButton.classList.add('is-busy');
       addSalonFavourite(salon)
         .then((added) => { if (added) setSalonFavouriteButtonState(saveButton, true); })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => {
+          saveButton.classList.remove('is-busy');
+          saveButton.disabled = false;
+        });
       return;
     }
 
@@ -3032,7 +3167,7 @@ const renderSalonDetailPanel = (salon) => {
       copy.append(
         createDetailText('h4', '', service.name || 'Service'),
         createDetailText('p', '', `${service.durationMinutes || 30} min`),
-        createDetailText('strong', '', service.priceLabel || 'Price on booking')
+        createDetailText('strong', '', formatPriceLabelForDisplay(service.priceLabel) || 'Price on booking')
       );
 
       const book = document.createElement('a');
@@ -3896,7 +4031,7 @@ const initHomeSalonShowcase = () => {
           name.textContent = service.name;
 
           const details = document.createElement('span');
-          details.textContent = `${service.durationMinutes} min â€¢ ${service.priceLabel}`;
+          details.textContent = `${service.durationMinutes} min â€¢ ${formatPriceLabelForDisplay(service.priceLabel)}`;
 
           serviceCard.append(name, details);
           services.append(serviceCard);
@@ -6035,7 +6170,7 @@ const initSignup = () => {
         return;
       }
 
-      verifyOtpButton.disabled = true;
+      setButtonBusy(verifyOtpButton, true);
       setStatus('Verifying...');
 
       try {
@@ -6055,10 +6190,10 @@ const initSignup = () => {
           await verifyLoginOtp(pendingOtpClientId, code);
         } else {
           setStatus('Session expired. Please enter your details again.', true);
-          verifyOtpButton.disabled = false;
+          setButtonBusy(verifyOtpButton, false);
         }
       } catch (error) {
-        verifyOtpButton.disabled = false;
+        setButtonBusy(verifyOtpButton, false);
         setStatus(error instanceof Error ? error.message : 'Unable to verify code.', true);
       }
     });
@@ -6070,7 +6205,7 @@ const initSignup = () => {
     }
 
     button.addEventListener('click', async () => {
-      button.disabled = true;
+      setButtonBusy(button, true);
 
       try {
         if (button.dataset.authProvider === 'google') {
@@ -6082,7 +6217,7 @@ const initSignup = () => {
       } catch (error) {
         safeAlert(error instanceof Error ? error.message : 'Unable to continue');
       } finally {
-        button.disabled = false;
+        setButtonBusy(button, false);
       }
     });
   }
@@ -6217,7 +6352,7 @@ const initCustomerOtpLogin = () => {
     }
 
     setStatus(isEmail ? 'Sending code to your email...' : 'Sending code to your mobile...');
-    continueBtn.disabled = true;
+    setButtonBusy(continueBtn, true);
 
     try {
       await apiRequest(requestEndpoint, {
@@ -6235,7 +6370,7 @@ const initCustomerOtpLogin = () => {
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Unable to send verification code.', true);
     } finally {
-      continueBtn.disabled = false;
+      setButtonBusy(continueBtn, false);
     }
   };
 
@@ -6264,7 +6399,7 @@ const initCustomerOtpLogin = () => {
     }
 
     setStatus('Verifying code...');
-    verifyBtn.disabled = true;
+    setButtonBusy(verifyBtn, true);
 
     try {
       const body =
@@ -6282,7 +6417,7 @@ const initCustomerOtpLogin = () => {
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Unable to verify code.', true);
     } finally {
-      verifyBtn.disabled = false;
+      setButtonBusy(verifyBtn, false);
     }
   });
 
@@ -6408,10 +6543,11 @@ const initCustomerProfilePage = () => {
   const renderCustomerAccountData = (customer) => {
     const wallet = customer.wallet ?? {};
     const balanceMinor = Number(wallet.balanceMinor ?? 0);
-    const currencyCode = typeof wallet.currencyCode === 'string' ? wallet.currencyCode : 'USD';
-    const balance = new Intl.NumberFormat('en-US', {
+    const currencyCode = typeof wallet.currencyCode === 'string' ? wallet.currencyCode : 'PKR';
+    const balance = new Intl.NumberFormat('en-PK', {
       style: 'currency',
-      currency: currencyCode
+      currency: currencyCode,
+      maximumFractionDigits: 0
     }).format(balanceMinor / 100);
     setText('#customer-wallet-balance', balance);
     setText(
@@ -6547,7 +6683,7 @@ const initCustomerProfilePage = () => {
     const editFormSubmitButton = editForm.querySelector('[type="submit"]');
 
     if (editFormSubmitButton instanceof HTMLButtonElement) {
-      editFormSubmitButton.disabled = true;
+      setButtonBusy(editFormSubmitButton, true, 'Saving...');
     }
 
     try {
@@ -6566,7 +6702,7 @@ const initCustomerProfilePage = () => {
       safeAlert(error instanceof Error ? error.message : 'Unable to update profile');
     } finally {
       if (editFormSubmitButton instanceof HTMLButtonElement) {
-        editFormSubmitButton.disabled = false;
+        setButtonBusy(editFormSubmitButton, false);
       }
     }
   });
@@ -6679,9 +6815,10 @@ const initBusinessProfile = () => {
       return;
     }
 
-    if (continueButton instanceof HTMLButtonElement) {
-      continueButton.disabled = true;
-    }
+    const originalContinueLabel = continueButton.textContent;
+    continueButton.classList.add('onboarding-continue-disabled', 'is-busy');
+    continueButton.setAttribute('aria-disabled', 'true');
+    continueButton.textContent = 'Saving...';
 
     try {
       await apiRequest(`/api/platform/clients/${clientId}/business-profile`, {
@@ -6697,9 +6834,9 @@ const initBusinessProfile = () => {
       redirectTo('/onboarding/service-types', clientId);
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to save business profile');
-      if (continueButton instanceof HTMLButtonElement) {
-        continueButton.disabled = false;
-      }
+      continueButton.classList.remove('onboarding-continue-disabled', 'is-busy');
+      continueButton.setAttribute('aria-disabled', 'false');
+      continueButton.textContent = originalContinueLabel;
     }
   };
 
@@ -6829,7 +6966,10 @@ const initServiceTypes = () => {
       return;
     }
 
-    continueButton.disabled = true;
+    const originalContinueLabel = continueButton.textContent;
+    continueButton.classList.add('onboarding-continue-disabled', 'is-busy');
+    continueButton.setAttribute('aria-disabled', 'true');
+    continueButton.textContent = 'Saving...';
 
     try {
       await apiRequest(`/api/platform/clients/${clientId}/service-types`, {
@@ -6841,7 +6981,9 @@ const initServiceTypes = () => {
 
       redirectTo('/onboarding/account-type', clientId);
     } catch (error) {
-      continueButton.disabled = false;
+      continueButton.classList.remove('onboarding-continue-disabled', 'is-busy');
+      continueButton.setAttribute('aria-disabled', 'false');
+      continueButton.textContent = originalContinueLabel;
       safeAlert(error instanceof Error ? error.message : 'Unable to save service types');
     }
   });
@@ -6924,7 +7066,10 @@ const initAccountType = () => {
       return;
     }
 
-    continueButton.disabled = true;
+    const originalContinueLabel = continueButton.textContent;
+    continueButton.classList.add('onboarding-continue-disabled', 'is-busy');
+    continueButton.setAttribute('aria-disabled', 'true');
+    continueButton.textContent = 'Saving...';
 
     try {
       await apiRequest(`/api/platform/clients/${clientId}/account-type`, {
@@ -6934,7 +7079,9 @@ const initAccountType = () => {
 
       redirectTo('/onboarding/service-location', clientId);
     } catch (error) {
-      continueButton.disabled = false;
+      continueButton.classList.remove('onboarding-continue-disabled', 'is-busy');
+      continueButton.setAttribute('aria-disabled', 'false');
+      continueButton.textContent = originalContinueLabel;
       safeAlert(error instanceof Error ? error.message : 'Unable to save account type');
     }
   });
@@ -7022,7 +7169,10 @@ const initServiceLocation = () => {
       return;
     }
 
-    continueButton.disabled = true;
+    const originalContinueLabel = continueButton.textContent;
+    continueButton.classList.add('onboarding-continue-disabled', 'is-busy');
+    continueButton.setAttribute('aria-disabled', 'true');
+    continueButton.textContent = 'Saving...';
 
     try {
       await apiRequest(`/api/platform/clients/${clientId}/service-location`, {
@@ -7032,7 +7182,9 @@ const initServiceLocation = () => {
 
       redirectTo('/onboarding/venue-location', clientId);
     } catch (error) {
-      continueButton.disabled = false;
+      continueButton.classList.remove('onboarding-continue-disabled', 'is-busy');
+      continueButton.setAttribute('aria-disabled', 'false');
+      continueButton.textContent = originalContinueLabel;
       safeAlert(error instanceof Error ? error.message : 'Unable to save service location');
     }
   });
@@ -7466,7 +7618,7 @@ const initVenueLocation = () => {
       return;
     }
 
-    venueAddressContinue.disabled = true;
+    setButtonBusy(venueAddressContinue, true, 'Saving...');
 
     try {
       const payload = await apiRequest(`/api/platform/clients/${clientId}/venue-location`, {
@@ -7476,6 +7628,7 @@ const initVenueLocation = () => {
 
       window.location.assign(payload.nextStep || buildPathWithClientId('/onboarding/salon-images', clientId));
     } catch (error) {
+      setButtonBusy(venueAddressContinue, false);
       updateContinue();
       safeAlert(error instanceof Error ? error.message : 'Unable to save venue location');
     }
@@ -7642,7 +7795,7 @@ const initSalonImages = () => {
     const salonImagesSubmitButton = form.querySelector('[type="submit"]');
 
     if (salonImagesSubmitButton instanceof HTMLButtonElement) {
-      salonImagesSubmitButton.disabled = true;
+      setButtonBusy(salonImagesSubmitButton, true, 'Saving...');
     }
 
     skipButton.disabled = true;
@@ -7656,7 +7809,7 @@ const initSalonImages = () => {
       window.location.assign(payload.nextStep || buildPathWithClientId('/onboarding/launch-links', clientId));
     } catch (error) {
       if (salonImagesSubmitButton instanceof HTMLButtonElement) {
-        salonImagesSubmitButton.disabled = false;
+        setButtonBusy(salonImagesSubmitButton, false);
       }
 
       skipButton.disabled = false;
@@ -10654,8 +10807,7 @@ const createTrendCard = (
         return;
       }
 
-      submitButton.disabled = true;
-      submitButton.textContent = 'Recording...';
+      setButtonBusy(submitButton, true, 'Recording...');
 
       try {
         const payload = await recordAppointmentPayment(selectedBalance.appointmentId, {
@@ -10676,8 +10828,7 @@ const createTrendCard = (
             : 'Payment recorded.'
         );
       } catch (error) {
-        submitButton.disabled = false;
-        submitButton.textContent = 'Record payment';
+        setButtonBusy(submitButton, false);
         safeAlert(error instanceof Error ? error.message : 'Unable to record payment');
       }
     });
@@ -11041,7 +11192,7 @@ const createTrendCard = (
     const usesField = document.createElement('label');
     usesField.className = 'calendar-tool-field';
     const usesLabel = document.createElement('span');
-    usesLabel.textContent = packageUiCopy.fieldTotalUses || 'Total uses';
+    usesLabel.textContent = packageUiCopy.fieldTotalUses || 'Total users';
     const usesInput = document.createElement('input');
     usesInput.type = 'number';
     usesInput.min = '1';
@@ -11076,7 +11227,7 @@ const createTrendCard = (
       packageUiCopy.fieldIncludedServices || 'Included services',
       services.map((service) => ({
         value: service.id,
-        label: `${service.name} - ${service.priceLabel}`
+        label: `${service.name} - ${formatPriceLabelForDisplay(service.priceLabel)}`
       })),
       'Add services first'
     );
@@ -11105,8 +11256,7 @@ const createTrendCard = (
         return;
       }
 
-      submitButton.disabled = true;
-      submitButton.textContent = `${mode === 'edit' ? updateActionLabel : saveActionLabel}...`;
+      setButtonBusy(submitButton, true, `${mode === 'edit' ? updateActionLabel : saveActionLabel}...`);
 
       try {
         if (mode === 'edit' && packagePlan?.id) {
@@ -11129,8 +11279,7 @@ const createTrendCard = (
         closeToolModal();
         openCatalogMembershipsModal();
       } catch (error) {
-        submitButton.disabled = false;
-        submitButton.textContent = mode === 'edit' ? updateActionLabel : saveActionLabel;
+        setButtonBusy(submitButton, false);
         safeAlert(
           error instanceof Error
             ? error.message
@@ -11205,7 +11354,7 @@ const createTrendCard = (
       'Eligible services',
       services.map((service) => ({
         value: service.id,
-        label: `${service.name} - ${service.priceLabel}`
+        label: `${service.name} - ${formatPriceLabelForDisplay(service.priceLabel)}`
       })),
       'Add services first'
     );
@@ -11226,8 +11375,7 @@ const createTrendCard = (
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
 
-      submitButton.disabled = true;
-      submitButton.textContent = 'Saving...';
+      setButtonBusy(submitButton, true, 'Saving...');
 
       try {
         await saveLoyaltyProgram({
@@ -11239,8 +11387,7 @@ const createTrendCard = (
         closeToolModal();
         openClientLoyaltyModal();
       } catch (error) {
-        submitButton.disabled = false;
-        submitButton.textContent = 'Save loyalty';
+        setButtonBusy(submitButton, false);
         safeAlert(error instanceof Error ? error.message : 'Unable to save loyalty');
       }
     });
@@ -11277,7 +11424,7 @@ const createTrendCard = (
     for (const packagePlan of packagePlans) {
       const option = document.createElement('option');
       option.value = packagePlan.id;
-      option.textContent = `${packagePlan.name} - ${packagePlan.priceLabel}`;
+      option.textContent = `${packagePlan.name} - ${formatPriceLabelForDisplay(packagePlan.priceLabel)}`;
       packageSelect.append(option);
     }
     packageField.append(packageLabel, packageSelect);
@@ -11321,8 +11468,7 @@ const createTrendCard = (
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
 
-      submitButton.disabled = true;
-      submitButton.textContent = `${sellActionLabel}...`;
+      setButtonBusy(submitButton, true, `${sellActionLabel}...`);
 
       try {
         await createPackageSale({
@@ -11334,8 +11480,7 @@ const createTrendCard = (
         closeToolModal();
         openMembershipsModal();
       } catch (error) {
-        submitButton.disabled = false;
-        submitButton.textContent = sellActionLabel;
+        setButtonBusy(submitButton, false);
         safeAlert(error instanceof Error ? error.message : `Unable to sell ${packageLabelSingular}`);
       }
     });
@@ -11983,8 +12128,7 @@ const createTrendCard = (
           : expertiseSelect.value.trim();
       const offDaysValue = getSelectedValues(offDaysFieldConfig.select);
 
-      submitButton.disabled = true;
-      submitButton.textContent = 'Saving...';
+      setButtonBusy(submitButton, true, 'Saving...');
 
       try {
         if (mode === 'edit' && teamMember?.id) {
@@ -12013,8 +12157,7 @@ const createTrendCard = (
           });
         }
       } catch (error) {
-        submitButton.disabled = false;
-        submitButton.textContent = mode === 'edit' ? 'Save changes' : `Save ${roleLabel}`;
+        setButtonBusy(submitButton, false);
         safeAlert(
           error instanceof Error
             ? error.message
@@ -12328,8 +12471,7 @@ const createTrendCard = (
         return;
       }
 
-      submitButton.disabled = true;
-      submitButton.textContent = `${mode === 'edit' ? updateActionLabel : saveActionLabel}...`;
+      setButtonBusy(submitButton, true, `${mode === 'edit' ? updateActionLabel : saveActionLabel}...`);
 
       try {
         if (mode === 'edit' && service?.id) {
@@ -12361,8 +12503,7 @@ const createTrendCard = (
           openServiceMenuModal();
         }
       } catch (error) {
-        submitButton.disabled = false;
-        submitButton.textContent = mode === 'edit' ? updateActionLabel : saveActionLabel;
+        setButtonBusy(submitButton, false);
         safeAlert(
           error instanceof Error
             ? error.message
@@ -12414,7 +12555,7 @@ const createTrendCard = (
     }
 
     const copy = document.createElement('p');
-    copy.textContent = `${service.priceLabel} | ${service.durationMinutes} min | ${service.categoryName}${service.description ? ` | ${service.description}` : ''}`;
+    copy.textContent = `${formatPriceLabelForDisplay(service.priceLabel)} | ${service.durationMinutes} min | ${service.categoryName}${service.description ? ` | ${service.description}` : ''}`;
 
     if (highlightedPackageNames.length > 0) {
       const highlight = document.createElement('p');
@@ -12651,14 +12792,12 @@ const createTrendCard = (
     logoutButton.textContent = 'Log out';
 
     logoutButton.addEventListener('click', async () => {
-      logoutButton.disabled = true;
-      logoutButton.textContent = 'Logging out...';
+      setButtonBusy(logoutButton, true, 'Logging out...');
 
       try {
         await logoutAdminSession(clientId);
       } catch (error) {
-        logoutButton.disabled = false;
-        logoutButton.textContent = 'Log out';
+        setButtonBusy(logoutButton, false);
         safeAlert(error instanceof Error ? error.message : 'Unable to log out');
       }
     });
@@ -12844,8 +12983,7 @@ const createTrendCard = (
         return;
       }
 
-      submitButton.disabled = true;
-      submitButton.textContent = `${profileUiCopy.actionSave || 'Update profile'}...`;
+      setButtonBusy(submitButton, true, `${profileUiCopy.actionSave || 'Update profile'}...`);
 
       try {
         await apiRequest(`/api/platform/clients/${clientId}/business-profile`, {
@@ -12869,8 +13007,7 @@ const createTrendCard = (
         await loadDashboard();
         closeToolModal();
       } catch (error) {
-        submitButton.disabled = false;
-        submitButton.textContent = profileUiCopy.actionSave || 'Update profile';
+        setButtonBusy(submitButton, false);
         safeAlert(error instanceof Error ? error.message : profileUiCopy.errorUpdate || 'Unable to update profile');
       }
     });
@@ -12955,7 +13092,7 @@ const createTrendCard = (
     const copy = document.createElement('p');
     copy.textContent = [
       packagePlan.priceLabel,
-      `${packagePlan.totalUses} uses`,
+      `${packagePlan.totalUses} users`,
       formatPackagePlanExpiryLabel(packagePlan.expiresAt)
     ]
       .filter(Boolean)
@@ -13242,8 +13379,7 @@ const createTrendCard = (
         return;
       }
 
-      submitButton.disabled = true;
-      submitButton.textContent = `${mode === 'edit' ? updateActionLabel : saveActionLabel}...`;
+      setButtonBusy(submitButton, true, `${mode === 'edit' ? updateActionLabel : saveActionLabel}...`);
 
       try {
         if (mode === 'edit' && product?.id) {
@@ -13268,8 +13404,7 @@ const createTrendCard = (
         closeToolModal();
         openProductsModal();
       } catch (error) {
-        submitButton.disabled = false;
-        submitButton.textContent = mode === 'edit' ? updateActionLabel : saveActionLabel;
+        setButtonBusy(submitButton, false);
         safeAlert(
           error instanceof Error
             ? error.message
@@ -13377,8 +13512,7 @@ const createTrendCard = (
     form.addEventListener('submit', async (event) => {
       event.preventDefault();
 
-      submitButton.disabled = true;
-      submitButton.textContent = `${sellActionLabel}...`;
+      setButtonBusy(submitButton, true, `${sellActionLabel}...`);
 
       try {
         await createProductSale({
@@ -13391,8 +13525,7 @@ const createTrendCard = (
         closeToolModal();
         openProductSalesRecordsModal(productSelect.value);
       } catch (error) {
-        submitButton.disabled = false;
-        submitButton.textContent = sellActionLabel;
+        setButtonBusy(submitButton, false);
         safeAlert(
           error instanceof Error ? error.message : productUiCopy.errorSell || `Unable to sell ${productLabelSingular}`
         );
@@ -13478,16 +13611,14 @@ const createTrendCard = (
         return;
       }
 
-      removeButton.disabled = true;
-      removeButton.textContent = `${removeActionLabel}...`;
+      setButtonBusy(removeButton, true, `${removeActionLabel}...`);
 
       try {
         await removeProduct(product.id);
         closeToolModal();
         openProductsModal();
       } catch (error) {
-        removeButton.disabled = false;
-        removeButton.textContent = removeActionLabel;
+        setButtonBusy(removeButton, false);
         safeAlert(
           error instanceof Error
             ? error.message
@@ -13958,7 +14089,7 @@ const createTrendCard = (
           metaLabel: 'Service',
           title: service.name,
           description:
-            `${service.categoryName || 'Service'} | ${service.priceLabel || 'No price'} | ` +
+            `${service.categoryName || 'Service'} | ${formatPriceLabelForDisplay(service.priceLabel) || 'No price'} | ` +
             `${service.durationMinutes} mins`,
           onSelect: () => {
             closeToolModal();
@@ -14159,7 +14290,7 @@ const createTrendCard = (
       formatBookingSourceLabel(appointment.source)
     ].join(' | ');
     const benefitDetails = [
-      appointment.servicePriceLabel ? `Price: ${appointment.servicePriceLabel}` : '',
+      appointment.servicePriceLabel ? `Price: ${formatPriceLabelForDisplay(appointment.servicePriceLabel)}` : '',
       appointment.packageName ? `Package: ${appointment.packageName}` : '',
       appointment.loyaltyRewardLabel ? `Reward: ${appointment.loyaltyRewardLabel}` : ''
     ].filter(Boolean);
@@ -14195,18 +14326,18 @@ const createTrendCard = (
           closeToolModal();
           openRecordPaymentModal(appointment.id);
         }),
-        createToolActionButton('Mark complete', () => {
+        createToolActionButton('Mark complete', () =>
           markDashboardAppointmentComplete(appointment).catch((error) => {
             safeAlert(error instanceof Error ? error.message : 'Unable to complete appointment');
-          });
-        })
+          })
+        )
       );
 
-      const cancelButton = createToolActionButton('Cancel booking', () => {
+      const cancelButton = createToolActionButton('Cancel booking', () =>
         cancelDashboardAppointment(appointment).catch((error) => {
           safeAlert(error instanceof Error ? error.message : 'Unable to cancel appointment');
-        });
-      });
+        })
+      );
       cancelButton.classList.add('calendar-tool-action-danger');
       actions.push(cancelButton);
     }
@@ -14283,8 +14414,7 @@ const createTrendCard = (
         return;
       }
 
-      submitButton.disabled = true;
-      submitButton.textContent = 'Saving...';
+      setButtonBusy(submitButton, true, 'Saving...');
 
       try {
         await saveDashboardAppointmentEdit(appointment, {
@@ -14292,8 +14422,7 @@ const createTrendCard = (
           appointmentTime: timeSelect.value
         });
       } catch (error) {
-        submitButton.disabled = false;
-        submitButton.textContent = 'Save appointment';
+        setButtonBusy(submitButton, false);
         safeAlert(error instanceof Error ? error.message : 'Unable to update appointment');
       }
     });
@@ -14365,8 +14494,7 @@ const createTrendCard = (
         return;
       }
 
-      submitButton.disabled = true;
-      submitButton.textContent = 'Sending...';
+      setButtonBusy(submitButton, true, 'Sending...');
 
       try {
         await sendDashboardRunningLateNotification(appointment, {
@@ -14374,8 +14502,7 @@ const createTrendCard = (
           note: noteInput.value.trim()
         });
       } catch (error) {
-        submitButton.disabled = false;
-        submitButton.textContent = 'Send update';
+        setButtonBusy(submitButton, false);
         safeAlert(error instanceof Error ? error.message : 'Unable to send running-late message');
       }
     });
@@ -14687,16 +14814,14 @@ const createTrendCard = (
       onDetails: openAppointmentDetailsModal,
       onEdit: openEditAppointmentModal,
       onRunningLate: openRunningLateModal,
-      onComplete: (appointment) => {
+      onComplete: (appointment) =>
         markDashboardAppointmentComplete(appointment).catch((error) => {
           safeAlert(error instanceof Error ? error.message : 'Unable to complete appointment');
-        });
-      },
-      onCancel: (appointment) => {
+        }),
+      onCancel: (appointment) =>
         cancelDashboardAppointment(appointment).catch((error) => {
           safeAlert(error instanceof Error ? error.message : 'Unable to cancel appointment');
-        });
-      }
+        })
     });
     renderCalendarAppointments(appointments, appointmentsOverlay);
     updateCalendarDateLabel();
@@ -15184,12 +15309,12 @@ const createTrendCard = (
     if (showQrAction instanceof HTMLButtonElement) {
       showQrAction.addEventListener('click', async () => {
         closeAddMenu();
-        showQrAction.disabled = true;
+        setButtonBusy(showQrAction, true);
 
         try {
           await openQrModal();
         } finally {
-          showQrAction.disabled = false;
+          setButtonBusy(showQrAction, false);
         }
       });
     }
@@ -15702,6 +15827,7 @@ const createTrendCard = (
 
         saveBtn.addEventListener('click', async () => {
           saveBtn.disabled = true;
+          saveBtn.classList.add('is-busy');
           saveBtn.textContent = 'Saving...';
 
           try {
@@ -15716,12 +15842,14 @@ const createTrendCard = (
                 trialDays: Number(trialField.input.value)
               })
             });
+            saveBtn.classList.remove('is-busy');
             saveBtn.textContent = `Saved!`;
             setTimeout(() => {
               saveBtn.disabled = false;
               saveBtn.textContent = `Save ${nameField.input.value.trim() || plan.name}`;
             }, 1500);
           } catch (error) {
+            saveBtn.classList.remove('is-busy');
             saveBtn.disabled = false;
             saveBtn.textContent = `Save ${plan.name}`;
             safeAlert(error instanceof Error ? error.message : 'Unable to save plan');
@@ -15828,6 +15956,7 @@ const createTrendCard = (
         }
 
         saveBtn.disabled = true;
+        saveBtn.classList.add('is-busy');
         saveBtn.textContent = 'Saving...';
 
         try {
@@ -15838,6 +15967,7 @@ const createTrendCard = (
               body: JSON.stringify({ slotTimes: slots })
             }
           );
+          saveBtn.classList.remove('is-busy');
           saveBtn.textContent = 'Saved!';
           currentLabel.textContent = `Current slots: ${slots.join(', ')}`;
           setTimeout(() => {
@@ -15845,6 +15975,7 @@ const createTrendCard = (
             saveBtn.textContent = 'Save opening hours';
           }, 1500);
         } catch (error) {
+          saveBtn.classList.remove('is-busy');
           saveBtn.disabled = false;
           saveBtn.textContent = 'Save opening hours';
           safeAlert(error instanceof Error ? error.message : 'Unable to save opening hours');
@@ -15978,12 +16109,12 @@ const createTrendCard = (
 
   if (qrShortcutAction instanceof HTMLButtonElement) {
     qrShortcutAction.addEventListener('click', async () => {
-      qrShortcutAction.disabled = true;
+      setButtonBusy(qrShortcutAction, true);
 
       try {
         await openQrModal();
       } finally {
-        qrShortcutAction.disabled = false;
+        setButtonBusy(qrShortcutAction, false);
       }
     });
   }
@@ -16143,8 +16274,18 @@ const createTrendCard = (
         resumeButton.type = 'button';
         resumeButton.className = 'calendar-marketing-continue-button';
         resumeButton.textContent = 'Continue → Send';
-        resumeButton.addEventListener('click', () => {
-          void resumeDraftCampaign(campaign);
+        resumeButton.addEventListener('click', async () => {
+          if (resumeButton.disabled) {
+            return;
+          }
+
+          setButtonBusy(resumeButton, true);
+
+          try {
+            await resumeDraftCampaign(campaign);
+          } finally {
+            setButtonBusy(resumeButton, false);
+          }
         });
         row.append(resumeButton);
       }
@@ -16718,7 +16859,7 @@ const createTrendCard = (
     previewButton.textContent = 'Continue to preview';
 
     previewButton.addEventListener('click', async () => {
-      previewButton.disabled = true;
+      setButtonBusy(previewButton, true);
       status.textContent = '';
 
       try {
@@ -16773,7 +16914,7 @@ const createTrendCard = (
       } catch (error) {
         status.textContent = error instanceof Error ? error.message : 'Unable to create this campaign.';
       } finally {
-        previewButton.disabled = false;
+        setButtonBusy(previewButton, false);
       }
     });
 
@@ -16783,7 +16924,7 @@ const createTrendCard = (
     saveDefaultButton.textContent = 'Save as default';
     saveDefaultButton.title = 'Save this wording (and discount, for last-minute fill) as the default for next time';
     saveDefaultButton.addEventListener('click', async () => {
-      saveDefaultButton.disabled = true;
+      setButtonBusy(saveDefaultButton, true);
 
       try {
         const patch = {
@@ -16806,7 +16947,7 @@ const createTrendCard = (
       } catch (error) {
         status.textContent = error instanceof Error ? error.message : 'Unable to save this template.';
       } finally {
-        saveDefaultButton.disabled = false;
+        setButtonBusy(saveDefaultButton, false);
       }
     });
 
@@ -17150,14 +17291,14 @@ const createTrendCard = (
 
   if (refreshAction instanceof HTMLButtonElement) {
     refreshAction.addEventListener('click', async () => {
-      refreshAction.disabled = true;
+      setButtonBusy(refreshAction, true);
 
       try {
         await loadDashboard();
       } catch (error) {
         safeAlert(error instanceof Error ? error.message : 'Unable to refresh dashboard');
       } finally {
-        refreshAction.disabled = false;
+        setButtonBusy(refreshAction, false);
       }
     });
   }
@@ -17210,12 +17351,12 @@ const createTrendCard = (
 const initPublicBooking = () => {
   const bookingForm = document.querySelector('#public-booking-form');
   const bookingSubmitButton = bookingForm instanceof HTMLFormElement
-    ? bookingForm.querySelector('.booking-submit')
+    ? bookingForm.querySelector('.booking-submit[type="submit"]')
     : null;
-  const bookingSubmitButtonDefaultText =
-    bookingSubmitButton instanceof HTMLButtonElement ? bookingSubmitButton.textContent : '';
   const businessName = document.querySelector('#booking-business-name');
   const businessCopy = document.querySelector('#booking-business-copy');
+  const branchSelectWrapper = document.querySelector('#booking-branch-select-wrapper');
+  const branchSelect = document.querySelector('#booking-branch-select');
   const serviceTypes = document.querySelector('#booking-service-types');
   const teamMemberField = document.querySelector('#booking-team-member-field');
   const teamMemberSelect = document.querySelector('#booking-team-member-select');
@@ -17415,6 +17556,42 @@ const initPublicBooking = () => {
 
     bookingFooterAddressText.textContent = venueAddressValue;
   };
+
+  const syncBookingBranchSelect = (branches) => {
+    if (!(branchSelectWrapper instanceof HTMLElement) || !(branchSelect instanceof HTMLSelectElement)) {
+      return;
+    }
+
+    const branchList = Array.isArray(branches) ? branches : [];
+
+    if (branchList.length <= 1) {
+      branchSelectWrapper.classList.add('is-hidden');
+      branchSelect.replaceChildren();
+      return;
+    }
+
+    branchSelect.replaceChildren();
+
+    for (const branch of branchList) {
+      const option = document.createElement('option');
+      option.value = branch.id;
+      option.textContent = branch.businessName;
+      option.selected = branch.id === businessId;
+      branchSelect.append(option);
+    }
+
+    branchSelectWrapper.classList.remove('is-hidden');
+  };
+
+  branchSelect?.addEventListener('change', () => {
+    const selectedBranchId = branchSelect.value;
+
+    if (!selectedBranchId || selectedBranchId === businessId) {
+      return;
+    }
+
+    window.location.assign(`/book/${encodeURIComponent(selectedBranchId)}${window.location.search}`);
+  });
 
   const syncBookingUiCopy = (config = {}) => {
     const locationLabels =
@@ -17893,8 +18070,8 @@ const initPublicBooking = () => {
       option.disabled = selectableServices.length === 0;
       option.textContent =
         `${packagePlan.name}` +
-        `${packagePlan.priceLabel ? ` - ${packagePlan.priceLabel}` : ''}` +
-        `${packagePlan.totalUses ? ` (${packagePlan.totalUses} use${packagePlan.totalUses === 1 ? '' : 's'})` : ''}` +
+        `${packagePlan.priceLabel ? ` - ${formatPriceLabelForDisplay(packagePlan.priceLabel)}` : ''}` +
+        `${packagePlan.totalUses ? ` (${packagePlan.totalUses} user${packagePlan.totalUses === 1 ? '' : 's'})` : ''}` +
         `${packagePlan.expiresAt ? ` - ${formatPackagePlanExpiryLabel(packagePlan.expiresAt)}` : ''}`;
       packagePlanSelect.append(option);
     }
@@ -17964,9 +18141,9 @@ const initPublicBooking = () => {
     packagePlanPreview.classList.remove('is-hidden');
     packagePlanPreviewTitle.textContent = selectedPackagePlan.name || 'Selected package';
     packagePlanPreviewBadge.textContent =
-      selectedPackagePlan.priceLabel || `${selectedPackagePlan.totalUses || 0} uses`;
+      formatPriceLabelForDisplay(selectedPackagePlan.priceLabel) || `${selectedPackagePlan.totalUses || 0} users`;
     packagePlanPreviewCopy.textContent =
-      `${selectedPackagePlan.totalUses || 0} use${selectedPackagePlan.totalUses === 1 ? '' : 's'} included.` +
+      `${selectedPackagePlan.totalUses || 0} user${selectedPackagePlan.totalUses === 1 ? '' : 's'} included.` +
       `${selectedService?.name ? ` ${selectedService.name} is selected automatically for this package.` : ''}` +
       `${selectedPackagePlan.expiresAt ? ` ${formatPackagePlanExpiryLabel(selectedPackagePlan.expiresAt)}.` : ''}`;
     packagePlanPreviewServices.textContent =
@@ -17976,7 +18153,7 @@ const initPublicBooking = () => {
 
     if (packagePlanBuyButton instanceof HTMLButtonElement) {
       packagePlanBuyButton.disabled = false;
-      packagePlanBuyButton.textContent = `Buy ${selectedPackagePlan.priceLabel || 'package'}`;
+      packagePlanBuyButton.textContent = `Buy ${formatPriceLabelForDisplay(selectedPackagePlan.priceLabel) || 'package'}`;
     }
 
   };
@@ -18102,7 +18279,7 @@ const initPublicBooking = () => {
       meta.textContent = `${service.durationMinutes} min`;
 
       const price = document.createElement('b');
-      price.textContent = service.priceLabel || 'Price on booking';
+      price.textContent = formatPriceLabelForDisplay(service.priceLabel) || 'Price on booking';
 
       copy.append(title, meta, price);
 
@@ -18664,8 +18841,7 @@ const initPublicBooking = () => {
     }
 
     if (packagePlanBuyButton instanceof HTMLButtonElement) {
-      packagePlanBuyButton.disabled = true;
-      packagePlanBuyButton.textContent = 'Opening checkout...';
+      setButtonBusy(packagePlanBuyButton, true, 'Opening checkout...');
     }
 
     try {
@@ -18685,11 +18861,14 @@ const initPublicBooking = () => {
         return;
       }
 
+      if (packagePlanBuyButton instanceof HTMLButtonElement) {
+        setButtonBusy(packagePlanBuyButton, false);
+      }
+
       safeAlert('Stripe checkout did not return a checkout link.');
     } catch (error) {
       if (packagePlanBuyButton instanceof HTMLButtonElement) {
-        packagePlanBuyButton.disabled = false;
-        packagePlanBuyButton.textContent = `Buy ${selectedPackagePlan.priceLabel || 'package'}`;
+        setButtonBusy(packagePlanBuyButton, false);
       }
 
       safeAlert(error instanceof Error ? error.message : 'Unable to start package checkout');
@@ -18737,8 +18916,8 @@ const initPublicBooking = () => {
 
         const meta = document.createElement('p');
         meta.textContent =
-          `${packagePlan.priceLabel || 'Price on checkout'} | ` +
-          `${packagePlan.totalUses || 0} use${packagePlan.totalUses === 1 ? '' : 's'}` +
+          `${formatPriceLabelForDisplay(packagePlan.priceLabel) || 'Price on checkout'} | ` +
+          `${packagePlan.totalUses || 0} user${packagePlan.totalUses === 1 ? '' : 's'}` +
           `${packagePlan.expiresAt ? ` | ${formatPackagePlanExpiryLabel(packagePlan.expiresAt)}` : ''}`;
 
         button.append(title, meta);
@@ -18784,7 +18963,7 @@ const initPublicBooking = () => {
           ? `${selectedBookingLocationLabel}. `
           : '';
     const packageSummary = selectedPublishedPackagePlan
-      ? `Package selected: ${selectedPublishedPackagePlan.name}${selectedPublishedPackagePlan.totalUses ? ` (${selectedPublishedPackagePlan.totalUses} use${selectedPublishedPackagePlan.totalUses === 1 ? '' : 's'})` : ''}${selectedPublishedPackagePlan.priceLabel ? ` for ${selectedPublishedPackagePlan.priceLabel}` : ''}. `
+      ? `Package selected: ${selectedPublishedPackagePlan.name}${selectedPublishedPackagePlan.totalUses ? ` (${selectedPublishedPackagePlan.totalUses} user${selectedPublishedPackagePlan.totalUses === 1 ? '' : 's'})` : ''}${selectedPublishedPackagePlan.priceLabel ? ` for ${selectedPublishedPackagePlan.priceLabel}` : ''}. `
       : '';
 
     if (!serviceLabel && !formattedDateTime) {
@@ -18795,8 +18974,8 @@ const initPublicBooking = () => {
     }
 
     if (serviceLabel && !formattedDateTime) {
-      const summaryPriceLabel = selectedService?.priceLabel ?? '';
-      summaryTitle.textContent = `${serviceLabel} â€¢ ${selectedService?.priceLabel ?? ''}`.trim();
+      const summaryPriceLabel = formatPriceLabelForDisplay(selectedService?.priceLabel ?? '');
+      summaryTitle.textContent = `${serviceLabel} â€¢ ${summaryPriceLabel}`.trim();
       if (salonSummaryLabel) {
         summaryTitle.textContent = `${serviceLabel} at ${salonSummaryLabel}${summaryPriceLabel ? ` | ${summaryPriceLabel}` : ''}`.trim();
       }
@@ -18808,10 +18987,10 @@ const initPublicBooking = () => {
 
     summaryTitle.textContent =
       serviceLabel && selectedService?.priceLabel
-        ? `${serviceLabel} â€¢ ${selectedService.priceLabel}`
+        ? `${serviceLabel} â€¢ ${formatPriceLabelForDisplay(selectedService.priceLabel)}`
         : serviceLabel || 'Appointment selected';
     if (salonSummaryLabel && serviceLabel) {
-      summaryTitle.textContent = `${serviceLabel} at ${salonSummaryLabel}${selectedService?.priceLabel ? ` | ${selectedService.priceLabel}` : ''}`.trim();
+      summaryTitle.textContent = `${serviceLabel} at ${salonSummaryLabel}${selectedService?.priceLabel ? ` | ${formatPriceLabelForDisplay(selectedService.priceLabel)}` : ''}`.trim();
     }
     summaryCopy.textContent = formattedDateTime
       ? `${selectedService?.durationMinutes ? `${selectedService.durationMinutes} min service${teamMemberLabel ? ` with ${teamMemberLabel}` : ''}${salonSummaryLabel ? ` at ${salonSummaryLabel}` : ''}. ` : ''}${bookingLocationSummary}${packageSummary}${selectedBenefit ? `${selectedBenefit.title} will be applied. ` : ''}Your booking is planned for ${formattedDateTime}.`
@@ -18943,6 +19122,7 @@ const initPublicBooking = () => {
       currentBusinessPhoneNumber = typeof payload.businessPhoneNumber === 'string' ? payload.businessPhoneNumber.trim() : '';
       syncBookingHero();
       syncBookingFooter(payload);
+      syncBookingBranchSelect(payload.branches);
       serviceTypes.textContent =
         payload.serviceTypes.length > 0 ? payload.serviceTypes.join(' | ') : 'Salon services';
       populateBookingLocations(payload.serviceLocations);
@@ -18964,7 +19144,7 @@ const initPublicBooking = () => {
           highlightedPackageNames.length > 0
             ? ` - Package${highlightedPackageNames.length === 1 ? '' : 's'}: ${highlightedPackageNames.join(', ')}`
             : '';
-        option.textContent = `${service.name} - ${service.durationMinutes} min - ${service.priceLabel}${packageLabel}`;
+        option.textContent = `${service.name} - ${service.durationMinutes} min - ${formatPriceLabelForDisplay(service.priceLabel)}${packageLabel}`;
         serviceSelect.append(option);
       }
 
@@ -19296,6 +19476,7 @@ const initPublicBooking = () => {
 
   waitlistButton.addEventListener('click', async () => {
     waitlistButton.disabled = true;
+    waitlistButton.classList.add('is-busy');
 
     try {
       const payload = await apiRequest(`/api/public/book/${businessId}/waitlist`, {
@@ -19331,6 +19512,7 @@ const initPublicBooking = () => {
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to join the waitlist');
     } finally {
+      waitlistButton.classList.remove('is-busy');
       waitlistButton.disabled = false;
     }
   });
@@ -19344,9 +19526,7 @@ const initPublicBooking = () => {
     }
 
     if (bookingSubmitButton instanceof HTMLButtonElement) {
-      bookingSubmitButton.disabled = true;
-      bookingSubmitButton.classList.add('is-loading');
-      bookingSubmitButton.textContent = 'Confirming...';
+      setButtonBusy(bookingSubmitButton, true, 'Confirming...');
     }
 
     let isRedirectingToCheckout = false;
@@ -19405,7 +19585,7 @@ const initPublicBooking = () => {
       }
       latestAppointmentReference = payload.appointment.id;
       reviewReferenceInput.value = latestAppointmentReference;
-      successCopy.textContent = `Booked ${payload.appointment.serviceName}${payload.appointment.teamMemberName ? ` with ${payload.appointment.teamMemberName}` : ''} for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}.${payload.appointment.serviceLocation ? ` Service location: ${getSelectedBookingLocationLabel()}${payload.appointment.customerAddress ? ` (${payload.appointment.customerAddress})` : ''}.` : ''}${payload.appointment.packageName ? ` Package: ${payload.appointment.packageName}${payload.appointment.packageTotalUses ? ` (${payload.appointment.packageTotalUses} use${payload.appointment.packageTotalUses === 1 ? '' : 's'})` : ''}${payload.appointment.packagePriceLabel ? ` - ${payload.appointment.packagePriceLabel}` : ''}.` : ''}${payload.appointment.loyaltyRewardLabel ? ` Reward used: ${payload.appointment.loyaltyRewardLabel}.` : ''}`;
+      successCopy.textContent = `Booked ${payload.appointment.serviceName}${payload.appointment.teamMemberName ? ` with ${payload.appointment.teamMemberName}` : ''} for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}.${payload.appointment.serviceLocation ? ` Service location: ${getSelectedBookingLocationLabel()}${payload.appointment.customerAddress ? ` (${payload.appointment.customerAddress})` : ''}.` : ''}${payload.appointment.packageName ? ` Package: ${payload.appointment.packageName}${payload.appointment.packageTotalUses ? ` (${payload.appointment.packageTotalUses} user${payload.appointment.packageTotalUses === 1 ? '' : 's'})` : ''}${payload.appointment.packagePriceLabel ? ` - ${formatPriceLabelForDisplay(payload.appointment.packagePriceLabel)}` : ''}.` : ''}${payload.appointment.loyaltyRewardLabel ? ` Reward used: ${payload.appointment.loyaltyRewardLabel}.` : ''}`;
       const bookedPhone = payload.appointment.customerPhone;
       activeWaitlistOffer = null;
       savedWaitlistSignature = '';
@@ -19429,9 +19609,7 @@ const initPublicBooking = () => {
       safeAlert(error instanceof Error ? error.message : 'Unable to create appointment');
     } finally {
       if (!isRedirectingToCheckout && bookingSubmitButton instanceof HTMLButtonElement) {
-        bookingSubmitButton.disabled = false;
-        bookingSubmitButton.classList.remove('is-loading');
-        bookingSubmitButton.textContent = bookingSubmitButtonDefaultText;
+        setButtonBusy(bookingSubmitButton, false);
       }
     }
   });
@@ -19470,6 +19648,7 @@ const initPublicBooking = () => {
       for (const button of reviewStarButtons) {
         button.disabled = true;
       }
+      reviewStars.classList.add('is-busy');
 
       const payload = await apiRequest(`/api/public/book/${businessId}/reviews`, {
         method: 'POST',
@@ -19489,6 +19668,7 @@ const initPublicBooking = () => {
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to submit review');
     } finally {
+      reviewStars.classList.remove('is-busy');
       for (const button of reviewStarButtons) {
         button.disabled = false;
       }
@@ -19698,7 +19878,7 @@ const initManageBooking = () => {
     title.textContent = `Manage your appointment at ${payload.appointment.businessName}`;
     copy.textContent = `Booking for ${payload.appointment.customerName}. You can reschedule or cancel it below.`;
     summaryTitle.textContent = `${payload.appointment.serviceName}${payload.appointment.teamMemberName ? ` with ${payload.appointment.teamMemberName}` : ''}`;
-    summaryCopy.textContent = `Currently planned for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}.${payload.appointment.packageName ? ` Package: ${payload.appointment.packageName}${payload.appointment.packageTotalUses ? ` (${payload.appointment.packageTotalUses} use${payload.appointment.packageTotalUses === 1 ? '' : 's'})` : ''}${payload.appointment.packagePriceLabel ? ` - ${payload.appointment.packagePriceLabel}` : ''}.` : ''} Reference: ${payload.appointment.id.slice(0, 8)}.`;
+    summaryCopy.textContent = `Currently planned for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}.${payload.appointment.packageName ? ` Package: ${payload.appointment.packageName}${payload.appointment.packageTotalUses ? ` (${payload.appointment.packageTotalUses} user${payload.appointment.packageTotalUses === 1 ? '' : 's'})` : ''}${payload.appointment.packagePriceLabel ? ` - ${formatPriceLabelForDisplay(payload.appointment.packagePriceLabel)}` : ''}.` : ''} Reference: ${payload.appointment.id.slice(0, 8)}.`;
     dateInput.value = payload.appointment.appointmentDate;
     startCountdown();
     await loadSlots(payload.appointment.appointmentTime);
@@ -19736,7 +19916,7 @@ const initManageBooking = () => {
     const rescheduleSubmitButton = form.querySelector('[type="submit"]');
 
     if (rescheduleSubmitButton instanceof HTMLButtonElement) {
-      rescheduleSubmitButton.disabled = true;
+      setButtonBusy(rescheduleSubmitButton, true, 'Saving...');
     }
 
     try {
@@ -19753,7 +19933,7 @@ const initManageBooking = () => {
       );
 
       appointmentDetails = payload.appointment;
-      summaryCopy.textContent = `Currently planned for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}.${payload.appointment.packageName ? ` Package: ${payload.appointment.packageName}${payload.appointment.packageTotalUses ? ` (${payload.appointment.packageTotalUses} use${payload.appointment.packageTotalUses === 1 ? '' : 's'})` : ''}${payload.appointment.packagePriceLabel ? ` - ${payload.appointment.packagePriceLabel}` : ''}.` : ''} Reference: ${payload.appointment.id.slice(0, 8)}.`;
+      summaryCopy.textContent = `Currently planned for ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}.${payload.appointment.packageName ? ` Package: ${payload.appointment.packageName}${payload.appointment.packageTotalUses ? ` (${payload.appointment.packageTotalUses} user${payload.appointment.packageTotalUses === 1 ? '' : 's'})` : ''}${payload.appointment.packagePriceLabel ? ` - ${formatPriceLabelForDisplay(payload.appointment.packagePriceLabel)}` : ''}.` : ''} Reference: ${payload.appointment.id.slice(0, 8)}.`;
       successPanel.classList.remove('is-hidden');
       successCopy.textContent = `Your appointment has been moved to ${formatDateTimeForDisplay(payload.appointment.appointmentDate, payload.appointment.appointmentTime)}. SMS status: ${Array.isArray(payload.notifications) ? payload.notifications.map((entry) => `${entry.recipient} ${entry.status}`).join(', ') : 'updated'}.`;
       const manageRescheduleBackLink = document.querySelector('.back-link');
@@ -19768,7 +19948,7 @@ const initManageBooking = () => {
       safeAlert(error instanceof Error ? error.message : 'Unable to reschedule appointment');
     } finally {
       if (rescheduleSubmitButton instanceof HTMLButtonElement) {
-        rescheduleSubmitButton.disabled = false;
+        setButtonBusy(rescheduleSubmitButton, false);
       }
     }
   });
@@ -19778,7 +19958,7 @@ const initManageBooking = () => {
       return;
     }
 
-    cancelButton.disabled = true;
+    setButtonBusy(cancelButton, true, 'Cancelling...');
 
     try {
       const payload = await apiRequest(
@@ -19790,6 +19970,8 @@ const initManageBooking = () => {
       );
 
       appointmentDetails = payload.appointment;
+      setButtonBusy(cancelButton, false);
+      cancelButton.disabled = true;
       setFormDisabled(true);
       successPanel.classList.remove('is-hidden');
       successCopy.textContent = 'Your appointment has been cancelled.';
@@ -19799,10 +19981,10 @@ const initManageBooking = () => {
         manageCancelBackLink.setAttribute('aria-label', 'Go to dashboard');
       }
       setStatus('Appointment cancelled.', 'warning');
-      summaryCopy.textContent = `This appointment was cancelled.${payload.appointment.packageName ? ` Package: ${payload.appointment.packageName}${payload.appointment.packageTotalUses ? ` (${payload.appointment.packageTotalUses} use${payload.appointment.packageTotalUses === 1 ? '' : 's'})` : ''}${payload.appointment.packagePriceLabel ? ` - ${payload.appointment.packagePriceLabel}` : ''}.` : ''} Reference: ${payload.appointment.id.slice(0, 8)}.`;
+      summaryCopy.textContent = `This appointment was cancelled.${payload.appointment.packageName ? ` Package: ${payload.appointment.packageName}${payload.appointment.packageTotalUses ? ` (${payload.appointment.packageTotalUses} user${payload.appointment.packageTotalUses === 1 ? '' : 's'})` : ''}${payload.appointment.packagePriceLabel ? ` - ${formatPriceLabelForDisplay(payload.appointment.packagePriceLabel)}` : ''}.` : ''} Reference: ${payload.appointment.id.slice(0, 8)}.`;
       syncCountdown();
     } catch (error) {
-      cancelButton.disabled = false;
+      setButtonBusy(cancelButton, false);
       safeAlert(error instanceof Error ? error.message : 'Unable to cancel appointment');
     }
   });
@@ -19965,7 +20147,10 @@ const initPreferredLanguage = () => {
       return;
     }
 
-    continueButton.disabled = true;
+    const originalContinueLabel = continueButton.textContent;
+    continueButton.classList.add('onboarding-continue-disabled', 'is-busy');
+    continueButton.setAttribute('aria-disabled', 'true');
+    continueButton.textContent = 'Saving...';
 
     try {
       await apiRequest(`/api/platform/clients/${clientId}/preferred-language`, {
@@ -19980,7 +20165,9 @@ const initPreferredLanguage = () => {
 
       redirectTo('/onboarding/complete', clientId);
     } catch (error) {
-      continueButton.disabled = false;
+      continueButton.classList.remove('onboarding-continue-disabled', 'is-busy');
+      continueButton.setAttribute('aria-disabled', 'false');
+      continueButton.textContent = originalContinueLabel;
       safeAlert(error instanceof Error ? error.message : 'Unable to save preferred language');
     }
   });
@@ -20085,7 +20272,7 @@ const initOnboardingLaunchLinks = async () => {
 
 const formatSubscriptionPlanPrice = (plan) => {
   const amount = Number(plan?.amountCents ?? 0) / 100;
-  const currencyCode = typeof plan?.currencyCode === 'string' ? plan.currencyCode : 'USD';
+  const currencyCode = typeof plan?.currencyCode === 'string' ? plan.currencyCode : 'PKR';
 
   try {
     return new Intl.NumberFormat('en-PK', {
@@ -20223,7 +20410,11 @@ const initPricingPage = () => {
       <form class="pricing-checkout-form" id="pricing-checkout-form">
         <div class="pricing-checkout-actions">
           <button class="pricing-cta" type="submit">Continue to Stripe</button>
-          <span class="pricing-note">${escapeHtml(formatSubscriptionPlanPrice(selectedPlan))} per ${escapeHtml(selectedPlan.billingInterval)}.</span>
+          <span class="pricing-note">${
+            Number(selectedPlan.trialDays) > 0
+              ? `Free for the first ${escapeHtml(String(selectedPlan.trialDays))} days, then ${escapeHtml(formatSubscriptionPlanPrice(selectedPlan))} per ${escapeHtml(selectedPlan.billingInterval)}.`
+              : `${escapeHtml(formatSubscriptionPlanPrice(selectedPlan))} per ${escapeHtml(selectedPlan.billingInterval)}.`
+          }</span>
         </div>
       </form>
     `;
@@ -20245,8 +20436,7 @@ const initPricingPage = () => {
       const submitButton = form.querySelector('button[type="submit"]');
 
       if (submitButton instanceof HTMLButtonElement) {
-        submitButton.disabled = true;
-        submitButton.textContent = 'Opening Stripe...';
+        setButtonBusy(submitButton, true, 'Opening Stripe...');
       }
 
       try {
@@ -20265,11 +20455,14 @@ const initPricingPage = () => {
           return;
         }
 
+        if (submitButton instanceof HTMLButtonElement) {
+          setButtonBusy(submitButton, false);
+        }
+
         safeAlert('Stripe checkout did not return a checkout link.');
       } catch (error) {
         if (submitButton instanceof HTMLButtonElement) {
-          submitButton.disabled = false;
-          submitButton.textContent = 'Continue to Stripe';
+          setButtonBusy(submitButton, false);
         }
 
         safeAlert(error instanceof Error ? error.message : 'Unable to start Stripe checkout');
@@ -20325,6 +20518,75 @@ const initPricingPage = () => {
       const action = document.createElement('button');
       action.className = 'pricing-cta';
       action.type = 'button';
+
+      if (plan.key === 'solo' && !clientId) {
+        action.textContent = 'Start 1-month free trial';
+
+        const trialForm = document.createElement('form');
+        trialForm.className = 'pricing-trial-form is-hidden';
+        trialForm.innerHTML = `
+          <p class="pricing-trial-note">Just your name and email — every Solo feature unlocks instantly, free for 1 month. No card needed.</p>
+          <input type="text" name="name" placeholder="Your name" autocomplete="name" required minlength="2" />
+          <input type="email" name="email" placeholder="you@example.com" autocomplete="email" required />
+          <button class="pricing-cta" type="submit">Activate free trial</button>
+        `;
+
+        action.addEventListener('click', () => {
+          trialForm.classList.toggle('is-hidden');
+
+          if (!trialForm.classList.contains('is-hidden')) {
+            const nameInput = trialForm.querySelector('input[name="name"]');
+
+            if (nameInput instanceof HTMLInputElement) {
+              nameInput.focus();
+            }
+          }
+        });
+
+        trialForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+
+          const nameInput = trialForm.querySelector('input[name="name"]');
+          const emailInput = trialForm.querySelector('input[name="email"]');
+          const submitButton = trialForm.querySelector('button[type="submit"]');
+
+          if (
+            !(nameInput instanceof HTMLInputElement) ||
+            !(emailInput instanceof HTMLInputElement) ||
+            !(submitButton instanceof HTMLButtonElement)
+          ) {
+            return;
+          }
+
+          setButtonBusy(submitButton, true, 'Activating...');
+
+          try {
+            const payload = await apiRequest('/api/billing/solo-free-trial', {
+              method: 'POST',
+              body: JSON.stringify({
+                name: nameInput.value.trim(),
+                email: emailInput.value.trim()
+              })
+            });
+
+            if (payload?.clientId) {
+              setAdminSession(payload.clientId);
+              window.location.assign(buildPathWithClientId('/calendar', payload.clientId));
+              return;
+            }
+
+            safeAlert('Free trial could not be started. Please try again.');
+          } catch (error) {
+            safeAlert(error instanceof Error ? error.message : 'Unable to start free trial');
+          }
+
+          setButtonBusy(submitButton, false);
+        });
+
+        card.append(top, price, copy, featureWrap, action, trialForm);
+        return card;
+      }
+
       action.textContent = plan.id === currentPlanId ? 'Current plan' : clientId ? 'Choose plan' : 'Sign up first';
       action.addEventListener('click', async () => {
         if (!clientId) {
@@ -20332,8 +20594,7 @@ const initPricingPage = () => {
           return;
         }
 
-        action.disabled = true;
-        action.textContent = 'Opening Stripe...';
+        setButtonBusy(action, true, 'Opening Stripe...');
 
         try {
           const payload = await apiRequest(
@@ -20354,8 +20615,7 @@ const initPricingPage = () => {
           safeAlert(error instanceof Error ? error.message : 'Unable to start Stripe checkout');
         }
 
-        action.disabled = false;
-        action.textContent = 'Choose plan';
+        setButtonBusy(action, false);
       });
 
       card.append(top, price, copy, featureWrap, action);
@@ -20501,7 +20761,7 @@ const initBarberLoginForm = () => {
       return;
     }
 
-    submitBtn.disabled = true;
+    setButtonBusy(submitBtn, true);
     setStatus('Logging in...');
 
     try {
@@ -20529,7 +20789,7 @@ const initBarberLoginForm = () => {
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Unable to log in.', true);
     } finally {
-      submitBtn.disabled = false;
+      setButtonBusy(submitBtn, false);
     }
   };
 
@@ -20587,6 +20847,11 @@ const initBarberDashboard = () => {
 
   if (logoutBtn instanceof HTMLButtonElement) {
     logoutBtn.addEventListener('click', () => {
+      if (logoutBtn.disabled) {
+        return;
+      }
+
+      setButtonBusy(logoutBtn, true);
       staffApiRequest(`/api/platform/clients/${clientId}/staff/${teamMemberId}/logout`, {
         method: 'POST'
       })
@@ -21107,6 +21372,7 @@ const initEmailLogs = () => {
 };
 
 syncClientIdFromQuery();
+syncProtectedPageLinks();
 initCustomerLogin();
 initCustomerOtpLogin();
 initBarberLoginForm();

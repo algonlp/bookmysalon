@@ -10,6 +10,11 @@ billingRouter.get(
   asyncHandler(billingController.listSubscriptionPlans)
 );
 
+billingRouter.post(
+  '/billing/solo-free-trial',
+  asyncHandler(billingController.startSoloFreeTrial)
+);
+
 billingRouter.get(
   '/billing/stripe-return',
   asyncHandler(billingController.handleStripeSubscriptionReturn)

@@ -176,6 +176,7 @@ export interface PublicBookingPage {
   reviews: ReviewRecord[];
   reviewSummary: ReviewSummary;
   waitlistOffer: PublicWaitlistOffer | null;
+  branches: Array<{ id: string; businessName: string }>;
 }
 
 export interface PublicManagedAppointment {

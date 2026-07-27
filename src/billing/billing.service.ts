@@ -13,7 +13,8 @@ import type {
   CreateSubscriptionCheckoutInput,
   DemoBillingCard,
   DemoCheckoutInput,
-  SubscriptionPlan
+  SubscriptionPlan,
+  SubscriptionPlanKey
 } from './billing.types';
 import { clientPlatformRepository } from '../platform/clientPlatform.repository';
 import { HttpError } from '../shared/errors/httpError';
@@ -413,7 +414,7 @@ export const billingService = {
       businessId,
       subscriptionId: subscription.id,
       planId: plan.id,
-      amountCents: plan.amountCents,
+      amountCents: trialEndsAt ? 0 : plan.amountCents,
       currencyCode: plan.currencyCode,
       status: 'paid',
       periodStart: nowIso,
@@ -462,6 +463,92 @@ export const billingService = {
     return {
       subscription,
       invoice,
+      overview: await billingService.getBillingOverview(businessId)
+    };
+  },
+
+  async startFreeTrialSubscription(
+    businessId: string,
+    planKey: SubscriptionPlanKey
+  ): Promise<{
+    subscription: BusinessSubscription;
+    plan: SubscriptionPlan;
+    overview: BillingOverview;
+  }> {
+    await getBusinessOrThrow(businessId);
+    const plans = await listNormalizedSubscriptionPlans();
+    const plan = plans.find((entry) => entry.key === planKey);
+
+    if (!plan) {
+      throw new HttpError(404, 'Subscription plan was not found');
+    }
+
+    if (plan.trialDays <= 0) {
+      throw new HttpError(400, 'This plan does not include a free trial');
+    }
+
+    const existingSubscriptions = (
+      await billingRepository.listBusinessSubscriptionsByBusinessId(businessId)
+    ).filter((subscription) => activeSubscriptionStatuses.includes(subscription.status));
+
+    if (existingSubscriptions.length > 0) {
+      throw new HttpError(409, 'This business already has an active subscription');
+    }
+
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const trialEndsAt = new Date(
+      now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000
+    ).toISOString();
+    const appointmentCreditsGranted = getPlanIncludedCredits(plan);
+    const messageCreditsGranted = getPlanIncludedMessages(plan);
+    const marketingEmailCreditsGranted = getPlanIncludedMarketingEmails(plan);
+
+    const subscription: BusinessSubscription = {
+      id: randomUUID(),
+      businessId,
+      planId: plan.id,
+      status: 'trialing',
+      provider: 'trial',
+      providerCustomerId: `trial_customer_${businessId}`,
+      providerSubscriptionId: `trial_subscription_${randomUUID()}`,
+      appointmentCreditsGranted,
+      appointmentCreditsRemaining: appointmentCreditsGranted,
+      appointmentCreditsUsed: 0,
+      messageCreditsGranted,
+      messageCreditsRemaining: messageCreditsGranted,
+      messageCreditsUsed: 0,
+      marketingEmailCreditsGranted,
+      marketingEmailCreditsRemaining: marketingEmailCreditsGranted,
+      marketingEmailCreditsUsed: 0,
+      currentPeriodStart: nowIso,
+      currentPeriodEnd: trialEndsAt,
+      trialEndsAt,
+      createdAt: nowIso,
+      updatedAt: nowIso
+    };
+
+    const invoice: BillingInvoice = {
+      id: randomUUID(),
+      businessId,
+      subscriptionId: subscription.id,
+      planId: plan.id,
+      amountCents: 0,
+      currencyCode: plan.currencyCode,
+      status: 'paid',
+      periodStart: nowIso,
+      periodEnd: trialEndsAt,
+      paidAt: nowIso,
+      createdAt: nowIso,
+      updatedAt: nowIso
+    };
+
+    await billingRepository.saveBusinessSubscription(subscription);
+    await billingRepository.saveBillingInvoice(invoice);
+
+    return {
+      subscription,
+      plan,
       overview: await billingService.getBillingOverview(businessId)
     };
   },
@@ -658,7 +745,7 @@ export const billingService = {
       businessId: input.businessId,
       subscriptionId: subscription.id,
       planId: plan.id,
-      amountCents: plan.amountCents,
+      amountCents: trialEndsAt ? 0 : plan.amountCents,
       currencyCode: plan.currencyCode,
       status: 'paid',
       periodStart: nowIso,
@@ -757,7 +844,7 @@ export const billingService = {
       subscriptionId: subscription.id,
       planId: subscription.planId,
       amountCents: input.amountPaidCents ?? plan?.amountCents ?? 0,
-      currencyCode: input.currencyCode ?? plan?.currencyCode ?? 'GBP',
+      currencyCode: input.currencyCode ?? plan?.currencyCode ?? 'PKR',
       status: 'paid',
       periodStart,
       periodEnd,

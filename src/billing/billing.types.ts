@@ -55,7 +55,7 @@ export interface BusinessSubscription {
   businessId: string;
   planId: string;
   status: BusinessSubscriptionStatus;
-  provider: 'demo' | 'stripe';
+  provider: 'demo' | 'stripe' | 'trial';
   providerCustomerId: string;
   providerSubscriptionId: string;
   demoCard?: DemoBillingCard;
@@ -103,6 +103,11 @@ export interface DemoCheckoutInput {
 
 export interface CreateSubscriptionCheckoutInput {
   planId: string;
+}
+
+export interface SoloFreeTrialInput {
+  name: string;
+  email: string;
 }
 
 export interface BillingFeatureAccess {

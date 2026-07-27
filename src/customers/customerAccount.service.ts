@@ -71,7 +71,7 @@ const createCustomer = (input: UpsertCustomerInput): CustomerAccount => {
     favoriteSalonIds: [],
     wallet: {
       balanceMinor: 0,
-      currencyCode: 'USD',
+      currencyCode: 'PKR',
       giftCards: [],
       cards: []
     },
@@ -101,7 +101,7 @@ export const customerAccountService = {
         gender: '',
         addresses: [],
         favoriteSalonIds: [],
-        wallet: { balanceMinor: 0, currencyCode: 'USD', giftCards: [], cards: [] },
+        wallet: { balanceMinor: 0, currencyCode: 'PKR', giftCards: [], cards: [] },
         notifications: defaultNotifications(),
         socialLogins: defaultSocialLogins(),
         sessionToken: createSessionToken(),
