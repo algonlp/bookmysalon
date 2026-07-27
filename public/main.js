@@ -19496,8 +19496,8 @@ const initPublicBooking = () => {
       savedWaitlistSignature = getWaitlistSignature();
       successPanel.classList.remove('is-hidden');
       if (bookingBackLink instanceof HTMLAnchorElement) {
-        bookingBackLink.href = '/activity';
-        bookingBackLink.setAttribute('aria-label', isOwnerBookingTab ? 'Close and return to dashboard' : 'Go to dashboard');
+        bookingBackLink.href = getBookingReturnUrl();
+        bookingBackLink.setAttribute('aria-label', isOwnerBookingTab ? 'Close and return to dashboard' : 'Go back');
       }
       successCopy.textContent =
         `You joined the waitlist for ${payload.waitlistEntry.serviceName} on ${formatDateForDisplay(payload.waitlistEntry.appointmentDate)}.` +
@@ -19517,8 +19517,91 @@ const initPublicBooking = () => {
     }
   });
 
+  let bookingSubmitDefaultLabel = '';
+
+  // Where the visitor came from (salon page, home, dashboard...). Auth pages
+  // are excluded so "Go to dashboard" never bounces back to login/signup.
+  const bookingReferrerReturnUrl = (() => {
+    if (!document.referrer) {
+      return '';
+    }
+
+    try {
+      const referrerUrl = new URL(document.referrer);
+      const excludedPrefixes = ['/login', '/signup', '/customer-login', '/barber-login'];
+
+      if (
+        referrerUrl.origin !== window.location.origin ||
+        referrerUrl.pathname === window.location.pathname ||
+        excludedPrefixes.some((prefix) => referrerUrl.pathname.startsWith(prefix))
+      ) {
+        return '';
+      }
+
+      return `${referrerUrl.pathname}${referrerUrl.search}`;
+    } catch (_error) {
+      return '';
+    }
+  })();
+
+  const getBookingReturnUrl = () =>
+    bookingReferrerReturnUrl ||
+    (isCustomerLoggedIn() ? '/activity' : `/salon/${encodeURIComponent(businessId)}`);
+
+  const setBookingCompleteButton = () => {
+    if (!(bookingSubmitButton instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    bookingSubmitDefaultLabel = bookingSubmitButton.textContent;
+    bookingSubmitButton.dataset.bookingComplete = 'true';
+    // The form was just reset, so skip required-field validation while the
+    // button acts as a dashboard link.
+    bookingSubmitButton.setAttribute('formnovalidate', '');
+    bookingSubmitButton.textContent = isOwnerBookingTab ? 'Close and go to dashboard' : 'Go to dashboard';
+  };
+
+  const clearBookingCompleteButton = () => {
+    if (
+      !(bookingSubmitButton instanceof HTMLButtonElement) ||
+      bookingSubmitButton.dataset.bookingComplete !== 'true'
+    ) {
+      return;
+    }
+
+    delete bookingSubmitButton.dataset.bookingComplete;
+    bookingSubmitButton.removeAttribute('formnovalidate');
+    bookingSubmitButton.textContent = bookingSubmitDefaultLabel || 'Confirm appointment';
+  };
+
+  // Any interaction with the form besides the dashboard button means the
+  // visitor is starting another booking - restore the confirm button.
+  bookingForm.addEventListener('click', (event) => {
+    if (
+      bookingSubmitButton instanceof HTMLButtonElement &&
+      bookingSubmitButton.dataset.bookingComplete === 'true' &&
+      event.target instanceof Node &&
+      !bookingSubmitButton.contains(event.target)
+    ) {
+      clearBookingCompleteButton();
+    }
+  });
+
   bookingForm.addEventListener('submit', async (event) => {
     event.preventDefault();
+
+    if (
+      bookingSubmitButton instanceof HTMLButtonElement &&
+      bookingSubmitButton.dataset.bookingComplete === 'true'
+    ) {
+      if (isOwnerBookingTab) {
+        window.close();
+        return;
+      }
+
+      window.location.assign(getBookingReturnUrl());
+      return;
+    }
 
     if (!timeSelect.value) {
       safeAlert('Please select a time slot before confirming.');
@@ -19530,6 +19613,7 @@ const initPublicBooking = () => {
     }
 
     let isRedirectingToCheckout = false;
+    let isBookingCreated = false;
 
     try {
       const selectedBookingLocation = getSelectedBookingLocation();
@@ -19580,8 +19664,8 @@ const initPublicBooking = () => {
 
       successPanel.classList.remove('is-hidden');
       if (bookingBackLink instanceof HTMLAnchorElement) {
-        bookingBackLink.href = '/activity';
-        bookingBackLink.setAttribute('aria-label', isOwnerBookingTab ? 'Close and return to dashboard' : 'Go to dashboard');
+        bookingBackLink.href = getBookingReturnUrl();
+        bookingBackLink.setAttribute('aria-label', isOwnerBookingTab ? 'Close and return to dashboard' : 'Go back');
       }
       latestAppointmentReference = payload.appointment.id;
       reviewReferenceInput.value = latestAppointmentReference;
@@ -19605,11 +19689,16 @@ const initPublicBooking = () => {
       await renderPhoneHistory(getBookingCustomerPhoneValue());
       await renderBenefits(getBookingCustomerPhoneValue());
       successPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      isBookingCreated = true;
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to create appointment');
     } finally {
       if (!isRedirectingToCheckout && bookingSubmitButton instanceof HTMLButtonElement) {
         setButtonBusy(bookingSubmitButton, false);
+
+        if (isBookingCreated) {
+          setBookingCompleteButton();
+        }
       }
     }
   });
