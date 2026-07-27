@@ -1349,6 +1349,19 @@ const buildAppointmentManagementLink = (
   return `${baseLink}?${searchParams.toString()}`;
 };
 
+// A short, shareable link (e.g. https://host/b/<token>) that redirects to the
+// full appointment management page. Keeps SMS/WhatsApp messages tidy instead of
+// sending a very long URL.
+const buildShortManageLink = (appointment: AppointmentRecord, origin: string): string => {
+  const publicAccessToken = appointment.publicAccessToken?.trim();
+
+  if (!publicAccessToken) {
+    throw new HttpError(409, 'Appointment access token is not available');
+  }
+
+  return `${origin}/b/${encodeURIComponent(publicAccessToken)}`;
+};
+
 const buildWaitlistClaimLink = (waitlistEntry: WaitlistRecord, origin: string): string => {
   if (!waitlistEntry.offerClaimToken) {
     throw new HttpError(409, 'Waitlist offer is not currently active');
@@ -1589,7 +1602,7 @@ const sendAppointmentConfirmationNotification = async (
   origin: string,
   mode: 'booked' | 'rescheduled' = 'booked'
 ): Promise<NotificationDispatchResult[]> => {
-  const manageLink = buildAppointmentManagementLink(appointment, origin);
+  const shortManageLink = buildShortManageLink(appointment, origin);
   const statusLabel = mode === 'rescheduled' ? 'has been rescheduled' : 'is confirmed';
   const packageDetail =
     appointment.packageName
@@ -1610,7 +1623,7 @@ const sendAppointmentConfirmationNotification = async (
     `Your appointment at ${appointment.businessName} ${statusLabel} for ` +
     `${appointmentDateLabel}. ` +
     `Service: ${appointment.serviceName}.${packageDetail} Ref: ${appointment.id.slice(0, 8)}. ` +
-    `Open your live booking link for the countdown and updates: ${manageLink}`;
+    `Click here to view your booking: ${shortManageLink}`;
 
   const emailSubject = `Your appointment at ${appointment.businessName} ${statusLabel}`;
   const emailText = customerMessage;
@@ -1634,7 +1647,7 @@ const sendAppointmentConfirmationNotification = async (
         ${detailRow('Reference', `#${appointment.id.slice(0, 8)}`)}
       </table>
     `,
-    button: { label: 'View your booking', url: manageLink },
+    button: { label: 'Click here to view your booking', url: shortManageLink },
     footerNote: "If you didn't request this booking, you can safely ignore this email."
   });
 
@@ -1670,7 +1683,7 @@ const sendRunningLateNotification = async (
   origin: string,
   input: AppointmentRunningLateInput = {}
 ): Promise<NotificationDispatchResult[]> => {
-  const manageLink = buildAppointmentManagementLink(appointment, origin);
+  const shortManageLink = buildShortManageLink(appointment, origin);
   const normalizedDelayMinutes =
     Number.isFinite(input.delayMinutes) && Number(input.delayMinutes) > 0
       ? Math.floor(Number(input.delayMinutes))
@@ -1684,7 +1697,7 @@ const sendRunningLateNotification = async (
   const customerMessage =
     `Update from ${appointment.businessName}: your ${appointment.serviceName} appointment scheduled for ` +
     `${formatSmsDate(appointment.appointmentDate, appointment.appointmentTime)} is delayed.` +
-    `${delayCopy}${noteCopy} Open your live booking link for the countdown or to adjust the booking: ${manageLink}`;
+    `${delayCopy}${noteCopy} Click here to view your booking: ${shortManageLink}`;
 
   return Promise.all([
     twilioSmsService.sendSms(appointment.customerPhone, customerMessage, 'customer', {
@@ -1697,6 +1710,23 @@ const sendRunningLateNotification = async (
 
 export const appointmentService = {
   getServiceCatalogForBusiness,
+
+  // Resolves a short-link token (/b/:token) to the full appointment management
+  // URL so the short link can redirect to it.
+  async resolveManageLinkFromToken(token: string, origin: string): Promise<string | null> {
+    const trimmedToken = typeof token === 'string' ? token.trim() : '';
+
+    if (!trimmedToken) {
+      return null;
+    }
+
+    const appointments = await appointmentRepository.listAppointments();
+    const appointment = appointments.find(
+      (entry) => entry.publicAccessToken?.trim() === trimmedToken
+    );
+
+    return appointment ? buildAppointmentManagementLink(appointment, origin) : null;
+  },
 
   async getBookingUrl(
     businessId: string,

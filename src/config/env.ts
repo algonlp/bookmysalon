@@ -232,6 +232,16 @@ const envSchema = z.object({
   PUBLIC_BOOKING_PHONE_COUNTRY_CODE_LABEL: z.string().default('Country code'),
   PUBLIC_BOOKING_PHONE_COUNTRY_CODE: z.string().default(''),
   PUBLIC_BOOKING_PHONE_NUMBER_PLACEHOLDER: z.string().default('Enter phone number'),
+  PUBLIC_BOOKING_PROMO_ENABLED: z.boolean().default(true),
+  PUBLIC_BOOKING_PROMO_BADGE: z.string().default('✨ Launch offer'),
+  PUBLIC_BOOKING_PROMO_DISCOUNT: z.string().default('100% OFF'),
+  PUBLIC_BOOKING_PROMO_TITLE: z.string().default('This service is on us — completely free'),
+  PUBLIC_BOOKING_PROMO_COPY: z
+    .string()
+    .default(
+      "To celebrate our launch, we're covering the full price of your booking. Reserve your slot now and pay nothing."
+    ),
+  PUBLIC_BOOKING_PROMO_FREE_LABEL: z.string().default('FREE'),
   PUBLIC_HOME_SEARCH_RESULTS_LIMIT: z.coerce.number().int().min(1).max(20).default(3),
   PUBLIC_LOCATION_SEARCH_COUNTRY_CODE: z.string().trim().min(2).max(3).optional(),
   PUBLIC_LOCATION_SEARCH_COUNTRY_LABEL: z.string().trim().min(1).optional(),
@@ -424,6 +434,12 @@ const resolvedEnv = {
   PUBLIC_BOOKING_PHONE_COUNTRY_CODE_LABEL: process.env.PUBLIC_BOOKING_PHONE_COUNTRY_CODE_LABEL?.trim(),
   PUBLIC_BOOKING_PHONE_COUNTRY_CODE: process.env.PUBLIC_BOOKING_PHONE_COUNTRY_CODE?.trim(),
   PUBLIC_BOOKING_PHONE_NUMBER_PLACEHOLDER: process.env.PUBLIC_BOOKING_PHONE_NUMBER_PLACEHOLDER?.trim(),
+  PUBLIC_BOOKING_PROMO_ENABLED: parseBooleanEnv(process.env.PUBLIC_BOOKING_PROMO_ENABLED, true),
+  PUBLIC_BOOKING_PROMO_BADGE: process.env.PUBLIC_BOOKING_PROMO_BADGE?.trim(),
+  PUBLIC_BOOKING_PROMO_DISCOUNT: process.env.PUBLIC_BOOKING_PROMO_DISCOUNT?.trim(),
+  PUBLIC_BOOKING_PROMO_TITLE: process.env.PUBLIC_BOOKING_PROMO_TITLE?.trim(),
+  PUBLIC_BOOKING_PROMO_COPY: process.env.PUBLIC_BOOKING_PROMO_COPY?.trim(),
+  PUBLIC_BOOKING_PROMO_FREE_LABEL: process.env.PUBLIC_BOOKING_PROMO_FREE_LABEL?.trim(),
   PUBLIC_HOME_SEARCH_RESULTS_LIMIT: process.env.PUBLIC_HOME_SEARCH_RESULTS_LIMIT,
   PUBLIC_LOCATION_SEARCH_COUNTRY_CODE: process.env.PUBLIC_LOCATION_SEARCH_COUNTRY_CODE?.trim().toLowerCase(),
   PUBLIC_LOCATION_SEARCH_COUNTRY_LABEL: process.env.PUBLIC_LOCATION_SEARCH_COUNTRY_LABEL?.trim(),

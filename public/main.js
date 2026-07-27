@@ -14,6 +14,13 @@ const DEFAULT_PHONE_PLACEHOLDER = '+1234567890';
 const DEFAULT_BOOKING_PHONE_PLACEHOLDER = 'Enter phone number';
 const DEFAULT_BOOKING_PHONE_LABEL = 'Phone number';
 const DEFAULT_BOOKING_PHONE_HELP = 'You and the business will receive SMS updates on this number.';
+const DEFAULT_BOOKING_PROMO = {
+  badge: '✨ Launch offer',
+  discount: '100% OFF',
+  title: 'This service is on us — completely free',
+  copy: "To celebrate our launch, we're covering the full price of your booking. Reserve your slot now and pay nothing.",
+  freeLabel: 'FREE'
+};
 const DEFAULT_PHONE_COUNTRY_CODE_LABEL = 'Country code';
 const DEFAULT_BUSINESS_PHONE_LABEL = 'Business phone number';
 const DEFAULT_SALON_IMAGE_URL =
@@ -2377,7 +2384,7 @@ const createSalonShowcaseCard = (salon) => {
   details.textContent =
     activeServices.length > 0
       ? activeServices
-          .map((service) => [service.name, service.priceLabel].filter(Boolean).join(' - '))
+          .map((service) => [service.name, formatPriceLabelForDisplay(service.priceLabel)].filter(Boolean).join(' - '))
           .join(' | ')
       : 'Online booking available';
 
@@ -8019,7 +8026,9 @@ const initCalendar = () => {
 
     const url = new URL(publicBookingPath, window.location.origin);
     url.searchParams.set('ownerTab', '1');
-    window.open(url.toString(), '_blank', 'noopener,noreferrer');
+    // Open in the same tab; the booking page returns to the dashboard on
+    // completion instead of relying on a separate window to be closed.
+    window.location.assign(url.toString());
   };
   let instagramBookingPath = '';
   let facebookBookingPath = '';
@@ -13091,7 +13100,7 @@ const createTrendCard = (
 
     const copy = document.createElement('p');
     copy.textContent = [
-      packagePlan.priceLabel,
+      formatPriceLabelForDisplay(packagePlan.priceLabel),
       `${packagePlan.totalUses} users`,
       formatPackagePlanExpiryLabel(packagePlan.expiresAt)
     ]
@@ -13453,7 +13462,7 @@ const createTrendCard = (
     for (const product of products) {
       const option = document.createElement('option');
       option.value = product.id;
-      option.textContent = `${product.name} - ${product.priceLabel}`;
+      option.textContent = `${product.name} - ${formatPriceLabelForDisplay(product.priceLabel)}`;
       productSelect.append(option);
     }
     if (selectedProduct?.id) {
@@ -13560,7 +13569,7 @@ const createTrendCard = (
     const copy = document.createElement('p');
     copy.textContent = [
       product.categoryName,
-      product.priceLabel,
+      formatPriceLabelForDisplay(product.priceLabel),
       `${product.stockQuantity} in stock`,
       soldUnits > 0 ? `${soldUnits} sold` : ''
     ]
@@ -15776,106 +15785,6 @@ const createTrendCard = (
     });
   }
 
-  const openSubscriptionPlansEditor = async () => {
-    openToolModal({
-      eyebrow: 'Subscription plans',
-      title: 'Loading plans...',
-      description: 'Fetching subscription plan data.',
-      dialogClassName: 'wide'
-    });
-
-    try {
-      const payload = await apiRequest('/api/billing/subscription-plans');
-      const plans = Array.isArray(payload?.plans) ? payload.plans : [];
-
-      const container = document.createElement('div');
-      container.style.cssText = 'display:grid;gap:18px;';
-
-      for (const plan of plans) {
-        const card = document.createElement('div');
-        card.style.cssText = 'padding:16px;border:1px solid rgba(18,18,18,0.1);border-radius:16px;background:rgba(255,252,248,0.92);';
-
-        const heading = document.createElement('strong');
-        heading.textContent = plan.name;
-        heading.style.cssText = 'display:block;font-size:1.1rem;margin-bottom:10px;';
-
-        const makeField = (label, value, inputType = 'text') => {
-          const row = document.createElement('label');
-          row.style.cssText = 'display:grid;grid-template-columns:180px 1fr;align-items:center;gap:8px;margin-bottom:6px;font-size:0.88rem;color:#5c5651;';
-          const span = document.createElement('span');
-          span.textContent = label;
-          const input = document.createElement('input');
-          input.type = inputType;
-          input.value = value;
-          input.style.cssText = 'padding:6px 10px;border:1px solid rgba(18,18,18,0.12);border-radius:10px;font-size:0.88rem;background:#fff;';
-          row.append(span, input);
-          return { row, input };
-        };
-
-        const nameField = makeField('Plan name', plan.name);
-        const priceField = makeField('Price (Rs)', Math.round(plan.amountCents / 100), 'number');
-        const summaryField = makeField('Summary', plan.summary);
-        const badgeField = makeField('Badge label', plan.badgeLabel);
-        const creditsField = makeField('Appointment credits', plan.entitlements?.includedAppointmentCredits ?? 0, 'number');
-        const trialField = makeField('Trial days', plan.trialDays ?? 0, 'number');
-
-        const saveBtn = document.createElement('button');
-        saveBtn.className = 'calendar-tool-action';
-        saveBtn.type = 'button';
-        saveBtn.textContent = `Save ${plan.name}`;
-        saveBtn.style.cssText = 'margin-top:10px;';
-
-        saveBtn.addEventListener('click', async () => {
-          saveBtn.disabled = true;
-          saveBtn.classList.add('is-busy');
-          saveBtn.textContent = 'Saving...';
-
-          try {
-            await apiRequest(`/api/platform/clients/${encodeURIComponent(clientId)}/billing/subscription-plans/${encodeURIComponent(plan.id)}`, {
-              method: 'POST',
-              body: JSON.stringify({
-                name: nameField.input.value.trim(),
-                amountCents: Math.round(Number(priceField.input.value) * 100),
-                summary: summaryField.input.value.trim(),
-                badgeLabel: badgeField.input.value.trim(),
-                includedAppointmentCredits: Number(creditsField.input.value),
-                trialDays: Number(trialField.input.value)
-              })
-            });
-            saveBtn.classList.remove('is-busy');
-            saveBtn.textContent = `Saved!`;
-            setTimeout(() => {
-              saveBtn.disabled = false;
-              saveBtn.textContent = `Save ${nameField.input.value.trim() || plan.name}`;
-            }, 1500);
-          } catch (error) {
-            saveBtn.classList.remove('is-busy');
-            saveBtn.disabled = false;
-            saveBtn.textContent = `Save ${plan.name}`;
-            safeAlert(error instanceof Error ? error.message : 'Unable to save plan');
-          }
-        });
-
-        card.append(heading, nameField.row, priceField.row, summaryField.row, badgeField.row, creditsField.row, trialField.row, saveBtn);
-        container.append(card);
-      }
-
-      openToolModal({
-        eyebrow: 'Subscription plans',
-        title: 'Manage subscription plans',
-        description: 'Edit plan details below. Changes apply immediately to the pricing page.',
-        actions: [container],
-        dialogClassName: 'wide'
-      });
-    } catch (error) {
-      openToolModal({
-        eyebrow: 'Subscription plans',
-        title: 'Unable to load plans',
-        description: error instanceof Error ? error.message : 'Failed to load subscription plans.'
-      });
-    }
-  };
-
   const openOpeningHoursEditor = async () => {
     openToolModal({
       eyebrow: 'Opening hours',
@@ -16009,9 +15918,6 @@ const createTrendCard = (
         actions: [
           createToolActionButton('Opening hours', () => {
             void openOpeningHoursEditor();
-          }),
-          createToolActionButton('Manage subscription plans', () => {
-            void openSubscriptionPlansEditor();
           }),
           createToolActionButton('Open SMS logs', () => {
             closeToolModal();
@@ -17404,6 +17310,43 @@ const initPublicBooking = () => {
   const summaryBusinessName = document.querySelector('#booking-summary-business-name');
   const summaryTitle = document.querySelector('#booking-summary-title');
   const summaryCopy = document.querySelector('#booking-summary-copy');
+  const bookingPromoPrice = document.querySelector('#booking-promo-price');
+  let bookingPromoFreeLabel = DEFAULT_BOOKING_PROMO.freeLabel;
+
+  // The launch/campaign banner content is driven by public config so it can be
+  // updated on the server without any code change.
+  const syncBookingPromo = (config) => {
+    const promo = document.querySelector('#booking-promo');
+
+    if (!(promo instanceof HTMLElement)) {
+      return;
+    }
+
+    if (config?.bookingPromoEnabled === false) {
+      promo.classList.add('is-hidden');
+      return;
+    }
+
+    promo.classList.remove('is-hidden');
+
+    const setPromoText = (selector, value, fallback) => {
+      const element = promo.querySelector(selector);
+      if (element instanceof HTMLElement) {
+        element.textContent =
+          typeof value === 'string' && value.trim() ? value.trim() : fallback;
+      }
+    };
+
+    setPromoText('.booking-promo-badge', config?.bookingPromoBadge, DEFAULT_BOOKING_PROMO.badge);
+    setPromoText('#booking-promo-discount', config?.bookingPromoDiscount, DEFAULT_BOOKING_PROMO.discount);
+    setPromoText('.booking-promo-title', config?.bookingPromoTitle, DEFAULT_BOOKING_PROMO.title);
+    setPromoText('.booking-promo-copy', config?.bookingPromoCopy, DEFAULT_BOOKING_PROMO.copy);
+
+    bookingPromoFreeLabel =
+      typeof config?.bookingPromoFreeLabel === 'string' && config.bookingPromoFreeLabel.trim()
+        ? config.bookingPromoFreeLabel.trim()
+        : DEFAULT_BOOKING_PROMO.freeLabel;
+  };
   const packageToast = document.querySelector('#booking-package-toast');
   const packageToastTitle = document.querySelector('#booking-package-toast-title');
   const packageToastMessage = document.querySelector('#booking-package-toast-message');
@@ -17423,14 +17366,6 @@ const initPublicBooking = () => {
   const bookingBackLink = document.querySelector('#booking-back-link');
   const isOwnerBookingTab = new URLSearchParams(window.location.search).get('ownerTab') === '1';
 
-  if (bookingBackLink instanceof HTMLAnchorElement) {
-    bookingBackLink.addEventListener('click', (event) => {
-      if (isOwnerBookingTab && bookingBackLink.getAttribute('href') === '/activity') {
-        event.preventDefault();
-        window.close();
-      }
-    });
-  }
   const serviceTabs = document.querySelector('#booking-service-tabs');
   const serviceCards = document.querySelector('#booking-service-cards');
   const teamMemberCards = document.querySelector('#booking-team-member-cards');
@@ -17835,7 +17770,9 @@ const initPublicBooking = () => {
   }
 
   if (bookingBackLink instanceof HTMLAnchorElement) {
-    bookingBackLink.href = `/salon/${encodeURIComponent(businessId)}`;
+    bookingBackLink.href = isOwnerBookingTab
+      ? buildPathWithClientId('/calendar', getClientId())
+      : `/salon/${encodeURIComponent(businessId)}`;
   }
 
   const currentBookingSource = getPublicBookingSource();
@@ -17962,7 +17899,7 @@ const initPublicBooking = () => {
       : '';
     showPackageToast(
       'New package available',
-      `${newestPackagePlan.name}${newestPackagePlan.priceLabel ? ` for ${newestPackagePlan.priceLabel}` : ''} is now live on this booking page.${expiryLabel}`
+      `${newestPackagePlan.name}${newestPackagePlan.priceLabel ? ` for ${formatPriceLabelForDisplay(newestPackagePlan.priceLabel)}` : ''} is now live on this booking page.${expiryLabel}`
     );
   };
 
@@ -18946,10 +18883,21 @@ const initPublicBooking = () => {
     const selectedTeamMember = teamMembersById.get(teamMemberSelect.value);
     const selectedBenefit = getSelectedBenefit();
     const selectedPublishedPackagePlan = getSelectedPublishedPackagePlan();
+
+    if (bookingPromoPrice instanceof HTMLElement) {
+      const promoPriceLabel = formatPriceLabelForDisplay(selectedService?.priceLabel ?? '');
+      if (promoPriceLabel) {
+        bookingPromoPrice.innerHTML = `<s>${escapeHtml(promoPriceLabel)}</s><b>${escapeHtml(bookingPromoFreeLabel)}</b>`;
+        bookingPromoPrice.classList.remove('is-hidden');
+      } else {
+        bookingPromoPrice.classList.add('is-hidden');
+      }
+    }
     const serviceLabel = selectedService?.name || '';
     const teamMemberLabel = selectedTeamMember?.name || '';
     const salonLabel = currentBusinessName;
-    const salonSummaryLabel = [salonLabel, currentBusinessPhoneNumber].filter(Boolean).join(' | ');
+    // Keep the salon phone number out of the customer-facing booking summary.
+    const salonSummaryLabel = salonLabel;
     const formattedDateTime = formatDateTimeForDisplay(dateInput.value, timeSelect.value);
     const selectedBookingLocation = getSelectedBookingLocation();
     const selectedBookingLocationLabel = getSelectedBookingLocationLabel();
@@ -18963,7 +18911,7 @@ const initPublicBooking = () => {
           ? `${selectedBookingLocationLabel}. `
           : '';
     const packageSummary = selectedPublishedPackagePlan
-      ? `Package selected: ${selectedPublishedPackagePlan.name}${selectedPublishedPackagePlan.totalUses ? ` (${selectedPublishedPackagePlan.totalUses} user${selectedPublishedPackagePlan.totalUses === 1 ? '' : 's'})` : ''}${selectedPublishedPackagePlan.priceLabel ? ` for ${selectedPublishedPackagePlan.priceLabel}` : ''}. `
+      ? `Package selected: ${selectedPublishedPackagePlan.name}${selectedPublishedPackagePlan.totalUses ? ` (${selectedPublishedPackagePlan.totalUses} user${selectedPublishedPackagePlan.totalUses === 1 ? '' : 's'})` : ''}${selectedPublishedPackagePlan.priceLabel ? ` for ${formatPriceLabelForDisplay(selectedPublishedPackagePlan.priceLabel)}` : ''}. `
       : '';
 
     if (!serviceLabel && !formattedDateTime) {
@@ -19097,10 +19045,11 @@ const initPublicBooking = () => {
   loadPublicConfig()
     .then((config) => {
       syncBookingUiCopy(config ?? {});
+      syncBookingPromo(config ?? {});
       if (availableBookingLocations.length > 0) {
         populateBookingLocations(availableBookingLocations);
-        updateBookingSummary();
       }
+      updateBookingSummary();
       bookingHeadingFallback =
         config?.supportPlatformName?.trim() || config?.supportCompanyName?.trim() || '';
       syncBookingHero();
@@ -19497,7 +19446,7 @@ const initPublicBooking = () => {
       successPanel.classList.remove('is-hidden');
       if (bookingBackLink instanceof HTMLAnchorElement) {
         bookingBackLink.href = getBookingReturnUrl();
-        bookingBackLink.setAttribute('aria-label', isOwnerBookingTab ? 'Close and return to dashboard' : 'Go back');
+        bookingBackLink.setAttribute('aria-label', isOwnerBookingTab ? 'Back to dashboard' : 'Go back');
       }
       successCopy.textContent =
         `You joined the waitlist for ${payload.waitlistEntry.serviceName} on ${formatDateForDisplay(payload.waitlistEntry.appointmentDate)}.` +
@@ -19544,9 +19493,16 @@ const initPublicBooking = () => {
     }
   })();
 
-  const getBookingReturnUrl = () =>
-    bookingReferrerReturnUrl ||
-    (isCustomerLoggedIn() ? '/activity' : `/salon/${encodeURIComponent(businessId)}`);
+  const getBookingReturnUrl = () => {
+    if (isOwnerBookingTab) {
+      return buildPathWithClientId('/calendar', getClientId());
+    }
+
+    return (
+      bookingReferrerReturnUrl ||
+      (isCustomerLoggedIn() ? '/activity' : `/salon/${encodeURIComponent(businessId)}`)
+    );
+  };
 
   const setBookingCompleteButton = () => {
     if (!(bookingSubmitButton instanceof HTMLButtonElement)) {
@@ -19558,7 +19514,7 @@ const initPublicBooking = () => {
     // The form was just reset, so skip required-field validation while the
     // button acts as a dashboard link.
     bookingSubmitButton.setAttribute('formnovalidate', '');
-    bookingSubmitButton.textContent = isOwnerBookingTab ? 'Close and go to dashboard' : 'Go to dashboard';
+    bookingSubmitButton.textContent = isOwnerBookingTab ? 'Back to dashboard' : 'Go to dashboard';
   };
 
   const clearBookingCompleteButton = () => {
@@ -19594,11 +19550,6 @@ const initPublicBooking = () => {
       bookingSubmitButton instanceof HTMLButtonElement &&
       bookingSubmitButton.dataset.bookingComplete === 'true'
     ) {
-      if (isOwnerBookingTab) {
-        window.close();
-        return;
-      }
-
       window.location.assign(getBookingReturnUrl());
       return;
     }
@@ -19665,7 +19616,7 @@ const initPublicBooking = () => {
       successPanel.classList.remove('is-hidden');
       if (bookingBackLink instanceof HTMLAnchorElement) {
         bookingBackLink.href = getBookingReturnUrl();
-        bookingBackLink.setAttribute('aria-label', isOwnerBookingTab ? 'Close and return to dashboard' : 'Go back');
+        bookingBackLink.setAttribute('aria-label', isOwnerBookingTab ? 'Back to dashboard' : 'Go back');
       }
       latestAppointmentReference = payload.appointment.id;
       reviewReferenceInput.value = latestAppointmentReference;
@@ -20389,7 +20340,7 @@ const getSubscriptionFeatureLabels = (plan) => {
   }
 
   if (Number.isFinite(Number(entitlements.includedMessages))) {
-    labels.push(`${entitlements.includedMessages} messages included`);
+    labels.push(`${entitlements.includedMessages} SMS/WhatsApp included`);
   }
 
   if (Number.isFinite(Number(entitlements.includedMarketingEmails))) {

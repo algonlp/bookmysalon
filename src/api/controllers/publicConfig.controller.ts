@@ -153,6 +153,12 @@ export const publicConfigController = (_req: Request, res: Response): void => {
     bookingPhoneCountryCodeLabel: env.PUBLIC_BOOKING_PHONE_COUNTRY_CODE_LABEL?.trim() ?? '',
     bookingPhoneCountryCode: env.PUBLIC_BOOKING_PHONE_COUNTRY_CODE?.trim() ?? '',
     bookingPhoneNumberPlaceholder: env.PUBLIC_BOOKING_PHONE_NUMBER_PLACEHOLDER?.trim() ?? '',
+    bookingPromoEnabled: env.PUBLIC_BOOKING_PROMO_ENABLED,
+    bookingPromoBadge: env.PUBLIC_BOOKING_PROMO_BADGE?.trim() ?? '',
+    bookingPromoDiscount: env.PUBLIC_BOOKING_PROMO_DISCOUNT?.trim() ?? '',
+    bookingPromoTitle: env.PUBLIC_BOOKING_PROMO_TITLE?.trim() ?? '',
+    bookingPromoCopy: env.PUBLIC_BOOKING_PROMO_COPY?.trim() ?? '',
+    bookingPromoFreeLabel: env.PUBLIC_BOOKING_PROMO_FREE_LABEL?.trim() ?? '',
     homeSearchResultsLimit: env.PUBLIC_HOME_SEARCH_RESULTS_LIMIT,
     locationSearchCountryCode: env.PUBLIC_LOCATION_SEARCH_COUNTRY_CODE?.trim().toLowerCase() ?? '',
     locationSearchCountryLabel: env.PUBLIC_LOCATION_SEARCH_COUNTRY_LABEL?.trim() ?? ''

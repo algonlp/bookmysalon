@@ -1,6 +1,6 @@
 import type { SubscriptionPlan } from './billing.types';
 
-const timestamp = '2026-07-24T00:00:00.000Z';
+const timestamp = '2026-07-27T00:00:00.000Z';
 
 export const billingFeatureCatalog = [
   {
@@ -57,9 +57,9 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'plan_solo',
     key: 'solo',
-    name: 'Solo',
-    summary: 'For one independent professional with full workspace access until appointment credits run out.',
-    amountCents: 30000,
+    name: 'Starter',
+    summary: 'For getting started with online bookings and client messaging.',
+    amountCents: 169900,
     currencyCode: 'PKR',
     billingInterval: 'month',
     trialDays: 30,
@@ -68,7 +68,7 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
     displayOrder: 10,
     entitlements: {
       maxTeamMembers: 1,
-      includedMessages: 20,
+      includedMessages: 100,
       includedMarketingEmails: 50,
       includedAppointmentCredits: 50,
       featureKeys: billingFeatureCatalog.map((feature) => feature.key)
@@ -79,9 +79,9 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'plan_single',
     key: 'single',
-    name: 'Single',
+    name: 'Professional',
     summary: 'For a growing business that needs checkout, packages, clients, and reports.',
-    amountCents: 249000,
+    amountCents: 289900,
     currencyCode: 'PKR',
     billingInterval: 'month',
     trialDays: 30,
@@ -90,7 +90,7 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
     displayOrder: 20,
     entitlements: {
       maxTeamMembers: 3,
-      includedMessages: 100,
+      includedMessages: 180,
       includedMarketingEmails: 500,
       includedAppointmentCredits: 150,
       featureKeys: [
@@ -110,9 +110,9 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'plan_team_premium',
     key: 'team_premium',
-    name: 'Team Premium',
+    name: 'Premium',
     summary: 'For teams that need staff calendars, marketing, premium support, and more limits.',
-    amountCents: 84000,
+    amountCents: 479900,
     currencyCode: 'PKR',
     billingInterval: 'month',
     trialDays: 30,
@@ -121,7 +121,7 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
     displayOrder: 30,
     entitlements: {
       maxTeamMembers: 20,
-      includedMessages: 20,
+      includedMessages: 400,
       includedMarketingEmails: 50,
       includedAppointmentCredits: 500,
       featureKeys: billingFeatureCatalog.map((feature) => feature.key)
@@ -143,19 +143,9 @@ export const normalizeSubscriptionPlans = (
       return plan;
     }
 
-    const wasEdited = plan.updatedAt > defaultPlan.updatedAt;
-
-    if (wasEdited) {
-      return {
-        ...defaultPlan,
-        ...plan,
-        entitlements: {
-          ...defaultPlan.entitlements,
-          ...plan.entitlements
-        }
-      };
-    }
-
+    // Plan pricing and entitlements are defined in code (there is no longer a
+    // manual editor), so the code defaults are authoritative. Only the stored
+    // identity and original timestamps are preserved.
     return {
       ...defaultPlan,
       id: plan.id,

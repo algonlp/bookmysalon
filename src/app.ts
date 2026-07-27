@@ -9,6 +9,8 @@ import { asyncHandler } from './api/middlewares/asyncHandler';
 import { requirePlatformAdminPageAccess } from './api/middlewares/requirePlatformAdminAccess';
 import { requireStaffPageAccess } from './api/middlewares/requireStaffAccess';
 import { stripeWebhookController } from './api/controllers/stripeWebhook.controller';
+import { appointmentService } from './appointments/appointment.service';
+import { getRequestOrigin } from './shared/http';
 
 export const app = express();
 
@@ -206,6 +208,24 @@ app.get('/salon/:clientId', (_req, res) => {
 app.get('/book/:clientId/manage/:appointmentId', (_req, res) => {
   res.sendFile(resolve(publicDir, 'manage-booking.html'));
 });
+
+// Short shareable link that redirects to the full appointment management page.
+app.get(
+  '/b/:token',
+  asyncHandler(async (req: express.Request, res: express.Response) => {
+    const target = await appointmentService.resolveManageLinkFromToken(
+      req.params.token,
+      getRequestOrigin(req)
+    );
+
+    if (!target) {
+      res.redirect('/');
+      return;
+    }
+
+    res.redirect(target);
+  })
+);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
