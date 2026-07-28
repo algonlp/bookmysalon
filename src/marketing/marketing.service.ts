@@ -7,6 +7,7 @@ import type { AppointmentRecord } from '../appointments/appointment.types';
 import { customerAccountRepository } from '../customers/customerAccount.repository';
 import { twilioSmsService } from '../notifications/twilioSms.service';
 import { emailService } from '../notifications/email.service';
+import { renderMarketingEmail } from '../notifications/emailTemplate';
 import { billingService } from '../billing/billing.service';
 import { marketingRepository } from './marketing.repository';
 import { defaultCampaignTemplates } from './marketingTemplates.defaults';
@@ -93,6 +94,29 @@ const formatDiscountLabel = (campaign: CampaignRecord): string => {
 
 const renderPlaceholders = (template: string, values: Record<string, string>): string =>
   template.replace(/\{\{(\w+)\}\}/g, (match, key) => values[key] ?? match);
+
+// Big, punchy badge shown in the promotional email hero (e.g. "PKR 500 OFF").
+const buildOfferBadge = (campaign: CampaignRecord): string => {
+  switch (campaign.templateType) {
+    case 'free_service':
+      return 'Free service';
+    case 'percent_off':
+      return campaign.discountPercent ? `${campaign.discountPercent}% OFF` : 'Special offer';
+    case 'flat_amount_off':
+      return campaign.discountAmountCents
+        ? `${formatPriceCents(campaign.discountAmountCents, campaign.currencyCode)} OFF`
+        : 'Special offer';
+    case 'happy_hour':
+      return 'Happy hour';
+    case 'last_minute_fill':
+      return campaign.offerName?.trim() || 'Limited offer';
+    default:
+      return campaign.offerName?.trim() || 'Special offer';
+  }
+};
+
+const escapeEmailText = (value: string): string =>
+  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const shuffle = <T>(items: T[]): T[] => {
   const copy = [...items];
@@ -212,7 +236,8 @@ const dispatchSingleRecipient = async (
     serviceName:
       (campaign.templateType === 'free_service' ? campaign.freeServiceName : campaign.targetServiceName) ||
       'your next visit',
-    bookingLink: campaign.bookingLink,
+    // Per-recipient link so we can record who opened it.
+    bookingLink: `${campaign.bookingLink}&r=${encodeURIComponent(recipient.id)}`,
     startTime: campaign.happyHourStartTime ?? '',
     endTime: campaign.happyHourEndTime ?? '',
     offerName: campaign.offerName || 'Happy Hour',
@@ -263,12 +288,49 @@ const dispatchSingleRecipient = async (
     } else {
       const subject = renderPlaceholders(campaign.emailSubject, placeholderValues);
       const bodyText = renderPlaceholders(campaign.emailBodyText, placeholderValues);
+      const bookingLink = placeholderValues.bookingLink;
+
+      // Strip the raw booking URL from the message body — the styled CTA button
+      // carries the link in the promotional email.
+      const bodyForHtml = bodyText
+        .split(bookingLink)
+        .join('')
+        .replace(/[ \t]+\n/g, '\n')
+        .replace(/:\s*(\n|$)/g, '.$1')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+
+      const happyHourWindow =
+        campaign.templateType === 'happy_hour' &&
+        campaign.happyHourStartTime &&
+        campaign.happyHourEndTime
+          ? `${campaign.happyHourStartTime} – ${campaign.happyHourEndTime}`
+          : '';
+
+      const html = renderMarketingEmail({
+        preheader: subject,
+        businessName: client.businessName || 'Our salon',
+        offerBadge: buildOfferBadge(campaign),
+        headline: subject,
+        bodyHtml: escapeEmailText(bodyForHtml).replace(/\n/g, '<br />'),
+        originalPrice: campaign.originalPriceCents
+          ? formatPriceCents(campaign.originalPriceCents, campaign.currencyCode)
+          : '',
+        discountedPrice: campaign.discountedPriceCents
+          ? formatPriceCents(campaign.discountedPriceCents, campaign.currencyCode)
+          : '',
+        happyHourWindow,
+        ctaUrl: bookingLink,
+        ctaLabel: 'Book your slot',
+        footerNote: `You're receiving this offer from ${client.businessName || 'this salon'}.`
+      });
+
       const result = await emailService.sendEmail(
         {
           to: recipient.customerEmail,
           subject,
           text: bodyText,
-          html: `<p>${bodyText.replace(/\n/g, '<br />')}</p>`
+          html
         },
         'customer',
         { businessId: campaign.businessId, source: 'marketing_campaign' }
@@ -724,13 +786,23 @@ export const marketingService = {
     }
   },
 
-  async recordLinkOpen(campaignId: string): Promise<void> {
+  async recordLinkOpen(campaignId: string, recipientId?: string): Promise<void> {
     if (!campaignId) {
       return;
     }
 
     try {
-      await marketingRepository.incrementLinkOpens(campaignId);
+      if (recipientId) {
+        // Count the campaign open only on a recipient's first open so the
+        // total reflects unique people, and record who opened it.
+        const isFirstOpen = await marketingRepository.markRecipientOpened(recipientId);
+
+        if (isFirstOpen) {
+          await marketingRepository.incrementLinkOpens(campaignId);
+        }
+      } else {
+        await marketingRepository.incrementLinkOpens(campaignId);
+      }
     } catch (_error) {
       // Best-effort analytics counter — a failure here should never break the
       // public booking page for the visitor.

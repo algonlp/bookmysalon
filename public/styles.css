@@ -8026,6 +8026,11 @@ a.is-busy::after,
   color: #8a827b;
 }
 
+.calendar-campaign-tag.is-opened {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+
 .calendar-campaign-tag.is-booked {
   background: rgba(108, 76, 245, 0.14);
   color: #5b53d8;

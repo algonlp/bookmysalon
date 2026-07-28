@@ -16126,6 +16126,15 @@ const createTrendCard = (
           deliveredTag.className = `calendar-campaign-tag ${delivered ? 'is-ok' : 'is-muted'}`;
           deliveredTag.textContent = delivered ? 'Delivered' : 'Not delivered';
           tags.append(deliveredTag);
+          if (recipient.openedAt) {
+            const openedTag = document.createElement('span');
+            openedTag.className = 'calendar-campaign-tag is-opened';
+            const openedTime = new Date(recipient.openedAt);
+            openedTag.textContent = Number.isNaN(openedTime.getTime())
+              ? 'Opened'
+              : `Opened ${openedTime.toLocaleDateString()} ${openedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+            tags.append(openedTag);
+          }
           if (recipient.convertedAppointmentId) {
             const bookedTag = document.createElement('span');
             bookedTag.className = 'calendar-campaign-tag is-booked';
@@ -17913,8 +17922,13 @@ const initPublicBooking = () => {
   const currentWaitlistClaim = getPublicWaitlistClaim();
 
   if (currentCampaignId) {
+    // Include the per-recipient id (r) from the campaign link so we can record
+    // who opened it, not just the total open count.
+    const campaignRecipientId = new URLSearchParams(window.location.search).get('r') || '';
     fetch(`/api/public/campaigns/${encodeURIComponent(currentCampaignId)}/open`, {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(campaignRecipientId ? { recipientId: campaignRecipientId } : {}),
       keepalive: true
     }).catch(() => {});
   }

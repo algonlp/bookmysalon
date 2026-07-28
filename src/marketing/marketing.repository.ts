@@ -124,6 +124,7 @@ const recipientToRow = (recipient: CampaignRecipientRecord): Row => ({
   email_reason: recipient.emailReason,
   converted_appointment_id: recipient.convertedAppointmentId ?? null,
   converted_at: recipient.convertedAt ?? null,
+  opened_at: recipient.openedAt ?? null,
   created_at: recipient.createdAt,
   updated_at: recipient.updatedAt
 });
@@ -145,6 +146,7 @@ const rowToRecipient = (row: Row): CampaignRecipientRecord => ({
   emailReason: asText(row.email_reason),
   convertedAppointmentId: asNullableText(row.converted_appointment_id),
   convertedAt: asNullableText(row.converted_at),
+  openedAt: asNullableText(row.opened_at),
   createdAt: asTimestamp(row.created_at),
   updatedAt: asTimestamp(row.updated_at)
 });
@@ -280,6 +282,25 @@ export const marketingRepository = {
     if (error) {
       throw new Error(`Failed to update campaign recipient ${recipient.id}: ${error.message}`);
     }
+  },
+
+  // Records the recipient's first link open. Sets opened_at only when it is
+  // still null, and returns true if this was the first (unique) open.
+  async markRecipientOpened(recipientId: string): Promise<boolean> {
+    const client = getSupabaseClient();
+    const now = new Date().toISOString();
+    const { data, error } = await client
+      .from('marketing_campaign_recipients')
+      .update({ opened_at: now, updated_at: now })
+      .eq('id', recipientId)
+      .is('opened_at', null)
+      .select('id');
+
+    if (error) {
+      throw new Error(`Failed to mark recipient ${recipientId} opened: ${error.message}`);
+    }
+
+    return Array.isArray(data) && data.length > 0;
   },
 
   async listRecipientsByCampaignId(campaignId: string): Promise<CampaignRecipientRecord[]> {

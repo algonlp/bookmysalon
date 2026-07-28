@@ -150,9 +150,16 @@ export const marketingController = {
 
   async trackLinkOpen(req: Request, res: Response, _next: NextFunction): Promise<void> {
     const campaignId = z.string().uuid().safeParse(req.params.campaignId);
+    const recipientId = z
+      .string()
+      .uuid()
+      .safeParse((req.body as { recipientId?: unknown } | undefined)?.recipientId);
 
     if (campaignId.success) {
-      await marketingService.recordLinkOpen(campaignId.data);
+      await marketingService.recordLinkOpen(
+        campaignId.data,
+        recipientId.success ? recipientId.data : undefined
+      );
     }
 
     res.status(204).end();

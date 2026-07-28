@@ -64,6 +64,7 @@ export interface CampaignRecipientRecord {
   emailReason: string;
   convertedAppointmentId?: string;
   convertedAt?: string;
+  openedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
