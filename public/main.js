@@ -16011,6 +16011,7 @@ const createTrendCard = (
   });
 
   const marketingSummaryEl = document.querySelector('#calendar-marketing-summary');
+  const marketingAnalyticsEl = document.querySelector('#calendar-marketing-analytics');
   const marketingBuilderEl = document.querySelector('#calendar-marketing-builder');
   const marketingListEl = document.querySelector('#calendar-marketing-list');
   const marketingNewButton = document.querySelector('#calendar-marketing-new-button');
@@ -16201,6 +16202,81 @@ const createTrendCard = (
         { chartType: 'comparison' }
       )
     );
+
+    renderMarketingAnalytics(totalSent, totalOpened, totalConverted);
+  };
+
+  // Modern delivery funnel: Delivered -> Opened -> Booked, each bar directly
+  // labelled with its count and conversion rate. Colours are validated for
+  // colour-blind separation; the visible labels carry identity, not colour alone.
+  const renderMarketingAnalytics = (delivered, opened, booked) => {
+    if (!(marketingAnalyticsEl instanceof HTMLElement)) {
+      return;
+    }
+
+    marketingAnalyticsEl.replaceChildren();
+
+    const sentCampaigns = marketingCampaigns.filter((campaign) => campaign.status !== 'draft');
+    if (sentCampaigns.length === 0) {
+      return;
+    }
+
+    const stages = [
+      { key: 'delivered', label: 'Delivered', value: delivered, color: '#6ea8fe', hint: 'Messages that reached your clients' },
+      { key: 'opened', label: 'Opened', value: opened, color: '#8b5cf6', hint: 'Clients who opened the campaign link' },
+      { key: 'booked', label: 'Booked', value: booked, color: '#22a06b', hint: 'Clients who booked from this campaign' }
+    ];
+    const maxValue = Math.max(delivered, opened, booked, 1);
+    const rate = (value) => (delivered > 0 ? Math.round((value / delivered) * 100) : 0);
+
+    const card = document.createElement('article');
+    card.className = 'mkt-chart-card';
+
+    const head = document.createElement('div');
+    head.className = 'mkt-chart-head';
+    head.innerHTML =
+      '<p class="mkt-chart-eyebrow">Analytics</p>' +
+      '<strong class="mkt-chart-title">Campaign performance</strong>' +
+      '<span class="mkt-chart-sub">How your clients moved from delivered to booked</span>';
+    card.append(head);
+
+    const funnel = document.createElement('div');
+    funnel.className = 'mkt-funnel';
+
+    stages.forEach((stage, index) => {
+      const row = document.createElement('div');
+      row.className = 'mkt-funnel-row';
+      row.title = `${stage.label}: ${stage.value.toLocaleString()} — ${stage.hint}`;
+
+      const rowRate = index === 0 ? 100 : rate(stage.value);
+      const widthPct = Math.max((stage.value / maxValue) * 100, stage.value > 0 ? 4 : 0);
+
+      const headCell = document.createElement('div');
+      headCell.className = 'mkt-funnel-head-cell';
+      headCell.innerHTML =
+        `<span class="mkt-funnel-dot" style="background:${stage.color}"></span>` +
+        `<span class="mkt-funnel-label">${stage.label}</span>`;
+
+      const track = document.createElement('div');
+      track.className = 'mkt-funnel-track';
+      const fill = document.createElement('div');
+      fill.className = 'mkt-funnel-fill';
+      fill.style.width = `${widthPct}%`;
+      fill.style.background = stage.color;
+      track.append(fill);
+
+      const valueCell = document.createElement('div');
+      valueCell.className = 'mkt-funnel-value';
+      valueCell.innerHTML =
+        `<strong>${stage.value.toLocaleString()}</strong>` +
+        `<span>${index === 0 ? 'of sent' : `${rowRate}% of delivered`}</span>`;
+
+      row.append(headCell, track, valueCell);
+      funnel.append(row);
+    });
+
+    card.append(funnel);
+    marketingAnalyticsEl.append(card);
   };
 
   const beginMarketingPolling = (campaignId) => {

@@ -7883,6 +7883,129 @@ a.is-busy::after,
   font-size: 0.86rem;
 }
 
+.calendar-marketing-analytics:empty {
+  display: none;
+}
+
+.mkt-chart-card {
+  margin: 4px 0 20px;
+  padding: 22px 24px;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 20px;
+  background: #fffdf8;
+  box-shadow: 0 14px 34px rgba(31, 26, 23, 0.06);
+}
+
+.mkt-chart-head {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 18px;
+}
+
+.mkt-chart-eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: #7c74d6;
+}
+
+.mkt-chart-title {
+  font-size: 1.12rem;
+  font-weight: 800;
+  color: #21162b;
+}
+
+.mkt-chart-sub {
+  font-size: 0.85rem;
+  color: #6f6963;
+}
+
+.mkt-funnel {
+  display: grid;
+  gap: 12px;
+}
+
+.mkt-funnel-row {
+  display: grid;
+  grid-template-columns: minmax(84px, 118px) 1fr minmax(88px, auto);
+  align-items: center;
+  gap: 14px;
+  padding: 6px 8px;
+  border-radius: 12px;
+  transition: background 0.15s ease;
+}
+
+.mkt-funnel-row:hover {
+  background: rgba(108, 76, 245, 0.05);
+}
+
+.mkt-funnel-head-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.mkt-funnel-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mkt-funnel-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #3a3440;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mkt-funnel-track {
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(18, 18, 18, 0.05);
+  overflow: hidden;
+}
+
+.mkt-funnel-fill {
+  height: 100%;
+  min-width: 6px;
+  border-radius: 999px;
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mkt-funnel-value {
+  display: grid;
+  gap: 1px;
+  text-align: right;
+}
+
+.mkt-funnel-value strong {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #21162b;
+}
+
+.mkt-funnel-value span {
+  font-size: 0.74rem;
+  color: #8a827b;
+}
+
+@media (max-width: 520px) {
+  .mkt-funnel-row {
+    grid-template-columns: minmax(72px, 96px) 1fr auto;
+    gap: 10px;
+  }
+
+  .mkt-funnel-track {
+    height: 26px;
+  }
+}
+
 .calendar-marketing-campaign-row {
   flex-wrap: wrap;
 }
