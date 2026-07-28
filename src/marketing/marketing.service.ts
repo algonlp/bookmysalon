@@ -725,18 +725,27 @@ export const marketingService = {
 
   async getCampaignStats(businessId: string, campaignId: string): Promise<CampaignWithStats> {
     const campaign = await getCampaignOrThrow(businessId, campaignId);
-    const appointments = await appointmentRepository.listAppointmentsByBusinessId(businessId);
+    const [appointments, recipients] = await Promise.all([
+      appointmentRepository.listAppointmentsByBusinessId(businessId),
+      marketingRepository.listRecipientsByCampaignId(campaignId)
+    ]);
     const conversionsCount = appointments.filter(
       (appointment) => appointment.campaignId === campaignId && appointment.status !== 'cancelled'
     ).length;
+    const openedCount = recipients.filter((recipient) => Boolean(recipient.openedAt)).length;
 
-    return { ...campaign, conversionsCount };
+    return {
+      ...campaign,
+      linkOpensCount: Math.max(campaign.linkOpensCount ?? 0, openedCount),
+      conversionsCount
+    };
   },
 
   async listCampaignsWithStats(businessId: string): Promise<CampaignWithStats[]> {
-    const [campaigns, appointments] = await Promise.all([
+    const [campaigns, appointments, openCounts] = await Promise.all([
       marketingRepository.listCampaignsByBusinessId(businessId),
-      appointmentRepository.listAppointmentsByBusinessId(businessId)
+      appointmentRepository.listAppointmentsByBusinessId(businessId),
+      marketingRepository.countOpensByBusinessId(businessId)
     ]);
 
     const conversionCounts = new Map<string, number>();
@@ -751,6 +760,9 @@ export const marketingService = {
 
     return campaigns.map((campaign) => ({
       ...campaign,
+      // Derive opens from the per-recipient records so the count always matches
+      // the "Opened" rows; fall back to the stored counter for older opens.
+      linkOpensCount: Math.max(campaign.linkOpensCount ?? 0, openCounts.get(campaign.id) ?? 0),
       conversionsCount: conversionCounts.get(campaign.id) ?? 0
     }));
   },

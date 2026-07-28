@@ -16090,7 +16090,8 @@ const createTrendCard = (
       const summary = document.createElement('div');
       summary.className = 'calendar-campaign-detail-summary';
       const reached = detail.recipientsTotal || recipients.length || 0;
-      const opened = detail.linkOpensCount || 0;
+      const openedFromRecipients = recipients.filter((recipient) => recipient.openedAt).length;
+      const opened = Math.max(detail.linkOpensCount || 0, openedFromRecipients);
       const booked = detail.conversionsCount || 0;
       for (const [value, label] of [
         [reached, 'Reached'],

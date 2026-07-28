@@ -303,6 +303,29 @@ export const marketingRepository = {
     return Array.isArray(data) && data.length > 0;
   },
 
+  // Counts unique recipients who opened, per campaign, for a business. Used to
+  // keep the opens shown everywhere consistent with the per-recipient records.
+  async countOpensByBusinessId(businessId: string): Promise<Map<string, number>> {
+    const client = getSupabaseClient();
+    const { data, error } = await client
+      .from('marketing_campaign_recipients')
+      .select('campaign_id')
+      .eq('business_id', businessId)
+      .not('opened_at', 'is', null);
+
+    if (error) {
+      throw new Error(`Failed to count opens for business ${businessId}: ${error.message}`);
+    }
+
+    const counts = new Map<string, number>();
+    for (const row of data ?? []) {
+      const campaignId = asText((row as Row).campaign_id);
+      counts.set(campaignId, (counts.get(campaignId) ?? 0) + 1);
+    }
+
+    return counts;
+  },
+
   async listRecipientsByCampaignId(campaignId: string): Promise<CampaignRecipientRecord[]> {
     const client = getSupabaseClient();
     const { data, error } = await client
