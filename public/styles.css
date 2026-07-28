@@ -7883,6 +7883,154 @@ a.is-busy::after,
   font-size: 0.86rem;
 }
 
+.calendar-marketing-campaign-row {
+  flex-wrap: wrap;
+}
+
+.calendar-marketing-campaign-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.calendar-marketing-offer-sticker {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #6c4cf5, #a855f7);
+  color: #ffffff !important;
+  font-size: 0.74rem !important;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.calendar-marketing-campaign-rates {
+  color: #4a443f !important;
+  font-size: 0.9rem !important;
+}
+
+.calendar-marketing-campaign-rates s {
+  color: #9c948d;
+  margin-right: 6px;
+}
+
+.calendar-marketing-campaign-rates b {
+  color: #1f8a4c;
+  font-weight: 800;
+}
+
+.calendar-marketing-detail-button {
+  padding: 8px 14px;
+  border: 1px solid rgba(108, 76, 245, 0.35);
+  border-radius: 999px;
+  background: rgba(108, 76, 245, 0.08);
+  color: #5b53d8;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.calendar-marketing-detail-button:hover {
+  background: rgba(108, 76, 245, 0.16);
+}
+
+.calendar-campaign-detail {
+  display: grid;
+  gap: 16px;
+}
+
+.calendar-campaign-detail-summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.calendar-campaign-detail-stat {
+  display: grid;
+  gap: 2px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgba(108, 76, 245, 0.07);
+  text-align: center;
+}
+
+.calendar-campaign-detail-stat strong {
+  font-size: 1.3rem;
+  color: #21162b;
+}
+
+.calendar-campaign-detail-stat span {
+  font-size: 0.76rem;
+  color: #6f6963;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.calendar-campaign-recipient-list {
+  display: grid;
+  gap: 8px;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.calendar-campaign-recipient {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 12px;
+  background: #fffdf8;
+}
+
+.calendar-campaign-recipient-who {
+  display: grid;
+  gap: 2px;
+}
+
+.calendar-campaign-recipient-who strong {
+  color: #21162b;
+  font-size: 0.92rem;
+}
+
+.calendar-campaign-recipient-who span {
+  color: #6f6963;
+  font-size: 0.82rem;
+}
+
+.calendar-campaign-recipient-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.calendar-campaign-tag {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.calendar-campaign-tag.is-ok {
+  background: rgba(31, 138, 76, 0.12);
+  color: #1f8a4c;
+}
+
+.calendar-campaign-tag.is-muted {
+  background: rgba(18, 18, 18, 0.06);
+  color: #8a827b;
+}
+
+.calendar-campaign-tag.is-booked {
+  background: rgba(108, 76, 245, 0.14);
+  color: #5b53d8;
+}
+
 .calendar-reports-sidebar,
 .calendar-reports-main {
   border: 1px solid rgba(18, 18, 18, 0.08);

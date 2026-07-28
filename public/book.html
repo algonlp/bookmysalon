@@ -163,13 +163,12 @@
                   <div class="booking-calendar is-hidden" id="booking-calendar"></div>
                 </div>
                 <p class="booking-choice-label">Pick a time</p>
-                <div class="booking-time-list" id="booking-time-list"></div>
-                <label class="booking-field booking-native-field">
-                  <span>Time</span>
+                <label class="booking-field booking-time-dropdown">
                   <select id="booking-time-select" required>
                     <option value="">Select a time</option>
                   </select>
                 </label>
+                <div class="booking-time-list is-hidden" id="booking-time-list"></div>
 
                 <div class="booking-history-panel is-hidden" id="booking-waitlist-panel">
                   <strong>Fully booked on this date</strong>
@@ -308,7 +307,7 @@
                 <select id="booking-branch-select"></select>
               </label>
 
-              <div class="booking-promo" id="booking-promo">
+              <div class="booking-promo is-hidden" id="booking-promo">
                 <div class="booking-promo-top">
                   <span class="booking-promo-badge">✨ Launch offer</span>
                   <span class="booking-promo-discount" id="booking-promo-discount">100% OFF</span>

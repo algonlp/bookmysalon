@@ -7902,7 +7902,6 @@ const initCalendar = () => {
   const moreAction = document.querySelector('#calendar-more-action');
   const bookAppointmentAction = document.querySelector('#calendar-book-appointment-action');
   const showQrAction = document.querySelector('#calendar-show-qr-action');
-  const groupAppointmentAction = document.querySelector('#calendar-group-appointment-action');
   const blockedTimeAction = document.querySelector('#calendar-blocked-time-action');
   const quickPaymentAction = document.querySelector('#calendar-quick-payment-action');
   const calendarNavCalendar = document.querySelector('#calendar-nav-calendar');
@@ -15328,24 +15327,6 @@ const createTrendCard = (
       });
     }
 
-    if (groupAppointmentAction instanceof HTMLButtonElement) {
-      groupAppointmentAction.addEventListener('click', () => {
-        closeAddMenu();
-        openToolModal({
-          eyebrow: 'Add menu',
-          title: 'Group appointments are planned',
-          description:
-            'Use the standard booking page for now. Group booking rules can be added once service capacity is defined.',
-          actions: [
-            createToolActionButton('Open booking page', () => {
-              closeToolModal();
-              openPublicBookingPage();
-            })
-          ]
-        });
-      });
-    }
-
     if (blockedTimeAction instanceof HTMLButtonElement) {
       blockedTimeAction.addEventListener('click', () => {
         closeAddMenu();
@@ -16055,6 +16036,124 @@ const createTrendCard = (
     failed: 'Failed'
   };
 
+  const formatCampaignRate = (cents) =>
+    typeof cents === 'number' && Number.isFinite(cents) && cents > 0
+      ? formatMoneyValue(cents / 100, 'PKR')
+      : '';
+
+  // Short label describing the campaign's offer, used for the sticker/badge.
+  const buildCampaignOfferLabel = (campaign) => {
+    const customName = typeof campaign.offerName === 'string' ? campaign.offerName.trim() : '';
+    if (customName) {
+      return customName;
+    }
+
+    switch (campaign.templateType) {
+      case 'percent_off':
+        return campaign.discountPercent ? `${campaign.discountPercent}% OFF` : 'Discount';
+      case 'flat_amount_off':
+        return campaign.discountAmountCents
+          ? `Flat ${formatCampaignRate(campaign.discountAmountCents)} off`
+          : 'Flat discount';
+      case 'free_service':
+        return 'Free service';
+      case 'happy_hour':
+        return campaign.happyHourStartTime && campaign.happyHourEndTime
+          ? `Happy hour ${campaign.happyHourStartTime}-${campaign.happyHourEndTime}`
+          : 'Happy hour';
+      case 'last_minute_fill':
+        return 'Last-minute offer';
+      default:
+        return marketingTemplateLabels[campaign.templateType] || 'Offer';
+    }
+  };
+
+  const openCampaignRecipientsModal = async (campaign) => {
+    openToolModal({
+      eyebrow: 'Campaign history',
+      title: campaign.name || 'Campaign',
+      description: 'Loading who this campaign reached...',
+      dialogClassName: 'wide'
+    });
+
+    try {
+      const payload = await apiRequest(
+        `/api/platform/clients/${encodeURIComponent(clientId)}/campaigns/${encodeURIComponent(campaign.id)}`
+      );
+      const recipients = Array.isArray(payload?.recipients) ? payload.recipients : [];
+      const detail = payload?.campaign ?? campaign;
+
+      const container = document.createElement('div');
+      container.className = 'calendar-campaign-detail';
+
+      const summary = document.createElement('div');
+      summary.className = 'calendar-campaign-detail-summary';
+      const reached = detail.recipientsTotal || recipients.length || 0;
+      const opened = detail.linkOpensCount || 0;
+      const booked = detail.conversionsCount || 0;
+      for (const [value, label] of [
+        [reached, 'Reached'],
+        [detail.recipientsSent || 0, 'Delivered'],
+        [opened, 'Link opens'],
+        [booked, 'Booked']
+      ]) {
+        const stat = document.createElement('div');
+        stat.className = 'calendar-campaign-detail-stat';
+        stat.innerHTML = `<strong>${value}</strong><span>${label}</span>`;
+        summary.append(stat);
+      }
+      container.append(summary);
+
+      if (recipients.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'calendar-marketing-empty';
+        empty.textContent = 'No recipients recorded for this campaign yet.';
+        container.append(empty);
+      } else {
+        const list = document.createElement('div');
+        list.className = 'calendar-campaign-recipient-list';
+        for (const recipient of recipients) {
+          const item = document.createElement('div');
+          item.className = 'calendar-campaign-recipient';
+          const who = document.createElement('div');
+          who.className = 'calendar-campaign-recipient-who';
+          who.innerHTML = `<strong>${escapeHtml(recipient.customerName || 'Guest')}</strong><span>${escapeHtml(recipient.customerPhone || recipient.customerEmail || 'No contact info')}</span>`;
+          const tags = document.createElement('div');
+          tags.className = 'calendar-campaign-recipient-tags';
+          const delivered =
+            recipient.smsStatus === 'sent' || recipient.emailStatus === 'sent';
+          const deliveredTag = document.createElement('span');
+          deliveredTag.className = `calendar-campaign-tag ${delivered ? 'is-ok' : 'is-muted'}`;
+          deliveredTag.textContent = delivered ? 'Delivered' : 'Not delivered';
+          tags.append(deliveredTag);
+          if (recipient.convertedAppointmentId) {
+            const bookedTag = document.createElement('span');
+            bookedTag.className = 'calendar-campaign-tag is-booked';
+            bookedTag.textContent = 'Booked';
+            tags.append(bookedTag);
+          }
+          item.append(who, tags);
+          list.append(item);
+        }
+        container.append(list);
+      }
+
+      openToolModal({
+        eyebrow: 'Campaign history',
+        title: `${detail.name || 'Campaign'} — ${buildCampaignOfferLabel(detail)}`,
+        description: `Sent ${detail.sentAt ? new Date(detail.sentAt).toLocaleDateString() : 'recently'}. See who this campaign reached and who booked.`,
+        actions: [container],
+        dialogClassName: 'wide'
+      });
+    } catch (error) {
+      openToolModal({
+        eyebrow: 'Campaign history',
+        title: 'Unable to load campaign',
+        description: error instanceof Error ? error.message : 'Failed to load campaign recipients.'
+      });
+    }
+  };
+
   const stopMarketingPolling = () => {
     if (marketingPollTimer) {
       window.clearInterval(marketingPollTimer);
@@ -16149,23 +16248,51 @@ const createTrendCard = (
 
       const info = document.createElement('div');
       info.className = 'calendar-marketing-campaign-info';
+      const titleRow = document.createElement('div');
+      titleRow.className = 'calendar-marketing-campaign-title-row';
       const title = document.createElement('strong');
       title.textContent = campaign.name || 'Untitled campaign';
+      const offerSticker = document.createElement('span');
+      offerSticker.className = 'calendar-marketing-offer-sticker';
+      offerSticker.textContent = buildCampaignOfferLabel(campaign);
+      titleRow.append(title, offerSticker);
       const meta = document.createElement('span');
       meta.textContent = `${marketingTemplateLabels[campaign.templateType] || campaign.templateType} • ${marketingStatusLabels[campaign.status] || campaign.status}${campaign.isAutoGenerated && campaign.status === 'draft' ? ' • Auto-generated, awaiting your confirmation' : ''}`;
-      info.append(title, meta);
+      info.append(titleRow, meta);
+
+      const standardRate = formatCampaignRate(campaign.originalPriceCents);
+      const discountedRate = formatCampaignRate(campaign.discountedPriceCents);
+      if (standardRate && discountedRate) {
+        const rates = document.createElement('span');
+        rates.className = 'calendar-marketing-campaign-rates';
+        rates.innerHTML = `<s>${escapeHtml(standardRate)}</s> <b>${escapeHtml(discountedRate)}</b>`;
+        info.append(rates);
+      }
 
       const stats = document.createElement('div');
       stats.className = 'calendar-marketing-campaign-stats';
+      const reachedStat = document.createElement('span');
+      reachedStat.innerHTML = `<strong>${campaign.recipientsTotal || 0}</strong> reached`;
       const sentStat = document.createElement('span');
       sentStat.innerHTML = `<strong>${campaign.recipientsSent || 0}</strong> sent`;
       const openedStat = document.createElement('span');
       openedStat.innerHTML = `<strong>${campaign.linkOpensCount || 0}</strong> opened`;
       const bookedStat = document.createElement('span');
       bookedStat.innerHTML = `<strong>${campaign.conversionsCount || 0}</strong> booked`;
-      stats.append(sentStat, openedStat, bookedStat);
+      stats.append(reachedStat, sentStat, openedStat, bookedStat);
 
       row.append(info, stats);
+
+      if (campaign.status === 'sent' || campaign.status === 'partially_sent') {
+        const detailButton = document.createElement('button');
+        detailButton.type = 'button';
+        detailButton.className = 'calendar-marketing-detail-button';
+        detailButton.textContent = 'View recipients & opens';
+        detailButton.addEventListener('click', () => {
+          void openCampaignRecipientsModal(campaign);
+        });
+        row.append(detailButton);
+      }
 
       if (campaign.status === 'sending') {
         const attempted =
@@ -16997,10 +17124,6 @@ const createTrendCard = (
       qrShortcutAction.title = calendarCopy.showQrCode;
     }
 
-    if (groupAppointmentAction instanceof HTMLButtonElement) {
-      groupAppointmentAction.lastElementChild.textContent = calendarCopy.groupAppointment;
-    }
-
     if (blockedTimeAction instanceof HTMLButtonElement) {
       blockedTimeAction.lastElementChild.textContent = calendarCopy.blockedTime;
     }
@@ -17322,7 +17445,9 @@ const initPublicBooking = () => {
       return;
     }
 
-    if (config?.bookingPromoEnabled === false) {
+    // Only show the offer banner when the visitor arrived from a campaign link
+    // (?campaign=...). Regular bookings never show it.
+    if (!currentCampaignId || config?.bookingPromoEnabled === false) {
       promo.classList.add('is-hidden');
       return;
     }
@@ -17447,6 +17572,20 @@ const initPublicBooking = () => {
     stepContinueButton.classList.toggle('is-hidden', currentBookingStep === 'confirm');
   };
 
+  // Bring the wizard back to the top of the viewport so the customer sees the
+  // next step without scrolling down to a Continue button.
+  const scrollBookingWizardIntoView = () => {
+    if (bookingForm instanceof HTMLElement && typeof bookingForm.scrollIntoView === 'function') {
+      bookingForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  // Move to a step and reveal it (used for auto-advance on selection).
+  const goToBookingStep = (stepName) => {
+    setBookingStep(stepName);
+    scrollBookingWizardIntoView();
+  };
+
   const syncBookingHero = () => {
     const bookingHeading = currentBusinessName || bookingHeadingFallback;
     businessName.textContent = bookingHeading;
@@ -17462,24 +17601,18 @@ const initPublicBooking = () => {
   };
 
   const syncBookingFooter = (payload = {}) => {
-    const businessPhoneNumber =
-      typeof payload.businessPhoneNumber === 'string' ? payload.businessPhoneNumber.trim() : '';
     const websiteValue = typeof payload.website === 'string' ? payload.website.trim() : '';
     const venueAddressValue =
       typeof payload.venueAddress === 'string' ? payload.venueAddress.trim() : '';
     const websiteUrl = normalizeExternalUrl(websiteValue);
 
-    bookingFooterPhoneRow.classList.toggle('is-hidden', !businessPhoneNumber);
+    // The salon phone number is intentionally never shown to customers on the
+    // booking page.
+    bookingFooterPhoneRow.classList.add('is-hidden');
+    bookingFooterPhoneLink.removeAttribute('href');
+    bookingFooterPhoneLink.textContent = '';
     bookingFooterWebsiteRow.classList.toggle('is-hidden', !websiteUrl);
     bookingFooterAddressRow.classList.toggle('is-hidden', !venueAddressValue);
-
-    if (businessPhoneNumber) {
-      bookingFooterPhoneLink.href = `tel:${businessPhoneNumber.replace(/\s+/g, '')}`;
-      bookingFooterPhoneLink.textContent = businessPhoneNumber;
-    } else {
-      bookingFooterPhoneLink.removeAttribute('href');
-      bookingFooterPhoneLink.textContent = '';
-    }
 
     if (websiteUrl) {
       bookingFooterWebsiteLink.href = websiteUrl;
@@ -19199,8 +19332,9 @@ const initPublicBooking = () => {
 
     serviceSelect.value = card.dataset.serviceName ?? '';
     renderServiceCards();
-    await populateSlots();
     updateBookingSummary();
+    goToBookingStep('professional');
+    populateSlots().then(updateBookingSummary).catch(() => {});
   });
 
   serviceTabs.addEventListener('click', async (event) => {
@@ -19244,8 +19378,9 @@ const initPublicBooking = () => {
 
     teamMemberSelect.value = card.dataset.teamMemberId ?? '';
     renderTeamMemberCards();
-    await populateSlots();
     updateBookingSummary();
+    goToBookingStep('time');
+    populateSlots().then(updateBookingSummary).catch(() => {});
   });
 
   dateStrip.addEventListener('click', async (event) => {
@@ -19288,11 +19423,12 @@ const initPublicBooking = () => {
     renderTimeButtons(lastLoadedSlots);
     renderWaitlistPanel(lastLoadedSlots);
     updateBookingSummary();
+    goToBookingStep('confirm');
   });
 
   stepBackButton.addEventListener('click', () => {
     const previousIndex = Math.max(0, getStepIndex(currentBookingStep) - 1);
-    setBookingStep(bookingStepOrder[previousIndex]);
+    goToBookingStep(bookingStepOrder[previousIndex]);
   });
 
   stepContinueButton.addEventListener('click', () => {
@@ -19307,7 +19443,7 @@ const initPublicBooking = () => {
     }
 
     const nextIndex = Math.min(bookingStepOrder.length - 1, getStepIndex(currentBookingStep) + 1);
-    setBookingStep(bookingStepOrder[nextIndex]);
+    goToBookingStep(bookingStepOrder[nextIndex]);
   });
 
   dateInput.addEventListener('change', async () => {
@@ -19409,6 +19545,10 @@ const initPublicBooking = () => {
         .filter(Boolean)
     );
     updateBookingSummary();
+
+    if (timeSelect.value) {
+      goToBookingStep('confirm');
+    }
   });
 
   benefitSelect.addEventListener('change', () => {
