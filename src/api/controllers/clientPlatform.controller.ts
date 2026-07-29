@@ -18,7 +18,7 @@ import { appointmentService } from '../../appointments/appointment.service';
 import { twilioSmsService } from '../../notifications/twilioSms.service';
 import { emailOtpService } from '../../notifications/emailOtp.service';
 import { emailService } from '../../notifications/email.service';
-import { renderEmailLayout } from '../../notifications/emailTemplate';
+import { renderEmailLayout, BRAND_NAME } from '../../notifications/emailTemplate';
 import { hashPassword, verifyPassword } from '../../shared/hashToken';
 import { clearAdminSessionCookie, getRequestOrigin, setAdminSessionCookie } from '../../shared/http';
 
@@ -78,7 +78,7 @@ const sendWelcomeEmail = async (client: { id: string; email: string; businessNam
   await emailService.sendEmail(
     {
       to: client.email,
-      subject: `Welcome to QR Schedule, ${businessLabel}!`,
+      subject: `Welcome to ${BRAND_NAME}, ${businessLabel}!`,
       text:
         `Your workspace for ${businessLabel} is ready. ` +
         `Open your dashboard to manage bookings, services and your team: ${dashboardLink}`,
@@ -87,7 +87,7 @@ const sendWelcomeEmail = async (client: { id: string; email: string; businessNam
         eyebrow: 'Welcome',
         heading: `You're all set, ${businessLabel}!`,
         bodyHtml: `
-          <p style="margin:0 0 14px">Your QR Schedule workspace is live. From your dashboard you can:</p>
+          <p style="margin:0 0 14px">Your ${BRAND_NAME} workspace is live. From your dashboard you can:</p>
           <ul style="margin:0 0 4px;padding-left:20px">
             <li style="margin:0 0 6px">Manage bookings and your calendar</li>
             <li style="margin:0 0 6px">Add services, pricing and team members</li>
@@ -129,7 +129,7 @@ const sendStaffCredentialsNotification = async (
       to: teamMember.email,
       subject: `Welcome to ${businessLabel}, ${teamMember.name}!`,
       text:
-        `You've been added as a team member at ${businessLabel} on QR Schedule. ` +
+        `You've been added as a team member at ${businessLabel} on ${BRAND_NAME}. ` +
         `Username: ${credentials.username} Password: ${credentials.password}. ` +
         `Log in at ${loginLink}`,
       html: renderEmailLayout({
@@ -480,7 +480,7 @@ export const clientPlatformController = {
 
       const smsResult = await twilioSmsService.sendSms(
         mobileNumber,
-        `Your QR Schedule verification code is ${code}. It expires in 10 minutes.`,
+        `Your ${BRAND_NAME} verification code is ${code}. It expires in 10 minutes.`,
         'customer'
       );
 
@@ -612,7 +612,7 @@ export const clientPlatformController = {
     if (client.mobileNumber) {
       const smsResult = await twilioSmsService.sendSms(
         client.mobileNumber,
-        `Your QR Schedule verification code is ${code}. It expires in 10 minutes.`,
+        `Your ${BRAND_NAME} verification code is ${code}. It expires in 10 minutes.`,
         'customer'
       );
 

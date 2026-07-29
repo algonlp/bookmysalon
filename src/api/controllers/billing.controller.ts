@@ -5,7 +5,7 @@ import { billingService } from '../../billing/billing.service';
 import { clientPlatformRepository } from '../../platform/clientPlatform.repository';
 import { clientPlatformService } from '../../platform/clientPlatform.service';
 import { emailService } from '../../notifications/email.service';
-import { renderEmailLayout } from '../../notifications/emailTemplate';
+import { renderEmailLayout, BRAND_NAME } from '../../notifications/emailTemplate';
 import { HttpError } from '../../shared/errors/httpError';
 import { hashAdminToken } from '../../shared/hashToken';
 import { getRequestOrigin, setAdminSessionCookie } from '../../shared/http';
@@ -94,7 +94,7 @@ export const billingController = {
         text: [
           `Hi ${input.name},`,
           '',
-          `Your ${plan.name} plan free trial on QR Schedule is now active. Every ${plan.name} feature is unlocked for one month, free — no card required.`,
+          `Your ${plan.name} plan free trial on ${BRAND_NAME} is now active. Every ${plan.name} feature is unlocked for one month, free — no card required.`,
           `Your trial runs until ${trialEndLabel}.`,
           '',
           'Log in with:',
@@ -110,7 +110,7 @@ export const billingController = {
           eyebrow: 'Free trial activated',
           heading: `Welcome, ${input.name} — your ${plan.name} month is free`,
           bodyHtml: `
-            <p>Your <strong>${plan.name}</strong> plan free trial on QR Schedule is now active.
+            <p>Your <strong>${plan.name}</strong> plan free trial on ${BRAND_NAME} is now active.
             Every ${plan.name} feature is unlocked for one month, free — no card required.
             Your trial runs until <strong>${trialEndLabel}</strong>.</p>
             <p style="margin-top:16px">Log in with:</p>

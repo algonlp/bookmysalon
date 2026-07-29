@@ -5755,9 +5755,11 @@ const initSignup = () => {
   const submitArrow = document.querySelector('#pro-signup-submit-arrow');
   const submitSpinner = document.querySelector('#pro-signup-submit-spinner');
 
+  let otpSent = false;
+
   const setSubmitLoading = (loading) => {
     if (submitBtn instanceof HTMLButtonElement) {
-      submitBtn.disabled = loading;
+      submitBtn.disabled = loading || otpSent;
       submitBtn.classList.toggle('is-loading', loading);
     }
     if (submitLabel instanceof HTMLElement) {
@@ -5796,6 +5798,14 @@ const initSignup = () => {
     formMode = mode;
 
     const isSignup = mode === 'signup';
+
+    otpSent = false;
+    if (submitBtn instanceof HTMLButtonElement) {
+      submitBtn.disabled = false;
+    }
+    if (otpPanel instanceof HTMLElement) {
+      otpPanel.classList.add('is-hidden');
+    }
 
     if (nameWrap instanceof HTMLElement) {
       nameWrap.classList.toggle('is-hidden', !isSignup);
@@ -5879,6 +5889,11 @@ const initSignup = () => {
       pendingOtpPhone = mobileNumber.trim();
       pendingOtpEmail = mobileNumber.trim() ? '' : email.trim();
       pendingOtpType = 'signup';
+      otpSent = true;
+
+      if (submitBtn instanceof HTMLButtonElement) {
+        submitBtn.disabled = true;
+      }
 
       if (otpPanel instanceof HTMLElement) {
         otpPanel.classList.remove('is-hidden');
@@ -5971,6 +5986,11 @@ const initSignup = () => {
       if (result.otpRequired) {
         pendingOtpClientId = result.clientId;
         pendingOtpType = 'login';
+        otpSent = true;
+
+        if (submitBtn instanceof HTMLButtonElement) {
+          submitBtn.disabled = true;
+        }
 
         if (otpPanel instanceof HTMLElement) {
           otpPanel.classList.remove('is-hidden');
@@ -6326,6 +6346,7 @@ const initCustomerOtpLogin = () => {
     backLink.addEventListener('click', (e) => {
       if (!stepOtp.classList.contains('is-hidden')) {
         e.preventDefault();
+        continueBtn.disabled = false;
         showStep(stepEntry);
       }
     });
@@ -6372,6 +6393,7 @@ const initCustomerOtpLogin = () => {
       if (otpSubtitle instanceof HTMLElement) {
         otpSubtitle.textContent = `We sent a 6-digit code to ${value}. It expires in 10 minutes.`;
       }
+      continueBtn.disabled = true;
       showStep(stepOtp);
       codeInput.focus();
     } catch (error) {
@@ -6386,6 +6408,7 @@ const initCustomerOtpLogin = () => {
 
   if (resendBtn instanceof HTMLButtonElement) {
     resendBtn.addEventListener('click', () => {
+      continueBtn.disabled = false;
       showStep(stepEntry);
       entryInput.focus();
     });

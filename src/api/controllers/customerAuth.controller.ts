@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { twilioSmsService } from '../../notifications/twilioSms.service';
 import { emailOtpService } from '../../notifications/emailOtp.service';
 import { customerAccountService } from '../../customers/customerAccount.service';
+import { BRAND_NAME } from '../../notifications/emailTemplate';
 
 const requestOtpSchema = z.object({
   phone: z.string().trim().min(7, 'Phone number is required'),
@@ -49,7 +50,7 @@ export const customerAuthController = {
 
     const smsResult = await twilioSmsService.sendSms(
       input.phone,
-      `Your QR Schedule verification code is ${code}. It expires in 10 minutes.`,
+      `Your ${BRAND_NAME} verification code is ${code}. It expires in 10 minutes.`,
       'customer'
     );
 

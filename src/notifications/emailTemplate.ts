@@ -1,7 +1,7 @@
 import { env } from '../config/env';
 
 // Brand name shown in emails comes from config, not hardcoded.
-const BRAND_NAME =
+export const BRAND_NAME =
   env.PUBLIC_SUPPORT_PLATFORM_NAME?.trim() ||
   env.PUBLIC_SUPPORT_COMPANY_NAME?.trim() ||
   'QR Schedule';
@@ -9,6 +9,13 @@ const BRAND_GRADIENT = 'linear-gradient(135deg, #6c4cf5, #5636e8)';
 const PROMO_GRADIENT = 'linear-gradient(135deg, #6c4cf5 0%, #8b5cf6 55%, #a855f7 100%)';
 const INK = '#1f1a17';
 const MUTED = '#6f6760';
+// Same warm cream tone as the dashboard's page background (--bg-mid), so every
+// email reads as the same product as the app, not a different theme.
+const PAGE_BG = '#f7efe7';
+const CARD_SHADOW = '0 16px 38px rgba(81, 60, 55, 0.12)';
+export const PRIMARY_SOFT_BG = 'rgba(108, 76, 245, 0.1)';
+export const PRIMARY_SOFT_BORDER = 'rgba(108, 76, 245, 0.28)';
+export { INK, MUTED };
 
 const escapeHtml = (value: string): string =>
   value
@@ -62,14 +69,14 @@ export const renderEmailLayout = ({
 }: EmailLayoutInput): string => `
 <!DOCTYPE html>
 <html lang="en">
-  <body style="margin:0;padding:0;background:#f4f2ef;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <body style="margin:0;padding:0;background:${PAGE_BG};font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
     <span style="display:none;max-height:0;overflow:hidden;opacity:0">${preheader}</span>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f2ef;padding:32px 16px">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PAGE_BG};padding:32px 16px">
       <tr>
         <td align="center">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
                  style="max-width:520px;background:#ffffff;border-radius:18px;overflow:hidden;
-                        box-shadow:0 12px 32px rgba(31,26,23,0.08)">
+                        box-shadow:${CARD_SHADOW}">
             <tr>
               <td style="background:${BRAND_GRADIENT};padding:26px 32px">
                 <span style="color:#ffffff;font-size:19px;font-weight:800;letter-spacing:-0.02em">
@@ -155,14 +162,14 @@ export const renderMarketingEmail = ({
   return `
 <!DOCTYPE html>
 <html lang="en">
-  <body style="margin:0;padding:0;background:#f1eefb;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <body style="margin:0;padding:0;background:${PAGE_BG};font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
     <span style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(preheader)}</span>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1eefb;padding:30px 14px">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PAGE_BG};padding:30px 14px">
       <tr>
         <td align="center">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
                  style="max-width:560px;background:#ffffff;border-radius:22px;overflow:hidden;
-                        box-shadow:0 18px 42px rgba(76,45,168,0.18)">
+                        box-shadow:${CARD_SHADOW}">
             <tr>
               <td style="background:${PROMO_GRADIENT};padding:36px 32px;text-align:center">
                 <p style="margin:0 0 16px;color:rgba(255,255,255,0.86);font-size:13px;font-weight:700;
