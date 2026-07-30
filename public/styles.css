@@ -9697,6 +9697,43 @@ button.calendar-reports-summary-card {
   width: 100%;
 }
 
+.calendar-team-dashboard-selector-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.calendar-team-dashboard-select-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.calendar-team-dashboard-select-field span {
+  color: #68736d;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.calendar-team-dashboard-select-field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 36px 0 12px;
+  border: 1px solid rgba(31, 51, 93, 0.12);
+  border-radius: 8px;
+  background: #f8faf9;
+  color: #1f2f2f;
+  font: inherit;
+  font-weight: 800;
+}
+
+.calendar-team-dashboard-select-field select:focus {
+  outline: none;
+  border-color: rgba(47, 111, 115, 0.5);
+  box-shadow: 0 0 0 3px rgba(47, 111, 115, 0.12);
+}
+
 .calendar-team-dashboard-body {
   display: grid;
   gap: 18px;
@@ -9704,8 +9741,9 @@ button.calendar-reports-summary-card {
 
 .calendar-team-dashboard-filter-row {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 14px;
+  align-items: end;
   padding: 16px;
   border: 1px solid rgba(31, 51, 93, 0.08);
   border-radius: 8px;
@@ -14290,6 +14328,11 @@ button.calendar-reports-summary-card {
   .calendar-team-dashboard-charts,
   .calendar-team-dashboard-metrics,
   .calendar-team-dashboard-appointment-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-team-dashboard-selector-panel,
+  .calendar-team-dashboard-controls {
     grid-template-columns: 1fr;
   }
 
