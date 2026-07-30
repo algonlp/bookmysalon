@@ -7948,6 +7948,11 @@ const initCalendar = () => {
   const catalogPanel = document.querySelector('#calendar-catalog-panel');
   const teamToggle = document.querySelector('#calendar-team-toggle');
   const teamPanel = document.querySelector('#calendar-team-panel');
+  const teamDashboardView = document.querySelector('#calendar-team-dashboard-view');
+  const teamDashboardBackButton = document.querySelector('#calendar-team-dashboard-back-button');
+  const teamDashboardTitle = document.querySelector('#calendar-team-dashboard-title');
+  const teamDashboardCopy = document.querySelector('#calendar-team-dashboard-copy');
+  const teamDashboardBody = document.querySelector('#calendar-team-dashboard-body');
   const reportsToggle = document.querySelector('#calendar-reports-toggle');
   const reportsView = document.querySelector('#calendar-reports-view');
   const calendarBoard = document.querySelector('.calendar-board');
@@ -8088,6 +8093,9 @@ const initCalendar = () => {
   };
   let activeReportsFolderId = '';
   let reportsDateRange = '30d';
+  let teamPerformanceRange = '30d';
+  let teamPerformanceStatusFilter = 'all';
+  let selectedTeamDashboardMemberId = '';
 
   const isBillingFeatureLocked = (featureKey) => {
     if (!Array.isArray(billingPayload?.lockedFeatureKeys)) {
@@ -10484,6 +10492,447 @@ const createTrendCard = (
       marketingDrawerTitle,
       marketingDrawerContent
     );
+  };
+
+  const getTeamPerformanceRangeConfig = () => {
+    const options = [
+      { key: 'today', label: 'Today', days: 1 },
+      { key: '7d', label: 'Week', days: 7 },
+      { key: '30d', label: 'Month', days: 30 },
+      { key: '90d', label: '90 days', days: 90 }
+    ];
+
+    return {
+      options,
+      selected: options.find((option) => option.key === teamPerformanceRange) ?? options[2]
+    };
+  };
+
+  const getTeamPerformanceAppointments = () =>
+    getAppointmentsInDateRange(getDashboardAppointments(), teamPerformanceRange);
+
+  const getAppointmentEstimatedValue = (appointment, servicePriceMap) => {
+    const price = servicePriceMap.get(appointment?.serviceName) ?? 0;
+    return appointment?.status === 'cancelled' ? 0 : price;
+  };
+
+  const getTeamPerformanceTrend = (appointments, servicePriceMap, metric = 'count') => {
+    const { selected } = getTeamPerformanceRangeConfig();
+    const days = selected.days;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(today);
+    start.setDate(start.getDate() - (days - 1));
+
+    return Array.from({ length: days }, (_entry, index) => {
+      const currentDate = new Date(start);
+      currentDate.setDate(start.getDate() + index);
+      const key = formatDateForApi(currentDate);
+      const dayAppointments = appointments.filter(
+        (appointment) => getAppointmentReportDateValue(appointment) === key
+      );
+
+      if (metric === 'revenue') {
+        return dayAppointments.reduce(
+          (sum, appointment) => sum + getAppointmentEstimatedValue(appointment, servicePriceMap),
+          0
+        );
+      }
+
+      return dayAppointments.length;
+    });
+  };
+
+  const buildTeamPerformanceInsights = () => {
+    const teamMembers = getDashboardTeamMembers().filter((teamMember) => teamMember.isActive !== false);
+    const appointments = getTeamPerformanceAppointments();
+    const servicePriceMap = new Map(
+      getDashboardServices().map((service) => [service.name, parsePriceLabel(service.priceLabel)])
+    );
+
+    const members = teamMembers
+      .map((teamMember) => {
+        const memberAppointments = appointments.filter(
+          (appointment) =>
+            appointment.teamMemberId === teamMember.id ||
+            (!appointment.teamMemberId && appointment.teamMemberName === teamMember.name)
+        );
+        const completedAppointments = memberAppointments.filter(
+          (appointment) => appointment.status === 'completed'
+        );
+        const bookedAppointments = memberAppointments.filter((appointment) =>
+          ['booked', 'pending_deposit'].includes(appointment.status)
+        );
+        const cancelledAppointments = memberAppointments.filter(
+          (appointment) => appointment.status === 'cancelled'
+        );
+        const estimatedRevenue = memberAppointments.reduce(
+          (sum, appointment) => sum + getAppointmentEstimatedValue(appointment, servicePriceMap),
+          0
+        );
+        const completionRate =
+          memberAppointments.length > 0
+            ? Math.round((completedAppointments.length / memberAppointments.length) * 100)
+            : 0;
+
+        return {
+          teamMember,
+          appointments: memberAppointments,
+          total: memberAppointments.length,
+          completed: completedAppointments.length,
+          booked: bookedAppointments.length,
+          inProcess: bookedAppointments.length,
+          cancelled: cancelledAppointments.length,
+          estimatedRevenue,
+          completionRate,
+          trend: getTeamPerformanceTrend(memberAppointments, servicePriceMap)
+        };
+      })
+      .sort((first, second) => second.total - first.total || second.estimatedRevenue - first.estimatedRevenue);
+
+    const totalAppointments = members.reduce((sum, member) => sum + member.total, 0);
+    const completedAppointments = members.reduce((sum, member) => sum + member.completed, 0);
+    const estimatedRevenue = members.reduce((sum, member) => sum + member.estimatedRevenue, 0);
+    const activeTeamCount = teamMembers.length;
+    const leader = members.find((member) => member.total > 0);
+
+    return {
+      members,
+      totalAppointments,
+      completedAppointments,
+      estimatedRevenue,
+      activeTeamCount,
+      averageAppointments: activeTeamCount > 0 ? totalAppointments / activeTeamCount : 0,
+      completionRate:
+        totalAppointments > 0 ? Math.round((completedAppointments / totalAppointments) * 100) : 0,
+      leader
+    };
+  };
+
+  const createTeamMetricCard = (label, value, meta, values, tone = '#1f335d', chartType = 'sparkline') => {
+    const card = document.createElement('article');
+    card.className = 'calendar-team-performance-card';
+
+    const labelEl = document.createElement('span');
+    labelEl.className = 'calendar-team-performance-label';
+    labelEl.textContent = label;
+
+    const valueEl = document.createElement('strong');
+    valueEl.textContent = value;
+
+    const metaEl = document.createElement('small');
+    metaEl.textContent = meta;
+
+    const chart = document.createElement('div');
+    chart.className = 'calendar-team-performance-chart';
+    chart.innerHTML =
+      chartType === 'bars' ? buildComparisonBarsSvg(values, tone) : buildSparklineSvg(values, tone);
+
+    card.append(labelEl, valueEl, metaEl, chart);
+    return card;
+  };
+
+  const createTeamPerformanceMemberButton = (memberInsight, maxAppointments) => {
+    const { teamMember } = memberInsight;
+    const button = document.createElement('button');
+    button.className = 'calendar-team-performance-member';
+    button.type = 'button';
+    button.dataset.teamMemberId = teamMember.id;
+
+    const avatar = document.createElement('span');
+    avatar.className = 'calendar-team-performance-avatar';
+    avatar.textContent = (teamMember.name || 'T').trim().slice(0, 1).toUpperCase();
+
+    const copy = document.createElement('span');
+    copy.className = 'calendar-team-performance-member-copy';
+    const title = document.createElement('strong');
+    title.textContent = teamMember.name || 'Team member';
+    const meta = document.createElement('small');
+    meta.textContent = `${teamMember.role || getDefaultTeamMemberRole()} | ${memberInsight.completed} completed | ${memberInsight.booked} booked`;
+    copy.append(title, meta);
+
+    const stats = document.createElement('span');
+    stats.className = 'calendar-team-performance-member-stats';
+    const count = document.createElement('strong');
+    count.textContent = String(memberInsight.total);
+    const label = document.createElement('small');
+    label.textContent = 'appointments';
+    stats.append(count, label);
+
+    const progress = document.createElement('span');
+    progress.className = 'calendar-team-performance-progress';
+    const progressFill = document.createElement('span');
+    progressFill.style.width = `${maxAppointments > 0 ? Math.max(8, (memberInsight.total / maxAppointments) * 100) : 0}%`;
+    progress.append(progressFill);
+
+    button.append(avatar, copy, stats, progress);
+    return button;
+  };
+
+  const createTeamDrawerMemberButton = (teamMember) => {
+    const button = document.createElement('button');
+    button.className = 'calendar-drawer-link calendar-team-drawer-member';
+    button.type = 'button';
+    button.dataset.teamMemberId = teamMember.id;
+
+    const copy = document.createElement('span');
+    copy.className = 'calendar-drawer-link-copy';
+    const title = document.createElement('strong');
+    title.textContent = teamMember.name || 'Team member';
+    const meta = document.createElement('small');
+    meta.textContent = `${teamMember.role || getDefaultTeamMemberRole()}${teamMember.phone ? ` | ${teamMember.phone}` : ''}`;
+    copy.append(title, meta);
+
+    button.append(copy);
+    return button;
+  };
+
+  const renderTeamDashboardView = (teamMemberId = selectedTeamDashboardMemberId) => {
+    if (
+      !(teamDashboardTitle instanceof HTMLElement) ||
+      !(teamDashboardCopy instanceof HTMLElement) ||
+      !(teamDashboardBody instanceof HTMLElement)
+    ) {
+      return;
+    }
+
+    const insights = buildTeamPerformanceInsights();
+    const memberInsight = insights.members.find((member) => member.teamMember.id === teamMemberId);
+    teamDashboardBody.replaceChildren();
+
+    if (!memberInsight) {
+      teamDashboardTitle.textContent = 'Barber performance';
+      teamDashboardCopy.textContent = 'Add team members and assign bookings to them to build this report.';
+      teamDashboardBody.append(
+        createToolInfoCard(
+          'No performance data yet',
+          `Use Add ${getBusinessRoleLabel()} to create your first team member.`
+        )
+      );
+      return;
+    }
+
+    selectedTeamDashboardMemberId = teamMemberId;
+    teamDashboardTitle.textContent = memberInsight.teamMember.name || 'Team member';
+    teamDashboardCopy.textContent = `${memberInsight.total} appointments in ${getTeamPerformanceRangeConfig().selected.label.toLowerCase()} with ${memberInsight.completionRate}% completion.`;
+
+    const rangeControls = document.createElement('div');
+    rangeControls.className = 'calendar-team-dashboard-controls';
+    getTeamPerformanceRangeConfig().options.forEach((option) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = option.label;
+      button.className =
+        option.key === teamPerformanceRange
+          ? 'calendar-team-performance-range-button is-active'
+          : 'calendar-team-performance-range-button';
+      button.addEventListener('click', () => {
+        teamPerformanceRange = option.key;
+        renderTeamDashboardView(teamMemberId);
+      });
+      rangeControls.append(button);
+    });
+
+    const statusOptions = [
+      { key: 'all', label: 'All' },
+      { key: 'in_process', label: 'In process' },
+      { key: 'completed', label: 'Completed' },
+      { key: 'cancelled', label: 'Cancelled' }
+    ];
+    const statusControls = document.createElement('div');
+    statusControls.className = 'calendar-team-dashboard-controls';
+    statusOptions.forEach((option) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = option.label;
+      button.className =
+        option.key === teamPerformanceStatusFilter
+          ? 'calendar-team-performance-range-button is-active'
+          : 'calendar-team-performance-range-button';
+      button.addEventListener('click', () => {
+        teamPerformanceStatusFilter = option.key;
+        renderTeamDashboardView(teamMemberId);
+      });
+      statusControls.append(button);
+    });
+
+    const filteredAppointments = memberInsight.appointments.filter((appointment) => {
+      if (teamPerformanceStatusFilter === 'completed') {
+        return appointment.status === 'completed';
+      }
+
+      if (teamPerformanceStatusFilter === 'cancelled') {
+        return appointment.status === 'cancelled';
+      }
+
+      if (teamPerformanceStatusFilter === 'in_process') {
+        return ['booked', 'pending_deposit'].includes(appointment.status);
+      }
+
+      return true;
+    });
+
+    const statusChartValues = [
+      memberInsight.inProcess,
+      memberInsight.completed,
+      memberInsight.cancelled
+    ];
+
+    const controlsWrap = document.createElement('div');
+    controlsWrap.className = 'calendar-team-dashboard-filter-row';
+    controlsWrap.append(rangeControls, statusControls);
+
+    const metricsGrid = document.createElement('div');
+    metricsGrid.className = 'calendar-team-dashboard-metrics';
+    metricsGrid.append(
+      createTeamMetricCard('Total appointments', String(memberInsight.total), 'selected period', memberInsight.trend, '#2f6f73'),
+      createTeamMetricCard('In process', String(memberInsight.inProcess), 'booked or pending', [memberInsight.inProcess], '#1f335d', 'bars'),
+      createTeamMetricCard('Completed', String(memberInsight.completed), `${memberInsight.completionRate}% completion`, [memberInsight.completed], '#7257d8', 'bars'),
+      createTeamMetricCard('Cancelled', String(memberInsight.cancelled), 'cancelled bookings', [memberInsight.cancelled], '#9b5d20', 'bars'),
+      createTeamMetricCard('Estimated value', formatCurrencyLabel(memberInsight.estimatedRevenue), 'service price estimate', [memberInsight.estimatedRevenue], '#2f6f73', 'bars'),
+      createTeamMetricCard('Completion rate', `${memberInsight.completionRate}%`, 'completed vs total', [memberInsight.completionRate], '#7257d8')
+    );
+
+    const chartGrid = document.createElement('div');
+    chartGrid.className = 'calendar-team-dashboard-charts';
+
+    const chartCard = document.createElement('article');
+    chartCard.className = 'calendar-team-performance-detail-chart';
+    const chartTitle = document.createElement('strong');
+    chartTitle.textContent = 'Appointment trend';
+    const chart = document.createElement('div');
+    chart.innerHTML = buildSparklineSvg(memberInsight.trend, '#2f6f73');
+    chartCard.append(chartTitle, chart);
+
+    const statusChartCard = document.createElement('article');
+    statusChartCard.className = 'calendar-team-performance-detail-chart';
+    const statusChartTitle = document.createElement('strong');
+    statusChartTitle.textContent = 'Status breakdown';
+    const statusChart = document.createElement('div');
+    statusChart.innerHTML = buildComparisonBarsSvg(statusChartValues, '#7257d8');
+    const statusChartMeta = document.createElement('small');
+    statusChartMeta.textContent = `${memberInsight.inProcess} in process | ${memberInsight.completed} completed | ${memberInsight.cancelled} cancelled`;
+    statusChartCard.append(statusChartTitle, statusChart, statusChartMeta);
+    chartGrid.append(chartCard, statusChartCard);
+
+    const recentAppointments = filteredAppointments
+      .slice()
+      .sort((first, second) =>
+        `${second.appointmentDate ?? ''} ${second.appointmentTime ?? ''}`.localeCompare(
+          `${first.appointmentDate ?? ''} ${first.appointmentTime ?? ''}`
+        )
+      )
+      .slice(0, 12)
+      .map((appointment) =>
+        createToolInfoCard(
+          `${appointment.customerName || 'Customer'} | ${appointment.status || 'booking'}`,
+          `${appointment.serviceName || 'Service'} | ${formatDateTimeForDisplay(
+            appointment.appointmentDate,
+            appointment.appointmentTime
+          )}`
+        )
+      );
+
+    const appointmentsSection = document.createElement('section');
+    appointmentsSection.className = 'calendar-team-dashboard-appointments';
+    const appointmentsHead = document.createElement('div');
+    appointmentsHead.className = 'calendar-team-dashboard-section-head';
+    const appointmentsTitle = document.createElement('h2');
+    appointmentsTitle.textContent = 'Appointments';
+    const appointmentsCopy = document.createElement('p');
+    appointmentsCopy.textContent = `${filteredAppointments.length} appointment${filteredAppointments.length === 1 ? '' : 's'} match this filter.`;
+    appointmentsHead.append(appointmentsTitle, appointmentsCopy);
+    const appointmentsGrid = document.createElement('div');
+    appointmentsGrid.className = 'calendar-team-dashboard-appointment-grid';
+    appointmentsGrid.append(
+      ...(recentAppointments.length > 0
+        ? recentAppointments
+        : [createToolInfoCard('Appointments', 'No appointments match this filter.')])
+    );
+    appointmentsSection.append(appointmentsHead, appointmentsGrid);
+
+    const actions = document.createElement('div');
+    actions.className = 'calendar-tool-inline-actions';
+    actions.append(
+      createToolActionButton('Edit team member', () => {
+        openEditTeamMemberModal(memberInsight.teamMember);
+      }),
+      createToolActionButton('Open team list', () => {
+        setMainView('calendar');
+        syncSideDrawerOffset();
+        setActiveDrawer('team');
+        openBarbersListModal();
+      })
+    );
+
+    teamDashboardBody.append(controlsWrap, metricsGrid, chartGrid, appointmentsSection, actions);
+  };
+
+  const openTeamDashboardView = (teamMemberId = '') => {
+    closeToolModal();
+    setActiveDrawer('');
+    selectedTeamDashboardMemberId = teamMemberId;
+    setMainView('team-dashboard');
+    renderTeamDashboardView(teamMemberId);
+  };
+
+  const openBarbersListModal = () => {
+    const teamMembers = getDashboardTeamMembers().filter((teamMember) => teamMember.isActive !== false);
+
+    const actions =
+      teamMembers.length > 0
+        ? teamMembers.map((teamMember) => {
+            const button = createTeamDrawerMemberButton(teamMember);
+            button.addEventListener('click', () => {
+              teamPerformanceStatusFilter = 'all';
+              openTeamDashboardView(teamMember.id);
+            });
+            return button;
+          })
+        : [
+            createToolInfoCard(
+              'No barbers yet',
+              `Use Add ${getBusinessRoleLabel()} to create your first team member.`
+            ),
+            createToolActionButton(`Add ${getBusinessRoleLabel()}`, () => {
+              closeToolModal();
+              openAddTeamMemberModal();
+            })
+          ];
+
+    openToolModal({
+      eyebrow: 'Team',
+      title: getBusinessRoleLabelPlural().replace(/^\w/, (letter) => letter.toUpperCase()),
+      description: 'Choose a barber to open their performance dashboard.',
+      actions
+    });
+  };
+
+  const renderTeamDrawer = () => {
+    if (!(teamTitle instanceof HTMLElement) || !(teamContent instanceof HTMLElement)) {
+      return;
+    }
+
+    const teamDrawer = dashboardPayload?.dashboard?.sideDrawers?.team;
+
+    if (!teamDrawer) {
+      return;
+    }
+
+    const teamMembers = getDashboardTeamMembers().filter((teamMember) => teamMember.isActive !== false);
+    const barberLabel = getBusinessRoleLabelPlural().replace(/^\w/, (letter) => letter.toUpperCase());
+    const enhancedSections = teamDrawer.sections.slice(0, 1).map((section) => ({
+      ...section,
+      items: [
+        {
+          label: barberLabel,
+          subtitle: `${teamMembers.length} active ${getBusinessRoleLabelPlural()}`
+        },
+        ...(Array.isArray(section.items) ? section.items : [])
+      ]
+    }));
+
+    renderDrawer({ ...teamDrawer, sections: enhancedSections }, teamTitle, teamContent);
   };
 
   const renderCatalogDrawer = () => {
@@ -15378,6 +15827,11 @@ const createTrendCard = (
       return;
     }
 
+    if (viewName === 'team-dashboard') {
+      calendarMain.dataset.mainView = 'team-dashboard';
+      return;
+    }
+
     delete calendarMain.dataset.mainView;
     calendarNavCalendar.classList.add('is-active');
   };
@@ -15702,6 +16156,14 @@ const createTrendCard = (
         return;
       }
 
+      const performanceButton = target.closest('.calendar-team-drawer-member');
+
+      if (performanceButton instanceof HTMLButtonElement) {
+        teamPerformanceStatusFilter = 'all';
+        openTeamDashboardView(performanceButton.dataset.teamMemberId ?? '');
+        return;
+      }
+
       const button = target.closest('.calendar-drawer-link');
 
       if (!(button instanceof HTMLButtonElement)) {
@@ -15709,6 +16171,12 @@ const createTrendCard = (
       }
 
       const actionLabel = button.dataset.drawerLabel?.trim().toLowerCase();
+      const barberLabel = getBusinessRoleLabelPlural().trim().toLowerCase();
+
+      if (actionLabel === 'barbers' || actionLabel === barberLabel) {
+        openBarbersListModal();
+        return;
+      }
 
       if (actionLabel === 'team members') {
         openTeamMembersModal();
@@ -17825,6 +18293,14 @@ const createTrendCard = (
     });
   }
 
+  if (teamDashboardBackButton instanceof HTMLButtonElement) {
+    teamDashboardBackButton.addEventListener('click', () => {
+      setMainView('calendar');
+      syncSideDrawerOffset();
+      setActiveDrawer('team');
+    });
+  }
+
   if (marketingAction instanceof HTMLButtonElement) {
     marketingAction.addEventListener('click', (event) => {
       event.stopPropagation();
@@ -18110,7 +18586,10 @@ const createTrendCard = (
     renderMarketingDrawer();
     renderClientsDrawer();
     renderCatalogDrawer();
-    renderDrawer(payload.dashboard.sideDrawers.team, teamTitle, teamContent);
+    renderTeamDrawer();
+    if (getMainView() === 'team-dashboard' && selectedTeamDashboardMemberId) {
+      renderTeamDashboardView(selectedTeamDashboardMemberId);
+    }
     renderReportsWorkspace();
 
     if (!setupActionHandled) {

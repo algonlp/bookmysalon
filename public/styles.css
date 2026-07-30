@@ -8132,6 +8132,12 @@ button.support-primary-action:disabled {
   overflow-y: auto;
 }
 
+.calendar-team-panel {
+  bottom: auto;
+  max-height: calc(100vh - var(--calendar-side-drawer-top) - 28px);
+  overflow-y: auto;
+}
+
 .calendar-reports-view {
   display: none;
   grid-template-columns: 320px minmax(0, 1fr);
@@ -8161,12 +8167,30 @@ button.support-primary-action:disabled {
   min-height: calc(100vh - 180px);
 }
 
+.calendar-team-dashboard-view {
+  display: none;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 18px;
+  padding: 28px;
+  border: 1px solid rgba(18, 18, 18, 0.08);
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(250, 253, 251, 0.98), rgba(244, 248, 246, 0.96));
+  min-height: calc(100vh - 180px);
+}
+
 .calendar-main[data-main-view='marketing'] .calendar-marketing-view {
   display: flex;
 }
 
+.calendar-main[data-main-view='team-dashboard'] .calendar-team-dashboard-view {
+  display: flex;
+}
+
 .calendar-main[data-main-view='marketing'] .calendar-toolbar,
-.calendar-main[data-main-view='marketing'] .calendar-board {
+.calendar-main[data-main-view='marketing'] .calendar-board,
+.calendar-main[data-main-view='team-dashboard'] .calendar-toolbar,
+.calendar-main[data-main-view='team-dashboard'] .calendar-board {
   display: none;
 }
 
@@ -9505,6 +9529,287 @@ button.calendar-reports-summary-card {
   font-size: 1.4rem;
   font-weight: 800;
   letter-spacing: -0.04em;
+}
+
+.calendar-team-performance {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.calendar-team-performance-head {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(31, 51, 93, 0.1);
+  border-radius: 8px;
+  background: #f8faf8;
+}
+
+.calendar-team-performance-head > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.calendar-team-performance-head span,
+.calendar-team-performance-label {
+  color: #64706b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.calendar-team-performance-head strong {
+  color: #1f2f2f;
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.calendar-team-performance-head small {
+  color: #68736d;
+  line-height: 1.45;
+}
+
+.calendar-team-performance-range {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.calendar-team-performance-range-button {
+  min-height: 34px;
+  padding: 7px 8px;
+  border: 1px solid rgba(31, 51, 93, 0.12);
+  border-radius: 8px;
+  background: #fff;
+  color: #44504c;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.calendar-team-performance-range-button:hover,
+.calendar-team-performance-range-button.is-active {
+  border-color: rgba(47, 111, 115, 0.38);
+  background: #eaf4f1;
+  color: #214b4e;
+}
+
+.calendar-team-performance-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.calendar-team-performance-card,
+.calendar-team-performance-wide-chart,
+.calendar-team-performance-detail-chart {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(31, 51, 93, 0.08);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(31, 51, 93, 0.06);
+}
+
+.calendar-team-performance-card strong {
+  color: #1f2f2f;
+  font-size: 1.38rem;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+.calendar-team-performance-card small {
+  color: #66716c;
+  font-weight: 700;
+}
+
+.calendar-team-performance-chart,
+.calendar-team-performance-wide-chart div,
+.calendar-team-performance-detail-chart div {
+  height: 46px;
+}
+
+.calendar-team-performance-chart svg,
+.calendar-team-performance-wide-chart svg,
+.calendar-team-performance-detail-chart svg {
+  width: 100%;
+  height: 100%;
+}
+
+.calendar-team-performance-wide-chart > strong,
+.calendar-team-performance-detail-chart > strong {
+  color: #263636;
+  font-size: 0.92rem;
+  font-weight: 850;
+}
+
+.calendar-team-performance-list {
+  display: grid;
+  gap: 10px;
+}
+
+.calendar-team-performance-member {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid rgba(31, 51, 93, 0.09);
+  border-radius: 8px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.calendar-team-performance-member:hover,
+.calendar-team-performance-member:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(47, 111, 115, 0.28);
+  box-shadow: 0 14px 26px rgba(31, 51, 93, 0.1);
+}
+
+.calendar-team-drawer-list-section {
+  margin-top: 26px;
+}
+
+.calendar-team-drawer-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 0;
+}
+
+.calendar-team-dashboard-controls {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.calendar-team-dashboard-body {
+  display: grid;
+  gap: 18px;
+}
+
+.calendar-team-dashboard-filter-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(31, 51, 93, 0.08);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.calendar-team-dashboard-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.calendar-team-dashboard-charts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.calendar-team-dashboard-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.calendar-team-dashboard-section-head h2 {
+  margin: 0;
+  color: #1f2f2f;
+  font-size: 1.35rem;
+  font-weight: 850;
+}
+
+.calendar-team-dashboard-section-head p {
+  margin: 0;
+  color: #68736d;
+  font-weight: 700;
+}
+
+.calendar-team-dashboard-appointment-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.calendar-team-performance-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #eaf4f1;
+  color: #214b4e;
+  font-weight: 850;
+}
+
+.calendar-team-performance-member-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.calendar-team-performance-member-copy strong {
+  overflow: hidden;
+  color: #1f2f2f;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-team-performance-member-copy small,
+.calendar-team-performance-member-stats small {
+  color: #68736d;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.calendar-team-performance-member-stats {
+  display: grid;
+  justify-items: end;
+  gap: 1px;
+}
+
+.calendar-team-performance-member-stats strong {
+  color: #1f2f2f;
+  font-size: 1.1rem;
+  font-weight: 850;
+}
+
+.calendar-team-performance-progress {
+  grid-column: 1 / -1;
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #edf0ee;
+}
+
+.calendar-team-performance-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2f6f73, #7257d8);
 }
 
 .calendar-staff-row {
@@ -13978,6 +14283,13 @@ button.calendar-reports-summary-card {
   }
 
   .calendar-reports-view {
+    grid-template-columns: 1fr;
+  }
+
+  .calendar-team-dashboard-filter-row,
+  .calendar-team-dashboard-charts,
+  .calendar-team-dashboard-metrics,
+  .calendar-team-dashboard-appointment-grid {
     grid-template-columns: 1fr;
   }
 
