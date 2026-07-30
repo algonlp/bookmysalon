@@ -8,7 +8,7 @@ export interface CampaignTemplateSeed {
 
 // Placeholders substituted per-recipient at send time: {{customerName}},
 // {{businessName}}, {{discountLabel}}, {{serviceName}}, {{bookingLink}}.
-// happy_hour additionally supports {{startTime}}, {{endTime}}, {{offerName}},
+// custom_offer supports {{offerName}}. happy_hour additionally supports {{startTime}}, {{endTime}}, {{offerName}},
 // {{originalPrice}}, {{discountedPrice}}. last_minute_fill additionally
 // supports {{slotTime}}, {{seatsLeft}}.
 export const defaultCampaignTemplates: Record<CampaignTemplateType, CampaignTemplateSeed> = {
@@ -32,6 +32,13 @@ export const defaultCampaignTemplates: Record<CampaignTemplateType, CampaignTemp
     emailSubject: 'A free {{serviceName}} is waiting for you at {{businessName}}',
     emailBodyText:
       'Hi {{customerName}},\n\n{{businessName}} is offering a free {{serviceName}} with your next booking this week: {{bookingLink}}\n\nSee you soon!'
+  },
+  custom_offer: {
+    smsBody:
+      'Hi {{customerName}}! {{businessName}} has {{offerName}} for {{serviceName}}. Book now: {{bookingLink}}',
+    emailSubject: '{{offerName}} at {{businessName}}',
+    emailBodyText:
+      'Hi {{customerName}},\n\n{{businessName}} has a special offer for you: {{offerName}} on {{serviceName}}.\n\nBook here: {{bookingLink}}\n\nSee you soon!'
   },
   happy_hour: {
     smsBody:

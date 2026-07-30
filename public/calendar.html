@@ -66,7 +66,14 @@
           <button class="calendar-side-icon" id="calendar-profile-action" type="button" aria-label="Profile">
             <svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="8" r="3"></circle><path d="M5 20a7 7 0 0114 0"></path><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>
           </button>
-          <button class="calendar-side-icon" id="calendar-marketing-action" type="button" aria-label="Marketing">
+          <button
+            class="calendar-side-icon"
+            id="calendar-marketing-action"
+            type="button"
+            aria-label="Marketing"
+            aria-expanded="false"
+            aria-controls="calendar-marketing-panel"
+          >
             <svg viewBox="0 0 24 24" focusable="false"><path d="M4 13V7l11-3v16L4 17v-4"></path><path d="M15 10h3a2 2 0 012 2v0a2 2 0 01-2 2h-3"></path></svg>
           </button>
           <button
@@ -294,14 +301,29 @@
 
         <section class="calendar-marketing-view" id="calendar-marketing-view" aria-label="Marketing campaigns">
           <div class="calendar-marketing-header">
-            <div>
+            <button
+              class="calendar-marketing-back-button"
+              id="calendar-marketing-back-button"
+              type="button"
+              aria-label="Back to calendar"
+              title="Back"
+            >
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M15 6l-6 6 6 6"></path></svg>
+            </button>
+            <div class="calendar-marketing-heading-copy">
               <h1 id="calendar-marketing-title">Marketing campaigns</h1>
               <p id="calendar-marketing-subtitle">
                 Send a discount campaign to your clients during slow hours and see who books because of it.
               </p>
             </div>
-            <button class="calendar-marketing-new-button" id="calendar-marketing-new-button" type="button">
-              New campaign
+            <button
+              class="calendar-marketing-new-button"
+              id="calendar-marketing-new-button"
+              type="button"
+              aria-label="New campaign"
+              title="New campaign"
+            >
+              <svg viewBox="0 0 24 24" focusable="false"><path d="M12 5v14M5 12h14"></path></svg>
             </button>
           </div>
 
@@ -313,6 +335,15 @@
 
           <div class="calendar-marketing-list" id="calendar-marketing-list"></div>
         </section>
+
+        <aside
+          class="calendar-side-drawer calendar-marketing-panel"
+          id="calendar-marketing-panel"
+          aria-label="Marketing"
+        >
+          <h2 id="calendar-marketing-drawer-title">Marketing</h2>
+          <div id="calendar-marketing-drawer-content"></div>
+        </aside>
 
         <aside class="calendar-side-drawer calendar-sales-panel" id="calendar-sales-panel" aria-label="Sales">
           <h2 id="calendar-sales-title">Sales</h2>

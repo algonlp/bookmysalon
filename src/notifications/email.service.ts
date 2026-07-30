@@ -12,6 +12,7 @@ export interface EmailMessage {
   subject: string;
   text: string;
   html: string;
+  replyTo?: string;
 }
 
 export interface EmailSendResult {
@@ -33,6 +34,10 @@ const getSmtpTransport = () => {
       host: env.SMTP_HOST,
       port: env.SMTP_PORT,
       secure: env.SMTP_SECURE,
+      dnsTimeout: 10000,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
       auth: {
         user: env.SMTP_USER,
         pass: env.SMTP_PASS
@@ -94,7 +99,8 @@ const sendViaSmtp = async (message: EmailMessage): Promise<EmailSendResult> => {
       to: message.to,
       subject: message.subject,
       text: message.text,
-      html: message.html
+      html: message.html,
+      replyTo: message.replyTo
     });
 
     return { status: 'sent' };

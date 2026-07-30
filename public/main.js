@@ -6171,8 +6171,9 @@ const initSignup = () => {
       try {
         await createClient('email', emailValue, mobileValue, '', nameValue);
       } catch (error) {
-        setSubmitLoading(false);
         safeAlert(error instanceof Error ? error.message : 'Unable to create account.');
+      } finally {
+        setSubmitLoading(false);
       }
       return;
     }
@@ -6382,6 +6383,8 @@ const initCustomerOtpLogin = () => {
     setStatus(isEmail ? 'Sending code to your email...' : 'Sending code to your mobile...');
     setButtonBusy(continueBtn, true);
 
+    let otpSentSuccessfully = false;
+
     try {
       await apiRequest(requestEndpoint, {
         method: 'POST',
@@ -6393,13 +6396,18 @@ const initCustomerOtpLogin = () => {
       if (otpSubtitle instanceof HTMLElement) {
         otpSubtitle.textContent = `We sent a 6-digit code to ${value}. It expires in 10 minutes.`;
       }
-      continueBtn.disabled = true;
+      otpSentSuccessfully = true;
       showStep(stepOtp);
       codeInput.focus();
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Unable to send verification code.', true);
     } finally {
+      // setButtonBusy restores the pre-busy disabled state, so the permanent
+      // post-OTP disable must be applied after it, not before.
       setButtonBusy(continueBtn, false);
+      if (otpSentSuccessfully) {
+        continueBtn.disabled = true;
+      }
     }
   };
 
@@ -7922,6 +7930,9 @@ const initCalendar = () => {
   const homeAction = document.querySelector('#calendar-home-action');
   const profileAction = document.querySelector('#calendar-profile-action');
   const marketingAction = document.querySelector('#calendar-marketing-action');
+  const marketingPanel = document.querySelector('#calendar-marketing-panel');
+  const marketingDrawerTitle = document.querySelector('#calendar-marketing-drawer-title');
+  const marketingDrawerContent = document.querySelector('#calendar-marketing-drawer-content');
   const moreAction = document.querySelector('#calendar-more-action');
   const bookAppointmentAction = document.querySelector('#calendar-book-appointment-action');
   const showQrAction = document.querySelector('#calendar-show-qr-action');
@@ -8038,8 +8049,10 @@ const initCalendar = () => {
     catalogToggle instanceof HTMLButtonElement && catalogPanel instanceof HTMLElement;
   const hasTeamDrawer =
     teamToggle instanceof HTMLButtonElement && teamPanel instanceof HTMLElement;
+  const hasMarketingDrawer =
+    marketingAction instanceof HTMLButtonElement && marketingPanel instanceof HTMLElement;
   const hasSideDrawers =
-    hasSalesDrawer || hasClientsDrawer || hasCatalogDrawer || hasTeamDrawer;
+    hasSalesDrawer || hasClientsDrawer || hasCatalogDrawer || hasTeamDrawer || hasMarketingDrawer;
   let publicBookingPath = '';
   const openPublicBookingPage = () => {
     if (!publicBookingPath) {
@@ -10394,6 +10407,83 @@ const createTrendCard = (
     };
 
     renderDrawer(enhancedDrawer, salesTitle, salesContent);
+  };
+
+  const renderMarketingDrawer = () => {
+    if (!(marketingDrawerTitle instanceof HTMLElement) || !(marketingDrawerContent instanceof HTMLElement)) {
+      return;
+    }
+
+    const sentCampaigns = marketingCampaigns.filter((campaign) => campaign.status !== 'draft');
+    const draftCampaigns = marketingCampaigns.filter((campaign) => campaign.status === 'draft');
+    const failedMessages = marketingCampaigns.reduce((sum, campaign) => sum + (campaign.recipientsFailed || 0), 0);
+    const totalSent = marketingCampaigns.reduce((sum, campaign) => sum + (campaign.recipientsSent || 0), 0);
+    const totalBooked = marketingCampaigns.reduce((sum, campaign) => sum + (campaign.conversionsCount || 0), 0);
+
+    renderDrawer(
+      {
+        title: 'Marketing',
+        sections: [
+          {
+            title: 'Campaigns',
+            items: [
+              {
+                label: 'New campaign',
+                subtitle: 'Create SMS or email offers for quiet hours'
+              },
+              {
+                label: 'Draft campaigns',
+                subtitle: `${draftCampaigns.length} waiting to finish`
+              },
+              {
+                label: 'Campaign history',
+                subtitle: `${sentCampaigns.length} sent campaign${sentCampaigns.length === 1 ? '' : 's'}`
+              },
+              {
+                label: 'Campaign performance',
+                subtitle: `${totalSent} delivered | ${totalBooked} booked`
+              }
+            ]
+          },
+          {
+            title: 'Growth tools',
+            items: [
+              {
+                label: 'Audience segments',
+                subtitle: 'Target repeat, inactive, and high-value clients'
+              },
+              {
+                label: 'Automations',
+                subtitle: 'Birthday, win-back, and follow-up flows'
+              },
+              {
+                label: 'Templates',
+                subtitle: 'Reusable campaign messages and offers'
+              }
+            ]
+          },
+          {
+            title: 'Tracking',
+            items: [
+              {
+                label: 'Coupons and offers',
+                subtitle: 'Manage discount codes and booking offers'
+              },
+              {
+                label: 'Message logs',
+                subtitle: `${failedMessages} failed message${failedMessages === 1 ? '' : 's'} to review`
+              },
+              {
+                label: 'Marketing settings',
+                subtitle: 'Sender name, language, and channel defaults'
+              }
+            ]
+          }
+        ]
+      },
+      marketingDrawerTitle,
+      marketingDrawerContent
+    );
   };
 
   const renderCatalogDrawer = () => {
@@ -15250,6 +15340,11 @@ const createTrendCard = (
       const isTeamOpen = drawerName === 'team';
       teamToggle.setAttribute('aria-expanded', String(isTeamOpen));
     }
+
+    if (hasMarketingDrawer) {
+      const isMarketingOpen = drawerName === 'marketing';
+      marketingAction.setAttribute('aria-expanded', String(isMarketingOpen));
+    }
   };
 
   const getActiveDrawer = () => {
@@ -15263,7 +15358,6 @@ const createTrendCard = (
 
     if (marketingAction instanceof HTMLButtonElement) {
       marketingAction.classList.remove('is-active');
-      marketingAction.setAttribute('aria-expanded', 'false');
     }
 
     if (viewName === 'reports') {
@@ -16038,16 +16132,26 @@ const createTrendCard = (
   const marketingBuilderEl = document.querySelector('#calendar-marketing-builder');
   const marketingListEl = document.querySelector('#calendar-marketing-list');
   const marketingNewButton = document.querySelector('#calendar-marketing-new-button');
+  const marketingBackButton = document.querySelector('#calendar-marketing-back-button');
+  const marketingTitleEl = document.querySelector('#calendar-marketing-title');
+  const marketingSubtitleEl = document.querySelector('#calendar-marketing-subtitle');
 
   let marketingCampaigns = [];
   let marketingCsvContacts = [];
   let marketingActiveCampaignId = '';
   let marketingPollTimer = null;
+  let activeMarketingMode = 'history';
+  let marketingPerformanceFilter = {
+    range: 'month',
+    from: '',
+    to: ''
+  };
 
   const marketingTemplateLabels = {
     percent_off: 'Percent off',
     flat_amount_off: 'Flat amount off',
     free_service: 'Free service',
+    custom_offer: 'Custom offer',
     happy_hour: 'Happy hour',
     last_minute_fill: 'Last-minute fill'
   };
@@ -16064,6 +16168,362 @@ const createTrendCard = (
     typeof cents === 'number' && Number.isFinite(cents) && cents > 0
       ? formatMoneyValue(cents / 100, 'PKR')
       : '';
+
+  const formatMarketingDateValue = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getCampaignDate = (campaign) => {
+    const rawDate =
+      campaign.sentAt ||
+      campaign.createdAt ||
+      campaign.updatedAt ||
+      campaign.scheduledAt ||
+      '';
+    const parsedDate = rawDate ? new Date(rawDate) : null;
+    return parsedDate && !Number.isNaN(parsedDate.getTime()) ? parsedDate : null;
+  };
+
+  const getMarketingPerformanceRange = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const endDate = new Date(today);
+    const startDate = new Date(today);
+
+    if (marketingPerformanceFilter.range === 'date') {
+      const dateValue = marketingPerformanceFilter.from || getSelectedDateValue();
+      const selected = new Date(`${dateValue}T00:00:00`);
+      const safeDate = Number.isNaN(selected.getTime()) ? today : selected;
+      return {
+        startDate: safeDate,
+        endDate: safeDate,
+        label: formatDateForDisplay(formatMarketingDateValue(safeDate)) || 'Selected date'
+      };
+    }
+
+    if (marketingPerformanceFilter.range === 'week') {
+      startDate.setDate(today.getDate() - 6);
+      return {
+        startDate,
+        endDate,
+        label: 'Last 7 days'
+      };
+    }
+
+    if (marketingPerformanceFilter.range === 'custom') {
+      const customStart = new Date(`${marketingPerformanceFilter.from || formatMarketingDateValue(today)}T00:00:00`);
+      const customEnd = new Date(`${marketingPerformanceFilter.to || marketingPerformanceFilter.from || formatMarketingDateValue(today)}T00:00:00`);
+      return {
+        startDate: Number.isNaN(customStart.getTime()) ? today : customStart,
+        endDate: Number.isNaN(customEnd.getTime()) ? today : customEnd,
+        label: 'Custom range'
+      };
+    }
+
+    startDate.setDate(today.getDate() - 29);
+    return {
+      startDate,
+      endDate,
+      label: 'Last 30 days'
+    };
+  };
+
+  const getFilteredMarketingCampaigns = () => {
+    const { startDate, endDate } = getMarketingPerformanceRange();
+    const rangeStart = new Date(startDate);
+    const rangeEnd = new Date(endDate);
+    rangeStart.setHours(0, 0, 0, 0);
+    rangeEnd.setHours(23, 59, 59, 999);
+
+    return marketingCampaigns.filter((campaign) => {
+      const campaignDate = getCampaignDate(campaign);
+      if (!campaignDate) {
+        return false;
+      }
+
+      return campaignDate >= rangeStart && campaignDate <= rangeEnd;
+    });
+  };
+
+  const getMarketingTotals = (campaigns = marketingCampaigns) => ({
+    total: campaigns.length,
+    sentCampaigns: campaigns.filter((campaign) => campaign.status !== 'draft').length,
+    reached: campaigns.reduce((sum, campaign) => sum + (campaign.recipientsTotal || 0), 0),
+    delivered: campaigns.reduce((sum, campaign) => sum + (campaign.recipientsSent || 0), 0),
+    opened: campaigns.reduce((sum, campaign) => sum + (campaign.linkOpensCount || 0), 0),
+    booked: campaigns.reduce((sum, campaign) => sum + (campaign.conversionsCount || 0), 0),
+    failed: campaigns.reduce((sum, campaign) => sum + (campaign.recipientsFailed || 0), 0)
+  });
+
+  const setMarketingWorkspaceMode = (mode) => {
+    activeMarketingMode = mode;
+    const modeTitles = {
+      new: 'New campaign',
+      history: 'Campaign history',
+      performance: 'Campaign performance',
+      drafts: 'Draft campaigns',
+      audience: 'Audience segments',
+      automations: 'Marketing automations',
+      templates: 'Campaign templates',
+      coupons: 'Coupons and offers',
+      logs: 'Message logs',
+      settings: 'Marketing settings'
+    };
+    const modeSubtitles = {
+      new: 'Choose an offer, preview recipients, and send it to the right clients.',
+      history: 'Review every campaign, delivery status, recipients, opens, and bookings.',
+      performance: 'Filter campaign delivery, opens, and bookings by date, week, month, or a custom range.',
+      drafts: 'Finish saved campaigns before they go stale.',
+      audience: 'Build smarter campaign audiences from your clients and appointments.',
+      automations: 'Turn common follow-ups into repeatable marketing flows.',
+      templates: 'Keep proven SMS and email campaign wording ready to reuse.',
+      coupons: 'Create booking offers your team can track clearly.',
+      logs: 'Review sent, opened, booked, and failed campaign messages.',
+      settings: 'Control default marketing language, sender details, and channels.'
+    };
+
+    if (marketingTitleEl instanceof HTMLElement) {
+      marketingTitleEl.textContent = modeTitles[mode] || 'Marketing';
+    }
+
+    if (marketingSubtitleEl instanceof HTMLElement) {
+      marketingSubtitleEl.textContent = modeSubtitles[mode] || 'Manage campaigns and customer growth.';
+    }
+
+    if (marketingSummaryEl instanceof HTMLElement) {
+      marketingSummaryEl.classList.toggle('is-hidden', mode === 'new' || !['history', 'performance'].includes(mode));
+    }
+
+    if (marketingAnalyticsEl instanceof HTMLElement) {
+      marketingAnalyticsEl.classList.toggle('is-hidden', mode === 'new');
+    }
+
+    if (marketingListEl instanceof HTMLElement) {
+      marketingListEl.classList.toggle('is-hidden', mode !== 'history');
+    }
+
+    if (marketingBuilderEl instanceof HTMLElement && mode !== 'new') {
+      marketingBuilderEl.classList.add('is-hidden');
+    }
+  };
+
+  const createMarketingAdminCard = (title, value, description, tone = '') => {
+    const card = document.createElement('article');
+    card.className = `calendar-marketing-admin-card${tone ? ` is-${tone}` : ''}`;
+    card.innerHTML =
+      `<strong>${escapeHtml(title)}</strong>` +
+      `<b>${escapeHtml(String(value))}</b>` +
+      `<span>${escapeHtml(description)}</span>`;
+    return card;
+  };
+
+  const createMarketingAdminRow = (title, description, meta = '', actionLabel = '') => {
+    const row = document.createElement('article');
+    row.className = 'calendar-marketing-admin-row';
+    const copy = document.createElement('div');
+    copy.className = 'calendar-marketing-admin-row-copy';
+    copy.innerHTML =
+      `<strong>${escapeHtml(title)}</strong>` +
+      `<span>${escapeHtml(description)}</span>`;
+    row.append(copy);
+
+    if (meta || actionLabel) {
+      const side = document.createElement('div');
+      side.className = 'calendar-marketing-admin-row-side';
+      if (meta) {
+        const badge = document.createElement('span');
+        badge.className = 'calendar-marketing-admin-badge';
+        badge.textContent = meta;
+        side.append(badge);
+      }
+      if (actionLabel) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'calendar-marketing-detail-button';
+        button.textContent = actionLabel;
+        side.append(button);
+      }
+      row.append(side);
+    }
+
+    return row;
+  };
+
+  const renderMarketingAdminView = () => {
+    if (!(marketingAnalyticsEl instanceof HTMLElement)) {
+      return;
+    }
+
+    marketingAnalyticsEl.replaceChildren();
+
+    if (activeMarketingMode === 'performance') {
+      renderMarketingAnalytics();
+      return;
+    }
+
+    if (activeMarketingMode === 'new' || activeMarketingMode === 'history') {
+      return;
+    }
+
+    const appointments = getDashboardAppointments();
+    const customerProfiles = getDashboardCustomerProfiles();
+    const totals = getMarketingTotals(marketingCampaigns);
+    const drafts = marketingCampaigns.filter((campaign) => campaign.status === 'draft');
+    const sentCampaigns = marketingCampaigns.filter((campaign) => campaign.status !== 'draft');
+    const repeatClientNames = new Set();
+    const clientVisitCounts = new Map();
+
+    for (const appointment of appointments) {
+      const key = String(appointment.customerPhone || appointment.customerEmail || appointment.customerName || '').trim().toLowerCase();
+      if (!key) {
+        continue;
+      }
+      const count = (clientVisitCounts.get(key) || 0) + 1;
+      clientVisitCounts.set(key, count);
+      if (count > 1) {
+        repeatClientNames.add(key);
+      }
+    }
+
+    const shell = document.createElement('section');
+    shell.className = 'calendar-marketing-admin-view';
+    const statGrid = document.createElement('div');
+    statGrid.className = 'calendar-marketing-admin-grid';
+
+    const list = document.createElement('div');
+    list.className = 'calendar-marketing-admin-list';
+
+    if (activeMarketingMode === 'drafts') {
+      statGrid.append(
+        createMarketingAdminCard('Drafts', drafts.length, 'Campaigns saved but not sent'),
+        createMarketingAdminCard('Ready audiences', customerProfiles.length || appointments.length, 'Clients available from dashboard data'),
+        createMarketingAdminCard('Sent campaigns', sentCampaigns.length, 'Already completed')
+      );
+
+      if (drafts.length === 0) {
+        list.append(createMarketingAdminRow('No draft campaigns', 'Start a new campaign and save it before sending to see it here.', '', 'New campaign'));
+        list.querySelector('button')?.addEventListener('click', openMarketingBuilder);
+      } else {
+        for (const campaign of drafts) {
+          const row = createMarketingAdminRow(
+            campaign.name || 'Untitled campaign',
+            `${marketingTemplateLabels[campaign.templateType] || campaign.templateType || 'Campaign'} | ${buildCampaignOfferLabel(campaign)}`,
+            marketingStatusLabels[campaign.status] || 'Draft',
+            'Continue'
+          );
+          row.querySelector('button')?.addEventListener('click', () => {
+            void resumeDraftCampaign(campaign);
+          });
+          list.append(row);
+        }
+      }
+    } else if (activeMarketingMode === 'audience') {
+      const inactiveCount = Math.max(customerProfiles.length - repeatClientNames.size, 0);
+      statGrid.append(
+        createMarketingAdminCard('All clients', customerProfiles.length || appointments.length, 'Full reachable audience'),
+        createMarketingAdminCard('Repeat clients', repeatClientNames.size, 'Clients with multiple bookings', 'good'),
+        createMarketingAdminCard('Win-back', inactiveCount, 'Clients ready for a reactivation offer')
+      );
+      for (const [title, description, meta] of [
+        ['All clients', 'Send a broad announcement or seasonal promotion.', `${customerProfiles.length || appointments.length} people`],
+        ['Repeat clients', 'Reward loyal customers with a private offer.', `${repeatClientNames.size} people`],
+        ['Inactive clients', 'Bring back clients who have not booked recently.', `${inactiveCount} people`],
+        ['High-value clients', 'Target clients who book premium services or packages.', 'Smart segment'],
+        ['Birthday clients', 'Send a birthday discount when profile dates are available.', 'Automation-ready']
+      ]) {
+        list.append(createMarketingAdminRow(title, description, meta));
+      }
+    } else if (activeMarketingMode === 'automations') {
+      statGrid.append(
+        createMarketingAdminCard('Suggested flows', 5, 'Recommended automations'),
+        createMarketingAdminCard('Active now', 0, 'No live automation yet'),
+        createMarketingAdminCard('Manual campaigns', sentCampaigns.length, 'Campaigns sent by admin')
+      );
+      for (const [title, description, meta] of [
+        ['Birthday offer', 'Send a discount before each client birthday.', 'Ready to configure'],
+        ['Inactive client win-back', 'Send an offer after a client has not booked for a while.', 'Recommended'],
+        ['No-show follow-up', 'Recover clients after missed bookings.', 'Suggested'],
+        ['Review request', 'Ask completed clients for a review after checkout.', 'Suggested'],
+        ['Last-minute slot fill', 'Offer a quick discount when a cancellation opens a slot.', 'Already supported']
+      ]) {
+        list.append(createMarketingAdminRow(title, description, meta));
+      }
+    } else if (activeMarketingMode === 'templates') {
+      statGrid.append(
+        createMarketingAdminCard('Offer templates', Object.keys(marketingTemplateLabels).length, 'Built-in campaign types'),
+        createMarketingAdminCard('Sent reuse', sentCampaigns.length, 'Past campaigns can guide wording'),
+        createMarketingAdminCard('Channels', 'SMS + Email', 'Supported message formats')
+      );
+      for (const [type, label] of Object.entries(marketingTemplateLabels)) {
+        list.append(createMarketingAdminRow(label, `Reusable ${label.toLowerCase()} message setup.`, type.replaceAll('_', ' '), 'Use'));
+      }
+      list.querySelectorAll('button').forEach((button, index) => {
+        button.addEventListener('click', () => {
+          const templateType = Object.keys(marketingTemplateLabels)[index];
+          void renderMarketingCampaignForm(templateType);
+        });
+      });
+    } else if (activeMarketingMode === 'coupons') {
+      statGrid.append(
+        createMarketingAdminCard('Offers sent', totals.total, 'Campaign offers created'),
+        createMarketingAdminCard('Bookings', totals.booked, 'Tracked campaign conversions', 'good'),
+        createMarketingAdminCard('Default currency', 'PKR', 'Discount values use salon currency')
+      );
+      for (const [title, description, meta] of [
+        ['Percent discount', 'Create 10%, 20%, or custom percentage offers.', 'Campaign coupon'],
+        ['Flat amount off', 'Create Rs-based discounts for selected services.', 'Campaign coupon'],
+        ['Free add-on', 'Offer a free add-on service to encourage booking.', 'Offer idea'],
+        ['Happy hour price', 'Reduce prices during quiet business hours.', 'Time based']
+      ]) {
+        list.append(createMarketingAdminRow(title, description, meta));
+      }
+    } else if (activeMarketingMode === 'logs') {
+      statGrid.append(
+        createMarketingAdminCard('Delivered', totals.delivered, 'Messages sent successfully', 'good'),
+        createMarketingAdminCard('Opened', totals.opened, 'Campaign link opens'),
+        createMarketingAdminCard('Failed', totals.failed, 'Messages needing review', totals.failed > 0 ? 'warning' : '')
+      );
+      if (marketingCampaigns.length === 0) {
+        list.append(createMarketingAdminRow('No message logs yet', 'Send a campaign to start collecting delivery and open logs.'));
+      } else {
+        for (const campaign of marketingCampaigns.slice(0, 12)) {
+          list.append(
+            createMarketingAdminRow(
+              campaign.name || 'Untitled campaign',
+              `${campaign.recipientsSent || 0} sent | ${campaign.linkOpensCount || 0} opened | ${campaign.conversionsCount || 0} booked`,
+              marketingStatusLabels[campaign.status] || campaign.status || 'Unknown',
+              campaign.status === 'sent' || campaign.status === 'partially_sent' ? 'Details' : ''
+            )
+          );
+          const button = list.lastElementChild?.querySelector('button');
+          button?.addEventListener('click', () => {
+            void openCampaignRecipientsModal(campaign);
+          });
+        }
+      }
+    } else if (activeMarketingMode === 'settings') {
+      const businessName = dashboardPayload?.dashboard?.businessName || 'Your business';
+      statGrid.append(
+        createMarketingAdminCard('Sender name', businessName, 'Shown in campaign context'),
+        createMarketingAdminCard('Default channel', 'SMS + Email', 'Campaign form supports both'),
+        createMarketingAdminCard('Language', getDashboardUiCopy().locale || 'en-GB', 'Dashboard locale')
+      );
+      for (const [title, description, meta] of [
+        ['Sender profile', 'Keep business name and reply details clear for clients.', businessName],
+        ['Default audience', 'Use existing clients unless CSV upload is selected.', 'Existing clients'],
+        ['Message language', 'Use dashboard locale for labels and default copy.', getDashboardUiCopy().locale || 'en-GB'],
+        ['Tracking links', 'Campaign booking links record opens and bookings.', 'Enabled']
+      ]) {
+        list.append(createMarketingAdminRow(title, description, meta));
+      }
+    }
+
+    shell.append(statGrid, list);
+    marketingAnalyticsEl.append(shell);
+  };
 
   // Short label describing the campaign's offer, used for the sticker/badge.
   const buildCampaignOfferLabel = (campaign) => {
@@ -16202,32 +16662,32 @@ const createTrendCard = (
 
     marketingSummaryEl.replaceChildren();
 
-    const totalSent = marketingCampaigns.reduce((sum, campaign) => sum + (campaign.recipientsSent || 0), 0);
-    const totalOpened = marketingCampaigns.reduce((sum, campaign) => sum + (campaign.linkOpensCount || 0), 0);
-    const totalConverted = marketingCampaigns.reduce((sum, campaign) => sum + (campaign.conversionsCount || 0), 0);
-    const conversionRate = totalSent > 0 ? Math.round((totalConverted / totalSent) * 100) : 0;
-    const sentCampaignsCount = marketingCampaigns.filter((campaign) => campaign.status !== 'draft').length;
+    const totals = getMarketingTotals(marketingCampaigns);
+    const conversionRate = totals.delivered > 0 ? Math.round((totals.booked / totals.delivered) * 100) : 0;
+    const totalOpened = totals.opened;
+    const totalConverted = totals.booked;
 
     marketingSummaryEl.append(
       createTrendCard(
         'Campaign reach',
-        `${totalSent} sent`,
+        `${totals.delivered} sent`,
         `${totalOpened} opened the link · ${totalConverted} booked (${conversionRate}%)`,
-        [totalSent, totalOpened, totalConverted],
+        [totals.delivered, totals.opened, totals.booked],
         'green',
         { chartType: 'comparison' }
       ),
       createTrendCard(
         'Campaigns run',
-        String(sentCampaignsCount),
-        `${marketingCampaigns.length} total campaign${marketingCampaigns.length === 1 ? '' : 's'}`,
-        [marketingCampaigns.length, sentCampaignsCount],
+        String(totals.sentCampaigns),
+        `${totals.total} total campaign${totals.total === 1 ? '' : 's'}`,
+        [totals.total, totals.sentCampaigns],
         'plum',
         { chartType: 'comparison' }
       )
     );
 
-    renderMarketingAnalytics(totalSent, totalOpened, totalConverted);
+    renderMarketingDrawer();
+    renderMarketingAdminView();
   };
 
   // Modern delivery funnel: Delivered -> Opened -> Booked, each bar directly
@@ -16240,11 +16700,18 @@ const createTrendCard = (
 
     marketingAnalyticsEl.replaceChildren();
 
-    const sentCampaigns = marketingCampaigns.filter((campaign) => campaign.status !== 'draft');
-    if (sentCampaigns.length === 0) {
+    if (activeMarketingMode !== 'performance') {
       return;
     }
 
+    const filteredCampaigns = getFilteredMarketingCampaigns();
+    const totals = getMarketingTotals(filteredCampaigns);
+    const { label: rangeLabel } = getMarketingPerformanceRange();
+    delivered = Number.isFinite(Number(delivered)) ? Number(delivered) : totals.delivered;
+    opened = Number.isFinite(Number(opened)) ? Number(opened) : totals.opened;
+    booked = Number.isFinite(Number(booked)) ? Number(booked) : totals.booked;
+    const openRate = delivered > 0 ? Math.round((opened / delivered) * 100) : 0;
+    const bookingRate = delivered > 0 ? Math.round((booked / delivered) * 100) : 0;
     const stages = [
       { key: 'delivered', label: 'Delivered', value: delivered, color: '#6ea8fe', hint: 'Messages that reached your clients' },
       { key: 'opened', label: 'Opened', value: opened, color: '#8b5cf6', hint: 'Clients who opened the campaign link' },
@@ -16259,10 +16726,77 @@ const createTrendCard = (
     const head = document.createElement('div');
     head.className = 'mkt-chart-head';
     head.innerHTML =
-      '<p class="mkt-chart-eyebrow">Analytics</p>' +
+      `<p class="mkt-chart-eyebrow">Analytics - ${escapeHtml(rangeLabel)}</p>` +
       '<strong class="mkt-chart-title">Campaign performance</strong>' +
-      '<span class="mkt-chart-sub">How your clients moved from delivered to booked</span>';
+      '<span class="mkt-chart-sub">How your clients moved from delivered to booked in the selected range</span>';
     card.append(head);
+
+    const filters = document.createElement('div');
+    filters.className = 'mkt-filter-bar';
+    const rangeSelect = document.createElement('select');
+    rangeSelect.className = 'mkt-filter-select';
+    rangeSelect.setAttribute('aria-label', 'Performance range');
+    for (const [value, label] of [
+      ['date', 'Date'],
+      ['week', 'Week'],
+      ['month', 'Month'],
+      ['custom', 'Custom']
+    ]) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      option.selected = marketingPerformanceFilter.range === value;
+      rangeSelect.append(option);
+    }
+    const fromInput = document.createElement('input');
+    fromInput.type = 'date';
+    fromInput.className = 'mkt-filter-date';
+    fromInput.value = marketingPerformanceFilter.from || getSelectedDateValue();
+    fromInput.setAttribute('aria-label', marketingPerformanceFilter.range === 'date' ? 'Performance date' : 'From date');
+    const toInput = document.createElement('input');
+    toInput.type = 'date';
+    toInput.className = 'mkt-filter-date';
+    toInput.value = marketingPerformanceFilter.to || marketingPerformanceFilter.from || getSelectedDateValue();
+    toInput.setAttribute('aria-label', 'To date');
+    toInput.classList.toggle('is-hidden', marketingPerformanceFilter.range !== 'custom');
+    rangeSelect.addEventListener('change', () => {
+      marketingPerformanceFilter.range = rangeSelect.value;
+      if (!marketingPerformanceFilter.from) {
+        marketingPerformanceFilter.from = getSelectedDateValue();
+      }
+      renderMarketingSummary();
+    });
+    fromInput.addEventListener('change', () => {
+      marketingPerformanceFilter.from = fromInput.value;
+      if (marketingPerformanceFilter.range !== 'custom') {
+        marketingPerformanceFilter.to = fromInput.value;
+      }
+      renderMarketingSummary();
+    });
+    toInput.addEventListener('change', () => {
+      marketingPerformanceFilter.to = toInput.value;
+      renderMarketingSummary();
+    });
+    filters.append(rangeSelect, fromInput, toInput);
+    card.append(filters);
+
+    const statGrid = document.createElement('div');
+    statGrid.className = 'mkt-performance-stats';
+    for (const [value, label, hint] of [
+      [totals.sentCampaigns, 'Campaigns', 'Sent in range'],
+      [delivered, 'Delivered', `${totals.failed} failed`],
+      [`${openRate}%`, 'Open rate', `${opened} opens`],
+      [`${bookingRate}%`, 'Booking rate', `${booked} bookings`]
+    ]) {
+      const stat = document.createElement('div');
+      stat.className = 'mkt-performance-stat';
+      stat.innerHTML =
+        `<strong>${escapeHtml(String(value))}</strong>` +
+        `<span>${escapeHtml(label)}</span>` +
+        `<small>${escapeHtml(hint)}</small>`;
+      statGrid.append(stat);
+    }
+    card.append(statGrid);
 
     const funnel = document.createElement('div');
     funnel.className = 'mkt-funnel';
@@ -16300,6 +16834,50 @@ const createTrendCard = (
     });
 
     card.append(funnel);
+
+    const trend = document.createElement('div');
+    trend.className = 'mkt-trend';
+    const trendTitle = document.createElement('strong');
+    trendTitle.textContent = 'Daily campaign trend';
+    const trendBars = document.createElement('div');
+    trendBars.className = 'mkt-trend-bars';
+    const buckets = new Map();
+    for (const campaign of filteredCampaigns) {
+      const campaignDate = getCampaignDate(campaign);
+      if (!campaignDate) {
+        continue;
+      }
+
+      const dateKey = formatMarketingDateValue(campaignDate);
+      const bucket = buckets.get(dateKey) || { delivered: 0, opened: 0, booked: 0 };
+      bucket.delivered += campaign.recipientsSent || 0;
+      bucket.opened += campaign.linkOpensCount || 0;
+      bucket.booked += campaign.conversionsCount || 0;
+      buckets.set(dateKey, bucket);
+    }
+    const bucketEntries = Array.from(buckets.entries()).sort(([left], [right]) => left.localeCompare(right));
+    const maxBucketValue = Math.max(...bucketEntries.map(([, bucket]) => bucket.delivered), 1);
+    if (bucketEntries.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = 'calendar-marketing-empty';
+      empty.textContent = 'No campaign performance recorded in this range yet.';
+      trend.append(trendTitle, empty);
+    } else {
+      for (const [dateKey, bucket] of bucketEntries.slice(-14)) {
+        const bar = document.createElement('div');
+        bar.className = 'mkt-trend-bar';
+        bar.title = `${dateKey}: ${bucket.delivered} delivered, ${bucket.opened} opened, ${bucket.booked} booked`;
+        const fill = document.createElement('span');
+        fill.style.height = `${Math.max((bucket.delivered / maxBucketValue) * 100, 6)}%`;
+        const label = document.createElement('small');
+        label.textContent = dateKey.slice(5);
+        bar.append(fill, label);
+        trendBars.append(bar);
+      }
+      trend.append(trendTitle, trendBars);
+    }
+    card.append(trend);
+
     marketingAnalyticsEl.append(card);
   };
 
@@ -16616,6 +17194,8 @@ const createTrendCard = (
       { type: 'percent_off', label: 'Percent off', description: 'e.g. 20% off any service' },
       { type: 'flat_amount_off', label: 'Flat amount off', description: 'e.g. Rs 500 off' },
       { type: 'free_service', label: 'Free service', description: 'e.g. a free add-on with any booking' },
+      { type: 'custom_offer', label: 'Custom offer', description: 'Write your own offer and message' },
+      { type: 'custom_design', label: 'Custom design', description: 'Design the campaign look, headline, and CTA' },
       { type: 'happy_hour', label: 'Happy hour', description: 'e.g. Rs 2500 -> Rs 1800, 12-3 PM only' },
       { type: 'last_minute_fill', label: 'Last-minute fill', description: 'Discount blast when a slot opens up' }
     ].forEach((template) => {
@@ -16718,12 +17298,15 @@ const createTrendCard = (
       return;
     }
 
+    const submittedTemplateType = templateType === 'custom_design' ? 'custom_offer' : templateType;
+    setMarketingWorkspaceMode('new');
+    marketingBuilderEl.classList.remove('is-hidden');
     marketingBuilderEl.replaceChildren();
 
     let template = { smsBody: '', emailSubject: '', emailBodyText: '' };
 
     try {
-      const payload = await apiRequest(`/api/platform/clients/${clientId}/campaign-templates/${templateType}`);
+      const payload = await apiRequest(`/api/platform/clients/${clientId}/campaign-templates/${submittedTemplateType}`);
       template = payload?.template || template;
     } catch (_error) {
       // fall back to blank fields if the template couldn't be loaded
@@ -16736,7 +17319,7 @@ const createTrendCard = (
     form.addEventListener('submit', (event) => event.preventDefault());
 
     const heading = document.createElement('h2');
-    heading.textContent = marketingTemplateLabels[templateType] || 'New campaign';
+    heading.textContent = templateType === 'custom_design' ? 'Custom design' : marketingTemplateLabels[templateType] || 'New campaign';
     form.append(heading);
 
     const nameLabel = document.createElement('label');
@@ -16753,6 +17336,9 @@ const createTrendCard = (
     let targetServiceSelect = null;
     let freeServiceSelect = null;
     let offerNameInput = null;
+    let designStyleSelect = null;
+    let designHeadlineInput = null;
+    let designCtaInput = null;
     let happyHourStartInput = null;
     let happyHourEndInput = null;
     let originalPriceInput = null;
@@ -16782,6 +17368,65 @@ const createTrendCard = (
       discountAmountInput.placeholder = '500';
       label.append(discountAmountInput);
       form.append(label);
+    }
+
+    if (templateType === 'custom_offer' || templateType === 'custom_design') {
+      const offerLabel = document.createElement('label');
+      offerLabel.className = 'calendar-marketing-field';
+      offerLabel.innerHTML = '<span>Offer name</span>';
+      offerNameInput = document.createElement('input');
+      offerNameInput.type = 'text';
+      offerNameInput.placeholder = templateType === 'custom_design' ? 'e.g. Glow day pass' : 'e.g. Eid glow-up bundle';
+      offerLabel.append(offerNameInput);
+      form.append(offerLabel);
+    }
+
+    if (templateType === 'custom_design') {
+      const designWrap = document.createElement('div');
+      designWrap.className = 'calendar-marketing-design-panel';
+
+      const designTitle = document.createElement('strong');
+      designTitle.textContent = 'Campaign design';
+
+      const designGrid = document.createElement('div');
+      designGrid.className = 'calendar-marketing-design-grid';
+
+      const styleLabel = document.createElement('label');
+      styleLabel.className = 'calendar-marketing-field';
+      styleLabel.innerHTML = '<span>Style</span>';
+      designStyleSelect = document.createElement('select');
+      [
+        ['premium', 'Premium clean'],
+        ['bold', 'Bold sale'],
+        ['soft', 'Soft beauty'],
+        ['urgent', 'Limited-time']
+      ].forEach(([value, label]) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = label;
+        designStyleSelect.append(option);
+      });
+      styleLabel.append(designStyleSelect);
+
+      const headlineLabel = document.createElement('label');
+      headlineLabel.className = 'calendar-marketing-field';
+      headlineLabel.innerHTML = '<span>Headline</span>';
+      designHeadlineInput = document.createElement('input');
+      designHeadlineInput.type = 'text';
+      designHeadlineInput.placeholder = 'e.g. Your glow-up slot is ready';
+      headlineLabel.append(designHeadlineInput);
+
+      const ctaLabel = document.createElement('label');
+      ctaLabel.className = 'calendar-marketing-field';
+      ctaLabel.innerHTML = '<span>Call to action</span>';
+      designCtaInput = document.createElement('input');
+      designCtaInput.type = 'text';
+      designCtaInput.placeholder = 'e.g. Book your offer';
+      ctaLabel.append(designCtaInput);
+
+      designGrid.append(styleLabel, headlineLabel, ctaLabel);
+      designWrap.append(designTitle, designGrid);
+      form.append(designWrap);
     }
 
     if (templateType === 'happy_hour') {
@@ -16978,6 +17623,10 @@ const createTrendCard = (
     hint.textContent =
       templateType === 'happy_hour'
         ? 'Placeholders: {{customerName}}, {{businessName}}, {{serviceName}}, {{startTime}}, {{endTime}}, {{offerName}}, {{originalPrice}}, {{discountedPrice}}, {{bookingLink}}'
+        : templateType === 'custom_design'
+          ? 'Design fields shape the campaign wording. Placeholders: {{customerName}}, {{businessName}}, {{offerName}}, {{serviceName}}, {{bookingLink}}'
+        : templateType === 'custom_offer'
+          ? 'Placeholders: {{customerName}}, {{businessName}}, {{offerName}}, {{serviceName}}, {{bookingLink}}'
         : templateType === 'last_minute_fill'
           ? 'Placeholders: {{customerName}}, {{businessName}}, {{discountLabel}}, {{serviceName}}, {{slotTime}}, {{seatsLeft}}, {{bookingLink}}'
           : 'Placeholders: {{customerName}}, {{businessName}}, {{discountLabel}}, {{serviceName}}, {{bookingLink}}';
@@ -17005,9 +17654,38 @@ const createTrendCard = (
       status.textContent = '';
 
       try {
+        if (templateType === 'custom_design') {
+          const offerName = offerNameInput.value.trim() || 'Custom offer';
+          const headline = designHeadlineInput.value.trim() || offerName;
+          const cta = designCtaInput.value.trim() || 'Book now';
+          const style = designStyleSelect.value;
+          const stylePrefix =
+            style === 'urgent'
+              ? 'Limited time'
+              : style === 'bold'
+                ? 'Special deal'
+                : style === 'soft'
+                  ? 'A little treat'
+                  : 'Exclusive offer';
+
+          if (!nameInput.value.trim()) {
+            nameInput.value = headline;
+          }
+          if (!offerNameInput.value.trim()) {
+            offerNameInput.value = offerName;
+          }
+          smsTextarea.value =
+            smsTextarea.value.trim() ||
+            `Hi {{customerName}}! ${stylePrefix}: {{businessName}} has ${offerName} for {{serviceName}}. ${cta}: {{bookingLink}}`;
+          emailSubjectInput.value = emailSubjectInput.value.trim() || `${headline} at {{businessName}}`;
+          emailBodyTextarea.value =
+            emailBodyTextarea.value.trim() ||
+            `Hi {{customerName}},\n\n${headline}\n\n{{businessName}} has ${offerName} for {{serviceName}}.\n\n${cta}: {{bookingLink}}\n\nSee you soon!`;
+        }
+
         const input = {
           name: nameInput.value,
-          templateType,
+          templateType: submittedTemplateType,
           smsBody: smsTextarea.value,
           emailSubject: emailSubjectInput.value,
           emailBodyText: emailBodyTextarea.value,
@@ -17021,6 +17699,10 @@ const createTrendCard = (
 
         if (templateType === 'flat_amount_off') {
           input.discountAmountCents = Math.round(Number(discountAmountInput.value) * 100);
+        }
+
+        if (templateType === 'custom_offer' || templateType === 'custom_design') {
+          input.offerName = offerNameInput.value;
         }
 
         if (templateType === 'happy_hour') {
@@ -17079,7 +17761,7 @@ const createTrendCard = (
           patch.defaultDiscountPercent = Number(discountPercentInput.value);
         }
 
-        await apiRequest(`/api/platform/clients/${clientId}/campaign-templates/${templateType}`, {
+        await apiRequest(`/api/platform/clients/${clientId}/campaign-templates/${submittedTemplateType}`, {
           method: 'PUT',
           body: JSON.stringify(patch)
         });
@@ -17104,8 +17786,28 @@ const createTrendCard = (
       return;
     }
 
+    setMarketingWorkspaceMode('new');
     marketingBuilderEl.classList.remove('is-hidden');
     renderMarketingTemplatePicker();
+  };
+
+  const openMarketingWorkspace = async (mode) => {
+    if (guardBillingFeature('marketing')) {
+      return;
+    }
+
+    closeAddMenu();
+    setActiveDrawer('');
+    setMainView('marketing');
+    setMarketingWorkspaceMode(mode);
+    await loadMarketingCampaigns();
+
+    if (mode === 'new') {
+      openMarketingBuilder();
+    } else {
+      renderMarketingSummary();
+      renderMarketingList();
+    }
   };
 
   if (marketingNewButton instanceof HTMLButtonElement) {
@@ -17114,19 +17816,100 @@ const createTrendCard = (
     });
   }
 
+  if (marketingBackButton instanceof HTMLButtonElement) {
+    marketingBackButton.addEventListener('click', () => {
+      closeMarketingBuilder();
+      setMainView('calendar');
+      syncSideDrawerOffset();
+      setActiveDrawer('marketing');
+    });
+  }
+
   if (marketingAction instanceof HTMLButtonElement) {
-    marketingAction.addEventListener('click', () => {
+    marketingAction.addEventListener('click', (event) => {
+      event.stopPropagation();
       if (guardBillingFeature('marketing')) {
         return;
       }
 
-      if (getMainView() !== 'marketing') {
-        setMainView('marketing');
+      closeAddMenu();
+
+      if (getActiveDrawer() !== 'marketing') {
+        syncSideDrawerOffset();
+        setMainView('calendar');
+        setActiveDrawer('marketing');
         void loadMarketingCampaigns();
         return;
       }
 
-      setMainView('calendar');
+      setActiveDrawer('');
+    });
+  }
+
+  if (marketingDrawerContent instanceof HTMLElement) {
+    marketingDrawerContent.addEventListener('click', (event) => {
+      const target = event.target;
+
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      const button = target.closest('.calendar-drawer-link');
+
+      if (!(button instanceof HTMLButtonElement)) {
+        return;
+      }
+
+      const actionLabel = button.dataset.drawerLabel?.trim().toLowerCase();
+
+      if (actionLabel === 'new campaign') {
+        void openMarketingWorkspace('new');
+        return;
+      }
+
+      if (actionLabel === 'campaign history') {
+        void openMarketingWorkspace('history');
+        return;
+      }
+
+      if (actionLabel === 'campaign performance') {
+        void openMarketingWorkspace('performance');
+        return;
+      }
+
+      if (actionLabel === 'draft campaigns') {
+        void openMarketingWorkspace('drafts');
+        return;
+      }
+
+      if (actionLabel === 'audience segments') {
+        void openMarketingWorkspace('audience');
+        return;
+      }
+
+      if (actionLabel === 'automations') {
+        void openMarketingWorkspace('automations');
+        return;
+      }
+
+      if (actionLabel === 'templates') {
+        void openMarketingWorkspace('templates');
+        return;
+      }
+
+      if (actionLabel === 'coupons and offers') {
+        void openMarketingWorkspace('coupons');
+        return;
+      }
+
+      if (actionLabel === 'message logs') {
+        void openMarketingWorkspace('logs');
+        return;
+      }
+
+      if (actionLabel === 'marketing settings') {
+        void openMarketingWorkspace('settings');
+      }
     });
   }
 
@@ -17324,6 +18107,7 @@ const createTrendCard = (
     renderBillingPlanChip();
 
     renderSalesDrawer();
+    renderMarketingDrawer();
     renderClientsDrawer();
     renderCatalogDrawer();
     renderDrawer(payload.dashboard.sideDrawers.team, teamTitle, teamContent);
@@ -17378,7 +18162,8 @@ const createTrendCard = (
         (clientsPanel.contains(target) || clientsToggle.contains(target))) &&
       !(hasCatalogDrawer &&
         (catalogPanel.contains(target) || catalogToggle.contains(target))) &&
-      !(hasTeamDrawer && (teamPanel.contains(target) || teamToggle.contains(target)))
+      !(hasTeamDrawer && (teamPanel.contains(target) || teamToggle.contains(target))) &&
+      !(hasMarketingDrawer && (marketingPanel.contains(target) || marketingAction.contains(target)))
     ) {
       setActiveDrawer('');
     }

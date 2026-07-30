@@ -1608,7 +1608,7 @@ const sendAppointmentConfirmationNotification = async (
     appointment.packageName
       ? ` Package: ${appointment.packageName}${
           appointment.packageTotalUses
-            ? ` (${appointment.packageTotalUses} user${appointment.packageTotalUses === 1 ? '' : 's'}`
+            ? ` (${appointment.packageTotalUses} use${appointment.packageTotalUses === 1 ? '' : 's'}`
             : ''
         }${
           appointment.packagePriceLabel

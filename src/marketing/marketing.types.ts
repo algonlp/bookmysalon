@@ -2,6 +2,7 @@ export type CampaignTemplateType =
   | 'percent_off'
   | 'flat_amount_off'
   | 'free_service'
+  | 'custom_offer'
   | 'happy_hour'
   | 'last_minute_fill';
 export type CampaignChannel = 'sms' | 'email' | 'both';

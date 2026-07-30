@@ -3,8 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Support | QR Schedule</title>
-    <meta name="description" content="Support for QR Schedule customers and businesses." />
+    <title>Customer Support | QR Schedule</title>
+    <meta
+      name="description"
+      content="Professional customer support for QR Schedule bookings, accounts, salon setup, payments, and dashboard access."
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -13,25 +16,268 @@
     />
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body>
-    <main class="simple-page">
-      <div class="simple-page-header">
-        <a class="back-link" href="/" aria-label="Go back">
+  <body class="support-page">
+    <main class="support-shell">
+      <header class="support-topbar">
+        <a class="support-back" href="/" aria-label="Go back">
           <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
             <path d="M15 5l-7 7 7 7"></path>
           </svg>
         </a>
-        <a class="brand" href="/">QR Schedule</a>
-      </div>
-      <section class="simple-page-card">
-        <p class="login-eyebrow">Support</p>
-        <h1>Help for bookings, accounts, and salons.</h1>
-        <p>
-          Get help with customer login, public booking links, salon setup, payments, and dashboard
-          access.
-        </p>
-        <a class="pill-button fill" href="/help">Open help center</a>
+        <a class="support-brand" href="/">QR Schedule</a>
+        <a class="support-top-link" href="/help.html">Company details</a>
+      </header>
+
+      <section class="support-hero" aria-labelledby="support-title">
+        <div class="support-hero-copy">
+          <p class="support-eyebrow">Customer support</p>
+          <h1 id="support-title">Get reliable help for bookings, accounts, and salon operations.</h1>
+          <p>
+            Choose the right support path, share the details once, and our team can help with customer
+            login, public booking links, salon setup, payments, dashboard access, and campaign tools.
+          </p>
+          <div class="support-actions">
+            <a class="support-primary-action" href="#support-request">Start a request</a>
+            <a class="support-secondary-action" href="/help">Browse help articles</a>
+          </div>
+        </div>
+
+        <aside class="support-status-card" aria-label="Support status">
+          <div class="support-status-head">
+            <span></span>
+            <strong>Support desk online</strong>
+          </div>
+          <dl>
+            <div>
+              <dt>Priority response</dt>
+              <dd>Same business day</dd>
+            </div>
+            <div>
+              <dt>Coverage</dt>
+              <dd>Bookings, payments, setup</dd>
+            </div>
+            <div>
+              <dt>Best for urgent issues</dt>
+              <dd>Include salon name and booking link</dd>
+            </div>
+          </dl>
+        </aside>
+      </section>
+
+      <section class="support-channel-grid" aria-label="Support channels">
+        <article class="support-channel-card">
+          <span class="support-channel-icon">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M4 5h16v12H7l-3 3z"></path></svg>
+          </span>
+          <div>
+            <h2>Booking help</h2>
+            <p>Fix booking links, appointment confirmation, customer details, and reschedule issues.</p>
+          </div>
+        </article>
+        <article class="support-channel-card">
+          <span class="support-channel-icon">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M5 7h14v12H5z"></path><path d="M8 7V5h8v2M8 12h8"></path></svg>
+          </span>
+          <div>
+            <h2>Business setup</h2>
+            <p>Get guidance for services, staff, public profile, QR links, branches, and onboarding.</p>
+          </div>
+        </article>
+        <article class="support-channel-card">
+          <span class="support-channel-icon">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M4 8h16v10H4z"></path><path d="M4 11h16M8 15h4"></path></svg>
+          </span>
+          <div>
+            <h2>Billing and payments</h2>
+            <p>Review plan credits, payment records, pending balances, subscriptions, and checkout access.</p>
+          </div>
+        </article>
+      </section>
+
+      <section class="support-main-grid">
+        <form class="support-request-card" id="support-request">
+          <div class="support-section-head">
+            <p class="support-eyebrow">Request details</p>
+            <h2>Tell us what happened</h2>
+            <p>Clear details help support resolve your case faster.</p>
+          </div>
+
+          <div class="support-issue-chart" aria-label="Main issue">
+            <label class="is-selected">
+              <input type="radio" name="issue" value="Booking issue" checked />
+              <span>Booking issue</span>
+              <small>Link, date, confirmation, reschedule</small>
+            </label>
+            <label>
+              <input type="radio" name="issue" value="Salon dashboard" />
+              <span>Salon dashboard</span>
+              <small>Calendar, staff, services, setup</small>
+            </label>
+            <label>
+              <input type="radio" name="issue" value="Billing or payments" />
+              <span>Billing</span>
+              <small>Plan, credits, payment records</small>
+            </label>
+            <label>
+              <input type="radio" name="issue" value="Marketing campaigns" />
+              <span>Marketing</span>
+              <small>Campaigns, SMS, email, reports</small>
+            </label>
+          </div>
+
+          <div class="support-form-grid">
+            <label>
+              <span>Salon name</span>
+              <input type="text" name="salonName" placeholder="e.g. Glow@Glance" required />
+            </label>
+            <label>
+              <span>Name</span>
+              <input type="text" name="name" placeholder="Your name" required />
+            </label>
+            <label>
+              <span>Email or phone</span>
+              <input type="text" name="contact" placeholder="Where we can reach you" required />
+            </label>
+            <label>
+              <span>Priority</span>
+              <select name="priority">
+                <option>Normal</option>
+                <option>Urgent booking problem</option>
+                <option>Business blocked</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="support-full-field">
+            <span>What do you need help with?</span>
+            <textarea
+              name="message"
+              rows="6"
+              placeholder="Add booking link, salon name, date, customer phone, error message, or anything useful."
+              required
+            ></textarea>
+          </label>
+
+          <div class="support-form-footer">
+            <p id="support-submit-status">No password or private payment card details are needed.</p>
+            <button class="support-primary-action" type="submit">Submit request</button>
+          </div>
+        </form>
+
+        <aside class="support-side-panel">
+          <div class="support-section-head">
+            <p class="support-eyebrow">Faster resolution</p>
+            <h2>Include these details</h2>
+          </div>
+          <ul class="support-check-list">
+            <li>Salon or business name</li>
+            <li>Booking page or dashboard URL</li>
+            <li>Customer phone/email if it is a booking issue</li>
+            <li>Date and time of the appointment</li>
+            <li>Screenshot or exact error text</li>
+          </ul>
+          <div class="support-contact-box">
+            <span>Support email</span>
+            <a href="mailto:infoalgonlp@gmail.com">infoalgonlp@gmail.com</a>
+          </div>
+        </aside>
+      </section>
+
+      <section class="support-help-grid" aria-label="Common support topics">
+        <article>
+          <h2>Customers</h2>
+          <p>Login codes, booking changes, favourites, wallet details, and public appointment access.</p>
+        </article>
+        <article>
+          <h2>Salon admins</h2>
+          <p>Calendar setup, team members, services, packages, reports, customer records, and QR links.</p>
+        </article>
+        <article>
+          <h2>Campaigns</h2>
+          <p>SMS/email campaigns, recipient lists, message logs, opens, conversions, and offer setup.</p>
+        </article>
+        <article>
+          <h2>Payments</h2>
+          <p>Plan credits, subscription access, collected payments, pending balances, and checkout records.</p>
+        </article>
       </section>
     </main>
+    <script>
+      const supportForm = document.querySelector('#support-request');
+      const supportStatus = document.querySelector('#support-submit-status');
+      const issueOptions = document.querySelectorAll('.support-issue-chart label');
+
+      issueOptions.forEach((option) => {
+        const input = option.querySelector('input[type="radio"]');
+        if (!(input instanceof HTMLInputElement)) {
+          return;
+        }
+
+        option.classList.toggle('is-selected', input.checked);
+        input.addEventListener('change', () => {
+          issueOptions.forEach((entry) => entry.classList.remove('is-selected'));
+          option.classList.add('is-selected');
+        });
+      });
+
+      if (supportForm instanceof HTMLFormElement) {
+        supportForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+
+          const submitButton = supportForm.querySelector('button[type="submit"]');
+          const formData = new FormData(supportForm);
+          const payload = {
+            salonName: String(formData.get('salonName') || '').trim(),
+            name: String(formData.get('name') || '').trim(),
+            contact: String(formData.get('contact') || '').trim(),
+            issue: String(formData.get('issue') || '').trim(),
+            priority: String(formData.get('priority') || '').trim(),
+            message: String(formData.get('message') || '').trim()
+          };
+
+          if (supportStatus instanceof HTMLElement) {
+            supportStatus.textContent = 'Sending support request...';
+            supportStatus.classList.remove('is-error', 'is-success');
+          }
+
+          if (submitButton instanceof HTMLButtonElement) {
+            submitButton.disabled = true;
+          }
+
+          try {
+            const response = await fetch('/api/support/request', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+            });
+            const result = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+              throw new Error(result.error || result.message || 'Unable to submit support request.');
+            }
+
+            supportForm.reset();
+            const firstIssue = supportForm.querySelector('input[name="issue"]');
+            if (firstIssue instanceof HTMLInputElement) {
+              firstIssue.checked = true;
+            }
+            if (supportStatus instanceof HTMLElement) {
+              supportStatus.textContent = 'Request submitted. Our support team will receive it by email shortly.';
+              supportStatus.classList.add('is-success');
+            }
+          } catch (error) {
+            if (supportStatus instanceof HTMLElement) {
+              supportStatus.textContent =
+                error instanceof Error ? error.message : 'Unable to submit support request.';
+              supportStatus.classList.add('is-error');
+            }
+          } finally {
+            if (submitButton instanceof HTMLButtonElement) {
+              submitButton.disabled = false;
+            }
+          }
+        });
+      }
+    </script>
   </body>
 </html>

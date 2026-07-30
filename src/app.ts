@@ -138,7 +138,11 @@ app.get('/pricing', (_req, res) => {
 });
 
 app.get('/help', (_req, res) => {
-  res.sendFile(resolve(publicDir, 'help.html'));
+  res.sendFile(resolve(publicDir, 'support.html'));
+});
+
+app.get('/support', (_req, res) => {
+  res.sendFile(resolve(publicDir, 'support.html'));
 });
 
 app.get('/signup', (_req, res) => {

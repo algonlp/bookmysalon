@@ -9,6 +9,7 @@ import { locationRouter } from './location.route';
 import { marketingRouter } from './marketing.route';
 import { publicConfigRouter } from './publicConfig.route';
 import { staffAuthRouter } from './staffAuth.route';
+import { supportRouter } from './support.route';
 
 export const apiRouter = Router();
 
@@ -22,3 +23,4 @@ apiRouter.use('/', customerAccountRouter);
 apiRouter.use('/', clientPlatformRouter);
 apiRouter.use('/', marketingRouter);
 apiRouter.use('/', staffAuthRouter);
+apiRouter.use('/', supportRouter);
