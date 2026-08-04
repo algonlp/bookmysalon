@@ -113,6 +113,8 @@ const DEFAULT_BUSINESS_SETTINGS = {
     pageSubtitle: 'Access all of your business reports in one workspace.'
   }
 };
+const DISPLAY_CURRENCY_CODE = 'PKR';
+const DISPLAY_CURRENCY_LOCALE = 'en-PK';
 let currentBusinessSettings = DEFAULT_BUSINESS_SETTINGS;
 const BOOKED_APPOINTMENT_ACTIONS = [
   { key: 'edit', labelKey: 'edit', fallbackLabel: 'Edit', handlerKey: 'onEdit' },
@@ -388,11 +390,9 @@ const getActiveBusinessSettings = () => normalizeBusinessSettings(currentBusines
 const getActiveCalendarTimeSlots = () => getActiveBusinessSettings().slotTimes;
 
 const formatCurrencyExampleLabel = (amount) => {
-  const settings = getActiveBusinessSettings();
-
-  return new Intl.NumberFormat(settings.currencyLocale, {
+  return new Intl.NumberFormat(DISPLAY_CURRENCY_LOCALE, {
     style: 'currency',
-    currency: settings.currencyCode,
+    currency: DISPLAY_CURRENCY_CODE,
     maximumFractionDigits: 0
   }).format(amount);
 };
@@ -1976,14 +1976,11 @@ const formatPriceLabelForDisplay = (priceLabel) => {
 
 const formatMoneyValue = (amountValue, currencyCode = '') => {
   const normalizedAmountValue = Number.isFinite(Number(amountValue)) ? Number(amountValue) : 0;
-  const normalizedCurrencyCode =
-    typeof currencyCode === 'string' ? currencyCode.trim().toUpperCase() : '';
-  const settings = getActiveBusinessSettings();
-  const formatter = new Intl.NumberFormat(settings.currencyLocale, {
+  const formatter = new Intl.NumberFormat(DISPLAY_CURRENCY_LOCALE, {
     maximumFractionDigits: 0
   });
   const formattedAmount = formatter.format(Math.round(normalizedAmountValue));
-  return normalizedCurrencyCode ? `${normalizedCurrencyCode} ${formattedAmount}` : formattedAmount;
+  return `${DISPLAY_CURRENCY_CODE} ${formattedAmount}`;
 };
 
 const normalizeSearchValue = (value) =>
@@ -9456,7 +9453,7 @@ const createTrendCard = (
         createdBy: 'platform',
         plan: 'premium',
         kind: 'dashboards',
-        summary: `${salesInsights.totalAppointments} appointments â€¢ ${formatCurrencyLabel(salesInsights.totalRevenue)}`,
+        summary: `${salesInsights.totalAppointments} appointments - ${formatCurrencyLabel(salesInsights.totalRevenue)}`,
         detail: {
           eyebrow: 'Dashboard',
           description: 'High-level business performance across bookings, revenue, and next operational focus.',
@@ -9614,7 +9611,7 @@ const createTrendCard = (
         createdBy: 'platform',
         plan: 'standard',
         kind: 'standard',
-        summary: `${bookedAppointments.length} booked â€¢ ${completedAppointments.length} completed`,
+        summary: `${bookedAppointments.length} booked - ${completedAppointments.length} completed`,
         detail: {
           eyebrow: 'Appointments',
           description: 'Operational throughput of appointments currently moving through the business.',
@@ -10363,7 +10360,7 @@ const createTrendCard = (
           if (label === 'daily sales summary') {
             return {
               ...item,
-              subtitle: `${insights.selectedDayCount} on ${insights.selectedDayLabel} â€¢ ${formatCurrencyLabel(insights.selectedDayRevenue)}`
+              subtitle: `${insights.selectedDayCount} on ${insights.selectedDayLabel} - ${formatCurrencyLabel(insights.selectedDayRevenue)}`
             };
           }
 
@@ -10385,15 +10382,8 @@ const createTrendCard = (
             return {
               ...item,
               subtitle:
-                `${formatMoneyValue(paymentInsights.collectedAmountValue, paymentInsights.currencyCode)} collected â€¢ ` +
+                `${formatMoneyValue(paymentInsights.collectedAmountValue, paymentInsights.currencyCode)} collected - ` +
                 `${formatMoneyValue(paymentInsights.pendingAmountValue, paymentInsights.currencyCode)} pending`
-            };
-          }
-
-          if (label === 'payments') {
-            return {
-              ...item,
-              subtitle: `${formatCurrencyLabel(insights.collectedRevenue)} completed â€¢ ${formatCurrencyLabel(insights.pendingRevenue)} pending`
             };
           }
 
@@ -11241,7 +11231,7 @@ const createTrendCard = (
 
     openToolModal({
       eyebrow: 'Sales',
-      title: `Daily sales summary â€¢ ${insights.selectedDayLabel}`,
+      title: `Daily sales summary - ${insights.selectedDayLabel}`,
       description: 'Track the day view of bookings and estimated revenue from your active service prices.',
       actions: [
         createToolInfoCard(
@@ -11288,7 +11278,7 @@ const createTrendCard = (
           insights.topServices.length > 0
             ? insights.topServices
                 .map((service) => `${service.serviceName} (${service.count}, ${service.revenueLabel})`)
-                .join(' â€¢ ')
+                .join(' - ')
             : 'Top services will appear after the first bookings come in.'
         ),
         createToolActionButton('Open sales reports', () => {
