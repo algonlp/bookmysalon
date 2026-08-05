@@ -98,7 +98,7 @@ const DEFAULT_DASHBOARD_UI_COPY = {
     clients: 'Clients',
     bookedInRangeTemplate: '{count} booked in range',
     completionFlowTemplate: '{label} completion flow',
-    repeatClientsTeamTemplate: '{repeat} repeat â€¢ {team} team'
+    repeatClientsTeamTemplate: '{repeat} repeat - {team} team'
   }
 };
 let currentDashboardUiCopy = DEFAULT_DASHBOARD_UI_COPY;
@@ -2748,12 +2748,12 @@ const createSalonDetailMeta = (salon) => {
   meta.append(ratingGroup);
 
   [openingStatus, address].filter(Boolean).forEach((label) => {
-    meta.append(createDetailText('span', 'salon-detail-meta-separator', '•'));
+    meta.append(createDetailText('span', 'salon-detail-meta-separator', '-'));
     meta.append(createDetailText('span', '', label));
   });
 
   if (distanceText || (address && getStoredPublicLocation())) {
-    distanceSeparatorElement = createDetailText('span', 'salon-detail-meta-separator', '•');
+    distanceSeparatorElement = createDetailText('span', 'salon-detail-meta-separator', '-');
     distanceValueElement = createDetailText('span', '', distanceText);
     distanceValueElement.className = distanceText ? '' : 'is-hidden';
     distanceValueElement.dataset.salonDistance = 'true';
@@ -2770,7 +2770,7 @@ const createSalonDetailMeta = (salon) => {
     directionsLink.rel = 'noopener';
     directionsLink.textContent = 'Get directions';
 
-    meta.append(createDetailText('span', 'salon-detail-meta-separator', '•'), directionsLink);
+    meta.append(createDetailText('span', 'salon-detail-meta-separator', '-'), directionsLink);
   }
 
   meta.updateDistanceLabel = (label) => {
@@ -4004,9 +4004,9 @@ const initHomeSalonShowcase = () => {
         const locationLabel = formatAddressSingleLine(salon.venueAddress) || 'Booking available';
         const typeLabel =
           Array.isArray(salon.serviceTypes) && salon.serviceTypes.length > 0
-            ? salon.serviceTypes.join(' â€¢ ')
+            ? salon.serviceTypes.join(' - ')
             : 'Salon services';
-        meta.textContent = `${locationLabel} â€¢ ${typeLabel}`;
+        meta.textContent = `${locationLabel} - ${typeLabel}`;
 
         titleBlock.append(title, meta);
 
@@ -4021,8 +4021,8 @@ const initHomeSalonShowcase = () => {
         reviewMeta.className = 'public-salon-review-meta';
         reviewMeta.textContent =
           salon.reviewSummary?.totalReviews > 0
-            ? `${salon.reviewSummary.averageRating}/5 â€¢ ${salon.reviewSummary.totalReviews} review${salon.reviewSummary.totalReviews === 1 ? '' : 's'}`
-            : 'New salon â€¢ No reviews yet';
+            ? `${salon.reviewSummary.averageRating}/5 - ${salon.reviewSummary.totalReviews} review${salon.reviewSummary.totalReviews === 1 ? '' : 's'}`
+            : 'New salon - No reviews yet';
 
         const services = document.createElement('div');
         services.className = 'public-salon-services';
@@ -4035,7 +4035,7 @@ const initHomeSalonShowcase = () => {
           name.textContent = service.name;
 
           const details = document.createElement('span');
-          details.textContent = `${service.durationMinutes} min â€¢ ${formatPriceLabelForDisplay(service.priceLabel)}`;
+          details.textContent = `${service.durationMinutes} min - ${formatPriceLabelForDisplay(service.priceLabel)}`;
 
           serviceCard.append(name, details);
           services.append(serviceCard);
@@ -11106,7 +11106,7 @@ const createTrendCard = (
           if (label === 'service menu') {
             return {
               ...item,
-              subtitle: `${insights.activeServices} active service${insights.activeServices === 1 ? '' : 's'} â€¢ ${insights.categoryCount} categor${insights.categoryCount === 1 ? 'y' : 'ies'}`
+              subtitle: `${insights.activeServices} active service${insights.activeServices === 1 ? '' : 's'} - ${insights.categoryCount} categor${insights.categoryCount === 1 ? 'y' : 'ies'}`
             };
           }
 
@@ -14587,7 +14587,7 @@ const createTrendCard = (
         ...topClients.map((client) =>
           createToolInfoCard(
             client.customerName,
-            `${client.customerPhone || 'No phone'}${client.customerEmail ? ` â€¢ ${client.customerEmail}` : ''} â€¢ ${client.visits} visit${client.visits === 1 ? '' : 's'}`
+            `${client.customerPhone || 'No phone'}${client.customerEmail ? ` - ${client.customerEmail}` : ''} - ${client.visits} visit${client.visits === 1 ? '' : 's'}`
           )
         ),
         ...rankedClients.map((client) => createClientDetailCard(client, { loyaltyProgram })),
@@ -14638,7 +14638,7 @@ const createTrendCard = (
         ...loyaltyClients.map((client) =>
           createToolInfoCard(
             client.customerName,
-            `${client.completedVisits} completed visits â€¢ Last service: ${client.lastService}`
+            `${client.completedVisits} completed visits - Last service: ${client.lastService}`
           )
         ),
         ...(rankedLoyaltyClients.length > 0
@@ -15145,7 +15145,7 @@ const createTrendCard = (
       actions: [
         createToolInfoCard(
           'Current booking',
-          `${formatDateTimeForDisplay(appointment.appointmentDate, appointment.appointmentTime)} â€¢ Ref: ${appointment.id.slice(0, 8)}`
+          `${formatDateTimeForDisplay(appointment.appointmentDate, appointment.appointmentTime)} - Ref: ${appointment.id.slice(0, 8)}`
         ),
         form
       ]
@@ -15225,7 +15225,7 @@ const createTrendCard = (
       actions: [
         createToolInfoCard(
           'Appointment',
-          `${formatDateTimeForDisplay(appointment.appointmentDate, appointment.appointmentTime)} â€¢ Ref: ${appointment.id.slice(0, 8)}`
+          `${formatDateTimeForDisplay(appointment.appointmentDate, appointment.appointmentTime)} - Ref: ${appointment.id.slice(0, 8)}`
         ),
         form
       ]
@@ -17554,7 +17554,7 @@ const createTrendCard = (
       offerSticker.textContent = buildCampaignOfferLabel(campaign);
       titleRow.append(title, offerSticker);
       const meta = document.createElement('span');
-      meta.textContent = `${marketingTemplateLabels[campaign.templateType] || campaign.templateType} • ${marketingStatusLabels[campaign.status] || campaign.status}${campaign.isAutoGenerated && campaign.status === 'draft' ? ' • Auto-generated, awaiting your confirmation' : ''}`;
+      meta.textContent = `${marketingTemplateLabels[campaign.templateType] || campaign.templateType} - ${marketingStatusLabels[campaign.status] || campaign.status}${campaign.isAutoGenerated && campaign.status === 'draft' ? ' - Auto-generated, awaiting your confirmation' : ''}`;
       info.append(titleRow, meta);
 
       const standardRate = formatCampaignRate(campaign.originalPriceCents);
@@ -20227,10 +20227,10 @@ const initPublicBooking = () => {
         item.className = 'booking-history-item';
 
         const title = document.createElement('strong');
-        title.textContent = `${entry.serviceName} â€¢ ${entry.status}`;
+        title.textContent = `${entry.serviceName} - ${entry.status}`;
 
         const meta = document.createElement('p');
-        meta.textContent = `${formatDateTimeForDisplay(entry.appointmentDate, entry.appointmentTime)} â€¢ Ref: ${entry.reference}`;
+        meta.textContent = `${formatDateTimeForDisplay(entry.appointmentDate, entry.appointmentTime)} - Ref: ${entry.reference}`;
 
         item.append(title, meta);
         phoneHistoryList.append(item);
@@ -20576,7 +20576,7 @@ const initPublicBooking = () => {
 
     if (serviceLabel && !formattedDateTime) {
       const summaryPriceLabel = formatPriceLabelForDisplay(selectedService?.priceLabel ?? '');
-      summaryTitle.textContent = `${serviceLabel} â€¢ ${summaryPriceLabel}`.trim();
+      summaryTitle.textContent = `${serviceLabel} - ${summaryPriceLabel}`.trim();
       if (salonSummaryLabel) {
         summaryTitle.textContent = `${serviceLabel} at ${salonSummaryLabel}${summaryPriceLabel ? ` | ${summaryPriceLabel}` : ''}`.trim();
       }
@@ -20588,7 +20588,7 @@ const initPublicBooking = () => {
 
     summaryTitle.textContent =
       serviceLabel && selectedService?.priceLabel
-        ? `${serviceLabel} â€¢ ${formatPriceLabelForDisplay(selectedService.priceLabel)}`
+        ? `${serviceLabel} - ${formatPriceLabelForDisplay(selectedService.priceLabel)}`
         : serviceLabel || 'Appointment selected';
     if (salonSummaryLabel && serviceLabel) {
       summaryTitle.textContent = `${serviceLabel} at ${salonSummaryLabel}${selectedService?.priceLabel ? ` | ${formatPriceLabelForDisplay(selectedService.priceLabel)}` : ''}`.trim();
@@ -22843,7 +22843,7 @@ const initSmsLogs = () => {
         title.textContent = formatSmsLogSourceLabel(entry.source);
 
         const subtitle = document.createElement('p');
-        subtitle.textContent = `${formatSmsLogTimestamp(entry.createdAt)} • ${entry.recipient} • ${entry.destination || 'No destination'}`;
+        subtitle.textContent = `${formatSmsLogTimestamp(entry.createdAt)} - ${entry.recipient} - ${entry.destination || 'No destination'}`;
 
         meta.append(title, subtitle);
 
@@ -23013,7 +23013,7 @@ const initEmailLogs = () => {
         title.textContent = formatEmailLogSourceLabel(entry.source);
 
         const subtitle = document.createElement('p');
-        subtitle.textContent = `${formatEmailLogTimestamp(entry.createdAt)} • ${entry.recipient} • ${entry.destination || 'No destination'}`;
+        subtitle.textContent = `${formatEmailLogTimestamp(entry.createdAt)} - ${entry.recipient} - ${entry.destination || 'No destination'}`;
 
         meta.append(title, subtitle);
 

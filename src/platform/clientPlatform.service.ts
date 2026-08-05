@@ -171,7 +171,7 @@ const DASHBOARD_UI_COPY_BY_LANGUAGE: Record<PreferredLanguage, DashboardUiCopy> 
       clients: 'Clients',
       bookedInRangeTemplate: '{count} booked in range',
       completionFlowTemplate: '{label} completion flow',
-      repeatClientsTeamTemplate: '{repeat} repeat â€¢ {team} team'
+      repeatClientsTeamTemplate: '{repeat} repeat - {team} team'
     }
   },
   chinese: {
@@ -244,7 +244,7 @@ const DASHBOARD_UI_COPY_BY_LANGUAGE: Record<PreferredLanguage, DashboardUiCopy> 
       clients: '\u5ba2\u6237',
       bookedInRangeTemplate: '\u533a\u95f4\u5185\u5df2\u9884\u7ea6 {count} \u4e2a',
       completionFlowTemplate: '{label} \u5b8c\u6210\u8d8b\u52bf',
-      repeatClientsTeamTemplate: '\u56de\u5934\u5ba2 {repeat} \u2022 \u56e2\u961f {team}'
+      repeatClientsTeamTemplate: '\u56de\u5934\u5ba2 {repeat} - \u56e2\u961f {team}'
     }
   },
   urdu: {
@@ -315,7 +315,7 @@ const DASHBOARD_UI_COPY_BY_LANGUAGE: Record<PreferredLanguage, DashboardUiCopy> 
       clients: '\u06a9\u0644\u0627\u0626\u0646\u0679\u0632',
       bookedInRangeTemplate: '{count} \u0628\u06a9',
       completionFlowTemplate: '{label} \u0641\u0644\u0648',
-      repeatClientsTeamTemplate: '{repeat} \u062f\u0648\u0628\u0627\u0631\u06c1 â€¢ {team} \u0679\u06cc\u0645'
+      repeatClientsTeamTemplate: '{repeat} \u062f\u0648\u0628\u0627\u0631\u06c1 - {team} \u0679\u06cc\u0645'
     }
   },
   arabic: {
@@ -386,7 +386,7 @@ const DASHBOARD_UI_COPY_BY_LANGUAGE: Record<PreferredLanguage, DashboardUiCopy> 
       clients: '\u0627\u0644\u0639\u0645\u0644\u0627\u0621',
       bookedInRangeTemplate: '{count} \u062d\u062c\u0632',
       completionFlowTemplate: '{label} \u0627\u0643\u062a\u0645\u0627\u0644',
-      repeatClientsTeamTemplate: '{repeat} \u0639\u0645\u0644\u0627\u0621 â€¢ {team} \u0641\u0631\u064a\u0642'
+      repeatClientsTeamTemplate: '{repeat} \u0639\u0645\u0644\u0627\u0621 - {team} \u0641\u0631\u064a\u0642'
     }
   },
   hindi: {
@@ -457,7 +457,7 @@ const DASHBOARD_UI_COPY_BY_LANGUAGE: Record<PreferredLanguage, DashboardUiCopy> 
       clients: 'à¤—à¥à¤°à¤¾à¤¹à¤•',
       bookedInRangeTemplate: '{count} à¤¬à¥à¤•à¤¿à¤‚à¤—',
       completionFlowTemplate: '{label} à¤ªà¥à¤°à¤µà¤¾à¤¹',
-      repeatClientsTeamTemplate: '{repeat} à¤¦à¥‹à¤¬à¤¾à¤°à¤¾ â€¢ {team} à¤Ÿà¥€à¤®'
+      repeatClientsTeamTemplate: '{repeat} à¤¦à¥‹à¤¬à¤¾à¤°à¤¾ - {team} à¤Ÿà¥€à¤®'
     }
   },
   spanish: {
@@ -528,7 +528,7 @@ const DASHBOARD_UI_COPY_BY_LANGUAGE: Record<PreferredLanguage, DashboardUiCopy> 
       clients: 'Clientes',
       bookedInRangeTemplate: '{count} reservas',
       completionFlowTemplate: 'Flujo {label}',
-      repeatClientsTeamTemplate: '{repeat} recurrentes â€¢ {team} equipo'
+      repeatClientsTeamTemplate: '{repeat} recurrentes - {team} equipo'
     }
   },
   french: {
@@ -599,7 +599,7 @@ const DASHBOARD_UI_COPY_BY_LANGUAGE: Record<PreferredLanguage, DashboardUiCopy> 
       clients: 'Clients',
       bookedInRangeTemplate: '{count} reservations',
       completionFlowTemplate: 'Flux {label}',
-      repeatClientsTeamTemplate: '{repeat} recurrents â€¢ {team} equipe'
+      repeatClientsTeamTemplate: '{repeat} recurrents - {team} equipe'
     }
   },
   german: {
@@ -670,7 +670,7 @@ const DASHBOARD_UI_COPY_BY_LANGUAGE: Record<PreferredLanguage, DashboardUiCopy> 
       clients: 'Kunden',
       bookedInRangeTemplate: '{count} Buchungen',
       completionFlowTemplate: '{label} Ablauf',
-      repeatClientsTeamTemplate: '{repeat} wiederkehrend â€¢ {team} Team'
+      repeatClientsTeamTemplate: '{repeat} wiederkehrend - {team} Team'
     }
   },
   turkish: {
@@ -741,7 +741,7 @@ const DASHBOARD_UI_COPY_BY_LANGUAGE: Record<PreferredLanguage, DashboardUiCopy> 
       clients: 'Musteriler',
       bookedInRangeTemplate: '{count} rezervasyon',
       completionFlowTemplate: '{label} akis',
-      repeatClientsTeamTemplate: '{repeat} geri gelen â€¢ {team} ekip'
+      repeatClientsTeamTemplate: '{repeat} geri gelen - {team} ekip'
     }
   },
   portuguese: {
@@ -812,7 +812,7 @@ const DASHBOARD_UI_COPY_BY_LANGUAGE: Record<PreferredLanguage, DashboardUiCopy> 
       clients: 'Clientes',
       bookedInRangeTemplate: '{count} reservas',
       completionFlowTemplate: 'Fluxo {label}',
-      repeatClientsTeamTemplate: '{repeat} recorrentes â€¢ {team} equipa'
+      repeatClientsTeamTemplate: '{repeat} recorrentes - {team} equipa'
     }
   }
 };
@@ -895,35 +895,27 @@ const normalizeCurrencyLocale = (value: unknown): string => {
     : DEFAULT_BUSINESS_SETTINGS.currencyLocale;
 };
 
-const parseMoneyLabel = (
-  priceLabel: string,
-  fallbackCurrencyCode = DEFAULT_BUSINESS_SETTINGS.currencyCode
-): { amountValue: number; currencyCode: string } => {
+const parseMoneyLabel = (priceLabel: string): { amountValue: number; currencyCode: string } => {
   const trimmedLabel = typeof priceLabel === 'string' ? priceLabel.trim() : '';
-  const currencyMatch = trimmedLabel.match(/\b([A-Za-z]{3})\b/);
   const normalizedValue = Number(trimmedLabel.replace(/[^\d.]/g, ''));
 
   return {
     amountValue: Number.isFinite(normalizedValue) ? normalizedValue : 0,
-    currencyCode: currencyMatch?.[1]?.toUpperCase() ?? fallbackCurrencyCode
+    currencyCode: DEFAULT_BUSINESS_SETTINGS.currencyCode
   };
 };
 
-const formatMoneyLabel = (
-  amountValue: number,
-  currencyCode: string,
-  currencyLocale: string
-): string => {
+const formatMoneyLabel = (amountValue: number): string => {
   const normalizedAmountValue = Number.isFinite(amountValue) ? amountValue : 0;
 
   try {
-    return new Intl.NumberFormat(currencyLocale || DEFAULT_BUSINESS_SETTINGS.currencyLocale, {
+    return new Intl.NumberFormat(DEFAULT_BUSINESS_SETTINGS.currencyLocale, {
       style: 'currency',
-      currency: currencyCode || DEFAULT_BUSINESS_SETTINGS.currencyCode,
+      currency: DEFAULT_BUSINESS_SETTINGS.currencyCode,
       maximumFractionDigits: normalizedAmountValue % 1 === 0 ? 0 : 2
     }).format(normalizedAmountValue);
   } catch (_error) {
-    return `${currencyCode || DEFAULT_BUSINESS_SETTINGS.currencyCode} ${normalizedAmountValue}`;
+    return `${DEFAULT_BUSINESS_SETTINGS.currencyCode} ${normalizedAmountValue}`;
   }
 };
 
@@ -1712,7 +1704,7 @@ const buildClientDrawerItems = (appointments: AppointmentRecord[]) => {
 
   return recentClients.map((appointment) => ({
     label: appointment.customerName,
-    subtitle: `${appointment.customerPhone}${appointment.customerEmail ? ` â€¢ ${appointment.customerEmail}` : ''} â€¢ ${appointment.serviceName}`
+    subtitle: `${appointment.customerPhone}${appointment.customerEmail ? ` - ${appointment.customerEmail}` : ''} - ${appointment.serviceName}`
   }));
 };
 
@@ -2989,13 +2981,9 @@ export const clientPlatformService = {
 
       const now = new Date().toISOString();
       const businessSettings = normalizeBusinessSettings(client.businessSettings);
-      const unitMoney = parseMoneyLabel(existingProduct.priceLabel, businessSettings.currencyCode);
+      const unitMoney = parseMoneyLabel(existingProduct.priceLabel);
       const totalAmountValue = unitMoney.amountValue * quantity;
-      const totalPriceLabel = formatMoneyLabel(
-        totalAmountValue,
-        unitMoney.currencyCode,
-        businessSettings.currencyLocale
-      );
+      const totalPriceLabel = formatMoneyLabel(totalAmountValue);
 
       return {
         ...client,
