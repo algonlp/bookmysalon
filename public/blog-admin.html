@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QRschedule | Blog admin</title>
+    <meta name="description" content="Create and manage QRschedule blog posts." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="sms-logs-page blog-admin-page">
+      <div class="sms-logs-shell blog-admin-shell">
+        <header class="sms-logs-header">
+          <div class="sms-logs-header-copy">
+            <p class="sms-logs-eyebrow">Content</p>
+            <h1>Blog admin</h1>
+            <p>Create daily blog posts, keep drafts private, and publish salon growth tips.</p>
+          </div>
+          <a class="calendar-booking-link sms-logs-back-link" id="blog-admin-back-link" href="/calendar">
+            Return to dashboard
+          </a>
+        </header>
+
+        <section class="blog-admin-layout">
+          <form class="blog-admin-form" id="blog-admin-form">
+            <input type="hidden" id="blog-post-id" />
+            <label>
+              <span>Title</span>
+              <input id="blog-title" type="text" required placeholder="Best hair care tips for summer" />
+            </label>
+            <label>
+              <span>Slug</span>
+              <input id="blog-slug" type="text" placeholder="best-hair-care-tips" />
+            </label>
+            <label>
+              <span>Excerpt</span>
+              <textarea id="blog-excerpt" rows="3" placeholder="Short summary for the blog list"></textarea>
+            </label>
+            <label>
+              <span>Content</span>
+              <textarea id="blog-content" rows="10" required placeholder="Write the full blog post here"></textarea>
+            </label>
+            <div class="blog-admin-grid">
+              <label>
+                <span>Category</span>
+                <input id="blog-category" type="text" placeholder="Hair Care" />
+              </label>
+              <label>
+                <span>Author</span>
+                <input id="blog-author" type="text" placeholder="QRschedule team" />
+              </label>
+            </div>
+            <label>
+              <span>Image URL</span>
+              <input id="blog-image-url" type="url" placeholder="https://..." />
+            </label>
+            <div class="blog-admin-grid">
+              <label>
+                <span>SEO title</span>
+                <input id="blog-seo-title" type="text" />
+              </label>
+              <label>
+                <span>Status</span>
+                <select id="blog-status">
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              <span>SEO description</span>
+              <textarea id="blog-seo-description" rows="3"></textarea>
+            </label>
+            <div class="blog-admin-actions">
+              <button class="pill-button fill" id="blog-save-button" type="submit">Save post</button>
+              <button class="pill-button" id="blog-reset-button" type="button">New draft</button>
+            </div>
+            <p class="cl-status" id="blog-admin-status" aria-live="polite"></p>
+          </form>
+
+          <section class="blog-admin-list" id="blog-admin-list" aria-live="polite">
+            <article class="sms-log-empty">
+              <h2>No blog posts yet</h2>
+              <p>Your drafts and published posts will show here.</p>
+            </article>
+          </section>
+        </section>
+      </div>
+    </div>
+
+    <script src="/main.js"></script>
+  </body>
+</html>
