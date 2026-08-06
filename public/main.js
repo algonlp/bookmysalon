@@ -5517,8 +5517,8 @@ const initHomeSalonSearch = () => {
   const serviceDropdownController = createSearchDropdownController({
     input: serviceInput,
     dropdown: serviceDropdown,
-    title: 'Services',
-    subtitle: 'Pick a service or type to search all salon services.',
+    title: 'Services and salons',
+    subtitle: 'Search by salon name, service, or treatment type.',
     getSuggestions: (query) => getRankedSuggestions(serviceSuggestions, query, 40),
     onSelect: (value) => {
       applyServiceSuggestion(value);
@@ -5595,12 +5595,19 @@ const initHomeSalonSearch = () => {
       }
 
       allSalons = Array.isArray(payload.salons) ? payload.salons : [];
-      serviceSuggestions = buildSuggestionEntries(
+      const salonNameSuggestions = buildSuggestionEntries(
+        allSalons,
+        (salon) => [salon.businessName],
+        'Salon',
+        () => 'Salon name'
+      );
+      const salonServiceSuggestions = buildSuggestionEntries(
         allSalons,
         (salon) => getSalonServiceSearchValues(salon),
         'Service',
         (count) => `${count} salon${count === 1 ? '' : 's'} offer this`
       );
+      serviceSuggestions = [...salonNameSuggestions, ...salonServiceSuggestions];
       citySuggestions = buildSuggestionEntries(
         allSalons,
         (salon) => getSalonLocationSearchValues(salon),
