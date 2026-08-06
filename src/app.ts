@@ -201,6 +201,10 @@ app.get('/email-logs', requirePlatformAdminPageAccess, (_req, res) => {
   res.sendFile(resolve(publicDir, 'email-logs.html'));
 });
 
+app.get('/blog-admin', requirePlatformAdminPageAccess, (_req, res) => {
+  res.sendFile(resolve(publicDir, 'blog-admin.html'));
+});
+
 app.get('/book/:clientId', (_req, res) => {
   res.sendFile(resolve(publicDir, 'book.html'));
 });

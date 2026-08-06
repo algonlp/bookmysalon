@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>QR schedule.com | Settings</title>
+    <title>QRschedule | Settings</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -14,7 +14,7 @@
             <path d="M15 5l-7 7 7 7"></path>
           </svg>
         </a>
-        <a class="brand" href="/">QR schedule.com</a>
+        <a class="brand" href="/">QRschedule</a>
         <div class="header-actions"></div>
       </header>
       <div class="customer-profile-layout">
@@ -34,7 +34,7 @@
           <h1>Settings</h1>
           <section class="customer-settings-card">
             <h2>My social logins</h2>
-            <p>Link social profiles for easier access to your QR Schedule account</p>
+            <p>Link social profiles for easier access to your QRschedule account</p>
             <div class="customer-settings-row"><strong>Facebook</strong><button type="button" id="customer-facebook-state">Connect</button></div>
             <div class="customer-settings-row"><strong>Google</strong><button type="button" id="customer-google-state">Connect</button></div>
           </section>
@@ -48,6 +48,11 @@
             <label>Email <input id="customer-notify-marketing-email" type="checkbox" /></label>
             <label>Text message <input id="customer-notify-marketing-text" type="checkbox" /></label>
             <label>WhatsApp <input id="customer-notify-marketing-whatsapp" type="checkbox" /></label>
+          </section>
+          <section class="customer-settings-card is-hidden" id="admin-blog-settings-card">
+            <h2>Admin content</h2>
+            <p>Add, edit, draft, and publish blog posts for the public blog.</p>
+            <a class="pill-button fill" id="admin-blog-settings-link" href="/blog-admin">Manage blogs</a>
           </section>
         </main>
       </div>

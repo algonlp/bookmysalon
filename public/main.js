@@ -658,7 +658,7 @@ const syncProtectedPageLinks = () => {
   }
 
   const protectedPrefixes = ['/onboarding/', '/guides/'];
-  const protectedPaths = ['/calendar', '/sms-logs', '/email-logs'];
+  const protectedPaths = ['/calendar', '/sms-logs', '/email-logs', '/blog-admin'];
 
   for (const link of document.querySelectorAll('a[href]')) {
     const href = link.getAttribute('href') ?? '';
@@ -2630,7 +2630,7 @@ const shareSalonProfile = async (salon) => {
   const shareUrl = getSalonDetailUrl(salon);
   const shareData = {
     title: salon?.businessName || 'Salon profile',
-    text: `Book ${salon?.businessName || 'this salon'} on QR schedule.com`,
+    text: `Book ${salon?.businessName || 'this salon'} on QRschedule`,
     url: shareUrl
   };
 
@@ -2794,7 +2794,7 @@ const getSalonAboutText = (salon) => {
     : 'beauty and wellness services';
   const location = formatAddressSingleLine(salon.venueAddress) || 'your area';
 
-  return `${salon.businessName || 'This business'} offers ${serviceTypes} in ${location}. Browse services, compare prices, and book your appointment online from QR schedule.`;
+  return `${salon.businessName || 'This business'} offers ${serviceTypes} in ${location}. Browse services, compare prices, and book your appointment online from QRschedule.`;
 };
 
 const getSalonMapQuery = (salon) => {
@@ -3908,7 +3908,7 @@ const initSalonProfilePage = async () => {
       return;
     }
 
-    document.title = `${salon.businessName || 'Business'} | QR schedule.com`;
+    document.title = `${salon.businessName || 'Business'} | QRschedule`;
 
     renderSalonDetailPanel(salon);
     initSalonHeaderSearch(salon, {
@@ -4700,7 +4700,7 @@ const initHomeSalonSearch = () => {
     );
 
     if (!locationQuery && !serviceQuery && newSalons.length > 0) {
-      showcaseList.append(createSalonRail('New to QR schedule', newSalons));
+      showcaseList.append(createSalonRail('New to QRschedule', newSalons));
     }
   };
 
@@ -5517,8 +5517,8 @@ const initHomeSalonSearch = () => {
   const serviceDropdownController = createSearchDropdownController({
     input: serviceInput,
     dropdown: serviceDropdown,
-    title: 'Services',
-    subtitle: 'Pick a service or type to search all salon services.',
+    title: 'Services and salons',
+    subtitle: 'Search by salon name, service, or treatment type.',
     getSuggestions: (query) => getRankedSuggestions(serviceSuggestions, query, 40),
     onSelect: (value) => {
       applyServiceSuggestion(value);
@@ -5595,12 +5595,19 @@ const initHomeSalonSearch = () => {
       }
 
       allSalons = Array.isArray(payload.salons) ? payload.salons : [];
-      serviceSuggestions = buildSuggestionEntries(
+      const salonNameSuggestions = buildSuggestionEntries(
+        allSalons,
+        (salon) => [salon.businessName],
+        'Salon',
+        () => 'Salon name'
+      );
+      const salonServiceSuggestions = buildSuggestionEntries(
         allSalons,
         (salon) => getSalonServiceSearchValues(salon),
         'Service',
         (count) => `${count} salon${count === 1 ? '' : 's'} offer this`
       );
+      serviceSuggestions = [...salonNameSuggestions, ...salonServiceSuggestions];
       citySuggestions = buildSuggestionEntries(
         allSalons,
         (salon) => getSalonLocationSearchValues(salon),
@@ -5711,7 +5718,10 @@ const guardAdminPages = () => {
     '/onboarding/language',
     '/onboarding/complete',
     '/guides/legendary-learner',
-    '/calendar'
+    '/calendar',
+    '/sms-logs',
+    '/email-logs',
+    '/blog-admin'
   ];
 
   if (!protectedPaths.includes(window.location.pathname)) {
@@ -16635,6 +16645,10 @@ const createTrendCard = (
             closeToolModal();
             window.location.assign(buildPathWithClientId('/email-logs', clientId));
           }),
+          createToolActionButton('Manage blogs', () => {
+            closeToolModal();
+            window.location.assign(buildPathWithClientId('/blog-admin', clientId));
+          }),
           createToolActionButton('Set up online payments', () => {
             void openStripeConnectModal();
           }),
@@ -23071,6 +23085,389 @@ const initEmailLogs = () => {
     });
 };
 
+const formatBlogDate = (value) => {
+  if (!value) {
+    return 'Draft';
+  }
+
+  const parsedDate = new Date(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }).format(parsedDate);
+};
+
+const renderBlogContent = (content) =>
+  String(content || '')
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+
+const initPublicBlog = () => {
+  const list = document.querySelector('#public-blog-list');
+
+  if (!(list instanceof HTMLElement)) {
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const activeSlug = params.get('slug')?.trim();
+  const renderEmpty = (title, description) => {
+    const card = document.createElement('article');
+    card.className = 'sms-log-empty';
+    const heading = document.createElement('h2');
+    heading.textContent = title;
+    const copy = document.createElement('p');
+    copy.textContent = description;
+    card.append(heading, copy);
+    list.replaceChildren(card);
+  };
+
+  const renderPostDetail = (post) => {
+    document.title = `${post.seoTitle || post.title} | QRschedule`;
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription instanceof HTMLMetaElement && post.seoDescription) {
+      metaDescription.content = post.seoDescription;
+    }
+
+    const article = document.createElement('article');
+    article.className = 'public-blog-detail';
+
+    if (post.imageUrl) {
+      const image = document.createElement('img');
+      image.src = post.imageUrl;
+      image.alt = post.title;
+      article.append(image);
+    }
+
+    const category = document.createElement('p');
+    category.className = 'login-eyebrow';
+    category.textContent = post.category || 'Blog';
+
+    const title = document.createElement('h2');
+    title.textContent = post.title;
+
+    const meta = document.createElement('p');
+    meta.className = 'public-blog-meta';
+    meta.textContent = `${post.authorName || 'QRschedule team'} - ${formatBlogDate(post.publishedAt)}`;
+
+    article.append(category, title, meta);
+
+    for (const paragraphText of renderBlogContent(post.content)) {
+      const paragraph = document.createElement('p');
+      paragraph.textContent = paragraphText;
+      article.append(paragraph);
+    }
+
+    list.replaceChildren(article);
+  };
+
+  const renderPostList = (posts) => {
+    if (posts.length === 0) {
+      renderEmpty('No blog posts yet', 'Published posts will show here soon.');
+      return;
+    }
+
+    const cards = posts.map((post) => {
+      const card = document.createElement('article');
+      card.className = 'public-blog-card';
+
+      if (post.imageUrl) {
+        const image = document.createElement('img');
+        image.src = post.imageUrl;
+        image.alt = post.title;
+        card.append(image);
+      }
+
+      const body = document.createElement('div');
+      const meta = document.createElement('p');
+      meta.className = 'public-blog-meta';
+      meta.textContent = `${post.category || 'Blog'} - ${formatBlogDate(post.publishedAt)}`;
+
+      const title = document.createElement('h2');
+      title.textContent = post.title;
+
+      const excerpt = document.createElement('p');
+      excerpt.textContent = post.excerpt || post.seoDescription || '';
+
+      const link = document.createElement('a');
+      link.className = 'pill-button';
+      link.href = `/blog.html?slug=${encodeURIComponent(post.slug)}`;
+      link.textContent = 'Read post';
+
+      body.append(meta, title, excerpt, link);
+      card.append(body);
+      return card;
+    });
+
+    list.replaceChildren(...cards);
+  };
+
+  apiRequest(activeSlug ? `/api/public/blog-posts/${encodeURIComponent(activeSlug)}` : '/api/public/blog-posts')
+    .then((payload) => {
+      if (activeSlug) {
+        renderPostDetail(payload.post);
+        return;
+      }
+
+      renderPostList(Array.isArray(payload.posts) ? payload.posts : []);
+    })
+    .catch((error) => {
+      renderEmpty(
+        'Unable to load blog',
+        error instanceof Error ? error.message : 'Blog posts are not available right now.'
+      );
+    });
+};
+
+const initBlogAdmin = () => {
+  const form = document.querySelector('#blog-admin-form');
+  const list = document.querySelector('#blog-admin-list');
+
+  if (!(form instanceof HTMLFormElement) || !(list instanceof HTMLElement)) {
+    return;
+  }
+
+  const clientId = requireClientId();
+  if (!clientId) {
+    return;
+  }
+
+  const backLink = document.querySelector('#blog-admin-back-link');
+  const idInput = document.querySelector('#blog-post-id');
+  const titleInput = document.querySelector('#blog-title');
+  const slugInput = document.querySelector('#blog-slug');
+  const excerptInput = document.querySelector('#blog-excerpt');
+  const contentInput = document.querySelector('#blog-content');
+  const categoryInput = document.querySelector('#blog-category');
+  const imageUrlInput = document.querySelector('#blog-image-url');
+  const authorInput = document.querySelector('#blog-author');
+  const seoTitleInput = document.querySelector('#blog-seo-title');
+  const seoDescriptionInput = document.querySelector('#blog-seo-description');
+  const statusInput = document.querySelector('#blog-status');
+  const statusMessage = document.querySelector('#blog-admin-status');
+  const saveButton = document.querySelector('#blog-save-button');
+  const resetButton = document.querySelector('#blog-reset-button');
+  let posts = [];
+
+  if (backLink instanceof HTMLAnchorElement) {
+    backLink.href = buildPathWithClientId('/calendar', clientId);
+  }
+
+  const setStatus = (message, isError = false) => {
+    if (statusMessage instanceof HTMLElement) {
+      statusMessage.textContent = message;
+      statusMessage.classList.toggle('is-error', isError);
+    }
+  };
+
+  const getValue = (input) => (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement ? input.value.trim() : '');
+  const setValue = (input, value) => {
+    if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
+      input.value = value || '';
+    }
+  };
+
+  const resetForm = () => {
+    setValue(idInput, '');
+    setValue(titleInput, '');
+    setValue(slugInput, '');
+    setValue(excerptInput, '');
+    setValue(contentInput, '');
+    setValue(categoryInput, '');
+    setValue(imageUrlInput, '');
+    setValue(authorInput, '');
+    setValue(seoTitleInput, '');
+    setValue(seoDescriptionInput, '');
+    if (statusInput instanceof HTMLSelectElement) {
+      statusInput.value = 'draft';
+    }
+    setStatus('');
+  };
+
+  const getPayload = () => ({
+    title: getValue(titleInput),
+    slug: getValue(slugInput),
+    excerpt: getValue(excerptInput),
+    content: getValue(contentInput),
+    category: getValue(categoryInput),
+    imageUrl: getValue(imageUrlInput),
+    authorName: getValue(authorInput),
+    seoTitle: getValue(seoTitleInput),
+    seoDescription: getValue(seoDescriptionInput),
+    status: statusInput instanceof HTMLSelectElement ? statusInput.value : 'draft'
+  });
+
+  const editPost = (post) => {
+    setValue(idInput, post.id);
+    setValue(titleInput, post.title);
+    setValue(slugInput, post.slug);
+    setValue(excerptInput, post.excerpt);
+    setValue(contentInput, post.content);
+    setValue(categoryInput, post.category);
+    setValue(imageUrlInput, post.imageUrl);
+    setValue(authorInput, post.authorName);
+    setValue(seoTitleInput, post.seoTitle);
+    setValue(seoDescriptionInput, post.seoDescription);
+    if (statusInput instanceof HTMLSelectElement) {
+      statusInput.value = post.status || 'draft';
+    }
+    setStatus(`Editing "${post.title}"`);
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const renderList = () => {
+    if (posts.length === 0) {
+      const empty = document.createElement('article');
+      empty.className = 'sms-log-empty';
+      const heading = document.createElement('h2');
+      heading.textContent = 'No blog posts yet';
+      const copy = document.createElement('p');
+      copy.textContent = 'Your drafts and published posts will show here.';
+      empty.append(heading, copy);
+      list.replaceChildren(empty);
+      return;
+    }
+
+    const cards = posts.map((post) => {
+      const card = document.createElement('article');
+      card.className = 'blog-admin-post-card';
+
+      const top = document.createElement('div');
+      top.className = 'sms-log-card-top';
+
+      const meta = document.createElement('div');
+      meta.className = 'sms-log-meta';
+      const title = document.createElement('strong');
+      title.textContent = post.title;
+      const subtitle = document.createElement('p');
+      subtitle.textContent = `${post.category || 'Blog'} - ${formatBlogDate(post.publishedAt)}`;
+      meta.append(title, subtitle);
+
+      const badge = document.createElement('span');
+      badge.className = `sms-log-status is-${post.status === 'published' ? 'sent' : 'skipped'}`;
+      badge.textContent = post.status;
+      top.append(meta, badge);
+
+      const excerpt = document.createElement('p');
+      excerpt.textContent = post.excerpt || post.seoDescription || 'No excerpt saved.';
+
+      const actions = document.createElement('div');
+      actions.className = 'blog-admin-card-actions';
+      const editButton = document.createElement('button');
+      editButton.className = 'pill-button';
+      editButton.type = 'button';
+      editButton.textContent = 'Edit';
+      editButton.addEventListener('click', () => editPost(post));
+
+      const viewLink = document.createElement('a');
+      viewLink.className = 'pill-button';
+      viewLink.href = `/blog.html?slug=${encodeURIComponent(post.slug)}`;
+      viewLink.textContent = 'View';
+
+      const deleteButton = document.createElement('button');
+      deleteButton.className = 'pill-button';
+      deleteButton.type = 'button';
+      deleteButton.textContent = 'Delete';
+      deleteButton.addEventListener('click', async () => {
+        const confirmed = window.confirm(`Delete "${post.title}"?`);
+        if (!confirmed) {
+          return;
+        }
+
+        await apiRequest(`/api/platform/clients/${clientId}/blog-posts/${post.id}`, {
+          method: 'DELETE'
+        });
+        posts = posts.filter((entry) => entry.id !== post.id);
+        renderList();
+        setStatus('Blog post deleted.');
+      });
+
+      actions.append(editButton, viewLink, deleteButton);
+      card.append(top, excerpt, actions);
+      return card;
+    });
+
+    list.replaceChildren(...cards);
+  };
+
+  const loadPosts = async () => {
+    const payload = await apiRequest(`/api/platform/clients/${clientId}/blog-posts`);
+    posts = Array.isArray(payload.posts) ? payload.posts : [];
+    renderList();
+  };
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const postId = getValue(idInput);
+    const payload = getPayload();
+
+    if (saveButton instanceof HTMLButtonElement) {
+      setButtonBusy(saveButton, true);
+    }
+
+    try {
+      const response = await apiRequest(
+        postId
+          ? `/api/platform/clients/${clientId}/blog-posts/${postId}`
+          : `/api/platform/clients/${clientId}/blog-posts`,
+        {
+          method: postId ? 'PUT' : 'POST',
+          body: JSON.stringify(payload)
+        }
+      );
+      const savedPost = response.post;
+      const existingIndex = posts.findIndex((post) => post.id === savedPost.id);
+      if (existingIndex >= 0) {
+        posts[existingIndex] = savedPost;
+      } else {
+        posts.unshift(savedPost);
+      }
+      renderList();
+      editPost(savedPost);
+      setStatus(savedPost.status === 'published' ? 'Blog post published.' : 'Draft saved.');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Unable to save blog post.', true);
+    } finally {
+      if (saveButton instanceof HTMLButtonElement) {
+        setButtonBusy(saveButton, false);
+      }
+    }
+  });
+
+  if (resetButton instanceof HTMLButtonElement) {
+    resetButton.addEventListener('click', resetForm);
+  }
+
+  loadPosts().catch((error) => {
+    setStatus(error instanceof Error ? error.message : 'Unable to load blog posts.', true);
+  });
+};
+
+const initAdminSettingsLinks = () => {
+  const card = document.querySelector('#admin-blog-settings-card');
+  const link = document.querySelector('#admin-blog-settings-link');
+
+  if (!(card instanceof HTMLElement) || !(link instanceof HTMLAnchorElement)) {
+    return;
+  }
+
+  const clientId = getClientId();
+
+  if (!clientId) {
+    return;
+  }
+
+  card.classList.remove('is-hidden');
+  link.href = buildPathWithClientId('/blog-admin', clientId);
+};
+
 syncClientIdFromQuery();
 syncProtectedPageLinks();
 initCustomerLogin();
@@ -23100,6 +23497,9 @@ if (guardAdminPages()) {
 initPricingPage();
 initSmsLogs();
 initEmailLogs();
+initPublicBlog();
+initBlogAdmin();
+initAdminSettingsLinks();
 initHomeSalonSearch();
 initSalonDetailTabs();
 initSalonProfilePage().catch((error) => {

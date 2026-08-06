@@ -1,6 +1,7 @@
 export const platformClientPagePaths = {
   signup: '/signup',
   calendar: '/calendar',
+  blogAdmin: '/blog-admin',
   onboarding: {
     businessName: '/onboarding/business-name',
     serviceTypes: '/onboarding/service-types',

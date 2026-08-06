@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { appointmentRouter } from './appointment.route';
+import { blogRouter } from './blog.route';
 import { billingRouter } from './billing.route';
 import { clientPlatformRouter } from './clientPlatform.route';
 import { customerAccountRouter } from './customerAccount.route';
@@ -17,6 +18,7 @@ apiRouter.use('/', healthRouter);
 apiRouter.use('/', locationRouter);
 apiRouter.use('/', publicConfigRouter);
 apiRouter.use('/', appointmentRouter);
+apiRouter.use('/', blogRouter);
 apiRouter.use('/', billingRouter);
 apiRouter.use('/', customerAuthRouter);
 apiRouter.use('/', customerAccountRouter);
