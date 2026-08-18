@@ -18182,6 +18182,46 @@ const createTrendCard = (
       }
     }
 
+    let messagePreview = null;
+
+    try {
+      const sampleName = preview.recipients?.[0]?.name || '';
+      const query = sampleName ? `?recipientName=${encodeURIComponent(sampleName)}` : '';
+      messagePreview = await apiRequest(
+        `/api/platform/clients/${clientId}/campaigns/${marketingActiveCampaignId}/message-preview${query}`
+      );
+    } catch (_error) {
+      // Preview is a nice-to-have, not required to send.
+    }
+
+    if (messagePreview) {
+      const previewHeading = document.createElement('h3');
+      previewHeading.className = 'calendar-marketing-preview-heading';
+      previewHeading.textContent = 'Message preview';
+      marketingBuilderEl.append(previewHeading);
+
+      const previewWrap = document.createElement('div');
+      previewWrap.className = 'calendar-marketing-message-preview';
+
+      const smsCard = document.createElement('div');
+      smsCard.className = 'calendar-marketing-preview-card';
+      smsCard.innerHTML = `
+        <span class="calendar-marketing-preview-label">SMS</span>
+        <p class="calendar-marketing-preview-sms-bubble">${escapeHtml(messagePreview.smsBody)}</p>
+      `;
+
+      const emailCard = document.createElement('div');
+      emailCard.className = 'calendar-marketing-preview-card';
+      emailCard.innerHTML = `
+        <span class="calendar-marketing-preview-label">Email</span>
+        <p class="calendar-marketing-preview-email-subject">${escapeHtml(messagePreview.emailSubject)}</p>
+        <p class="calendar-marketing-preview-email-body">${escapeHtml(messagePreview.emailBodyText).replace(/\n/g, '<br>')}</p>
+      `;
+
+      previewWrap.append(smsCard, emailCard);
+      marketingBuilderEl.append(previewWrap);
+    }
+
     if (preview.total === 0) {
       const empty = document.createElement('p');
       empty.className = 'calendar-marketing-form-status';
@@ -18630,47 +18670,6 @@ const createTrendCard = (
       }
     });
 
-    const smsLabel = document.createElement('label');
-    smsLabel.className = 'calendar-marketing-field';
-    smsLabel.innerHTML = '<span>SMS message</span>';
-    const smsTextarea = document.createElement('textarea');
-    smsTextarea.rows = 3;
-    smsTextarea.value = template.smsBody;
-    smsLabel.append(smsTextarea);
-    form.append(smsLabel);
-
-    const emailSubjectLabel = document.createElement('label');
-    emailSubjectLabel.className = 'calendar-marketing-field';
-    emailSubjectLabel.innerHTML = '<span>Email subject</span>';
-    const emailSubjectInput = document.createElement('input');
-    emailSubjectInput.type = 'text';
-    emailSubjectInput.value = template.emailSubject;
-    emailSubjectLabel.append(emailSubjectInput);
-    form.append(emailSubjectLabel);
-
-    const emailBodyLabel = document.createElement('label');
-    emailBodyLabel.className = 'calendar-marketing-field';
-    emailBodyLabel.innerHTML = '<span>Email body</span>';
-    const emailBodyTextarea = document.createElement('textarea');
-    emailBodyTextarea.rows = 4;
-    emailBodyTextarea.value = template.emailBodyText;
-    emailBodyLabel.append(emailBodyTextarea);
-    form.append(emailBodyLabel);
-
-    const hint = document.createElement('p');
-    hint.className = 'calendar-marketing-placeholder-hint';
-    hint.textContent =
-      templateType === 'happy_hour'
-        ? 'Placeholders: {{customerName}}, {{businessName}}, {{serviceName}}, {{startTime}}, {{endTime}}, {{offerName}}, {{originalPrice}}, {{discountedPrice}}, {{bookingLink}}'
-        : templateType === 'custom_design'
-          ? 'Design fields shape the campaign wording. Placeholders: {{customerName}}, {{businessName}}, {{offerName}}, {{serviceName}}, {{bookingLink}}'
-        : templateType === 'custom_offer'
-          ? 'Placeholders: {{customerName}}, {{businessName}}, {{offerName}}, {{serviceName}}, {{bookingLink}}'
-        : templateType === 'last_minute_fill'
-          ? 'Placeholders: {{customerName}}, {{businessName}}, {{discountLabel}}, {{serviceName}}, {{slotTime}}, {{seatsLeft}}, {{bookingLink}}'
-          : 'Placeholders: {{customerName}}, {{businessName}}, {{discountLabel}}, {{serviceName}}, {{bookingLink}}';
-    form.append(hint);
-
     const status = document.createElement('p');
     status.className = 'calendar-marketing-form-status';
 
@@ -18693,6 +18692,10 @@ const createTrendCard = (
       status.textContent = '';
 
       try {
+        let smsBody = template.smsBody;
+        let emailSubject = template.emailSubject;
+        let emailBodyText = template.emailBodyText;
+
         if (templateType === 'custom_design') {
           const offerName = offerNameInput.value.trim() || 'Custom offer';
           const headline = designHeadlineInput.value.trim() || offerName;
@@ -18713,21 +18716,17 @@ const createTrendCard = (
           if (!offerNameInput.value.trim()) {
             offerNameInput.value = offerName;
           }
-          smsTextarea.value =
-            smsTextarea.value.trim() ||
-            `Hi {{customerName}}! ${stylePrefix}: {{businessName}} has ${offerName} for {{serviceName}}. ${cta}: {{bookingLink}}`;
-          emailSubjectInput.value = emailSubjectInput.value.trim() || `${headline} at {{businessName}}`;
-          emailBodyTextarea.value =
-            emailBodyTextarea.value.trim() ||
-            `Hi {{customerName}},\n\n${headline}\n\n{{businessName}} has ${offerName} for {{serviceName}}.\n\n${cta}: {{bookingLink}}\n\nSee you soon!`;
+          smsBody = `Hi {{customerName}}! ${stylePrefix}: {{businessName}} has ${offerName} for {{serviceName}}. ${cta}: {{bookingLink}}`;
+          emailSubject = `${headline} at {{businessName}}`;
+          emailBodyText = `Hi {{customerName}},\n\n${headline}\n\n{{businessName}} has ${offerName} for {{serviceName}}.\n\n${cta}: {{bookingLink}}\n\nSee you soon!`;
         }
 
         const input = {
           name: nameInput.value,
           templateType: submittedTemplateType,
-          smsBody: smsTextarea.value,
-          emailSubject: emailSubjectInput.value,
-          emailBodyText: emailBodyTextarea.value,
+          smsBody,
+          emailSubject,
+          emailBodyText,
           channel: channelSelect.value,
           recipientSource: sourceSelect.value
         };
@@ -18795,40 +18794,7 @@ const createTrendCard = (
       }
     });
 
-    const saveDefaultButton = document.createElement('button');
-    saveDefaultButton.type = 'button';
-    saveDefaultButton.className = 'calendar-marketing-builder-cancel';
-    saveDefaultButton.textContent = 'Save as default';
-    saveDefaultButton.title = 'Save this wording (and discount, for last-minute fill) as the default for next time';
-    saveDefaultButton.addEventListener('click', async () => {
-      setButtonBusy(saveDefaultButton, true);
-
-      try {
-        const patch = {
-          smsBody: smsTextarea.value,
-          emailSubject: emailSubjectInput.value,
-          emailBodyText: emailBodyTextarea.value
-        };
-
-        if (templateType === 'last_minute_fill' && discountPercentInput?.value) {
-          patch.defaultDiscountPercent = Number(discountPercentInput.value);
-        }
-
-        await apiRequest(`/api/platform/clients/${clientId}/campaign-templates/${submittedTemplateType}`, {
-          method: 'PUT',
-          body: JSON.stringify(patch)
-        });
-        status.textContent = 'Saved as your default template for this offer type.';
-        status.classList.remove('calendar-marketing-form-status');
-        status.classList.add('calendar-marketing-form-status-success');
-      } catch (error) {
-        status.textContent = error instanceof Error ? error.message : 'Unable to save this template.';
-      } finally {
-        setButtonBusy(saveDefaultButton, false);
-      }
-    });
-
-    actions.append(backButton, saveDefaultButton, previewButton);
+    actions.append(backButton, previewButton);
     form.append(actions, status);
 
     marketingBuilderEl.append(form);

@@ -110,6 +110,14 @@ export const marketingController = {
     res.status(200).json(preview);
   },
 
+  async previewMessage(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const businessId = getBusinessId(req);
+    const campaignId = campaignIdSchema.parse(req.params.campaignId);
+    const sampleRecipientName = z.string().trim().optional().parse(req.query.recipientName);
+    const preview = await marketingService.previewCampaignMessage(businessId, campaignId, sampleRecipientName);
+    res.status(200).json(preview);
+  },
+
   async previewCost(req: Request, res: Response, _next: NextFunction): Promise<void> {
     const businessId = getBusinessId(req);
     const input = recipientSourceInputSchema.parse(req.body);

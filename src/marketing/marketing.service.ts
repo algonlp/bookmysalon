@@ -227,28 +227,35 @@ const isOptedOutOfEmail = async (email: string): Promise<boolean> => {
   return account ? account.notifications.marketingEmail === false : false;
 };
 
+const buildPlaceholderValues = (
+  client: ClientRecord,
+  campaign: CampaignRecord,
+  recipientName: string,
+  recipientId?: string
+): Record<string, string> => ({
+  customerName: recipientName || 'there',
+  businessName: client.businessName || 'us',
+  discountLabel: formatDiscountLabel(campaign),
+  serviceName:
+    (campaign.templateType === 'free_service' ? campaign.freeServiceName : campaign.targetServiceName) ||
+    'your next visit',
+  // Per-recipient link so we can record who opened it.
+  bookingLink: recipientId ? `${campaign.bookingLink}&r=${encodeURIComponent(recipientId)}` : campaign.bookingLink,
+  startTime: campaign.happyHourStartTime ?? '',
+  endTime: campaign.happyHourEndTime ?? '',
+  offerName: campaign.offerName || 'Happy Hour',
+  originalPrice: formatPriceCents(campaign.originalPriceCents, campaign.currencyCode),
+  discountedPrice: formatPriceCents(campaign.discountedPriceCents, campaign.currencyCode),
+  slotTime: campaign.fillSlotTime ?? '',
+  seatsLeft: '1'
+});
+
 const dispatchSingleRecipient = async (
   client: ClientRecord,
   campaign: CampaignRecord,
   recipient: CampaignRecipientRecord
 ): Promise<void> => {
-  const placeholderValues: Record<string, string> = {
-    customerName: recipient.customerName || 'there',
-    businessName: client.businessName || 'us',
-    discountLabel: formatDiscountLabel(campaign),
-    serviceName:
-      (campaign.templateType === 'free_service' ? campaign.freeServiceName : campaign.targetServiceName) ||
-      'your next visit',
-    // Per-recipient link so we can record who opened it.
-    bookingLink: `${campaign.bookingLink}&r=${encodeURIComponent(recipient.id)}`,
-    startTime: campaign.happyHourStartTime ?? '',
-    endTime: campaign.happyHourEndTime ?? '',
-    offerName: campaign.offerName || 'Happy Hour',
-    originalPrice: formatPriceCents(campaign.originalPriceCents, campaign.currencyCode),
-    discountedPrice: formatPriceCents(campaign.discountedPriceCents, campaign.currencyCode),
-    slotTime: campaign.fillSlotTime ?? '',
-    seatsLeft: '1'
-  };
+  const placeholderValues = buildPlaceholderValues(client, campaign, recipient.customerName, recipient.id);
 
   let smsStatus = recipient.smsStatus;
   let smsReason = recipient.smsReason;
@@ -693,6 +700,25 @@ export const marketingService = {
   ): Promise<CampaignCostPreview> {
     const preview = await marketingService.previewRecipients(businessId, recipientSource, csvContacts);
     return walletService.previewCampaignCost(businessId, preview.smsEligibleCount, preview.emailEligibleCount);
+  },
+
+  // Shows the business owner exactly what a recipient will receive - same
+  // placeholder rendering as the real send, just with a sample name and no
+  // per-recipient tracking id in the booking link.
+  async previewCampaignMessage(
+    businessId: string,
+    campaignId: string,
+    sampleRecipientName?: string
+  ): Promise<{ smsBody: string; emailSubject: string; emailBodyText: string }> {
+    const client = await getClientOrThrow(businessId);
+    const campaign = await getCampaignOrThrow(businessId, campaignId);
+    const placeholderValues = buildPlaceholderValues(client, campaign, sampleRecipientName?.trim() || 'Ayesha');
+
+    return {
+      smsBody: renderPlaceholders(campaign.smsBody, placeholderValues),
+      emailSubject: renderPlaceholders(campaign.emailSubject, placeholderValues),
+      emailBodyText: renderPlaceholders(campaign.emailBodyText, placeholderValues)
+    };
   },
 
   async confirmAndDispatchCampaign(

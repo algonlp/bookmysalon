@@ -37,6 +37,11 @@ marketingRouter.post(
   ...requireMarketingAccess,
   asyncHandler(marketingController.previewRecipients)
 );
+marketingRouter.get(
+  '/platform/clients/:clientId/campaigns/:campaignId/message-preview',
+  ...requireMarketingAccess,
+  asyncHandler(marketingController.previewMessage)
+);
 marketingRouter.post(
   '/platform/clients/:clientId/campaigns/cost-preview',
   ...requireMarketingAccess,
