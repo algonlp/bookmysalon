@@ -14,52 +14,70 @@ export const billingFeatureCatalog = [
   {
     key: 'payments',
     label: 'Payments and checkout',
-    requiredPlanKey: 'single'
+    requiredPlanKey: 'growth'
   },
   {
     key: 'service_packages',
     label: 'Prepaid service packages',
-    requiredPlanKey: 'single'
+    requiredPlanKey: 'growth'
   },
   {
     key: 'products',
     label: 'Products and inventory',
-    requiredPlanKey: 'single'
+    requiredPlanKey: 'growth'
   },
   {
     key: 'client_crm',
     label: 'Client CRM and loyalty',
-    requiredPlanKey: 'single'
+    requiredPlanKey: 'growth'
   },
   {
     key: 'advanced_reports',
     label: 'Advanced reports',
-    requiredPlanKey: 'single'
+    requiredPlanKey: 'growth'
   },
   {
     key: 'team_management',
     label: 'Team calendars and staff tools',
-    requiredPlanKey: 'team_premium'
+    requiredPlanKey: 'multi_branch'
   },
   {
     key: 'marketing',
     label: 'Marketing campaigns',
-    requiredPlanKey: 'team_premium'
+    requiredPlanKey: 'multi_branch'
   },
   {
     key: 'premium_support',
     label: 'Premium support',
-    requiredPlanKey: 'team_premium'
+    requiredPlanKey: 'multi_branch'
   }
 ] as const;
 
+const allFeatureKeys = billingFeatureCatalog.map((feature) => feature.key);
+
+const growthFeatureKeys = [
+  'online_booking',
+  'qr_booking',
+  'team_management',
+  'payments',
+  'service_packages',
+  'products',
+  'client_crm',
+  'advanced_reports',
+  'marketing'
+];
+
+// Bookable Staff Member = a person who can be selected by customers or
+// assigned to services/appointments and has bookable availability. A
+// receptionist/manager/owner account that only manages the salon does not
+// consume this allowance (see clientPlatform TeamMemberRecord.isBookableStaffMember).
 export const defaultSubscriptionPlans: SubscriptionPlan[] = [
   {
     id: 'plan_solo',
-    key: 'solo',
-    name: 'Starter',
+    key: 'lite',
+    name: 'Lite',
     summary: 'For getting started with online bookings and client messaging.',
-    amountCents: 169900,
+    amountCents: 199900,
     currencyCode: 'PKR',
     billingInterval: 'month',
     trialDays: 30,
@@ -67,52 +85,55 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
     isActive: true,
     displayOrder: 10,
     entitlements: {
-      maxTeamMembers: 1,
+      maxTeamMembers: 2,
+      maxBookableStaffCap: 4,
+      extraBookableStaffPriceCents: 40000,
+      maxLocations: 1,
+      campaignCreditCents: 30000,
+      whatsappUtilityMessageAllowance: 50,
+      maxActiveMarketplaceOffers: 1,
       includedMessages: 100,
       includedMarketingEmails: 50,
       includedAppointmentCredits: 50,
-      featureKeys: billingFeatureCatalog.map((feature) => feature.key)
+      featureKeys: allFeatureKeys
     },
     createdAt: timestamp,
     updatedAt: timestamp
   },
   {
     id: 'plan_single',
-    key: 'single',
-    name: 'Professional',
+    key: 'growth',
+    name: 'Growth',
     summary: 'For a growing business that needs checkout, packages, clients, and reports.',
-    amountCents: 289900,
+    amountCents: 499900,
     currencyCode: 'PKR',
     billingInterval: 'month',
     trialDays: 30,
-    badgeLabel: 'First month free',
+    badgeLabel: 'Most popular',
     isActive: true,
     displayOrder: 20,
     entitlements: {
-      maxTeamMembers: 3,
+      maxTeamMembers: 8,
+      maxBookableStaffCap: 12,
+      extraBookableStaffPriceCents: 40000,
+      maxLocations: 1,
+      campaignCreditCents: 75000,
+      whatsappUtilityMessageAllowance: 150,
+      maxActiveMarketplaceOffers: 3,
       includedMessages: 180,
       includedMarketingEmails: 500,
       includedAppointmentCredits: 150,
-      featureKeys: [
-        'online_booking',
-        'qr_booking',
-        'team_management',
-        'payments',
-        'service_packages',
-        'products',
-        'client_crm',
-        'advanced_reports'
-      ]
+      featureKeys: growthFeatureKeys
     },
     createdAt: timestamp,
     updatedAt: timestamp
   },
   {
-    id: 'plan_team_premium',
-    key: 'team_premium',
-    name: 'Premium',
-    summary: 'For teams that need staff calendars, marketing, premium support, and more limits.',
-    amountCents: 479900,
+    id: 'plan_professional',
+    key: 'professional',
+    name: 'Professional',
+    summary: 'For established salons that need advanced analytics, loyalty tools, and more staff.',
+    amountCents: 799900,
     currencyCode: 'PKR',
     billingInterval: 'month',
     trialDays: 30,
@@ -121,10 +142,46 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
     displayOrder: 30,
     entitlements: {
       maxTeamMembers: 20,
+      maxBookableStaffCap: 30,
+      extraBookableStaffPriceCents: 30000,
+      maxLocations: 1,
+      campaignCreditCents: 150000,
+      whatsappUtilityMessageAllowance: 400,
+      maxActiveMarketplaceOffers: 10,
       includedMessages: 400,
-      includedMarketingEmails: 50,
+      includedMarketingEmails: 500,
       includedAppointmentCredits: 500,
-      featureKeys: billingFeatureCatalog.map((feature) => feature.key)
+      featureKeys: allFeatureKeys
+    },
+    createdAt: timestamp,
+    updatedAt: timestamp
+  },
+  {
+    id: 'plan_team_premium',
+    key: 'multi_branch',
+    name: 'Multi-Branch',
+    summary: 'For multi-location teams that need staff calendars, marketing, premium support, and more limits.',
+    amountCents: 1499900,
+    currencyCode: 'PKR',
+    billingInterval: 'month',
+    trialDays: 30,
+    badgeLabel: 'First month free',
+    isActive: true,
+    displayOrder: 40,
+    entitlements: {
+      maxTeamMembers: 40,
+      // Admin-configurable per spec - no fixed ceiling until super-admin
+      // configuration exists, so treat as effectively uncapped for now.
+      maxBookableStaffCap: null,
+      extraBookableStaffPriceCents: 25000,
+      maxLocations: 3,
+      campaignCreditCents: 300000,
+      whatsappUtilityMessageAllowance: 1000,
+      maxActiveMarketplaceOffers: 20,
+      includedMessages: 400,
+      includedMarketingEmails: 500,
+      includedAppointmentCredits: 500,
+      featureKeys: allFeatureKeys
     },
     createdAt: timestamp,
     updatedAt: timestamp
@@ -149,7 +206,7 @@ export const normalizeSubscriptionPlans = (
     return {
       ...defaultPlan,
       id: plan.id,
-      key: plan.key,
+      key: defaultPlan.key,
       createdAt: plan.createdAt || defaultPlan.createdAt,
       updatedAt: plan.updatedAt || defaultPlan.updatedAt
     };
@@ -163,4 +220,19 @@ export const normalizeSubscriptionPlans = (
   );
 
   return [...normalizedPlans, ...missingDefaultPlans];
+};
+
+export const getNextPlanRecommendation = (
+  currentPlanKey: SubscriptionPlan['key'] | null | undefined
+): SubscriptionPlan | null => {
+  const orderedPlans = [...defaultSubscriptionPlans].sort(
+    (left, right) => left.displayOrder - right.displayOrder
+  );
+  const currentIndex = orderedPlans.findIndex((plan) => plan.key === currentPlanKey);
+
+  if (currentIndex === -1) {
+    return orderedPlans[0] ?? null;
+  }
+
+  return orderedPlans[currentIndex + 1] ?? null;
 };

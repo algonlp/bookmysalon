@@ -2,7 +2,7 @@
   "name": "qr-schedule",
   "version": "0.1.0",
   "private": true,
-  "description": "Node.js + TypeScript booking and schedule management platform for QR Schedule workflows",
+  "description": "Node.js + TypeScript booking and schedule management platform for QRschedule workflows",
   "type": "commonjs",
   "scripts": {
     "dev": "tsx watch src/index.ts",

@@ -99,6 +99,9 @@ const envSchema = z.object({
   PUBLIC_SUPPORT_COMPANY_NAME: z.string().optional(),
   PUBLIC_SUPPORT_EMAIL: z.string().email().optional(),
   PUBLIC_SUPPORT_PHONE: z.string().optional(),
+  // Where manual-payment ("verify from email") admin notifications go. Falls
+  // back to PUBLIC_SUPPORT_EMAIL if unset.
+  PLATFORM_PAYMENTS_ADMIN_EMAIL: z.string().email().optional(),
   PUBLIC_GOOGLE_CLIENT_ID: z.string().trim().min(1).optional(),
   PUBLIC_SUPPORT_PLATFORM_NAME: z.string().optional(),
   PUBLIC_SUPPORT_WEBSITE_URL: z.string().url().optional(),
@@ -249,6 +252,12 @@ const envSchema = z.object({
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_PHONE_NUMBER: z.string().optional(),
+  STRIPE_ENABLED: z.boolean().default(false),
+  PLATFORM_SUPER_ADMIN_KEY: z.string().trim().min(1).optional(),
+  // Wallet campaign pricing defaults (in cents/paisa). Admin-configurable at
+  // runtime from /platform-admin, matching the STRIPE_ENABLED override pattern.
+  WALLET_SMS_COST_CENTS: z.coerce.number().int().min(0).default(200),
+  WALLET_EMAIL_COST_CENTS: z.coerce.number().int().min(0).default(0),
   STRIPE_SECRET_KEY: z
     .string()
     .regex(/^sk_(test|live)_[A-Za-z0-9]+$/, 'STRIPE_SECRET_KEY must start with sk_test_ or sk_live_')
@@ -447,6 +456,8 @@ const resolvedEnv = {
   TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID?.trim() || process.env.TWILIO_SID?.trim(),
   TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN?.trim() || process.env.TWILIO_TOKEN?.trim(),
   TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER?.trim() || process.env.TWILIO_FROM?.trim(),
+  STRIPE_ENABLED: parseBooleanEnv(process.env.STRIPE_ENABLED, false),
+  PLATFORM_SUPER_ADMIN_KEY: normalizeOptionalEnv(process.env.PLATFORM_SUPER_ADMIN_KEY),
   STRIPE_SECRET_KEY: normalizeOptionalEnv(process.env.STRIPE_SECRET_KEY),
   STRIPE_PUBLISHABLE_KEY: normalizeOptionalEnv(process.env.STRIPE_PUBLISHABLE_KEY),
   STRIPE_WEBHOOK_SECRET: normalizeOptionalEnv(process.env.STRIPE_WEBHOOK_SECRET),

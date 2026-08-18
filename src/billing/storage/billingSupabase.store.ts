@@ -1,6 +1,7 @@
 import type {
   BillingInvoice,
   BusinessSubscription,
+  SubscriptionPaymentRequestRecord,
   SubscriptionPlan
 } from '../billing.types';
 import type { BillingStore } from '../billing.store';
@@ -38,6 +39,17 @@ const billingInvoiceTable = new SupabaseJsonbTable<BillingInvoice>({
     subscription_id: invoice.subscriptionId,
     status: invoice.status,
     payload: toJsonValue(invoice)
+  })
+});
+
+const subscriptionPaymentRequestTable = new SupabaseJsonbTable<SubscriptionPaymentRequestRecord>({
+  tableName: 'subscription_payment_request_records',
+  mapToRow: (request) => ({
+    id: request.id,
+    business_id: request.businessId,
+    plan_id: request.planId,
+    status: request.status,
+    payload: toJsonValue(request)
   })
 });
 
@@ -150,10 +162,49 @@ export class BillingSupabaseStore implements BillingStore {
     });
   }
 
+  async listSubscriptionPaymentRequests(businessId?: string): Promise<SubscriptionPaymentRequestRecord[]> {
+    try {
+      return businessId
+        ? await subscriptionPaymentRequestTable.listByColumn('business_id', businessId)
+        : await subscriptionPaymentRequestTable.list();
+    } catch (error) {
+      if (isMissingTableError(error)) {
+        return [];
+      }
+
+      throw error;
+    }
+  }
+
+  async getSubscriptionPaymentRequestById(id: string): Promise<SubscriptionPaymentRequestRecord | undefined> {
+    try {
+      return await subscriptionPaymentRequestTable.getById(id);
+    } catch (error) {
+      if (isMissingTableError(error)) {
+        return undefined;
+      }
+
+      throw error;
+    }
+  }
+
+  saveSubscriptionPaymentRequest(
+    request: SubscriptionPaymentRequestRecord
+  ): Promise<SubscriptionPaymentRequestRecord> {
+    return subscriptionPaymentRequestTable.upsert(request).catch((error: unknown) => {
+      if (isMissingTableError(error)) {
+        throw missingBillingTablesError();
+      }
+
+      throw error;
+    });
+  }
+
   async reset(): Promise<void> {
     await Promise.all([
       businessSubscriptionTable.reset(),
-      billingInvoiceTable.reset()
+      billingInvoiceTable.reset(),
+      subscriptionPaymentRequestTable.reset()
     ]);
   }
 }

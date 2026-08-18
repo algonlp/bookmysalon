@@ -1,6 +1,7 @@
 import type {
   BillingInvoice,
   BusinessSubscription,
+  SubscriptionPaymentRequestRecord,
   SubscriptionPlan
 } from '../billing.types';
 import {
@@ -72,6 +73,31 @@ export class BillingMemoryStore implements BillingStore {
     }
 
     return invoice;
+  }
+
+  async listSubscriptionPaymentRequests(businessId?: string): Promise<SubscriptionPaymentRequestRecord[]> {
+    const requests = this.state.subscriptionPaymentRequests;
+    return businessId ? requests.filter((entry) => entry.businessId === businessId) : [...requests];
+  }
+
+  async getSubscriptionPaymentRequestById(id: string): Promise<SubscriptionPaymentRequestRecord | undefined> {
+    return this.state.subscriptionPaymentRequests.find((entry) => entry.id === id);
+  }
+
+  async saveSubscriptionPaymentRequest(
+    request: SubscriptionPaymentRequestRecord
+  ): Promise<SubscriptionPaymentRequestRecord> {
+    const existingIndex = this.state.subscriptionPaymentRequests.findIndex(
+      (entry) => entry.id === request.id
+    );
+
+    if (existingIndex >= 0) {
+      this.state.subscriptionPaymentRequests[existingIndex] = request;
+    } else {
+      this.state.subscriptionPaymentRequests.push(request);
+    }
+
+    return request;
   }
 
   async reset(): Promise<void> {

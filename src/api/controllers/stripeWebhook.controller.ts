@@ -3,6 +3,7 @@ import { appointmentService } from '../../appointments/appointment.service';
 import { billingService } from '../../billing/billing.service';
 import { stripePaymentService } from '../../payments/stripePayment.service';
 import { clientPlatformService } from '../../platform/clientPlatform.service';
+import { platformSettingsService } from '../../platform/platformSettings.service';
 
 interface StripeCheckoutSessionPayload {
   id: string;
@@ -84,7 +85,12 @@ const getInvoicePeriod = (
 
 export const stripeWebhookController = {
   async handleWebhook(req: Request, res: Response): Promise<void> {
-    const event = stripePaymentService.constructWebhookEvent(
+    if (!(await platformSettingsService.isStripeEnabled())) {
+      res.status(200).json({ received: true, skipped: 'stripe_disabled' });
+      return;
+    }
+
+    const event = await stripePaymentService.constructWebhookEvent(
       req.body as Buffer,
       req.header('stripe-signature')
     );

@@ -6,6 +6,8 @@ export type EmailLogSource =
   | 'welcome'
   | 'free_trial'
   | 'marketing_campaign'
+  | 'manual_payment_admin_notice'
+  | 'manual_payment_confirmation'
   | 'unknown';
 
 export interface EmailLogRecord {

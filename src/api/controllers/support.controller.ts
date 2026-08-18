@@ -35,9 +35,9 @@ export const supportController = {
       throw new HttpError(500, 'Support email is not configured');
     }
 
-    const subject = `QR Schedule support: ${input.salonName} - ${input.issue}`;
+    const subject = `QRschedule support: ${input.salonName} - ${input.issue}`;
     const text = [
-      'New QR Schedule support request',
+      'New QRschedule support request',
       '',
       `Salon name: ${input.salonName}`,
       `Requester: ${input.name}`,
@@ -50,7 +50,7 @@ export const supportController = {
     ].join('\n');
     const html = `
       <div style="font-family:Arial,sans-serif;line-height:1.6;color:#172033">
-        <h2>New QR Schedule support request</h2>
+        <h2>New QRschedule support request</h2>
         <p><strong>Salon name:</strong> ${escapeHtml(input.salonName)}</p>
         <p><strong>Requester:</strong> ${escapeHtml(input.name)}</p>
         <p><strong>Contact:</strong> ${escapeHtml(input.contact)}</p>

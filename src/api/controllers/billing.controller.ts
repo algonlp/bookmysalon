@@ -9,6 +9,7 @@ import { renderEmailLayout, BRAND_NAME } from '../../notifications/emailTemplate
 import { HttpError } from '../../shared/errors/httpError';
 import { hashAdminToken } from '../../shared/hashToken';
 import { getRequestOrigin, setAdminSessionCookie } from '../../shared/http';
+import { MANUAL_PAYMENT_METHOD_KEYS } from '../../platform/platformSettings.types';
 
 const demoCheckoutSchema = z.object({
   planId: z.string().trim().min(1, 'Plan is required'),
@@ -31,6 +32,17 @@ const soloFreeTrialSchema = z.object({
 
 const confirmCheckoutSchema = z.object({
   checkoutSessionId: z.string().trim().min(1, 'Checkout session id is required')
+});
+
+const manualPaymentSchema = z.object({
+  planId: z.string().trim().min(1, 'Plan is required'),
+  paymentMethod: z.enum(MANUAL_PAYMENT_METHOD_KEYS),
+  paymentProofDataUrl: z.string().trim().min(1, 'Payment proof is required'),
+  transactionReference: z.string().trim().optional().default('')
+});
+
+const rejectManualPaymentSchema = z.object({
+  reason: z.string().trim().min(1, 'A rejection reason is required')
 });
 
 const stripeReturnSchema = z.object({
@@ -76,7 +88,7 @@ export const billingController = {
 
     const { subscription, plan } = await billingService.startFreeTrialSubscription(
       client.id,
-      'solo'
+      'lite'
     );
 
     const origin = getRequestOrigin(req);
@@ -152,6 +164,35 @@ export const billingController = {
         demoCheckoutSchema.parse(req.body)
       )
     );
+  },
+
+  async requestManualSubscriptionPayment(req: Request, res: Response): Promise<void> {
+    const input = manualPaymentSchema.parse(req.body);
+    const request = await billingService.requestManualSubscriptionPayment(
+      getClientId(req),
+      input,
+      getRequestOrigin(req)
+    );
+    res.status(201).json({ paymentRequest: request });
+  },
+
+  async listPendingManualSubscriptionPaymentRequests(_req: Request, res: Response): Promise<void> {
+    res.status(200).json({
+      paymentRequests: await billingService.listPendingManualSubscriptionPaymentRequests()
+    });
+  },
+
+  async approveManualSubscriptionPayment(req: Request, res: Response): Promise<void> {
+    const operator = req.header('x-super-admin-actor')?.trim() || undefined;
+    const request = await billingService.approveManualSubscriptionPayment(req.params.requestId, operator);
+    res.status(200).json({ paymentRequest: request });
+  },
+
+  async rejectManualSubscriptionPayment(req: Request, res: Response): Promise<void> {
+    const { reason } = rejectManualPaymentSchema.parse(req.body);
+    const operator = req.header('x-super-admin-actor')?.trim() || undefined;
+    const request = await billingService.rejectManualSubscriptionPayment(req.params.requestId, operator, reason);
+    res.status(200).json({ paymentRequest: request });
   },
 
   async createStripeSubscriptionCheckout(

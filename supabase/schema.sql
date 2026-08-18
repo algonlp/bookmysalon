@@ -525,7 +525,7 @@ create table if not exists team_members (
   expertise text not null default '',
   opening_time time not null default '09:00',
   closing_time time not null default '18:00',
-  off_days weekday_id[] not null default '{}'::weekday_id[],
+  off_days text[] not null default '{}'::text[],
   is_active boolean not null default true,
   username text null,
   created_at timestamptz not null default now(),
@@ -534,6 +534,13 @@ create table if not exists team_members (
 
 alter table team_members add column if not exists email text null;
 alter table team_members add column if not exists username text null;
+-- off_days was originally weekday_id[] (a custom enum array). PostgREST/Postgres
+-- throws "malformed array literal" when upserting an empty array into a custom
+-- enum array column, which blocked saves for any team member with no days off.
+-- Switched to plain text[] (enum membership is still validated in application
+-- code) to avoid that failure. See migration below for existing databases.
+alter table team_members alter column off_days type text[] using off_days::text[];
+alter table team_members alter column off_days set default '{}'::text[];
 
 create index if not exists team_members_business_id_idx on team_members (business_id);
 create index if not exists team_members_business_active_idx on team_members (business_id, is_active);

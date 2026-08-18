@@ -27,7 +27,7 @@ describe('GET /', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
-    expect(response.text).toContain('QR schedule.com');
+    expect(response.text).toContain('QRschedule');
     expect(response.text).toContain('Book local selfcare services');
     expect(response.text).toContain('450,904');
     expect(response.text).toContain('List your business');
@@ -52,8 +52,8 @@ describe('GET /', () => {
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
     expect(response.text).toContain('Sign up/log in');
-    expect(response.text).toContain('QR Schedule for customers');
-    expect(response.text).toContain('QR Schedule for professionals');
+    expect(response.text).toContain('QRschedule for customers');
+    expect(response.text).toContain('QRschedule for professionals');
   });
 
   it('serves the professional login/signup page', async () => {
@@ -61,7 +61,7 @@ describe('GET /', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
-    expect(response.text).toContain('QR schedule');
+    expect(response.text).toContain('QRschedule');
     expect(response.text).toContain('Enter your email address');
     expect(response.text).toContain('Enter your mobile number');
   });
@@ -96,7 +96,7 @@ describe('GET /', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
-    expect(response.text).toContain('QR schedule');
+    expect(response.text).toContain('QRschedule');
     expect(response.text).toContain('Enter your email address');
     expect(response.text).toContain('Enter your mobile number');
     expect(response.text).toContain('Continue with Google');
@@ -153,7 +153,7 @@ describe('GET /', () => {
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
     expect(response.text).toContain('Legendary Learner');
-    expect(response.text).toContain('Create your QR Schedule account');
+    expect(response.text).toContain('Create your QRschedule account');
     expect(response.text).toContain('Create your first appointment');
     expect(response.text).toContain('Help center');
   });
@@ -260,7 +260,7 @@ describe('GET /', () => {
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
     expect(response.text).toContain('Your business is set up!');
-    expect(response.text).toContain('Enjoy 7 days free of using QR Schedule for business');
+    expect(response.text).toContain('Enjoy 7 days free of using QRschedule for business');
     expect(response.text).toContain('Done');
     expect(response.text).toContain('<script src="/main.js"></script>');
   });
@@ -305,7 +305,7 @@ describe('GET /', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
-    expect(response.text).toContain('QR Schedule');
+    expect(response.text).toContain('QRschedule');
     expect(response.text).toContain('Continue setup');
     expect(response.text).toContain('Today');
     expect(response.text).toContain('Owner');
@@ -340,7 +340,7 @@ describe('GET /', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers['content-type']).toContain('text/html');
-    expect(response.text).toContain('QR schedule.com | Business details');
+    expect(response.text).toContain('QRschedule | Business details');
     expect(response.text).toContain('id="salon-detail-panel"');
     expect(response.text).toContain('id="salon-detail-main"');
     expect(response.text).toContain('id="salon-detail-card"');

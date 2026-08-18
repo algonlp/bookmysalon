@@ -62,6 +62,15 @@ const campaignToRow = (campaign: CampaignRecord): Row => ({
   recipients_failed: campaign.recipientsFailed,
   recipients_skipped: campaign.recipientsSkipped,
   booking_link: campaign.bookingLink,
+  is_promoted_on_marketplace: campaign.isPromotedOnMarketplace,
+  marketplace_offer_title: campaign.marketplaceOfferTitle ?? null,
+  marketplace_service_ids: campaign.marketplaceServiceIds,
+  marketplace_start_date: campaign.marketplaceStartDate ?? null,
+  marketplace_end_date: campaign.marketplaceEndDate ?? null,
+  marketplace_branch_id: campaign.marketplaceBranchId ?? null,
+  marketplace_redemption_cap: campaign.marketplaceRedemptionCap ?? null,
+  marketplace_new_customer_only: campaign.marketplaceNewCustomerOnly,
+  marketplace_cta_label: campaign.marketplaceCtaLabel,
   created_at: campaign.createdAt,
   updated_at: campaign.updatedAt,
   sent_at: campaign.sentAt ?? null
@@ -102,6 +111,17 @@ const rowToCampaign = (row: Row): CampaignRecord => ({
   recipientsSkipped: asNumber(row.recipients_skipped),
   linkOpensCount: asNumber(row.link_opens_count),
   bookingLink: asText(row.booking_link),
+  isPromotedOnMarketplace: asBoolean(row.is_promoted_on_marketplace),
+  marketplaceOfferTitle: asNullableText(row.marketplace_offer_title),
+  marketplaceServiceIds: Array.isArray(row.marketplace_service_ids)
+    ? (row.marketplace_service_ids as unknown[]).filter((entry): entry is string => typeof entry === 'string')
+    : [],
+  marketplaceStartDate: asNullableText(row.marketplace_start_date),
+  marketplaceEndDate: asNullableText(row.marketplace_end_date),
+  marketplaceBranchId: asNullableText(row.marketplace_branch_id),
+  marketplaceRedemptionCap: asNullableNumber(row.marketplace_redemption_cap),
+  marketplaceNewCustomerOnly: asBoolean(row.marketplace_new_customer_only),
+  marketplaceCtaLabel: asText(row.marketplace_cta_label) || 'Book Offer',
   createdAt: asTimestamp(row.created_at),
   updatedAt: asTimestamp(row.updated_at),
   sentAt: asNullableText(row.sent_at)
@@ -240,6 +260,23 @@ export const marketingRepository = {
     }
 
     return data ? rowToCampaign(data as Row) : undefined;
+  },
+
+  async countActiveMarketplaceOffers(businessId: string): Promise<number> {
+    const client = getSupabaseClient();
+    const todayDate = new Date().toISOString().slice(0, 10);
+    const { count, error } = await client
+      .from('marketing_campaigns')
+      .select('*', { count: 'exact', head: true })
+      .eq('business_id', businessId)
+      .eq('is_promoted_on_marketplace', true)
+      .or(`marketplace_end_date.is.null,marketplace_end_date.gte.${todayDate}`);
+
+    if (error) {
+      throw new Error(`Failed to count active marketplace offers for ${businessId}: ${error.message}`);
+    }
+
+    return count ?? 0;
   },
 
   async listCampaignsByBusinessId(businessId: string): Promise<CampaignRecord[]> {

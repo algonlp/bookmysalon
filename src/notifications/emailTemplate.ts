@@ -4,7 +4,7 @@ import { env } from '../config/env';
 export const BRAND_NAME =
   env.PUBLIC_SUPPORT_PLATFORM_NAME?.trim() ||
   env.PUBLIC_SUPPORT_COMPANY_NAME?.trim() ||
-  'QR Schedule';
+  'QRschedule';
 const BRAND_GRADIENT = 'linear-gradient(135deg, #6c4cf5, #5636e8)';
 const PROMO_GRADIENT = 'linear-gradient(135deg, #6c4cf5 0%, #8b5cf6 55%, #a855f7 100%)';
 const INK = '#1f1a17';

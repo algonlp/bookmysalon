@@ -2,6 +2,7 @@ import { env } from '../config/env';
 import type {
   BillingInvoice,
   BusinessSubscription,
+  SubscriptionPaymentRequestRecord,
   SubscriptionPlan
 } from './billing.types';
 import type { BillingStore } from './billing.store';
@@ -70,6 +71,18 @@ class BillingRepository {
 
   saveBillingInvoice(invoice: BillingInvoice) {
     return this.store.saveBillingInvoice(invoice);
+  }
+
+  listSubscriptionPaymentRequests(businessId?: string) {
+    return this.store.listSubscriptionPaymentRequests(businessId);
+  }
+
+  getSubscriptionPaymentRequestById(id: string) {
+    return this.store.getSubscriptionPaymentRequestById(id);
+  }
+
+  saveSubscriptionPaymentRequest(request: SubscriptionPaymentRequestRecord) {
+    return this.store.saveSubscriptionPaymentRequest(request);
   }
 
   resetForTests(): Promise<void> {

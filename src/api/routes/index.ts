@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { appointmentRouter } from './appointment.route';
+import { blogRouter } from './blog.route';
 import { billingRouter } from './billing.route';
 import { clientPlatformRouter } from './clientPlatform.route';
 import { customerAccountRouter } from './customerAccount.route';
@@ -7,9 +8,12 @@ import { customerAuthRouter } from './customerAuth.route';
 import { healthRouter } from './health.route';
 import { locationRouter } from './location.route';
 import { marketingRouter } from './marketing.route';
+import { paymentVerificationRouter } from './paymentVerification.route';
+import { platformSettingsRouter } from './platformSettings.route';
 import { publicConfigRouter } from './publicConfig.route';
 import { staffAuthRouter } from './staffAuth.route';
 import { supportRouter } from './support.route';
+import { walletRouter } from './wallet.route';
 
 export const apiRouter = Router();
 
@@ -17,10 +21,14 @@ apiRouter.use('/', healthRouter);
 apiRouter.use('/', locationRouter);
 apiRouter.use('/', publicConfigRouter);
 apiRouter.use('/', appointmentRouter);
+apiRouter.use('/', blogRouter);
 apiRouter.use('/', billingRouter);
 apiRouter.use('/', customerAuthRouter);
 apiRouter.use('/', customerAccountRouter);
 apiRouter.use('/', clientPlatformRouter);
 apiRouter.use('/', marketingRouter);
+apiRouter.use('/', paymentVerificationRouter);
+apiRouter.use('/', platformSettingsRouter);
 apiRouter.use('/', staffAuthRouter);
 apiRouter.use('/', supportRouter);
+apiRouter.use('/', walletRouter);

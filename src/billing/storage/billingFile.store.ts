@@ -4,6 +4,7 @@ import { dirname, resolve } from 'path';
 import type {
   BillingInvoice,
   BusinessSubscription,
+  SubscriptionPaymentRequestRecord,
   SubscriptionPlan
 } from '../billing.types';
 import {
@@ -49,7 +50,8 @@ export class BillingFileStore implements BillingStore {
           ? parsedState.subscriptionPlans
           : createDefaultBillingState().subscriptionPlans,
       businessSubscriptions: parsedState.businessSubscriptions ?? [],
-      billingInvoices: parsedState.billingInvoices ?? []
+      billingInvoices: parsedState.billingInvoices ?? [],
+      subscriptionPaymentRequests: parsedState.subscriptionPaymentRequests ?? []
     };
     this.loaded = true;
   }
@@ -152,6 +154,37 @@ export class BillingFileStore implements BillingStore {
 
       await this.persist();
       return invoice;
+    });
+  }
+
+  async listSubscriptionPaymentRequests(businessId?: string): Promise<SubscriptionPaymentRequestRecord[]> {
+    await this.ensureLoaded();
+    const requests = this.state.subscriptionPaymentRequests;
+    return businessId ? requests.filter((entry) => entry.businessId === businessId) : [...requests];
+  }
+
+  async getSubscriptionPaymentRequestById(id: string): Promise<SubscriptionPaymentRequestRecord | undefined> {
+    await this.ensureLoaded();
+    return this.state.subscriptionPaymentRequests.find((entry) => entry.id === id);
+  }
+
+  async saveSubscriptionPaymentRequest(
+    request: SubscriptionPaymentRequestRecord
+  ): Promise<SubscriptionPaymentRequestRecord> {
+    return this.withWriteLock(async () => {
+      await this.loadStateFromDisk();
+      const existingIndex = this.state.subscriptionPaymentRequests.findIndex(
+        (entry) => entry.id === request.id
+      );
+
+      if (existingIndex >= 0) {
+        this.state.subscriptionPaymentRequests[existingIndex] = request;
+      } else {
+        this.state.subscriptionPaymentRequests.push(request);
+      }
+
+      await this.persist();
+      return request;
     });
   }
 

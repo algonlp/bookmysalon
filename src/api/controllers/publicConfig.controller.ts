@@ -6,8 +6,9 @@ import {
   serviceLocationValues
 } from '../../platform/serviceLocation.constants';
 import { preferredLanguageOptions } from '../../platform/clientPlatform.types';
+import { platformSettingsService } from '../../platform/platformSettings.service';
 
-export const publicConfigController = (_req: Request, res: Response): void => {
+export const publicConfigController = async (_req: Request, res: Response): Promise<void> => {
   const bookingLocationLabels = {
     [serviceLocationValues[0]]: env.PUBLIC_BOOKING_LOCATION_OPTION_PHYSICAL?.trim() ?? '',
     [serviceLocationValues[1]]: env.PUBLIC_BOOKING_LOCATION_OPTION_MOBILE?.trim() ?? '',
@@ -15,6 +16,8 @@ export const publicConfigController = (_req: Request, res: Response): void => {
   };
 
   res.status(200).json({
+    paymentsStripeEnabled: await platformSettingsService.isStripeEnabled(),
+    manualPaymentMethods: await platformSettingsService.getManualPaymentMethods(),
     supportCompanyName: env.PUBLIC_SUPPORT_COMPANY_NAME?.trim() || 'Algonlp',
     supportEmail: env.PUBLIC_SUPPORT_EMAIL?.trim() ?? '',
     supportPhone: env.PUBLIC_SUPPORT_PHONE?.trim() ?? '',

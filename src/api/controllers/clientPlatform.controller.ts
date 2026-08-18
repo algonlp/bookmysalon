@@ -304,7 +304,8 @@ const createTeamMemberSchema = z.object({
   openingTime: teamMemberTimeSchema,
   closingTime: teamMemberTimeSchema,
   offDays: z.array(weekdayEnum).optional().default([]),
-  isActive: z.boolean().optional()
+  isActive: z.boolean().optional(),
+  isBookableStaffMember: z.boolean().optional()
 }).refine(
   (value) =>
     !value.openingTime ||
@@ -325,7 +326,8 @@ const updateTeamMemberSchema = z.object({
   openingTime: teamMemberTimeSchema,
   closingTime: teamMemberTimeSchema,
   offDays: z.array(weekdayEnum).optional().default([]),
-  isActive: z.boolean().optional()
+  isActive: z.boolean().optional(),
+  isBookableStaffMember: z.boolean().optional()
 }).refine(
   (value) =>
     !value.openingTime ||

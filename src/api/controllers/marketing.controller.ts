@@ -49,7 +49,16 @@ const createCampaignSchema = z
     emailSubject: z.string().trim().min(1, 'Email subject is required'),
     emailBodyText: z.string().trim().min(1, 'Email body is required'),
     channel: z.enum(['sms', 'email', 'both']),
-    recipientSource: z.enum(['existing_clients', 'csv_upload', 'both', 'random_batch'])
+    recipientSource: z.enum(['existing_clients', 'csv_upload', 'both', 'random_batch']),
+    isPromotedOnMarketplace: z.boolean().optional(),
+    marketplaceOfferTitle: z.string().trim().optional().or(z.literal('')),
+    marketplaceServiceIds: z.array(z.string().trim()).optional(),
+    marketplaceStartDate: z.string().trim().optional().or(z.literal('')),
+    marketplaceEndDate: z.string().trim().optional().or(z.literal('')),
+    marketplaceBranchId: z.string().trim().optional().or(z.literal('')),
+    marketplaceRedemptionCap: z.number().int().positive().optional(),
+    marketplaceNewCustomerOnly: z.boolean().optional(),
+    marketplaceCtaLabel: z.string().trim().optional().or(z.literal(''))
   });
 
 const recipientSourceInputSchema = z.object({
@@ -98,6 +107,13 @@ export const marketingController = {
     campaignIdSchema.parse(req.params.campaignId);
     const input = recipientSourceInputSchema.parse(req.body);
     const preview = await marketingService.previewRecipients(businessId, input.recipientSource, input.csvContacts);
+    res.status(200).json(preview);
+  },
+
+  async previewCost(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const businessId = getBusinessId(req);
+    const input = recipientSourceInputSchema.parse(req.body);
+    const preview = await marketingService.previewCampaignCost(businessId, input.recipientSource, input.csvContacts);
     res.status(200).json(preview);
   },
 

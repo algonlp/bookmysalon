@@ -3,6 +3,7 @@ import { env } from '../config/env';
 import { HttpError } from '../shared/errors/httpError';
 import type { PackagePurchaseRecord } from '../appointments/appointment.types';
 import type { SubscriptionPlan } from '../billing/billing.types';
+import { platformSettingsService } from '../platform/platformSettings.service';
 
 type StripeClient = ReturnType<typeof Stripe>;
 type StripeCheckoutSession = Awaited<
@@ -94,7 +95,11 @@ const getStripeChargeMoney = (
   );
 };
 
-const getStripeClient = (): StripeClient => {
+const getStripeClient = async (): Promise<StripeClient> => {
+  if (!(await platformSettingsService.isStripeEnabled())) {
+    throw new HttpError(503, 'Stripe payments are currently disabled');
+  }
+
   if (!env.STRIPE_SECRET_KEY) {
     throw new HttpError(503, 'Stripe is not configured');
   }
@@ -153,7 +158,8 @@ async function findOrCreateCustomer(
 
 export const stripePaymentService = {
   async retrieveCheckoutSession(sessionId: string): Promise<StripeCheckoutSession> {
-    return getStripeClient().checkout.sessions.retrieve(sessionId);
+    const client = await getStripeClient();
+    return client.checkout.sessions.retrieve(sessionId);
   },
 
   async createConnectAccount(input: {
@@ -162,7 +168,8 @@ export const stripePaymentService = {
     countryCode?: string;
   }): Promise<StripeConnectAccount> {
     try {
-      return await getStripeClient().accounts.create({
+      const client = await getStripeClient();
+      return await client.accounts.create({
         type: 'express',
         country: input.countryCode || env.STRIPE_CONNECT_COUNTRY_CODE,
         email: input.email,
@@ -180,7 +187,8 @@ export const stripePaymentService = {
   },
 
   async retrieveConnectAccount(accountId: string): Promise<StripeConnectAccount> {
-    const account = await getStripeClient().accounts.retrieve(accountId);
+    const client = await getStripeClient();
+    const account = await client.accounts.retrieve(accountId);
 
     if ('deleted' in account && account.deleted) {
       throw new HttpError(409, 'The salon Stripe Connect account no longer exists');
@@ -195,7 +203,8 @@ export const stripePaymentService = {
     returnUrl: string;
   }): Promise<StripeConnectAccountLink> {
     try {
-      return await getStripeClient().accountLinks.create({
+      const client = await getStripeClient();
+      return await client.accountLinks.create({
         account: input.accountId,
         refresh_url: input.refreshUrl,
         return_url: input.returnUrl,
@@ -264,8 +273,9 @@ export const stripePaymentService = {
     }
 
     const salonLabel = input.businessName?.trim() || input.packagePurchase.businessId;
+    const client = await getStripeClient();
 
-    return getStripeClient().checkout.sessions.create({
+    return client.checkout.sessions.create({
       mode: 'payment',
       customer_email: input.packagePurchase.customerEmail || undefined,
       client_reference_id: input.packagePurchase.id,
@@ -289,7 +299,7 @@ export const stripePaymentService = {
       ],
       custom_text: {
         submit: {
-          message: `QRSchedule — ${input.packagePurchase.packageName} at ${salonLabel}`
+          message: `QRschedule — ${input.packagePurchase.packageName} at ${salonLabel}`
         }
       },
       metadata: {
@@ -331,8 +341,9 @@ export const stripePaymentService = {
     }
 
     const salonLabel = input.businessName?.trim() || input.businessId;
+    const client = await getStripeClient();
 
-    return getStripeClient().checkout.sessions.create({
+    return client.checkout.sessions.create({
       mode: 'payment',
       customer_email: input.customerEmail || undefined,
       client_reference_id: input.appointmentId,
@@ -356,7 +367,7 @@ export const stripePaymentService = {
       ],
       custom_text: {
         submit: {
-          message: `QRSchedule — advance deposit for ${input.serviceName} at ${salonLabel}`
+          message: `QRschedule — advance deposit for ${input.serviceName} at ${salonLabel}`
         }
       },
       metadata: {
@@ -381,7 +392,7 @@ export const stripePaymentService = {
     const salonLabel = input.businessName?.trim() || input.businessId;
     const productName = `${input.plan.name} — ${salonLabel}`;
 
-    const client = getStripeClient();
+    const client = await getStripeClient();
     const customerId = await findOrCreateCustomer(client, input.businessId, salonLabel);
 
     return client.checkout.sessions.create({
@@ -413,11 +424,11 @@ export const stripePaymentService = {
       ],
       custom_text: {
         submit: {
-          message: `QRSchedule — ${input.plan.name} plan for ${salonLabel}`
+          message: `QRschedule — ${input.plan.name} plan for ${salonLabel}`
         }
       },
       subscription_data: {
-        description: `QRSchedule ${input.plan.name} — ${salonLabel}`,
+        description: `QRschedule ${input.plan.name} — ${salonLabel}`,
         trial_period_days: input.plan.trialDays > 0 ? input.plan.trialDays : undefined,
         metadata: {
           businessId: input.businessId,
@@ -446,7 +457,10 @@ export const stripePaymentService = {
     });
   },
 
-  constructWebhookEvent(payload: Buffer, signature: string | undefined): StripeWebhookEvent {
+  async constructWebhookEvent(
+    payload: Buffer,
+    signature: string | undefined
+  ): Promise<StripeWebhookEvent> {
     if (!env.STRIPE_WEBHOOK_SECRET) {
       throw new HttpError(503, 'Stripe webhook secret is not configured');
     }
@@ -455,10 +469,7 @@ export const stripePaymentService = {
       throw new HttpError(400, 'Stripe signature is required');
     }
 
-    return getStripeClient().webhooks.constructEvent(
-      payload,
-      signature,
-      env.STRIPE_WEBHOOK_SECRET
-    );
+    const client = await getStripeClient();
+    return client.webhooks.constructEvent(payload, signature, env.STRIPE_WEBHOOK_SECRET);
   }
 };

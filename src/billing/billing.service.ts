@@ -8,18 +8,30 @@ import {
 import type {
   BillingInvoice,
   BillingOverview,
+  BookableStaffMemberUsage,
   BusinessSubscription,
   BusinessSubscriptionStatus,
   CreateSubscriptionCheckoutInput,
   DemoBillingCard,
   DemoCheckoutInput,
+  SubscriptionPaymentRequestRecord,
   SubscriptionPlan,
   SubscriptionPlanKey
 } from './billing.types';
 import { clientPlatformRepository } from '../platform/clientPlatform.repository';
+import type { TeamMemberRecord } from '../platform/clientPlatform.types';
 import { HttpError } from '../shared/errors/httpError';
 import { stripePaymentService } from '../payments/stripePayment.service';
+import { platformSettingsService, MANUAL_PAYMENT_METHOD_LABELS } from '../platform/platformSettings.service';
 import { env } from '../config/env';
+import {
+  issueVerificationToken,
+  sendAdminVerificationEmail,
+  sendBuyerDecisionEmail,
+  type PaymentVerificationAdapter
+} from '../notifications/paymentVerification';
+
+const formatAmountCentsLabel = (amountCents: number): string => `Rs${(amountCents / 100).toFixed(0)}`;
 
 const activeSubscriptionStatuses: BusinessSubscriptionStatus[] = ['active', 'trialing'];
 const appointmentCreditsFinishedMessage =
@@ -33,14 +45,44 @@ const sortPlans = (plans: SubscriptionPlan[]): SubscriptionPlan[] =>
 const listNormalizedSubscriptionPlans = async (): Promise<SubscriptionPlan[]> =>
   sortPlans(normalizeSubscriptionPlans(await billingRepository.listSubscriptionPlans()));
 
-const getBusinessOrThrow = async (businessId: string): Promise<{ businessName: string }> => {
+const getBusinessOrThrow = async (
+  businessId: string
+): Promise<{ businessName: string; teamMembers: TeamMemberRecord[]; email: string }> => {
   const business = await clientPlatformRepository.getClientById(businessId);
 
   if (!business) {
     throw new HttpError(404, 'Business not found');
   }
 
-  return { businessName: business.businessName };
+  return { businessName: business.businessName, teamMembers: business.teamMembers, email: business.email };
+};
+
+const countActiveBookableStaffMembers = (teamMembers: TeamMemberRecord[]): number =>
+  teamMembers.filter(
+    (member) => member.isActive !== false && member.isBookableStaffMember !== false
+  ).length;
+
+const buildBookableStaffMemberUsage = (
+  currentPlan: SubscriptionPlan | null,
+  teamMembers: TeamMemberRecord[]
+): BookableStaffMemberUsage | null => {
+  if (!currentPlan) {
+    return null;
+  }
+
+  const active = countActiveBookableStaffMembers(teamMembers);
+  const included = currentPlan.entitlements.maxTeamMembers;
+  const extra = Math.max(0, active - included);
+  const cap = currentPlan.entitlements.maxBookableStaffCap;
+
+  return {
+    included,
+    active,
+    extra,
+    extraMonthlyCostCents: extra * currentPlan.entitlements.extraBookableStaffPriceCents,
+    cap,
+    capReached: cap !== null && active >= cap
+  };
 };
 
 const addMonths = (date: Date, monthsToAdd: number): Date => {
@@ -200,6 +242,131 @@ const hydrateSubscriptionCredits = (
   };
 };
 
+// Shared subscription-activation logic: computes credit carryover from any
+// existing active subscription, cancels it, and saves the new subscription +
+// invoice with rollback on failure. Used by both the demo checkout and the
+// manual/Raast payment approval path so this ~70-line sequence isn't
+// duplicated a second time.
+const activateSubscriptionForPlan = async (
+  businessId: string,
+  plan: SubscriptionPlan,
+  providerMeta: {
+    provider: BusinessSubscription['provider'];
+    providerCustomerId: string;
+    providerSubscriptionId: string;
+    demoCard?: DemoBillingCard;
+  }
+): Promise<{ subscription: BusinessSubscription; invoice: BillingInvoice }> => {
+  const plans = await listNormalizedSubscriptionPlans();
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const periodEnd = addMonths(now, plan.billingInterval === 'year' ? 12 : 1).toISOString();
+  const trialEndsAt =
+    plan.trialDays > 0
+      ? new Date(now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000).toISOString()
+      : undefined;
+
+  const existingSubscriptions = (await billingRepository.listBusinessSubscriptionsByBusinessId(businessId)).filter(
+    (subscription) => activeSubscriptionStatuses.includes(subscription.status)
+  );
+  const existingCreditRemainder = existingSubscriptions.reduce((sum, subscription) => {
+    const subscriptionPlan = plans.find((entry) => entry.id === subscription.planId);
+    return sum + hydrateSubscriptionCredits(subscription, subscriptionPlan).appointmentCreditsRemaining;
+  }, 0);
+  const existingMessageCreditRemainder = existingSubscriptions.reduce((sum, subscription) => {
+    const subscriptionPlan = plans.find((entry) => entry.id === subscription.planId);
+    return sum + hydrateSubscriptionCredits(subscription, subscriptionPlan).messageCreditsRemaining;
+  }, 0);
+  const existingMarketingEmailCreditRemainder = existingSubscriptions.reduce((sum, subscription) => {
+    const subscriptionPlan = plans.find((entry) => entry.id === subscription.planId);
+    return sum + hydrateSubscriptionCredits(subscription, subscriptionPlan).marketingEmailCreditsRemaining;
+  }, 0);
+  const includedCredits = getPlanIncludedCredits(plan);
+  const includedMessages = getPlanIncludedMessages(plan);
+  const includedMarketingEmails = getPlanIncludedMarketingEmails(plan);
+  const appointmentCreditsGranted = existingCreditRemainder + includedCredits;
+  const messageCreditsGranted = existingMessageCreditRemainder + includedMessages;
+  const marketingEmailCreditsGranted = existingMarketingEmailCreditRemainder + includedMarketingEmails;
+
+  const subscription: BusinessSubscription = {
+    id: randomUUID(),
+    businessId,
+    planId: plan.id,
+    status: plan.trialDays > 0 ? 'trialing' : 'active',
+    provider: providerMeta.provider,
+    providerCustomerId: providerMeta.providerCustomerId,
+    providerSubscriptionId: providerMeta.providerSubscriptionId,
+    demoCard: providerMeta.demoCard,
+    appointmentCreditsGranted,
+    appointmentCreditsRemaining: appointmentCreditsGranted,
+    appointmentCreditsUsed: 0,
+    messageCreditsGranted,
+    messageCreditsRemaining: messageCreditsGranted,
+    messageCreditsUsed: 0,
+    marketingEmailCreditsGranted,
+    marketingEmailCreditsRemaining: marketingEmailCreditsGranted,
+    marketingEmailCreditsUsed: 0,
+    currentPeriodStart: nowIso,
+    currentPeriodEnd: periodEnd,
+    trialEndsAt,
+    createdAt: nowIso,
+    updatedAt: nowIso
+  };
+
+  const invoice: BillingInvoice = {
+    id: randomUUID(),
+    businessId,
+    subscriptionId: subscription.id,
+    planId: plan.id,
+    amountCents: trialEndsAt ? 0 : plan.amountCents,
+    currencyCode: plan.currencyCode,
+    status: 'paid',
+    periodStart: nowIso,
+    periodEnd,
+    paidAt: nowIso,
+    createdAt: nowIso,
+    updatedAt: nowIso
+  };
+
+  let hasSavedNextSubscription = false;
+
+  try {
+    await Promise.all(
+      existingSubscriptions.map((existingSubscription) =>
+        billingRepository.saveBusinessSubscription({
+          ...existingSubscription,
+          status: 'cancelled',
+          cancelledAt: nowIso,
+          updatedAt: nowIso
+        })
+      )
+    );
+
+    await billingRepository.saveBusinessSubscription(subscription);
+    hasSavedNextSubscription = true;
+    await billingRepository.saveBillingInvoice(invoice);
+  } catch (error) {
+    if (hasSavedNextSubscription) {
+      await billingRepository.saveBusinessSubscription({
+        ...subscription,
+        status: 'cancelled',
+        cancelledAt: nowIso,
+        updatedAt: new Date().toISOString()
+      });
+    }
+
+    await Promise.all(
+      existingSubscriptions.map((existingSubscription) =>
+        billingRepository.saveBusinessSubscription(existingSubscription)
+      )
+    );
+
+    throw error;
+  }
+
+  return { subscription, invoice };
+};
+
 const buildFeatureAccess = (currentPlan: SubscriptionPlan | null): BillingOverview['featureAccess'] => {
   const enabledFeatureKeys = new Set(currentPlan?.entitlements.featureKeys ?? ['online_booking', 'qr_booking']);
   const maxTeamMembers = Number(currentPlan?.entitlements.maxTeamMembers ?? 0);
@@ -256,7 +423,7 @@ export const billingService = {
   },
 
   async getBillingOverview(businessId: string): Promise<BillingOverview> {
-    await getBusinessOrThrow(businessId);
+    const business = await getBusinessOrThrow(businessId);
 
     const [plans, businessSubscriptions, businessInvoices] = await Promise.all([
       listNormalizedSubscriptionPlans(),
@@ -277,6 +444,7 @@ export const billingService = {
       plans: sortedPlans,
       subscription,
       currentPlan,
+      bookableStaffMemberUsage: buildBookableStaffMemberUsage(currentPlan, business.teamMembers),
       latestInvoice: getLatestInvoice(businessInvoices),
       creditBalance: {
         granted: subscription?.appointmentCreditsGranted ?? 0,
@@ -317,118 +485,144 @@ export const billingService = {
     }
 
     const demoCard = getSafeDemoCard(input);
-    const now = new Date();
-    const nowIso = now.toISOString();
-    const periodEnd = addMonths(now, plan.billingInterval === 'year' ? 12 : 1).toISOString();
-    const trialEndsAt =
-      plan.trialDays > 0
-        ? new Date(now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000).toISOString()
-        : undefined;
-
-    const existingSubscriptions = (await billingRepository.listBusinessSubscriptionsByBusinessId(businessId)).filter(
-      (subscription) =>
-        activeSubscriptionStatuses.includes(subscription.status)
-    );
-    const existingCreditRemainder = existingSubscriptions.reduce((sum, subscription) => {
-      const subscriptionPlan = plans.find((entry) => entry.id === subscription.planId);
-      return sum + hydrateSubscriptionCredits(subscription, subscriptionPlan).appointmentCreditsRemaining;
-    }, 0);
-    const existingMessageCreditRemainder = existingSubscriptions.reduce((sum, subscription) => {
-      const subscriptionPlan = plans.find((entry) => entry.id === subscription.planId);
-      return sum + hydrateSubscriptionCredits(subscription, subscriptionPlan).messageCreditsRemaining;
-    }, 0);
-    const existingMarketingEmailCreditRemainder = existingSubscriptions.reduce((sum, subscription) => {
-      const subscriptionPlan = plans.find((entry) => entry.id === subscription.planId);
-      return sum + hydrateSubscriptionCredits(subscription, subscriptionPlan).marketingEmailCreditsRemaining;
-    }, 0);
-    const includedCredits = getPlanIncludedCredits(plan);
-    const includedMessages = getPlanIncludedMessages(plan);
-    const includedMarketingEmails = getPlanIncludedMarketingEmails(plan);
-    const appointmentCreditsGranted = existingCreditRemainder + includedCredits;
-    const messageCreditsGranted = existingMessageCreditRemainder + includedMessages;
-    const marketingEmailCreditsGranted = existingMarketingEmailCreditRemainder + includedMarketingEmails;
-
-    const subscription: BusinessSubscription = {
-      id: randomUUID(),
-      businessId,
-      planId: plan.id,
-      status: plan.trialDays > 0 ? 'trialing' : 'active',
+    const { subscription, invoice } = await activateSubscriptionForPlan(businessId, plan, {
       provider: 'demo',
       providerCustomerId: `demo_customer_${businessId}`,
       providerSubscriptionId: `demo_subscription_${randomUUID()}`,
-      demoCard,
-      appointmentCreditsGranted,
-      appointmentCreditsRemaining: appointmentCreditsGranted,
-      appointmentCreditsUsed: 0,
-      messageCreditsGranted,
-      messageCreditsRemaining: messageCreditsGranted,
-      messageCreditsUsed: 0,
-      marketingEmailCreditsGranted,
-      marketingEmailCreditsRemaining: marketingEmailCreditsGranted,
-      marketingEmailCreditsUsed: 0,
-      currentPeriodStart: nowIso,
-      currentPeriodEnd: periodEnd,
-      trialEndsAt,
-      createdAt: nowIso,
-      updatedAt: nowIso
-    };
-
-    const invoice: BillingInvoice = {
-      id: randomUUID(),
-      businessId,
-      subscriptionId: subscription.id,
-      planId: plan.id,
-      amountCents: trialEndsAt ? 0 : plan.amountCents,
-      currencyCode: plan.currencyCode,
-      status: 'paid',
-      periodStart: nowIso,
-      periodEnd,
-      paidAt: nowIso,
-      createdAt: nowIso,
-      updatedAt: nowIso
-    };
-
-    let hasSavedNextSubscription = false;
-
-    try {
-      await Promise.all(
-        existingSubscriptions.map((existingSubscription) =>
-          billingRepository.saveBusinessSubscription({
-            ...existingSubscription,
-            status: 'cancelled',
-            cancelledAt: nowIso,
-            updatedAt: nowIso
-          })
-        )
-      );
-
-      await billingRepository.saveBusinessSubscription(subscription);
-      hasSavedNextSubscription = true;
-      await billingRepository.saveBillingInvoice(invoice);
-    } catch (error) {
-      if (hasSavedNextSubscription) {
-        await billingRepository.saveBusinessSubscription({
-          ...subscription,
-          status: 'cancelled',
-          cancelledAt: nowIso,
-          updatedAt: new Date().toISOString()
-        });
-      }
-
-      await Promise.all(
-        existingSubscriptions.map((existingSubscription) =>
-          billingRepository.saveBusinessSubscription(existingSubscription)
-        )
-      );
-
-      throw error;
-    }
+      demoCard
+    });
 
     return {
       subscription,
       invoice,
       overview: await billingService.getBillingOverview(businessId)
     };
+  },
+
+  async requestManualSubscriptionPayment(
+    businessId: string,
+    input: {
+      planId: string;
+      paymentMethod: SubscriptionPaymentRequestRecord['paymentMethod'];
+      paymentProofDataUrl: string;
+      transactionReference: string;
+    },
+    origin: string
+  ): Promise<SubscriptionPaymentRequestRecord> {
+    await getBusinessOrThrow(businessId);
+    const plans = await listNormalizedSubscriptionPlans();
+    const plan = plans.find((entry) => entry.id === input.planId);
+
+    if (!plan) {
+      throw new HttpError(404, 'Subscription plan was not found');
+    }
+
+    if (!input.paymentProofDataUrl?.trim()) {
+      throw new HttpError(400, 'Upload payment proof before submitting a payment request');
+    }
+
+    const { tokenHash, expiresAt, plainToken } = issueVerificationToken();
+    const now = new Date().toISOString();
+    const request: SubscriptionPaymentRequestRecord = {
+      id: randomUUID(),
+      businessId,
+      planId: plan.id,
+      amountCents: plan.amountCents,
+      currencyCode: plan.currencyCode,
+      paymentMethod: input.paymentMethod,
+      paymentProofDataUrl: input.paymentProofDataUrl.trim(),
+      transactionReference: input.transactionReference?.trim() ?? '',
+      status: 'pending_review',
+      verificationTokenHash: tokenHash,
+      verificationTokenExpiresAt: expiresAt,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const saved = await billingRepository.saveSubscriptionPaymentRequest(request);
+    await sendAdminVerificationEmail(subscriptionPaymentAdapter, saved, plainToken, origin);
+    return saved;
+  },
+
+  async listPendingManualSubscriptionPaymentRequests(): Promise<SubscriptionPaymentRequestRecord[]> {
+    const all = await billingRepository.listSubscriptionPaymentRequests();
+    return all.filter((entry) => entry.status === 'pending_review');
+  },
+
+  async approveManualSubscriptionPayment(
+    requestId: string,
+    operator?: string
+  ): Promise<SubscriptionPaymentRequestRecord> {
+    const request = await billingRepository.getSubscriptionPaymentRequestById(requestId);
+
+    if (!request) {
+      throw new HttpError(404, 'Payment request not found');
+    }
+
+    if (request.status !== 'pending_review') {
+      // Idempotent: approving an already-decided request just returns it
+      // as-is instead of erroring, so a double-click/replayed link never
+      // double-activates the subscription.
+      return request;
+    }
+
+    const plans = await listNormalizedSubscriptionPlans();
+    const plan = plans.find((entry) => entry.id === request.planId);
+
+    if (!plan) {
+      throw new HttpError(404, 'Subscription plan was not found');
+    }
+
+    await activateSubscriptionForPlan(request.businessId, plan, {
+      provider: 'manual',
+      providerCustomerId: `manual_customer_${request.businessId}`,
+      providerSubscriptionId: `manual_subscription_${randomUUID()}`
+    });
+
+    const updated: SubscriptionPaymentRequestRecord = {
+      ...request,
+      status: 'approved',
+      verificationTokenHash: undefined,
+      verificationTokenExpiresAt: undefined,
+      reviewedBy: operator,
+      reviewedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const saved = await billingRepository.saveSubscriptionPaymentRequest(updated);
+    await sendBuyerDecisionEmail(subscriptionPaymentAdapter, saved, 'approved');
+    return saved;
+  },
+
+  async rejectManualSubscriptionPayment(
+    requestId: string,
+    operator: string | undefined,
+    reason: string
+  ): Promise<SubscriptionPaymentRequestRecord> {
+    const request = await billingRepository.getSubscriptionPaymentRequestById(requestId);
+
+    if (!request) {
+      throw new HttpError(404, 'Payment request not found');
+    }
+
+    if (request.status !== 'pending_review') {
+      return request;
+    }
+
+    const updated: SubscriptionPaymentRequestRecord = {
+      ...request,
+      status: 'rejected',
+      verificationTokenHash: undefined,
+      verificationTokenExpiresAt: undefined,
+      reviewedBy: operator,
+      reviewedAt: new Date().toISOString(),
+      rejectionReason: reason.trim(),
+      updatedAt: new Date().toISOString()
+    };
+
+    const saved = await billingRepository.saveSubscriptionPaymentRequest(updated);
+    await sendBuyerDecisionEmail(subscriptionPaymentAdapter, saved, 'rejected', reason);
+    return saved;
   },
 
   async startFreeTrialSubscription(
@@ -530,8 +724,8 @@ export const billingService = {
       throw new HttpError(404, 'Subscription plan was not found');
     }
 
-    if (!env.STRIPE_SECRET_KEY) {
-      throw new HttpError(503, 'Stripe is not configured');
+    if (!(await platformSettingsService.isStripeEnabled()) || !env.STRIPE_SECRET_KEY) {
+      throw new HttpError(503, 'Stripe payments are currently disabled');
     }
 
     const checkoutSession = await stripePaymentService.createSubscriptionCheckoutSession({
@@ -1014,6 +1208,33 @@ export const billingService = {
       remainingCredits,
       isBookingEnabled: remainingCredits > 0,
       reason: remainingCredits > 0 ? '' : appointmentCreditsFinishedMessage
+    };
+  }
+};
+
+export const subscriptionPaymentAdapter: PaymentVerificationAdapter<SubscriptionPaymentRequestRecord> = {
+  kind: 'subscription_payment',
+  getById: (id) => billingRepository.getSubscriptionPaymentRequestById(id).then((entry) => entry ?? null),
+  approve: (id, operator) => billingService.approveManualSubscriptionPayment(id, operator),
+  reject: (id, operator, reason) => billingService.rejectManualSubscriptionPayment(id, operator, reason),
+  async describe(request) {
+    const [business, plans] = await Promise.all([
+      getBusinessOrThrow(request.businessId).catch(() => null),
+      listNormalizedSubscriptionPlans()
+    ]);
+    const plan = plans.find((entry) => entry.id === request.planId);
+
+    return {
+      businessName: business?.businessName ?? 'Unknown business',
+      businessEmail: business?.email ?? '',
+      kindLabel: 'Subscription payment',
+      amountLabel: formatAmountCentsLabel(request.amountCents),
+      proofUrl: request.paymentProofDataUrl,
+      extraLines: [
+        `Plan: ${plan?.name ?? request.planId}`,
+        `Method: ${MANUAL_PAYMENT_METHOD_LABELS[request.paymentMethod]}`,
+        request.transactionReference ? `Reference: ${request.transactionReference}` : ''
+      ].filter(Boolean)
     };
   }
 };

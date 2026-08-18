@@ -658,7 +658,7 @@ const syncProtectedPageLinks = () => {
   }
 
   const protectedPrefixes = ['/onboarding/', '/guides/'];
-  const protectedPaths = ['/calendar', '/sms-logs', '/email-logs'];
+  const protectedPaths = ['/calendar', '/sms-logs', '/email-logs', '/blog-admin'];
 
   for (const link of document.querySelectorAll('a[href]')) {
     const href = link.getAttribute('href') ?? '';
@@ -825,6 +825,107 @@ const loadPublicConfig = async () => {
 
 const getGoogleClientId = () =>
   typeof currentPublicConfig?.googleClientId === 'string' ? currentPublicConfig.googleClientId.trim() : '';
+
+const isStripePaymentsEnabled = () => currentPublicConfig?.paymentsStripeEnabled === true;
+
+const MANUAL_PAYMENT_METHOD_FALLBACKS = [
+  { key: 'easypaisa', label: 'Easypaisa', qrImageUrl: '', instructions: '' },
+  { key: 'jazzcash', label: 'JazzCash', qrImageUrl: '', instructions: '' },
+  { key: 'bank_transfer', label: 'Bank Transfer', qrImageUrl: '', instructions: '' }
+];
+
+const MANUAL_PAYMENT_METHOD_ICONS = {
+  easypaisa: '📱',
+  jazzcash: '💳',
+  bank_transfer: '🏦'
+};
+
+// Shared by the wallet top-up modal and the subscription manual-payment
+// checkout - both let the buyer pick Easypaisa/JazzCash/Bank Transfer, see
+// that method's QR/instructions, and carry the selected method through to
+// submission. Lives at module scope instead of being duplicated per page.
+// Returns { container, getSelectedMethod }.
+const buildManualPaymentMethodPicker = () => {
+  const methods =
+    Array.isArray(currentPublicConfig?.manualPaymentMethods) &&
+    currentPublicConfig.manualPaymentMethods.length > 0
+      ? currentPublicConfig.manualPaymentMethods
+      : MANUAL_PAYMENT_METHOD_FALLBACKS;
+
+  const container = document.createElement('div');
+  container.className = 'manual-payment-picker';
+
+  const tabsWrap = document.createElement('div');
+  tabsWrap.className = 'manual-payment-tabs';
+
+  const detailsWrap = document.createElement('div');
+  detailsWrap.className = 'manual-payment-details';
+
+  let selectedKey = methods[0]?.key ?? '';
+
+  const renderDetails = () => {
+    detailsWrap.replaceChildren();
+    const method = methods.find((entry) => entry.key === selectedKey);
+
+    if (!method) {
+      return;
+    }
+
+    if (method.qrImageUrl) {
+      const qrCard = document.createElement('div');
+      qrCard.className = 'manual-payment-qr-card';
+
+      const qrImage = document.createElement('img');
+      qrImage.src = method.qrImageUrl;
+      qrImage.alt = `${method.label} QR code`;
+      qrCard.append(qrImage);
+
+      const qrCaption = document.createElement('span');
+      qrCaption.className = 'manual-payment-qr-caption';
+      qrCaption.textContent = `Scan with ${method.label} to pay`;
+      qrCard.append(qrCaption);
+
+      detailsWrap.append(qrCard);
+    }
+
+    const note = document.createElement('p');
+    note.className = 'manual-payment-note';
+    note.textContent =
+      method.instructions || `Pay via ${method.label}, then upload your payment proof below.`;
+    detailsWrap.append(note);
+  };
+
+  const buttons = methods.map((method) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'manual-payment-method-tab';
+
+    const icon = document.createElement('span');
+    icon.className = 'manual-payment-method-icon';
+    icon.textContent = MANUAL_PAYMENT_METHOD_ICONS[method.key] ?? '💰';
+
+    const label = document.createElement('span');
+    label.textContent = method.label;
+
+    button.append(icon, label);
+    button.addEventListener('click', () => {
+      selectedKey = method.key;
+      buttons.forEach((entry) => entry.classList.toggle('is-selected', entry === button));
+      renderDetails();
+    });
+    tabsWrap.append(button);
+    return button;
+  });
+
+  if (buttons[0]) {
+    buttons[0].classList.add('is-selected');
+  }
+
+  container.append(tabsWrap, detailsWrap);
+  renderDetails();
+
+  return { container, getSelectedMethod: () => selectedKey };
+};
 
 const loadGoogleIdentityScript = async () => {
   if (!googleIdentityScriptRequest) {
@@ -2630,7 +2731,7 @@ const shareSalonProfile = async (salon) => {
   const shareUrl = getSalonDetailUrl(salon);
   const shareData = {
     title: salon?.businessName || 'Salon profile',
-    text: `Book ${salon?.businessName || 'this salon'} on QR schedule.com`,
+    text: `Book ${salon?.businessName || 'this salon'} on QRschedule`,
     url: shareUrl
   };
 
@@ -2794,7 +2895,7 @@ const getSalonAboutText = (salon) => {
     : 'beauty and wellness services';
   const location = formatAddressSingleLine(salon.venueAddress) || 'your area';
 
-  return `${salon.businessName || 'This business'} offers ${serviceTypes} in ${location}. Browse services, compare prices, and book your appointment online from QR schedule.`;
+  return `${salon.businessName || 'This business'} offers ${serviceTypes} in ${location}. Browse services, compare prices, and book your appointment online from QRschedule.`;
 };
 
 const getSalonMapQuery = (salon) => {
@@ -3908,7 +4009,7 @@ const initSalonProfilePage = async () => {
       return;
     }
 
-    document.title = `${salon.businessName || 'Business'} | QR schedule.com`;
+    document.title = `${salon.businessName || 'Business'} | QRschedule`;
 
     renderSalonDetailPanel(salon);
     initSalonHeaderSearch(salon, {
@@ -4700,7 +4801,7 @@ const initHomeSalonSearch = () => {
     );
 
     if (!locationQuery && !serviceQuery && newSalons.length > 0) {
-      showcaseList.append(createSalonRail('New to QR schedule', newSalons));
+      showcaseList.append(createSalonRail('New to QRschedule', newSalons));
     }
   };
 
@@ -5517,8 +5618,8 @@ const initHomeSalonSearch = () => {
   const serviceDropdownController = createSearchDropdownController({
     input: serviceInput,
     dropdown: serviceDropdown,
-    title: 'Services',
-    subtitle: 'Pick a service or type to search all salon services.',
+    title: 'Services and salons',
+    subtitle: 'Search by salon name, service, or treatment type.',
     getSuggestions: (query) => getRankedSuggestions(serviceSuggestions, query, 40),
     onSelect: (value) => {
       applyServiceSuggestion(value);
@@ -5595,12 +5696,19 @@ const initHomeSalonSearch = () => {
       }
 
       allSalons = Array.isArray(payload.salons) ? payload.salons : [];
-      serviceSuggestions = buildSuggestionEntries(
+      const salonNameSuggestions = buildSuggestionEntries(
+        allSalons,
+        (salon) => [salon.businessName],
+        'Salon',
+        () => 'Salon name'
+      );
+      const salonServiceSuggestions = buildSuggestionEntries(
         allSalons,
         (salon) => getSalonServiceSearchValues(salon),
         'Service',
         (count) => `${count} salon${count === 1 ? '' : 's'} offer this`
       );
+      serviceSuggestions = [...salonNameSuggestions, ...salonServiceSuggestions];
       citySuggestions = buildSuggestionEntries(
         allSalons,
         (salon) => getSalonLocationSearchValues(salon),
@@ -5711,7 +5819,10 @@ const guardAdminPages = () => {
     '/onboarding/language',
     '/onboarding/complete',
     '/guides/legendary-learner',
-    '/calendar'
+    '/calendar',
+    '/sms-logs',
+    '/email-logs',
+    '/blog-admin'
   ];
 
   if (!protectedPaths.includes(window.location.pathname)) {
@@ -12116,6 +12227,12 @@ const createTrendCard = (
     const packageLabelSingular = packageUiCopy.singular || 'package';
     const packageLabelPlural = packageUiCopy.plural || `${packageLabelSingular}s`;
     const sellActionLabel = packageUiCopy.actionSell || `Sell ${packageLabelSingular}`;
+
+    if (!isStripePaymentsEnabled()) {
+      safeAlert(`Online ${packageLabelSingular} payments are temporarily unavailable.`);
+      return;
+    }
+
     const packagePlans = getPublishedDashboardPackagePlans();
 
     if (packagePlans.length === 0) {
@@ -12451,7 +12568,8 @@ const createTrendCard = (
     openingTime,
     closingTime,
     offDays,
-    isActive
+    isActive,
+    isBookableStaffMember
   }) => {
     if (!clientId) {
       return;
@@ -12468,7 +12586,8 @@ const createTrendCard = (
         openingTime: openingTime.trim(),
         closingTime: closingTime.trim(),
         offDays,
-        isActive
+        isActive,
+        isBookableStaffMember
       })
     });
 
@@ -12498,7 +12617,7 @@ const createTrendCard = (
 
   const updateTeamMember = async (
     teamMemberId,
-    { name, role, phone, email, expertise, openingTime, closingTime, offDays, isActive }
+    { name, role, phone, email, expertise, openingTime, closingTime, offDays, isActive, isBookableStaffMember }
   ) => {
     if (!clientId) {
       return;
@@ -12515,7 +12634,8 @@ const createTrendCard = (
         openingTime: openingTime.trim(),
         closingTime: closingTime.trim(),
         offDays,
-        isActive
+        isActive,
+        isBookableStaffMember
       })
     });
 
@@ -12788,6 +12908,19 @@ const createTrendCard = (
     syncStatusSelection(statusInput.value);
     statusField.append(statusLabel, statusInput, statusToggle);
 
+    const bookableField = document.createElement('label');
+    bookableField.className = 'calendar-tool-field calendar-tool-field-checkbox';
+    const bookableInput = document.createElement('input');
+    bookableInput.type = 'checkbox';
+    bookableInput.name = 'is-bookable-staff-member';
+    bookableInput.checked = teamMember?.isBookableStaffMember !== false;
+    const bookableLabelText = document.createElement('span');
+    bookableLabelText.textContent = `This ${roleLabel} receives their own bookings/appointments`;
+    const bookableHelp = document.createElement('small');
+    bookableHelp.textContent =
+      'Turn off for receptionist/manager-only staff who only manage the salon — they will not count toward your plan\'s Bookable Staff Member limit.';
+    bookableField.append(bookableInput, bookableLabelText, bookableHelp);
+
     const syncCustomExpertiseField = () => {
       const shouldShowCustomExpertise = expertiseSelect.value === customExpertiseValue;
       customExpertiseField.classList.toggle('is-hidden', !shouldShowCustomExpertise);
@@ -12812,6 +12945,7 @@ const createTrendCard = (
       phoneField,
       emailField,
       statusField,
+      bookableField,
       openingTimeField,
       closingTimeField,
       offDaysFieldConfig.field,
@@ -12852,7 +12986,8 @@ const createTrendCard = (
             openingTime: openingTimeInput.value,
             closingTime: closingTimeInput.value,
             offDays: offDaysValue,
-            isActive: statusInput.value !== 'inactive'
+            isActive: statusInput.value !== 'inactive',
+            isBookableStaffMember: bookableInput.checked
           });
         } else {
           await addTeamMember({
@@ -12864,7 +12999,8 @@ const createTrendCard = (
             openingTime: openingTimeInput.value,
             closingTime: closingTimeInput.value,
             offDays: offDaysValue,
-            isActive: statusInput.value !== 'inactive'
+            isActive: statusInput.value !== 'inactive',
+            isBookableStaffMember: bookableInput.checked
           });
         }
       } catch (error) {
@@ -16617,7 +16753,9 @@ const createTrendCard = (
   };
 
   if (settingsAction instanceof HTMLButtonElement) {
-    settingsAction.addEventListener('click', () => {
+    settingsAction.addEventListener('click', async () => {
+      await loadPublicConfig().catch(() => ({}));
+
       openToolModal({
         eyebrow: 'Calendar settings',
         title: 'Settings shortcuts',
@@ -16635,9 +16773,17 @@ const createTrendCard = (
             closeToolModal();
             window.location.assign(buildPathWithClientId('/email-logs', clientId));
           }),
-          createToolActionButton('Set up online payments', () => {
-            void openStripeConnectModal();
+          createToolActionButton('Manage blogs', () => {
+            closeToolModal();
+            window.location.assign(buildPathWithClientId('/blog-admin', clientId));
           }),
+          ...(isStripePaymentsEnabled()
+            ? [
+                createToolActionButton('Set up online payments', () => {
+                  void openStripeConnectModal();
+                })
+              ]
+            : []),
           createToolActionButton('My branches', () => {
             void openBranchesModal();
           }),
@@ -16748,6 +16894,7 @@ const createTrendCard = (
 
   let marketingCampaigns = [];
   let marketingCsvContacts = [];
+  let walletOverview = null;
   let marketingActiveCampaignId = '';
   let marketingPollTimer = null;
   let activeMarketingMode = 'history';
@@ -17265,6 +17412,149 @@ const createTrendCard = (
     }
   };
 
+  const WALLET_TOPUP_PRESETS_CENTS = [50000, 100000, 250000, 500000];
+
+  const formatWalletBalance = (cents) => `Rs${Math.round((cents ?? 0) / 100).toLocaleString('en-PK')}`;
+
+  const loadWalletOverview = async () => {
+    try {
+      walletOverview = await apiRequest(`/api/platform/clients/${clientId}/wallet`);
+    } catch (_error) {
+      walletOverview = null;
+    }
+  };
+
+  const openWalletTopupModal = () => {
+    const form = document.createElement('form');
+    form.className = 'calendar-tool-form';
+
+    const methodPicker = buildManualPaymentMethodPicker();
+    form.append(methodPicker.container);
+
+    const amountField = document.createElement('div');
+    amountField.className = 'calendar-tool-field';
+    const amountLabel = document.createElement('span');
+    amountLabel.textContent = 'Top-up amount';
+    const presetsWrap = document.createElement('div');
+    presetsWrap.style.display = 'flex';
+    presetsWrap.style.gap = '8px';
+    presetsWrap.style.flexWrap = 'wrap';
+
+    const amountInput = document.createElement('input');
+    amountInput.type = 'number';
+    amountInput.min = '100';
+    amountInput.placeholder = 'Custom amount (Rs)';
+
+    WALLET_TOPUP_PRESETS_CENTS.forEach((presetCents) => {
+      const presetButton = document.createElement('button');
+      presetButton.type = 'button';
+      presetButton.className = 'pill-button';
+      presetButton.textContent = formatWalletBalance(presetCents);
+      presetButton.addEventListener('click', () => {
+        amountInput.value = String(presetCents / 100);
+      });
+      presetsWrap.append(presetButton);
+    });
+
+    amountField.append(amountLabel, presetsWrap, amountInput);
+
+    const referenceField = document.createElement('label');
+    referenceField.className = 'calendar-tool-field';
+    const referenceLabel = document.createElement('span');
+    referenceLabel.textContent = 'Bank/transaction reference (optional)';
+    const referenceInput = document.createElement('input');
+    referenceInput.type = 'text';
+    referenceInput.placeholder = 'e.g. transaction ID';
+    referenceField.append(referenceLabel, referenceInput);
+
+    const proofField = document.createElement('label');
+    proofField.className = 'calendar-tool-field';
+    const proofLabel = document.createElement('span');
+    proofLabel.textContent = 'Payment proof (screenshot)';
+    const proofInput = document.createElement('input');
+    proofInput.type = 'file';
+    proofInput.accept = 'image/*';
+    proofField.append(proofLabel, proofInput);
+
+    let proofDataUrl = '';
+    proofInput.addEventListener('change', () => {
+      const file = proofInput.files?.[0];
+
+      if (!file) {
+        proofDataUrl = '';
+        return;
+      }
+
+      if (!file.type.startsWith('image/')) {
+        safeAlert('Please choose an image file.');
+        proofInput.value = '';
+        return;
+      }
+
+      if (file.size > 4 * 1024 * 1024) {
+        safeAlert('Please choose an image smaller than 4 MB.');
+        proofInput.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        proofDataUrl = typeof reader.result === 'string' ? reader.result : '';
+      });
+      reader.readAsDataURL(file);
+    });
+
+    const submitButton = document.createElement('button');
+    submitButton.className = 'calendar-tool-action calendar-tool-submit';
+    submitButton.type = 'submit';
+    submitButton.textContent = 'Submit top-up request';
+
+    form.append(amountField, referenceField, proofField, submitButton);
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const amountCents = Math.round(Number(amountInput.value) * 100);
+
+      if (!amountCents || amountCents <= 0) {
+        safeAlert('Enter a top-up amount.');
+        return;
+      }
+
+      if (!proofDataUrl) {
+        safeAlert('Upload a payment proof screenshot.');
+        return;
+      }
+
+      setButtonBusy(submitButton, true, 'Submitting...');
+
+      try {
+        await apiRequest(`/api/platform/clients/${clientId}/wallet/topup`, {
+          method: 'POST',
+          body: JSON.stringify({
+            amountCents,
+            paymentMethod: methodPicker.getSelectedMethod(),
+            paymentProofDataUrl: proofDataUrl,
+            transactionReference: referenceInput.value
+          })
+        });
+
+        closeToolModal();
+        safeAlert('Top-up request submitted. Your wallet will be credited once ALGONLP approves it.');
+      } catch (error) {
+        setButtonBusy(submitButton, false);
+        safeAlert(error instanceof Error ? error.message : 'Unable to submit top-up request');
+      }
+    });
+
+    openToolModal({
+      eyebrow: 'Communication wallet',
+      title: 'Top up wallet',
+      description: 'Choose Easypaisa, JazzCash, or Bank Transfer, upload the proof, and ALGONLP will approve it and credit your wallet.',
+      actions: [form]
+    });
+  };
+
   const renderMarketingSummary = () => {
     if (!(marketingSummaryEl instanceof HTMLElement)) {
       return;
@@ -17295,6 +17585,27 @@ const createTrendCard = (
         { chartType: 'comparison' }
       )
     );
+
+    const walletCard = document.createElement('div');
+    walletCard.className = 'calendar-trend-card calendar-wallet-card';
+    const walletHeading = document.createElement('h3');
+    walletHeading.textContent = 'Communication wallet';
+    const walletAmount = document.createElement('strong');
+    walletAmount.className = 'calendar-wallet-amount';
+    walletAmount.textContent = formatWalletBalance(walletOverview?.balanceCents ?? 0);
+    const walletNote = document.createElement('p');
+    const pendingCount = walletOverview?.pendingTopupRequests?.length ?? 0;
+    walletNote.textContent =
+      pendingCount > 0
+        ? `${pendingCount} top-up request${pendingCount === 1 ? '' : 's'} awaiting approval`
+        : 'Used for SMS/WhatsApp campaign sends';
+    const walletTopupButton = document.createElement('button');
+    walletTopupButton.type = 'button';
+    walletTopupButton.className = 'pill-button fill';
+    walletTopupButton.textContent = 'Top up';
+    walletTopupButton.addEventListener('click', openWalletTopupModal);
+    walletCard.append(walletHeading, walletAmount, walletNote, walletTopupButton);
+    marketingSummaryEl.append(walletCard);
 
     renderMarketingDrawer();
     renderMarketingAdminView();
@@ -17682,7 +17993,7 @@ const createTrendCard = (
               body: JSON.stringify({ recipientSource: campaign.recipientSource, csvContacts: marketingCsvContacts })
             }
           );
-          renderMarketingPreviewStep(preview, campaign.recipientSource);
+          await renderMarketingPreviewStep(preview, campaign.recipientSource);
         } catch (error) {
           marketingCsvContacts = [];
           csvStatus.textContent = error instanceof Error ? error.message : 'Unable to read this file.';
@@ -17703,7 +18014,7 @@ const createTrendCard = (
       );
 
       marketingBuilderEl.classList.remove('is-hidden');
-      renderMarketingPreviewStep(preview, campaign.recipientSource);
+      await renderMarketingPreviewStep(preview, campaign.recipientSource);
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to load recipients for this campaign.');
     }
@@ -17829,7 +18140,9 @@ const createTrendCard = (
     marketingBuilderEl.append(cancelButton);
   };
 
-  const renderMarketingPreviewStep = (preview, recipientSource) => {
+  const formatWalletCents = (cents) => `Rs${Math.round((cents ?? 0) / 100).toLocaleString('en-PK')}`;
+
+  const renderMarketingPreviewStep = async (preview, recipientSource) => {
     marketingBuilderEl.replaceChildren();
 
     const heading = document.createElement('h2');
@@ -17839,6 +18152,35 @@ const createTrendCard = (
     const summary = document.createElement('p');
     summary.textContent = `${preview.total} recipient${preview.total === 1 ? '' : 's'} — ${preview.smsEligibleCount} reachable by SMS, ${preview.emailEligibleCount} reachable by email.`;
     marketingBuilderEl.append(summary);
+
+    let costPreview = null;
+
+    if (preview.total > 0) {
+      try {
+        costPreview = await apiRequest(`/api/platform/clients/${clientId}/campaigns/cost-preview`, {
+          method: 'POST',
+          body: JSON.stringify({ recipientSource, csvContacts: marketingCsvContacts })
+        });
+      } catch (_error) {
+        // If the cost preview can't be loaded, fall through and let the
+        // actual Send attempt surface the real error server-side.
+      }
+
+      if (costPreview) {
+        const costCard = document.createElement('div');
+        costCard.className = `calendar-marketing-cost-preview${costPreview.hasSufficientBalance ? '' : ' is-insufficient'}`;
+        costCard.innerHTML = `
+          <p>Estimated cost: <strong>${formatWalletCents(costPreview.estimatedTotalCents)}</strong></p>
+          <p>Wallet balance: ${formatWalletCents(costPreview.balanceCents)} → after send: ${formatWalletCents(costPreview.balanceAfterCents)}</p>
+          ${
+            costPreview.hasSufficientBalance
+              ? ''
+              : `<p class="calendar-marketing-cost-warning">Insufficient wallet balance — top up ${formatWalletCents(costPreview.topupNeededCents)} to send this campaign.</p>`
+          }
+        `;
+        marketingBuilderEl.append(costCard);
+      }
+    }
 
     if (preview.total === 0) {
       const empty = document.createElement('p');
@@ -17869,7 +18211,7 @@ const createTrendCard = (
     sendButton.type = 'button';
     sendButton.className = 'calendar-marketing-continue-button';
     sendButton.textContent = 'Send campaign';
-    sendButton.disabled = preview.total === 0;
+    sendButton.disabled = preview.total === 0 || (costPreview ? !costPreview.hasSufficientBalance : false);
 
     sendButton.addEventListener('click', () => {
       openToolModal({
@@ -18118,6 +18460,93 @@ const createTrendCard = (
       form.append(label);
     }
 
+    const marketplaceToggleField = document.createElement('label');
+    marketplaceToggleField.className = 'calendar-marketing-field calendar-tool-field-checkbox';
+    const marketplaceToggleInput = document.createElement('input');
+    marketplaceToggleInput.type = 'checkbox';
+    const marketplaceToggleText = document.createElement('span');
+    marketplaceToggleText.textContent = 'Promote on QRSchedule Marketplace';
+    const marketplaceToggleHelp = document.createElement('small');
+    marketplaceToggleHelp.textContent = 'Shows this offer publicly on the marketplace, separate from this campaign\'s SMS/email send.';
+    marketplaceToggleField.append(marketplaceToggleInput, marketplaceToggleText, marketplaceToggleHelp);
+    form.append(marketplaceToggleField);
+
+    const marketplaceFieldsWrap = document.createElement('div');
+    marketplaceFieldsWrap.className = 'calendar-marketing-marketplace-fields is-hidden';
+
+    const marketplaceTitleLabel = document.createElement('label');
+    marketplaceTitleLabel.className = 'calendar-marketing-field';
+    marketplaceTitleLabel.innerHTML = '<span>Marketplace offer title</span>';
+    const marketplaceTitleInput = document.createElement('input');
+    marketplaceTitleInput.type = 'text';
+    marketplaceTitleInput.placeholder = 'e.g. 20% off haircuts this week';
+    marketplaceTitleLabel.append(marketplaceTitleInput);
+
+    const marketplaceServicesLabel = document.createElement('label');
+    marketplaceServicesLabel.className = 'calendar-marketing-field';
+    marketplaceServicesLabel.innerHTML = '<span>Applicable services</span>';
+    const marketplaceServicesSelect = document.createElement('select');
+    marketplaceServicesSelect.multiple = true;
+    services.forEach((service) => {
+      const option = document.createElement('option');
+      option.value = service.id;
+      option.textContent = service.name;
+      marketplaceServicesSelect.append(option);
+    });
+    marketplaceServicesLabel.append(marketplaceServicesSelect);
+
+    const marketplaceDateRow = document.createElement('div');
+    marketplaceDateRow.className = 'calendar-marketing-field';
+    marketplaceDateRow.innerHTML = '<span>Offer runs from -&gt; until</span>';
+    const marketplaceDateWrap = document.createElement('div');
+    marketplaceDateWrap.style.display = 'flex';
+    marketplaceDateWrap.style.gap = '10px';
+    const marketplaceStartDateInput = document.createElement('input');
+    marketplaceStartDateInput.type = 'date';
+    const marketplaceEndDateInput = document.createElement('input');
+    marketplaceEndDateInput.type = 'date';
+    marketplaceDateWrap.append(marketplaceStartDateInput, marketplaceEndDateInput);
+    marketplaceDateRow.append(marketplaceDateWrap);
+
+    const marketplaceCapLabel = document.createElement('label');
+    marketplaceCapLabel.className = 'calendar-marketing-field';
+    marketplaceCapLabel.innerHTML = '<span>Redemption cap (optional)</span>';
+    const marketplaceCapInput = document.createElement('input');
+    marketplaceCapInput.type = 'number';
+    marketplaceCapInput.min = '1';
+    marketplaceCapInput.placeholder = 'e.g. 50';
+    marketplaceCapLabel.append(marketplaceCapInput);
+
+    const marketplaceNewCustomerField = document.createElement('label');
+    marketplaceNewCustomerField.className = 'calendar-marketing-field calendar-tool-field-checkbox';
+    const marketplaceNewCustomerInput = document.createElement('input');
+    marketplaceNewCustomerInput.type = 'checkbox';
+    const marketplaceNewCustomerText = document.createElement('span');
+    marketplaceNewCustomerText.textContent = 'New customers only';
+    marketplaceNewCustomerField.append(marketplaceNewCustomerInput, marketplaceNewCustomerText);
+
+    const marketplaceCtaLabel = document.createElement('label');
+    marketplaceCtaLabel.className = 'calendar-marketing-field';
+    marketplaceCtaLabel.innerHTML = '<span>Book button label</span>';
+    const marketplaceCtaInput = document.createElement('input');
+    marketplaceCtaInput.type = 'text';
+    marketplaceCtaInput.placeholder = 'Book Offer';
+    marketplaceCtaLabel.append(marketplaceCtaInput);
+
+    marketplaceFieldsWrap.append(
+      marketplaceTitleLabel,
+      marketplaceServicesLabel,
+      marketplaceDateRow,
+      marketplaceCapLabel,
+      marketplaceNewCustomerField,
+      marketplaceCtaLabel
+    );
+    form.append(marketplaceFieldsWrap);
+
+    marketplaceToggleInput.addEventListener('change', () => {
+      marketplaceFieldsWrap.classList.toggle('is-hidden', !marketplaceToggleInput.checked);
+    });
+
     const channelLabel = document.createElement('label');
     channelLabel.className = 'calendar-marketing-field';
     channelLabel.innerHTML = '<span>Send via</span>';
@@ -18303,6 +18732,20 @@ const createTrendCard = (
           recipientSource: sourceSelect.value
         };
 
+        if (marketplaceToggleInput.checked) {
+          input.isPromotedOnMarketplace = true;
+          input.marketplaceOfferTitle = marketplaceTitleInput.value;
+          input.marketplaceServiceIds = getSelectedValues(marketplaceServicesSelect);
+          input.marketplaceStartDate = marketplaceStartDateInput.value;
+          input.marketplaceEndDate = marketplaceEndDateInput.value;
+          input.marketplaceNewCustomerOnly = marketplaceNewCustomerInput.checked;
+          input.marketplaceCtaLabel = marketplaceCtaInput.value;
+
+          if (marketplaceCapInput.value) {
+            input.marketplaceRedemptionCap = Number(marketplaceCapInput.value);
+          }
+        }
+
         if (templateType === 'percent_off' || templateType === 'last_minute_fill') {
           input.discountPercent = Number(discountPercentInput.value);
         }
@@ -18344,7 +18787,7 @@ const createTrendCard = (
           }
         );
 
-        renderMarketingPreviewStep(preview, sourceSelect.value);
+        await renderMarketingPreviewStep(preview, sourceSelect.value);
       } catch (error) {
         status.textContent = error instanceof Error ? error.message : 'Unable to create this campaign.';
       } finally {
@@ -18410,7 +18853,7 @@ const createTrendCard = (
     setActiveDrawer('');
     setMainView('marketing');
     setMarketingWorkspaceMode(mode);
-    await loadMarketingCampaigns();
+    await Promise.all([loadMarketingCampaigns(), loadWalletOverview()]);
 
     if (mode === 'new') {
       openMarketingBuilder();
@@ -20405,6 +20848,11 @@ const initPublicBooking = () => {
   };
 
   const createPublicPackageCheckout = async () => {
+    if (!isStripePaymentsEnabled()) {
+      safeAlert('Online package payments are temporarily unavailable. Please contact the salon directly.');
+      return;
+    }
+
     const selectedPackagePlan = getSelectedPublishedPackagePlan();
 
     if (!selectedPackagePlan) {
@@ -20474,7 +20922,7 @@ const initPublicBooking = () => {
     publishedPackagePlansById.clear();
     selectedPublishedPackagePlanId = '';
 
-    if (!Array.isArray(packagePlans) || packagePlans.length === 0) {
+    if (!Array.isArray(packagePlans) || packagePlans.length === 0 || !isStripePaymentsEnabled()) {
       if (packagePlansPanel instanceof HTMLDivElement) {
         packagePlansPanel.classList.add('is-hidden');
       }
@@ -20719,6 +21167,7 @@ const initPublicBooking = () => {
     }`
   )
     .then(async (payload) => {
+      await loadPublicConfig().catch(() => ({}));
       currentBusinessName =
         typeof payload.businessName === 'string' ? payload.businessName.trim() : '';
       currentBusinessPhoneNumber = typeof payload.businessPhoneNumber === 'string' ? payload.businessPhoneNumber.trim() : '';
@@ -22069,7 +22518,11 @@ const initPricingPage = () => {
       pricingStatus.innerHTML = `
         <p class="pricing-label">Subscription setup</p>
         <h1>Choose a plan for your business workspace</h1>
-        <p>Sign up first, then come back here to activate a plan with secure Stripe Checkout.</p>
+        <p>${
+          isStripePaymentsEnabled()
+            ? 'Sign up first, then come back here to activate a plan with secure Stripe Checkout or manual payment (Easypaisa/JazzCash/Bank Transfer).'
+            : 'Sign up first, then come back here to activate a plan via manual payment (Easypaisa/JazzCash/Bank Transfer).'
+        }</p>
       `;
       return;
     }
@@ -22093,6 +22546,166 @@ const initPricingPage = () => {
     `;
   };
 
+  const renderManualPaymentCheckout = () => {
+    pricingCheckout.innerHTML = `
+      <div class="manual-payment-hero">
+        <span class="manual-payment-eyebrow">Manual payment</span>
+        <h2>Pay manually for ${escapeHtml(selectedPlan.name)}</h2>
+        <p>
+          Choose Easypaisa, JazzCash, or Bank Transfer, pay ${escapeHtml(formatSubscriptionPlanPrice(selectedPlan))},
+          upload the proof below, and ALGONLP will verify it and activate your plan.
+        </p>
+      </div>
+    `;
+
+    if (isStripePaymentsEnabled()) {
+      const backButton = document.createElement('button');
+      backButton.type = 'button';
+      backButton.className = 'pricing-cta-secondary manual-payment-back';
+      backButton.textContent = '← Pay by card instead';
+      backButton.addEventListener('click', () => {
+        renderCheckout();
+      });
+      pricingCheckout.append(backButton);
+    }
+
+    if (!clientId) {
+      const signupNote = document.createElement('p');
+      signupNote.className = 'manual-payment-signup-note';
+      signupNote.textContent = 'Sign up first, then come back here to submit your payment proof.';
+      pricingCheckout.append(signupNote);
+      pricingCheckout.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+
+    const layout = document.createElement('div');
+    layout.className = 'manual-payment-layout';
+
+    const methodPanel = document.createElement('div');
+    methodPanel.className = 'manual-payment-panel';
+    const methodStep = document.createElement('p');
+    methodStep.className = 'manual-payment-step';
+    methodStep.textContent = 'Step 1 · Choose a method & pay';
+    const methodPicker = buildManualPaymentMethodPicker();
+    methodPanel.append(methodStep, methodPicker.container);
+    layout.append(methodPanel);
+
+    const form = document.createElement('form');
+    form.className = 'pricing-checkout-form manual-payment-form';
+
+    const formStep = document.createElement('p');
+    formStep.className = 'manual-payment-step manual-payment-form-step';
+    formStep.textContent = 'Step 2 · Confirm your payment';
+
+    const referenceLabel = document.createElement('label');
+    referenceLabel.className = 'is-wide';
+    const referenceLabelText = document.createElement('span');
+    referenceLabelText.textContent = 'Bank/transaction reference (optional)';
+    const referenceInput = document.createElement('input');
+    referenceInput.type = 'text';
+    referenceInput.placeholder = 'e.g. transaction ID';
+    referenceLabel.append(referenceLabelText, referenceInput);
+
+    const proofLabel = document.createElement('label');
+    proofLabel.className = 'is-wide';
+    const proofLabelText = document.createElement('span');
+    proofLabelText.textContent = 'Payment proof (screenshot)';
+    const proofDropzone = document.createElement('div');
+    proofDropzone.className = 'manual-payment-dropzone';
+    const proofIcon = document.createElement('span');
+    proofIcon.className = 'manual-payment-dropzone-icon';
+    proofIcon.textContent = '📎';
+    const proofFilename = document.createElement('span');
+    proofFilename.className = 'manual-payment-dropzone-text';
+    proofFilename.textContent = 'Choose a screenshot to upload';
+    const proofInput = document.createElement('input');
+    proofInput.type = 'file';
+    proofInput.accept = 'image/*';
+    proofInput.className = 'manual-payment-dropzone-input';
+    proofDropzone.append(proofIcon, proofFilename, proofInput);
+    proofLabel.append(proofLabelText, proofDropzone);
+
+    let proofDataUrl = '';
+    proofInput.addEventListener('change', () => {
+      const file = proofInput.files?.[0];
+
+      if (!file) {
+        proofDataUrl = '';
+        proofFilename.textContent = 'Choose a screenshot to upload';
+        proofDropzone.classList.remove('has-file');
+        return;
+      }
+
+      if (!file.type.startsWith('image/')) {
+        safeAlert('Please choose an image file.');
+        proofInput.value = '';
+        return;
+      }
+
+      if (file.size > 4 * 1024 * 1024) {
+        safeAlert('Please choose an image smaller than 4 MB.');
+        proofInput.value = '';
+        return;
+      }
+
+      proofFilename.textContent = file.name;
+      proofDropzone.classList.add('has-file');
+
+      const reader = new FileReader();
+      reader.addEventListener('load', () => {
+        proofDataUrl = typeof reader.result === 'string' ? reader.result : '';
+      });
+      reader.readAsDataURL(file);
+    });
+
+    const actions = document.createElement('div');
+    actions.className = 'pricing-checkout-actions';
+    const submitButton = document.createElement('button');
+    submitButton.className = 'pricing-cta';
+    submitButton.type = 'submit';
+    submitButton.textContent = 'Submit payment proof';
+    const actionsNote = document.createElement('span');
+    actionsNote.className = 'manual-payment-actions-note';
+    actionsNote.textContent = 'Verified manually, usually within a few hours.';
+    actions.append(submitButton, actionsNote);
+
+    form.append(formStep, referenceLabel, proofLabel, actions);
+    layout.append(form);
+    pricingCheckout.append(layout);
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      if (!proofDataUrl) {
+        safeAlert('Upload a payment proof screenshot.');
+        return;
+      }
+
+      setButtonBusy(submitButton, true, 'Submitting...');
+
+      try {
+        await apiRequest(`/api/platform/clients/${encodeURIComponent(clientId)}/billing/manual-payment`, {
+          method: 'POST',
+          body: JSON.stringify({
+            planId: selectedPlan.id,
+            paymentMethod: methodPicker.getSelectedMethod(),
+            paymentProofDataUrl: proofDataUrl,
+            transactionReference: referenceInput.value
+          })
+        });
+
+        safeAlert('Payment submitted. Your plan will activate once ALGONLP verifies it.');
+        selectedPlan = null;
+        renderCheckout();
+      } catch (error) {
+        setButtonBusy(submitButton, false);
+        safeAlert(error instanceof Error ? error.message : 'Unable to submit payment proof');
+      }
+    });
+
+    pricingCheckout.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const renderCheckout = () => {
     if (!selectedPlan) {
       pricingCheckout.classList.add('is-hidden');
@@ -22101,6 +22714,12 @@ const initPricingPage = () => {
     }
 
     pricingCheckout.classList.remove('is-hidden');
+
+    if (!isStripePaymentsEnabled()) {
+      renderManualPaymentCheckout();
+      return;
+    }
+
     pricingCheckout.innerHTML = `
       <h2>Checkout for ${escapeHtml(selectedPlan.name)}</h2>
       <p>
@@ -22110,6 +22729,7 @@ const initPricingPage = () => {
       <form class="pricing-checkout-form" id="pricing-checkout-form">
         <div class="pricing-checkout-actions">
           <button class="pricing-cta" type="submit">Continue to Stripe</button>
+          <button class="pricing-cta-secondary" type="button" id="pricing-manual-payment-toggle">Pay manually instead</button>
           <span class="pricing-note">${
             Number(selectedPlan.trialDays) > 0
               ? `Free for the first ${escapeHtml(String(selectedPlan.trialDays))} days, then ${escapeHtml(formatSubscriptionPlanPrice(selectedPlan))} per ${escapeHtml(selectedPlan.billingInterval)}.`
@@ -22118,6 +22738,14 @@ const initPricingPage = () => {
         </div>
       </form>
     `;
+
+    const manualPaymentToggle = pricingCheckout.querySelector('#pricing-manual-payment-toggle');
+
+    if (manualPaymentToggle instanceof HTMLButtonElement) {
+      manualPaymentToggle.addEventListener('click', () => {
+        renderManualPaymentCheckout();
+      });
+    }
 
     const form = pricingCheckout.querySelector('#pricing-checkout-form');
 
@@ -22194,10 +22822,7 @@ const initPricingPage = () => {
       const amount = document.createElement('strong');
       amount.textContent = formatSubscriptionPlanPrice(plan);
       const interval = document.createElement('span');
-      interval.textContent =
-        plan.key === 'team_premium'
-          ? 'per team member monthly'
-          : `per ${plan.billingInterval}`;
+      interval.textContent = `per ${plan.billingInterval}`;
       price.append(amount, interval);
 
       const copy = document.createElement('div');
@@ -22219,7 +22844,7 @@ const initPricingPage = () => {
       action.className = 'pricing-cta';
       action.type = 'button';
 
-      if (plan.key === 'solo' && !clientId) {
+      if (plan.key === 'lite' && !clientId) {
         action.textContent = 'Start 1-month free trial';
 
         const trialForm = document.createElement('form');
@@ -22287,35 +22912,19 @@ const initPricingPage = () => {
         return card;
       }
 
-      action.textContent = plan.id === currentPlanId ? 'Current plan' : clientId ? 'Choose plan' : 'Sign up first';
-      action.addEventListener('click', async () => {
+      action.textContent =
+        plan.id === currentPlanId ? 'Current plan' : clientId ? 'Choose plan' : 'Sign up first';
+      action.addEventListener('click', () => {
         if (!clientId) {
           window.location.assign(`/signup?plan=${encodeURIComponent(plan.key)}`);
           return;
         }
 
-        setButtonBusy(action, true, 'Opening Stripe...');
-
-        try {
-          const payload = await apiRequest(
-            `/api/platform/clients/${encodeURIComponent(clientId)}/billing/checkout`,
-            {
-              method: 'POST',
-              body: JSON.stringify({ planId: plan.id })
-            }
-          );
-
-          if (payload?.checkoutUrl) {
-            window.location.href = payload.checkoutUrl;
-            return;
-          }
-
-          safeAlert('Stripe checkout did not return a checkout link.');
-        } catch (error) {
-          safeAlert(error instanceof Error ? error.message : 'Unable to start Stripe checkout');
-        }
-
-        setButtonBusy(action, false);
+        // Reveal the checkout panel below (Stripe when enabled, manual
+        // payment always) instead of redirecting straight to Stripe -
+        // manual payment must stay reachable even when Stripe is off.
+        selectedPlan = plan;
+        renderCheckout();
       });
 
       card.append(top, price, copy, featureWrap, action);
@@ -22339,12 +22948,13 @@ const initPricingPage = () => {
 
   recoverCompletedCheckout()
     .then(() => Promise.all([
+    loadPublicConfig().catch(() => ({})),
     apiRequest('/api/billing/subscription-plans'),
     clientId
       ? apiRequest(`/api/platform/clients/${encodeURIComponent(clientId)}/billing`).catch(() => null)
       : Promise.resolve(null)
     ]))
-    .then(([plansPayload, overviewPayload]) => {
+    .then(([, plansPayload, overviewPayload]) => {
       plans = Array.isArray(plansPayload?.plans) ? plansPayload.plans : [];
       billingOverview = overviewPayload;
       renderStatus();
@@ -23071,6 +23681,389 @@ const initEmailLogs = () => {
     });
 };
 
+const formatBlogDate = (value) => {
+  if (!value) {
+    return 'Draft';
+  }
+
+  const parsedDate = new Date(value);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }).format(parsedDate);
+};
+
+const renderBlogContent = (content) =>
+  String(content || '')
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+
+const initPublicBlog = () => {
+  const list = document.querySelector('#public-blog-list');
+
+  if (!(list instanceof HTMLElement)) {
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const activeSlug = params.get('slug')?.trim();
+  const renderEmpty = (title, description) => {
+    const card = document.createElement('article');
+    card.className = 'sms-log-empty';
+    const heading = document.createElement('h2');
+    heading.textContent = title;
+    const copy = document.createElement('p');
+    copy.textContent = description;
+    card.append(heading, copy);
+    list.replaceChildren(card);
+  };
+
+  const renderPostDetail = (post) => {
+    document.title = `${post.seoTitle || post.title} | QRschedule`;
+    const metaDescription = document.querySelector('meta[name="description"]');
+    if (metaDescription instanceof HTMLMetaElement && post.seoDescription) {
+      metaDescription.content = post.seoDescription;
+    }
+
+    const article = document.createElement('article');
+    article.className = 'public-blog-detail';
+
+    if (post.imageUrl) {
+      const image = document.createElement('img');
+      image.src = post.imageUrl;
+      image.alt = post.title;
+      article.append(image);
+    }
+
+    const category = document.createElement('p');
+    category.className = 'login-eyebrow';
+    category.textContent = post.category || 'Blog';
+
+    const title = document.createElement('h2');
+    title.textContent = post.title;
+
+    const meta = document.createElement('p');
+    meta.className = 'public-blog-meta';
+    meta.textContent = `${post.authorName || 'QRschedule team'} - ${formatBlogDate(post.publishedAt)}`;
+
+    article.append(category, title, meta);
+
+    for (const paragraphText of renderBlogContent(post.content)) {
+      const paragraph = document.createElement('p');
+      paragraph.textContent = paragraphText;
+      article.append(paragraph);
+    }
+
+    list.replaceChildren(article);
+  };
+
+  const renderPostList = (posts) => {
+    if (posts.length === 0) {
+      renderEmpty('No blog posts yet', 'Published posts will show here soon.');
+      return;
+    }
+
+    const cards = posts.map((post) => {
+      const card = document.createElement('article');
+      card.className = 'public-blog-card';
+
+      if (post.imageUrl) {
+        const image = document.createElement('img');
+        image.src = post.imageUrl;
+        image.alt = post.title;
+        card.append(image);
+      }
+
+      const body = document.createElement('div');
+      const meta = document.createElement('p');
+      meta.className = 'public-blog-meta';
+      meta.textContent = `${post.category || 'Blog'} - ${formatBlogDate(post.publishedAt)}`;
+
+      const title = document.createElement('h2');
+      title.textContent = post.title;
+
+      const excerpt = document.createElement('p');
+      excerpt.textContent = post.excerpt || post.seoDescription || '';
+
+      const link = document.createElement('a');
+      link.className = 'pill-button';
+      link.href = `/blog.html?slug=${encodeURIComponent(post.slug)}`;
+      link.textContent = 'Read post';
+
+      body.append(meta, title, excerpt, link);
+      card.append(body);
+      return card;
+    });
+
+    list.replaceChildren(...cards);
+  };
+
+  apiRequest(activeSlug ? `/api/public/blog-posts/${encodeURIComponent(activeSlug)}` : '/api/public/blog-posts')
+    .then((payload) => {
+      if (activeSlug) {
+        renderPostDetail(payload.post);
+        return;
+      }
+
+      renderPostList(Array.isArray(payload.posts) ? payload.posts : []);
+    })
+    .catch((error) => {
+      renderEmpty(
+        'Unable to load blog',
+        error instanceof Error ? error.message : 'Blog posts are not available right now.'
+      );
+    });
+};
+
+const initBlogAdmin = () => {
+  const form = document.querySelector('#blog-admin-form');
+  const list = document.querySelector('#blog-admin-list');
+
+  if (!(form instanceof HTMLFormElement) || !(list instanceof HTMLElement)) {
+    return;
+  }
+
+  const clientId = requireClientId();
+  if (!clientId) {
+    return;
+  }
+
+  const backLink = document.querySelector('#blog-admin-back-link');
+  const idInput = document.querySelector('#blog-post-id');
+  const titleInput = document.querySelector('#blog-title');
+  const slugInput = document.querySelector('#blog-slug');
+  const excerptInput = document.querySelector('#blog-excerpt');
+  const contentInput = document.querySelector('#blog-content');
+  const categoryInput = document.querySelector('#blog-category');
+  const imageUrlInput = document.querySelector('#blog-image-url');
+  const authorInput = document.querySelector('#blog-author');
+  const seoTitleInput = document.querySelector('#blog-seo-title');
+  const seoDescriptionInput = document.querySelector('#blog-seo-description');
+  const statusInput = document.querySelector('#blog-status');
+  const statusMessage = document.querySelector('#blog-admin-status');
+  const saveButton = document.querySelector('#blog-save-button');
+  const resetButton = document.querySelector('#blog-reset-button');
+  let posts = [];
+
+  if (backLink instanceof HTMLAnchorElement) {
+    backLink.href = buildPathWithClientId('/calendar', clientId);
+  }
+
+  const setStatus = (message, isError = false) => {
+    if (statusMessage instanceof HTMLElement) {
+      statusMessage.textContent = message;
+      statusMessage.classList.toggle('is-error', isError);
+    }
+  };
+
+  const getValue = (input) => (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement ? input.value.trim() : '');
+  const setValue = (input, value) => {
+    if (input instanceof HTMLInputElement || input instanceof HTMLTextAreaElement) {
+      input.value = value || '';
+    }
+  };
+
+  const resetForm = () => {
+    setValue(idInput, '');
+    setValue(titleInput, '');
+    setValue(slugInput, '');
+    setValue(excerptInput, '');
+    setValue(contentInput, '');
+    setValue(categoryInput, '');
+    setValue(imageUrlInput, '');
+    setValue(authorInput, '');
+    setValue(seoTitleInput, '');
+    setValue(seoDescriptionInput, '');
+    if (statusInput instanceof HTMLSelectElement) {
+      statusInput.value = 'draft';
+    }
+    setStatus('');
+  };
+
+  const getPayload = () => ({
+    title: getValue(titleInput),
+    slug: getValue(slugInput),
+    excerpt: getValue(excerptInput),
+    content: getValue(contentInput),
+    category: getValue(categoryInput),
+    imageUrl: getValue(imageUrlInput),
+    authorName: getValue(authorInput),
+    seoTitle: getValue(seoTitleInput),
+    seoDescription: getValue(seoDescriptionInput),
+    status: statusInput instanceof HTMLSelectElement ? statusInput.value : 'draft'
+  });
+
+  const editPost = (post) => {
+    setValue(idInput, post.id);
+    setValue(titleInput, post.title);
+    setValue(slugInput, post.slug);
+    setValue(excerptInput, post.excerpt);
+    setValue(contentInput, post.content);
+    setValue(categoryInput, post.category);
+    setValue(imageUrlInput, post.imageUrl);
+    setValue(authorInput, post.authorName);
+    setValue(seoTitleInput, post.seoTitle);
+    setValue(seoDescriptionInput, post.seoDescription);
+    if (statusInput instanceof HTMLSelectElement) {
+      statusInput.value = post.status || 'draft';
+    }
+    setStatus(`Editing "${post.title}"`);
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  const renderList = () => {
+    if (posts.length === 0) {
+      const empty = document.createElement('article');
+      empty.className = 'sms-log-empty';
+      const heading = document.createElement('h2');
+      heading.textContent = 'No blog posts yet';
+      const copy = document.createElement('p');
+      copy.textContent = 'Your drafts and published posts will show here.';
+      empty.append(heading, copy);
+      list.replaceChildren(empty);
+      return;
+    }
+
+    const cards = posts.map((post) => {
+      const card = document.createElement('article');
+      card.className = 'blog-admin-post-card';
+
+      const top = document.createElement('div');
+      top.className = 'sms-log-card-top';
+
+      const meta = document.createElement('div');
+      meta.className = 'sms-log-meta';
+      const title = document.createElement('strong');
+      title.textContent = post.title;
+      const subtitle = document.createElement('p');
+      subtitle.textContent = `${post.category || 'Blog'} - ${formatBlogDate(post.publishedAt)}`;
+      meta.append(title, subtitle);
+
+      const badge = document.createElement('span');
+      badge.className = `sms-log-status is-${post.status === 'published' ? 'sent' : 'skipped'}`;
+      badge.textContent = post.status;
+      top.append(meta, badge);
+
+      const excerpt = document.createElement('p');
+      excerpt.textContent = post.excerpt || post.seoDescription || 'No excerpt saved.';
+
+      const actions = document.createElement('div');
+      actions.className = 'blog-admin-card-actions';
+      const editButton = document.createElement('button');
+      editButton.className = 'pill-button';
+      editButton.type = 'button';
+      editButton.textContent = 'Edit';
+      editButton.addEventListener('click', () => editPost(post));
+
+      const viewLink = document.createElement('a');
+      viewLink.className = 'pill-button';
+      viewLink.href = `/blog.html?slug=${encodeURIComponent(post.slug)}`;
+      viewLink.textContent = 'View';
+
+      const deleteButton = document.createElement('button');
+      deleteButton.className = 'pill-button';
+      deleteButton.type = 'button';
+      deleteButton.textContent = 'Delete';
+      deleteButton.addEventListener('click', async () => {
+        const confirmed = window.confirm(`Delete "${post.title}"?`);
+        if (!confirmed) {
+          return;
+        }
+
+        await apiRequest(`/api/platform/clients/${clientId}/blog-posts/${post.id}`, {
+          method: 'DELETE'
+        });
+        posts = posts.filter((entry) => entry.id !== post.id);
+        renderList();
+        setStatus('Blog post deleted.');
+      });
+
+      actions.append(editButton, viewLink, deleteButton);
+      card.append(top, excerpt, actions);
+      return card;
+    });
+
+    list.replaceChildren(...cards);
+  };
+
+  const loadPosts = async () => {
+    const payload = await apiRequest(`/api/platform/clients/${clientId}/blog-posts`);
+    posts = Array.isArray(payload.posts) ? payload.posts : [];
+    renderList();
+  };
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const postId = getValue(idInput);
+    const payload = getPayload();
+
+    if (saveButton instanceof HTMLButtonElement) {
+      setButtonBusy(saveButton, true);
+    }
+
+    try {
+      const response = await apiRequest(
+        postId
+          ? `/api/platform/clients/${clientId}/blog-posts/${postId}`
+          : `/api/platform/clients/${clientId}/blog-posts`,
+        {
+          method: postId ? 'PUT' : 'POST',
+          body: JSON.stringify(payload)
+        }
+      );
+      const savedPost = response.post;
+      const existingIndex = posts.findIndex((post) => post.id === savedPost.id);
+      if (existingIndex >= 0) {
+        posts[existingIndex] = savedPost;
+      } else {
+        posts.unshift(savedPost);
+      }
+      renderList();
+      editPost(savedPost);
+      setStatus(savedPost.status === 'published' ? 'Blog post published.' : 'Draft saved.');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Unable to save blog post.', true);
+    } finally {
+      if (saveButton instanceof HTMLButtonElement) {
+        setButtonBusy(saveButton, false);
+      }
+    }
+  });
+
+  if (resetButton instanceof HTMLButtonElement) {
+    resetButton.addEventListener('click', resetForm);
+  }
+
+  loadPosts().catch((error) => {
+    setStatus(error instanceof Error ? error.message : 'Unable to load blog posts.', true);
+  });
+};
+
+const initAdminSettingsLinks = () => {
+  const card = document.querySelector('#admin-blog-settings-card');
+  const link = document.querySelector('#admin-blog-settings-link');
+
+  if (!(card instanceof HTMLElement) || !(link instanceof HTMLAnchorElement)) {
+    return;
+  }
+
+  const clientId = getClientId();
+
+  if (!clientId) {
+    return;
+  }
+
+  card.classList.remove('is-hidden');
+  link.href = buildPathWithClientId('/blog-admin', clientId);
+};
+
 syncClientIdFromQuery();
 syncProtectedPageLinks();
 initCustomerLogin();
@@ -23100,6 +24093,9 @@ if (guardAdminPages()) {
 initPricingPage();
 initSmsLogs();
 initEmailLogs();
+initPublicBlog();
+initBlogAdmin();
+initAdminSettingsLinks();
 initHomeSalonSearch();
 initSalonDetailTabs();
 initSalonProfilePage().catch((error) => {

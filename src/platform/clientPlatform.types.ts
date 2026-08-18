@@ -73,6 +73,13 @@ export interface TeamMemberRecord {
   closingTime: string;
   offDays: WeekdayId[];
   isActive: boolean;
+  /**
+   * A Bookable Staff Member can be selected by customers or assigned to
+   * services/appointments. Receptionist/manager/owner accounts that only
+   * manage the salon should set this to false so they do not consume the
+   * plan's Bookable Staff Member allowance. Defaults to true.
+   */
+  isBookableStaffMember: boolean;
   username?: string;
   passwordHash?: string;
   staffToken?: string;
@@ -299,6 +306,7 @@ export interface CreateTeamMemberInput {
   closingTime?: string;
   offDays?: WeekdayId[];
   isActive?: boolean;
+  isBookableStaffMember?: boolean;
 }
 
 export interface UpdateTeamMemberInput {
@@ -307,6 +315,7 @@ export interface UpdateTeamMemberInput {
   phone?: string;
   email?: string;
   expertise?: string;
+  isBookableStaffMember?: boolean;
   openingTime?: string;
   closingTime?: string;
   offDays?: WeekdayId[];

@@ -1,4 +1,6 @@
-export type SubscriptionPlanKey = 'solo' | 'single' | 'team_premium';
+import type { ManualPaymentMethodKey } from '../platform/platformSettings.types';
+
+export type SubscriptionPlanKey = 'lite' | 'growth' | 'professional' | 'multi_branch';
 
 export type BillingInterval = 'month' | 'year';
 
@@ -18,7 +20,24 @@ export type BillingCardBrand =
   | 'unknown';
 
 export interface SubscriptionPlanEntitlements {
+  /** Bookable Staff Members included in the base monthly price. */
   maxTeamMembers: number;
+  /**
+   * Hard ceiling on Bookable Staff Members for this plan, including paid
+   * add-ons. Creation is blocked past this and an upgrade is recommended.
+   * `null` means admin-configurable / no fixed ceiling (Multi-Branch).
+   */
+  maxBookableStaffCap: number | null;
+  /** Monthly price (in cents) per Bookable Staff Member beyond maxTeamMembers. */
+  extraBookableStaffPriceCents: number;
+  /** Maximum salon locations/branches this plan allows. `null` = admin-configurable. */
+  maxLocations: number | null;
+  /** One-time campaign wallet credit (in cents) granted on first paid activation. */
+  campaignCreditCents: number;
+  /** Monthly included WhatsApp utility (transactional) message allowance. */
+  whatsappUtilityMessageAllowance: number;
+  /** Max campaigns that can be promoted on the marketplace at once. */
+  maxActiveMarketplaceOffers: number;
   includedMessages: number;
   includedMarketingEmails: number;
   includedAppointmentCredits: number;
@@ -55,7 +74,7 @@ export interface BusinessSubscription {
   businessId: string;
   planId: string;
   status: BusinessSubscriptionStatus;
-  provider: 'demo' | 'stripe' | 'trial';
+  provider: 'demo' | 'stripe' | 'trial' | 'manual';
   providerCustomerId: string;
   providerSubscriptionId: string;
   demoCard?: DemoBillingCard;
@@ -105,6 +124,31 @@ export interface CreateSubscriptionCheckoutInput {
   planId: string;
 }
 
+export type SubscriptionPaymentStatus = 'pending_review' | 'approved' | 'rejected';
+
+// A subscription paid for via manual/offline transfer (e.g. Raast), pending
+// admin verification. Mirrors WalletTopupRequestRecord's shape/lifecycle.
+export interface SubscriptionPaymentRequestRecord {
+  id: string;
+  businessId: string;
+  planId: string;
+  amountCents: number;
+  currencyCode: string;
+  paymentMethod: ManualPaymentMethodKey;
+  paymentProofDataUrl: string;
+  transactionReference: string;
+  status: SubscriptionPaymentStatus;
+  // Cleared once the token has been used (or the request decided), so a
+  // replayed email link can never re-approve/re-reject.
+  verificationTokenHash?: string;
+  verificationTokenExpiresAt?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SoloFreeTrialInput {
   name: string;
   email: string;
@@ -117,11 +161,21 @@ export interface BillingFeatureAccess {
   requiredPlanKey?: SubscriptionPlanKey;
 }
 
+export interface BookableStaffMemberUsage {
+  included: number;
+  active: number;
+  extra: number;
+  extraMonthlyCostCents: number;
+  cap: number | null;
+  capReached: boolean;
+}
+
 export interface BillingOverview {
   plans: SubscriptionPlan[];
   subscription: BusinessSubscription | null;
   currentPlan: SubscriptionPlan | null;
   latestInvoice: BillingInvoice | null;
+  bookableStaffMemberUsage: BookableStaffMemberUsage | null;
   creditBalance: {
     granted: number;
     remaining: number;

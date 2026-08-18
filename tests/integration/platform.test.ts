@@ -26,6 +26,7 @@ describe('Client platform API', () => {
   const originalTwilioAccountSid = env.TWILIO_ACCOUNT_SID;
   const originalTwilioAuthToken = env.TWILIO_AUTH_TOKEN;
   const originalTwilioPhoneNumber = env.TWILIO_PHONE_NUMBER;
+  const originalStripeEnabled = env.STRIPE_ENABLED;
   const originalStripeSecretKey = env.STRIPE_SECRET_KEY;
   const originalAllowPlatformPackagePaymentsInTestMode =
     env.STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE;
@@ -38,6 +39,7 @@ describe('Client platform API', () => {
     env.TWILIO_ACCOUNT_SID = originalTwilioAccountSid;
     env.TWILIO_AUTH_TOKEN = originalTwilioAuthToken;
     env.TWILIO_PHONE_NUMBER = originalTwilioPhoneNumber;
+    env.STRIPE_ENABLED = originalStripeEnabled;
     env.STRIPE_SECRET_KEY = originalStripeSecretKey;
     env.STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE =
       originalAllowPlatformPackagePaymentsInTestMode;
@@ -49,6 +51,7 @@ describe('Client platform API', () => {
   });
 
   it('blocks online package checkout until the salon completes Stripe Connect onboarding', async () => {
+    env.STRIPE_ENABLED = true;
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
     env.STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE = false;
 
@@ -91,6 +94,7 @@ describe('Client platform API', () => {
   });
 
   it('creates and persists a separate Stripe Connect account for a salon', async () => {
+    env.STRIPE_ENABLED = true;
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
     const stripeAccount = {
       id: 'acct_salon_one',
@@ -142,6 +146,7 @@ describe('Client platform API', () => {
   });
 
   it('allows platform package checkout only when explicitly enabled with a Stripe test key', async () => {
+    env.STRIPE_ENABLED = true;
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
     env.STRIPE_ALLOW_PLATFORM_PACKAGE_PAYMENTS_IN_TEST_MODE = true;
     const createResponse = await createTestClient(app, {
@@ -188,6 +193,7 @@ describe('Client platform API', () => {
   });
 
   it('routes online package checkout to the current salon Stripe account', async () => {
+    env.STRIPE_ENABLED = true;
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
     const createResponse = await createTestClient(app, {
       email: 'stripe-routed-salon@example.com',
@@ -268,6 +274,7 @@ describe('Client platform API', () => {
   });
 
   it('returns Stripe subscription checkout to the business dashboard', async () => {
+    env.STRIPE_ENABLED = true;
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
     const createResponse = await createTestClient(app, {
       email: 'stripe-subscription-dashboard@example.com',
@@ -303,6 +310,7 @@ describe('Client platform API', () => {
   });
 
   it('restores admin access when Stripe returns without an existing browser cookie', async () => {
+    env.STRIPE_ENABLED = true;
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
     const createResponse = await createTestClient(app, {
       email: 'stripe-return-cookie@example.com',
@@ -337,6 +345,7 @@ describe('Client platform API', () => {
   });
 
   it('confirms a completed Stripe subscription checkout and unlocks dashboard features', async () => {
+    env.STRIPE_ENABLED = true;
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
     const createResponse = await createTestClient(app, {
       email: 'stripe-subscription-confirm@example.com',
@@ -409,6 +418,7 @@ describe('Client platform API', () => {
   });
 
   it('records paid Stripe subscription invoices and advances the billing period', async () => {
+    env.STRIPE_ENABLED = true;
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
     const createResponse = await createTestClient(app, {
       email: 'stripe-invoice-paid@example.com',
@@ -494,6 +504,7 @@ describe('Client platform API', () => {
   });
 
   it('marks a Stripe subscription past due when an invoice payment fails', async () => {
+    env.STRIPE_ENABLED = true;
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
     const createResponse = await createTestClient(app, {
       email: 'stripe-invoice-failed@example.com',
@@ -551,6 +562,7 @@ describe('Client platform API', () => {
   });
 
   it('syncs Stripe subscription status and period updates', async () => {
+    env.STRIPE_ENABLED = true;
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
     const createResponse = await createTestClient(app, {
       email: 'stripe-subscription-updated@example.com',
@@ -611,6 +623,7 @@ describe('Client platform API', () => {
   });
 
   it('cancels a local subscription when Stripe deletes the subscription', async () => {
+    env.STRIPE_ENABLED = true;
     env.STRIPE_SECRET_KEY = 'sk_test_platform';
     const createResponse = await createTestClient(app, {
       email: 'stripe-subscription-deleted@example.com',
@@ -974,7 +987,7 @@ describe('Client platform API', () => {
       destination: 'owner@example.com',
       status: 'sent',
       source: 'welcome',
-      subject: 'Welcome to QR Schedule',
+      subject: 'Welcome to QRschedule',
       createdAt: '2026-01-03T10:00:00.000Z'
     });
 
@@ -3548,7 +3561,7 @@ describe('Client platform API', () => {
     expect(trialResponse.status).toBe(201);
     expect(trialResponse.body).toEqual(
       expect.objectContaining({
-        planKey: 'solo',
+        planKey: 'lite',
         subscriptionStatus: 'trialing'
       })
     );
@@ -3566,7 +3579,7 @@ describe('Client platform API', () => {
 
     expect(overviewResponse.status).toBe(200);
     expect(overviewResponse.body.currentPlan).toEqual(
-      expect.objectContaining({ id: 'plan_solo', key: 'solo' })
+      expect.objectContaining({ id: 'plan_solo', key: 'lite' })
     );
     expect(overviewResponse.body.subscription).toEqual(
       expect.objectContaining({ status: 'trialing', provider: 'trial' })
@@ -3586,9 +3599,10 @@ describe('Client platform API', () => {
     expect(plansResponse.status).toBe(200);
     expect(plansResponse.body.plans).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ id: 'plan_solo', key: 'solo' }),
-        expect.objectContaining({ id: 'plan_single', key: 'single' }),
-        expect.objectContaining({ id: 'plan_team_premium', key: 'team_premium' })
+        expect.objectContaining({ id: 'plan_solo', key: 'lite' }),
+        expect.objectContaining({ id: 'plan_single', key: 'growth' }),
+        expect.objectContaining({ id: 'plan_professional', key: 'professional' }),
+        expect.objectContaining({ id: 'plan_team_premium', key: 'multi_branch' })
       ])
     );
 
@@ -3642,7 +3656,7 @@ describe('Client platform API', () => {
       })
     );
     expect(checkoutResponse.body.overview.currentPlan).toEqual(
-      expect.objectContaining({ key: 'single' })
+      expect.objectContaining({ key: 'growth' })
     );
     expect(checkoutResponse.body.overview.creditBalance).toEqual({
       granted: 150,
@@ -3708,6 +3722,72 @@ describe('Client platform API', () => {
     });
   });
 
+  it('enforces the Bookable Staff Member cap per plan and blocks creation past the max', async () => {
+    const createResponse = await createTestClient(app, {
+      email: 'staff-cap@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/demo-checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        planId: 'plan_single',
+        cardholderName: 'Growth Owner',
+        cardNumber: '4242 4242 4242 4242',
+        expMonth: 12,
+        expYear: 2030,
+        cvc: '123',
+        billingEmail: 'staff-cap@example.com'
+      });
+
+    // Growth plan: 8 included, max cap 12.
+    for (let index = 1; index <= 12; index += 1) {
+      const response = await request(app)
+        .post(`/api/platform/clients/${clientId}/team-members`)
+        .set('x-admin-token', adminToken)
+        .send({ name: `Bookable Staff ${index}` });
+
+      expect(response.status).toBe(201);
+    }
+
+    const blockedResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/team-members`)
+      .set('x-admin-token', adminToken)
+      .send({ name: 'Bookable Staff 13' });
+
+    expect(blockedResponse.status).toBe(402);
+    expect(blockedResponse.body.error).toMatch(/maximum of 12 Bookable Staff Members/);
+    expect(blockedResponse.body.error).toMatch(/Upgrade to Professional/);
+
+    const receptionistResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/team-members`)
+      .set('x-admin-token', adminToken)
+      .send({ name: 'Front Desk Receptionist', isBookableStaffMember: false });
+
+    expect(receptionistResponse.status).toBe(201);
+    expect(receptionistResponse.body.client.teamMembers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: 'Front Desk Receptionist', isBookableStaffMember: false })
+      ])
+    );
+
+    const billingResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}/billing`)
+      .set('x-admin-token', adminToken);
+
+    expect(billingResponse.body.bookableStaffMemberUsage).toEqual({
+      included: 8,
+      active: 12,
+      extra: 4,
+      extraMonthlyCostCents: 160000,
+      cap: 12,
+      capReached: true
+    });
+  });
+
   it('keeps services open on the solo plan while appointment credits remain', async () => {
     const createResponse = await createTestClient(app, {
       email: 'solo-credits@example.com',
@@ -3731,7 +3811,7 @@ describe('Client platform API', () => {
 
     expect(checkoutResponse.status).toBe(201);
     expect(checkoutResponse.body.overview.currentPlan).toEqual(
-      expect.objectContaining({ id: 'plan_solo', key: 'solo' })
+      expect.objectContaining({ id: 'plan_solo', key: 'lite' })
     );
     expect(checkoutResponse.body.overview.creditBalance).toEqual({
       granted: 50,
@@ -3799,7 +3879,7 @@ describe('Client platform API', () => {
 
     expect(updatedBillingResponse.status).toBe(200);
     expect(updatedBillingResponse.body.currentPlan).toEqual(
-      expect.objectContaining({ id: 'plan_solo', key: 'solo' })
+      expect.objectContaining({ id: 'plan_solo', key: 'lite' })
     );
     expect(updatedBillingResponse.body.lockedFeatureKeys).toEqual([]);
     expect(updatedBillingResponse.body.creditBalance).toEqual({

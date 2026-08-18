@@ -5,6 +5,7 @@ dist/
 app.log
 coverage/
 *.zip
+.worktrees/
 
 # Data and artifacts
 /data/*.json

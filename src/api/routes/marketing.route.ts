@@ -38,6 +38,11 @@ marketingRouter.post(
   asyncHandler(marketingController.previewRecipients)
 );
 marketingRouter.post(
+  '/platform/clients/:clientId/campaigns/cost-preview',
+  ...requireMarketingAccess,
+  asyncHandler(marketingController.previewCost)
+);
+marketingRouter.post(
   '/platform/clients/:clientId/campaigns/contacts/upload',
   ...requireMarketingAccess,
   upload.single('file'),

@@ -9,6 +9,9 @@ import { twilioSmsService } from '../notifications/twilioSms.service';
 import { emailService } from '../notifications/email.service';
 import { renderMarketingEmail } from '../notifications/emailTemplate';
 import { billingService } from '../billing/billing.service';
+import { walletService } from '../wallet/wallet.service';
+import { platformSettingsService } from '../platform/platformSettings.service';
+import type { CampaignCostPreview } from '../wallet/wallet.types';
 import { marketingRepository } from './marketing.repository';
 import { defaultCampaignTemplates } from './marketingTemplates.defaults';
 import { buildDedupeKey, normalizeContactEmail, normalizeContactPhone } from './marketingRecipients.util';
@@ -400,6 +403,13 @@ const dispatchRecipients = async (
   let failedCount = 0;
   let skippedCount = 0;
 
+  // Recipients that were counted (and charged for) in the reserved wallet
+  // cost but did not end up with a 'sent' status on that channel - these are
+  // refunded below so a provider outage or exhausted plan credits never
+  // permanently consumes wallet balance for messages that were never delivered.
+  let unsentSmsCount = 0;
+  let unsentEmailCount = 0;
+
   for (const recipient of finalRecipients) {
     const outcome = classifyRecipientOutcome(campaign, recipient);
 
@@ -409,6 +419,14 @@ const dispatchRecipients = async (
       failedCount += 1;
     } else {
       skippedCount += 1;
+    }
+
+    if (isChannelRelevant(campaign.channel, 'sms') && recipient.customerPhone && recipient.smsStatus !== 'sent') {
+      unsentSmsCount += 1;
+    }
+
+    if (isChannelRelevant(campaign.channel, 'email') && recipient.customerEmail && recipient.emailStatus !== 'sent') {
+      unsentEmailCount += 1;
     }
   }
 
@@ -427,6 +445,14 @@ const dispatchRecipients = async (
     sentAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   });
+
+  if (unsentSmsCount > 0 || unsentEmailCount > 0) {
+    const pricing = await platformSettingsService.getCampaignPricing();
+    const refundCents =
+      unsentSmsCount * pricing.smsCostCents + unsentEmailCount * pricing.emailCostCents;
+
+    await walletService.refundForCampaign(campaign.businessId, campaign.id, refundCents);
+  }
 };
 
 export const marketingService = {
@@ -533,6 +559,53 @@ export const marketingService = {
       throw new HttpError(400, 'Enter a name for this custom offer');
     }
 
+    const isPromotedOnMarketplace = input.isPromotedOnMarketplace === true;
+    const marketplaceServiceIds = (input.marketplaceServiceIds ?? []).filter((entry) => entry.trim());
+
+    if (isPromotedOnMarketplace) {
+      if (!input.marketplaceOfferTitle?.trim()) {
+        throw new HttpError(400, 'Enter a marketplace offer title');
+      }
+
+      if (marketplaceServiceIds.length === 0) {
+        throw new HttpError(400, 'Select at least one service for the marketplace offer');
+      }
+
+      const invalidService = marketplaceServiceIds.find(
+        (serviceId) => !client.services.some((service) => service.id === serviceId && service.isActive)
+      );
+
+      if (invalidService) {
+        throw new HttpError(400, 'One of the selected marketplace services is not available');
+      }
+
+      if (!input.marketplaceStartDate || !input.marketplaceEndDate) {
+        throw new HttpError(400, 'Enter a start and end date for the marketplace offer');
+      }
+
+      if (input.marketplaceEndDate < input.marketplaceStartDate) {
+        throw new HttpError(400, 'The marketplace offer end date must be on or after the start date');
+      }
+
+      if (
+        input.marketplaceRedemptionCap !== undefined &&
+        (!Number.isInteger(input.marketplaceRedemptionCap) || input.marketplaceRedemptionCap <= 0)
+      ) {
+        throw new HttpError(400, 'Enter a redemption cap greater than zero');
+      }
+
+      const overview = await billingService.getBillingOverview(businessId);
+      const maxActiveOffers = overview.currentPlan?.entitlements.maxActiveMarketplaceOffers ?? 0;
+      const activeOfferCount = await marketingRepository.countActiveMarketplaceOffers(businessId);
+
+      if (activeOfferCount >= maxActiveOffers) {
+        throw new HttpError(
+          403,
+          `You've reached the maximum of ${maxActiveOffers} active marketplace offers on your plan. End an existing offer or upgrade your plan to add more.`
+        );
+      }
+    }
+
     const id = randomUUID();
     const now = new Date().toISOString();
     const bookingLink = `${origin}/book/${encodeURIComponent(businessId)}?campaign=${id}`;
@@ -575,6 +648,17 @@ export const marketingService = {
       recipientsSkipped: 0,
       linkOpensCount: 0,
       bookingLink,
+      isPromotedOnMarketplace,
+      marketplaceOfferTitle: isPromotedOnMarketplace ? input.marketplaceOfferTitle?.trim() : undefined,
+      marketplaceServiceIds: isPromotedOnMarketplace ? marketplaceServiceIds : [],
+      marketplaceStartDate: isPromotedOnMarketplace ? input.marketplaceStartDate : undefined,
+      marketplaceEndDate: isPromotedOnMarketplace ? input.marketplaceEndDate : undefined,
+      marketplaceBranchId: isPromotedOnMarketplace ? input.marketplaceBranchId?.trim() : undefined,
+      marketplaceRedemptionCap: isPromotedOnMarketplace ? input.marketplaceRedemptionCap : undefined,
+      marketplaceNewCustomerOnly: isPromotedOnMarketplace ? input.marketplaceNewCustomerOnly === true : false,
+      marketplaceCtaLabel: isPromotedOnMarketplace
+        ? input.marketplaceCtaLabel?.trim() || 'Book Offer'
+        : 'Book Offer',
       createdAt: now,
       updatedAt: now
     };
@@ -600,6 +684,17 @@ export const marketingService = {
     };
   },
 
+  // Cost preview shown before Send: how much this campaign will cost from the
+  // wallet, and whether the balance covers it (spec 5.2 steps 4-6).
+  async previewCampaignCost(
+    businessId: string,
+    recipientSource: CampaignRecipientSource,
+    csvContacts: CsvContactRow[]
+  ): Promise<CampaignCostPreview> {
+    const preview = await marketingService.previewRecipients(businessId, recipientSource, csvContacts);
+    return walletService.previewCampaignCost(businessId, preview.smsEligibleCount, preview.emailEligibleCount);
+  },
+
   async confirmAndDispatchCampaign(
     businessId: string,
     campaignId: string,
@@ -619,6 +714,15 @@ export const marketingService = {
     if (merged.length === 0) {
       throw new HttpError(400, 'No valid recipients found for this campaign');
     }
+
+    // Reserve/deduct the wallet cost before any recipient is written, keyed
+    // by campaignId so a retry or double-click on Send can never charge
+    // twice. Throws HttpError(402) if the wallet balance is insufficient,
+    // which blocks the send entirely (spec 5.2 step 6-7).
+    const smsEligibleCount = merged.filter((entry) => entry.phone).length;
+    const emailEligibleCount = merged.filter((entry) => entry.email).length;
+    const costPreview = await walletService.previewCampaignCost(businessId, smsEligibleCount, emailEligibleCount);
+    await walletService.reserveAndDeductForCampaign(businessId, campaignId, costPreview.estimatedTotalCents);
 
     const now = new Date().toISOString();
     const recipientRecords: CampaignRecipientRecord[] = merged.map((entry) => ({
@@ -722,6 +826,10 @@ export const marketingService = {
         recipientsSkipped: 0,
         linkOpensCount: 0,
         bookingLink,
+        isPromotedOnMarketplace: false,
+        marketplaceServiceIds: [],
+        marketplaceNewCustomerOnly: false,
+        marketplaceCtaLabel: 'Book Offer',
         createdAt: now,
         updatedAt: now
       };

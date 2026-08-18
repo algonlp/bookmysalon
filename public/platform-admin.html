@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Platform Admin | QRschedule</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      .pa-toggle-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 20px;
+        border: 1px solid rgba(18, 18, 18, 0.08);
+        border-radius: 14px;
+        background: #ffffff;
+        margin-top: 18px;
+      }
+
+      .pa-toggle-copy h3 {
+        margin: 0 0 4px;
+        font-size: 1rem;
+      }
+
+      .pa-toggle-copy p {
+        margin: 0;
+        font-size: 0.85rem;
+        color: #8a8480;
+      }
+
+      .pa-switch {
+        position: relative;
+        display: inline-block;
+        width: 52px;
+        height: 30px;
+        flex-shrink: 0;
+      }
+
+      .pa-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      .pa-switch-track {
+        position: absolute;
+        inset: 0;
+        background: #d8d3cc;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      .pa-switch-track::before {
+        content: '';
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        left: 3px;
+        top: 3px;
+        background: #ffffff;
+        border-radius: 50%;
+        transition: transform 0.15s ease;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      .pa-switch input:checked + .pa-switch-track {
+        background: var(--primary, #6c4cf5);
+      }
+
+      .pa-switch input:checked + .pa-switch-track::before {
+        transform: translateX(22px);
+      }
+
+      .pa-switch input:disabled + .pa-switch-track {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .pa-meta {
+        margin-top: 10px;
+        font-size: 0.8rem;
+        color: #8a8480;
+      }
+
+      .pa-status-message {
+        margin-top: 14px;
+        font-size: 0.85rem;
+        min-height: 1.2em;
+      }
+
+      .pa-status-message.is-error {
+        color: #c0392b;
+      }
+
+      .pa-status-message.is-success {
+        color: #1e8e3e;
+      }
+
+      .simple-page-card input[type='password'] {
+        width: 100%;
+        min-height: 46px;
+        padding: 0 16px;
+        border: 1px solid rgba(18, 18, 18, 0.08);
+        border-radius: 12px;
+        font-size: 0.95rem;
+        margin: 12px 0;
+      }
+
+      .pa-topup-list {
+        display: grid;
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .pa-topup-card {
+        border: 1px solid rgba(18, 18, 18, 0.08);
+        border-radius: 14px;
+        background: #ffffff;
+        padding: 16px 18px;
+      }
+
+      .pa-topup-card-top {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .pa-topup-amount {
+        font-size: 1.1rem;
+        font-weight: 800;
+      }
+
+      .pa-topup-meta {
+        font-size: 0.8rem;
+        color: #8a8480;
+        margin: 6px 0 10px;
+      }
+
+      .pa-topup-proof-link {
+        display: inline-block;
+        font-size: 0.82rem;
+        margin-bottom: 12px;
+      }
+
+      .pa-topup-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      .pa-topup-actions button {
+        flex: 1;
+        min-height: 40px;
+        border-radius: 10px;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .pa-topup-approve {
+        background: var(--primary, #6c4cf5);
+        color: #fff;
+      }
+
+      .pa-topup-reject {
+        background: #f3ede8;
+        color: #1f1a17;
+      }
+
+      .pa-empty-note {
+        font-size: 0.85rem;
+        color: #8a8480;
+        margin-top: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="simple-page">
+      <div class="simple-page-header">
+        <a class="back-link" href="/" aria-label="Go back">
+          <svg viewBox="0 0 24 24" focusable="false" aria-hidden="true">
+            <path d="M15 5l-7 7 7 7"></path>
+          </svg>
+        </a>
+        <a class="brand" href="/">QRschedule</a>
+      </div>
+
+      <section class="simple-page-card" id="pa-login-card">
+        <p class="login-eyebrow">Platform admin</p>
+        <h1>Enter the super admin key</h1>
+        <p>This page controls platform-wide settings that affect every salon. ALGONLP staff only.</p>
+        <form id="pa-login-form">
+          <input
+            type="password"
+            id="pa-key-input"
+            placeholder="Super admin key"
+            autocomplete="off"
+            required
+          />
+          <button class="pill-button fill" type="submit">Unlock</button>
+        </form>
+        <p class="pa-status-message is-error" id="pa-login-error"></p>
+      </section>
+
+      <section class="simple-page-card is-hidden" id="pa-settings-card">
+        <p class="login-eyebrow">Platform admin</p>
+        <h1>Global settings</h1>
+        <p>Changes here apply immediately to every salon, with no restart needed.</p>
+
+        <div class="pa-toggle-row">
+          <div class="pa-toggle-copy">
+            <h3>Stripe payments</h3>
+            <p>When off, checkout/Connect/webhooks are blocked and Stripe UI is hidden everywhere.</p>
+          </div>
+          <label class="pa-switch">
+            <input type="checkbox" id="pa-stripe-toggle" />
+            <span class="pa-switch-track"></span>
+          </label>
+        </div>
+        <p class="pa-meta" id="pa-stripe-meta"></p>
+        <p class="pa-status-message" id="pa-toggle-status"></p>
+
+        <div class="pa-toggle-row" style="display: block">
+          <div class="pa-toggle-copy">
+            <h3>Manual payment methods</h3>
+            <p>Shown to every salon on the wallet top-up and subscription checkout screens as Easypaisa/JazzCash/Bank Transfer options.</p>
+          </div>
+          <div id="pa-manual-payment-methods" style="margin-top: 14px"></div>
+        </div>
+      </section>
+
+      <section class="simple-page-card is-hidden" id="pa-topups-card">
+        <p class="login-eyebrow">Platform admin</p>
+        <h1>Wallet top-up requests</h1>
+        <p>Review the payment proof, then approve or reject. Approving credits the salon's wallet immediately.</p>
+        <div class="pa-topup-list" id="pa-topup-list"></div>
+        <p class="pa-empty-note is-hidden" id="pa-topup-empty">No pending top-up requests right now.</p>
+      </section>
+
+      <section class="simple-page-card is-hidden" id="pa-subscription-payments-card">
+        <p class="login-eyebrow">Platform admin</p>
+        <h1>Subscription payment requests</h1>
+        <p>Review the payment proof, then approve or reject. Approving activates the salon's plan immediately.</p>
+        <div class="pa-topup-list" id="pa-subscription-payment-list"></div>
+        <p class="pa-empty-note is-hidden" id="pa-subscription-payment-empty">No pending subscription payment requests right now.</p>
+      </section>
+    </main>
+
+    <script>
+      (() => {
+        const loginCard = document.getElementById('pa-login-card');
+        const settingsCard = document.getElementById('pa-settings-card');
+        const loginForm = document.getElementById('pa-login-form');
+        const keyInput = document.getElementById('pa-key-input');
+        const loginError = document.getElementById('pa-login-error');
+        const stripeToggle = document.getElementById('pa-stripe-toggle');
+        const stripeMeta = document.getElementById('pa-stripe-meta');
+        const toggleStatus = document.getElementById('pa-toggle-status');
+        const topupsCard = document.getElementById('pa-topups-card');
+        const topupList = document.getElementById('pa-topup-list');
+        const topupEmpty = document.getElementById('pa-topup-empty');
+        const manualPaymentMethodsContainer = document.getElementById('pa-manual-payment-methods');
+        const subscriptionPaymentsCard = document.getElementById('pa-subscription-payments-card');
+        const subscriptionPaymentList = document.getElementById('pa-subscription-payment-list');
+        const subscriptionPaymentEmpty = document.getElementById('pa-subscription-payment-empty');
+
+        const SESSION_KEY = 'qr-platform-admin-key';
+
+        const setStatus = (element, message, kind) => {
+          element.textContent = message || '';
+          element.classList.remove('is-error', 'is-success');
+          if (kind) {
+            element.classList.add(kind === 'error' ? 'is-error' : 'is-success');
+          }
+        };
+
+        const formatMeta = (overview) => {
+          if (overview.source === 'env') {
+            return 'Using the server default (no override saved yet).';
+          }
+
+          const when = overview.updatedAt ? new Date(overview.updatedAt).toLocaleString() : 'unknown time';
+          const who = overview.updatedBy ? ` by ${overview.updatedBy}` : '';
+          return `Last changed${who} at ${when}.`;
+        };
+
+        const loadSettings = async (superAdminKey) => {
+          const response = await fetch('/api/super-admin/settings', {
+            headers: { 'x-super-admin-key': superAdminKey }
+          });
+
+          if (!response.ok) {
+            throw new Error(response.status === 403 ? 'Invalid key' : 'Unable to load settings');
+          }
+
+          const payload = await response.json();
+          stripeToggle.checked = payload.stripe.stripeEnabled === true;
+          stripeMeta.textContent = formatMeta(payload.stripe);
+          renderManualPaymentMethods(payload.manualPaymentMethods ?? []);
+        };
+
+        // One small form per method (Easypaisa/JazzCash/Bank Transfer),
+        // generated instead of hand-writing three near-identical blocks of
+        // markup - see src/platform/platformSettings.types.ts for the keys.
+        const renderManualPaymentMethods = (methods) => {
+          manualPaymentMethodsContainer.replaceChildren();
+
+          for (const method of methods) {
+            const wrap = document.createElement('div');
+            wrap.style.marginBottom = '18px';
+
+            const heading = document.createElement('h4');
+            heading.style.margin = '0 0 8px';
+            heading.style.fontSize = '0.9rem';
+            heading.textContent = method.label;
+            wrap.append(heading);
+
+            const form = document.createElement('form');
+
+            const qrLabel = document.createElement('label');
+            qrLabel.style.display = 'block';
+            qrLabel.style.fontSize = '0.85rem';
+            qrLabel.style.marginBottom = '6px';
+            qrLabel.textContent = 'QR code image URL (optional)';
+            const qrInput = document.createElement('input');
+            qrInput.type = 'url';
+            qrInput.placeholder = 'https://...';
+            qrInput.value = method.qrImageUrl ?? '';
+            qrInput.style.cssText =
+              'width:100%;min-height:46px;padding:0 16px;border:1px solid rgba(18,18,18,0.08);border-radius:12px;font-size:0.95rem;margin-bottom:12px';
+
+            const instructionsLabel = document.createElement('label');
+            instructionsLabel.style.display = 'block';
+            instructionsLabel.style.fontSize = '0.85rem';
+            instructionsLabel.style.marginBottom = '6px';
+            instructionsLabel.textContent = 'Payment instructions (account/number, account title, etc.)';
+            const instructionsInput = document.createElement('textarea');
+            instructionsInput.rows = 2;
+            instructionsInput.placeholder = `e.g. ${method.label} number: 0300-1234567 - Account title: ALGONLP`;
+            instructionsInput.value = method.instructions ?? '';
+            instructionsInput.style.cssText =
+              'width:100%;padding:12px 16px;border:1px solid rgba(18,18,18,0.08);border-radius:12px;font-size:0.95rem;margin-bottom:12px;font-family:inherit';
+
+            const saveButton = document.createElement('button');
+            saveButton.className = 'pill-button fill';
+            saveButton.type = 'submit';
+            saveButton.textContent = 'Save';
+
+            const status = document.createElement('p');
+            status.className = 'pa-status-message';
+
+            form.append(qrLabel, qrInput, instructionsLabel, instructionsInput, saveButton, status);
+            wrap.append(form);
+            manualPaymentMethodsContainer.append(wrap);
+
+            form.addEventListener('submit', async (event) => {
+              event.preventDefault();
+              const superAdminKey = window.sessionStorage.getItem(SESSION_KEY);
+              saveButton.disabled = true;
+              setStatus(status, 'Saving...', null);
+
+              try {
+                const response = await fetch(`/api/super-admin/settings/manual-payment/${method.key}`, {
+                  method: 'PATCH',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'x-super-admin-key': superAdminKey || ''
+                  },
+                  body: JSON.stringify({
+                    qrImageUrl: qrInput.value,
+                    instructions: instructionsInput.value
+                  })
+                });
+
+                if (!response.ok) {
+                  throw new Error('Failed to save');
+                }
+
+                setStatus(status, `${method.label} details saved.`, 'success');
+              } catch (error) {
+                setStatus(status, 'Could not save the change. Please try again.', 'error');
+              } finally {
+                saveButton.disabled = false;
+              }
+            });
+          }
+        };
+
+        const formatAmount = (amountCents) => `Rs${(amountCents / 100).toLocaleString('en-PK')}`;
+
+        // Shared by the wallet top-up list and the subscription payment
+        // list below - both are the same "review proof, approve/reject"
+        // shape against the two request types' near-identical endpoints.
+        const createPendingRequestsController = ({
+          listContainer,
+          emptyEl,
+          listUrl,
+          responseKey,
+          approveUrl,
+          rejectUrl,
+          approveConfirmLabel
+        }) => {
+          let load;
+
+          const render = (requests, superAdminKey) => {
+            listContainer.replaceChildren();
+            emptyEl.classList.toggle('is-hidden', requests.length > 0);
+
+            for (const request of requests) {
+              const card = document.createElement('div');
+              card.className = 'pa-topup-card';
+
+              const top = document.createElement('div');
+              top.className = 'pa-topup-card-top';
+              const amount = document.createElement('span');
+              amount.className = 'pa-topup-amount';
+              amount.textContent = formatAmount(request.amountCents);
+              const when = document.createElement('span');
+              when.className = 'pa-topup-meta';
+              when.textContent = new Date(request.createdAt).toLocaleString();
+              top.append(amount, when);
+
+              const meta = document.createElement('p');
+              meta.className = 'pa-topup-meta';
+              meta.textContent = `Business: ${request.businessId}${request.planId ? ` • Plan: ${request.planId}` : ''}${request.transactionReference ? ` • Ref: ${request.transactionReference}` : ''}`;
+
+              const proofLink = document.createElement('a');
+              proofLink.className = 'pa-topup-proof-link';
+              proofLink.href = request.paymentProofDataUrl;
+              proofLink.target = '_blank';
+              proofLink.rel = 'noopener noreferrer';
+              proofLink.textContent = 'View payment proof →';
+
+              const actions = document.createElement('div');
+              actions.className = 'pa-topup-actions';
+
+              const approveButton = document.createElement('button');
+              approveButton.className = 'pa-topup-approve';
+              approveButton.type = 'button';
+              approveButton.textContent = 'Approve';
+              approveButton.addEventListener('click', async () => {
+                if (!window.confirm(`Approve ${formatAmount(request.amountCents)} ${approveConfirmLabel} for ${request.businessId}?`)) {
+                  return;
+                }
+
+                approveButton.disabled = true;
+
+                try {
+                  const response = await fetch(approveUrl(request.id), {
+                    method: 'POST',
+                    headers: { 'x-super-admin-key': superAdminKey, 'x-super-admin-actor': 'platform-admin' }
+                  });
+
+                  if (!response.ok) {
+                    throw new Error('Failed to approve');
+                  }
+
+                  await load(superAdminKey);
+                } catch (error) {
+                  approveButton.disabled = false;
+                  window.alert('Could not approve this request. Please try again.');
+                }
+              });
+
+              const rejectButton = document.createElement('button');
+              rejectButton.className = 'pa-topup-reject';
+              rejectButton.type = 'button';
+              rejectButton.textContent = 'Reject';
+              rejectButton.addEventListener('click', async () => {
+                const reason = window.prompt('Reason for rejecting this request:');
+
+                if (!reason || !reason.trim()) {
+                  return;
+                }
+
+                rejectButton.disabled = true;
+
+                try {
+                  const response = await fetch(rejectUrl(request.id), {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'x-super-admin-key': superAdminKey,
+                      'x-super-admin-actor': 'platform-admin'
+                    },
+                    body: JSON.stringify({ reason: reason.trim() })
+                  });
+
+                  if (!response.ok) {
+                    throw new Error('Failed to reject');
+                  }
+
+                  await load(superAdminKey);
+                } catch (error) {
+                  rejectButton.disabled = false;
+                  window.alert('Could not reject this request. Please try again.');
+                }
+              });
+
+              actions.append(approveButton, rejectButton);
+              card.append(top, meta, proofLink, actions);
+              listContainer.append(card);
+            }
+          };
+
+          load = async (superAdminKey) => {
+            const response = await fetch(listUrl, {
+              headers: { 'x-super-admin-key': superAdminKey }
+            });
+
+            if (!response.ok) {
+              return;
+            }
+
+            const payload = await response.json();
+            render(payload[responseKey] ?? [], superAdminKey);
+          };
+
+          return { load };
+        };
+
+        const topupRequestsController = createPendingRequestsController({
+          listContainer: topupList,
+          emptyEl: topupEmpty,
+          listUrl: '/api/super-admin/wallet/topup-requests',
+          responseKey: 'topupRequests',
+          approveUrl: (id) => `/api/super-admin/wallet/topup-requests/${id}/approve`,
+          rejectUrl: (id) => `/api/super-admin/wallet/topup-requests/${id}/reject`,
+          approveConfirmLabel: 'top-up'
+        });
+
+        const subscriptionPaymentRequestsController = createPendingRequestsController({
+          listContainer: subscriptionPaymentList,
+          emptyEl: subscriptionPaymentEmpty,
+          listUrl: '/api/super-admin/billing/manual-payment-requests',
+          responseKey: 'paymentRequests',
+          approveUrl: (id) => `/api/super-admin/billing/manual-payment-requests/${id}/approve`,
+          rejectUrl: (id) => `/api/super-admin/billing/manual-payment-requests/${id}/reject`,
+          approveConfirmLabel: 'subscription payment'
+        });
+
+        const unlock = async (superAdminKey) => {
+          setStatus(loginError, '', null);
+
+          try {
+            await loadSettings(superAdminKey);
+            window.sessionStorage.setItem(SESSION_KEY, superAdminKey);
+            loginCard.classList.add('is-hidden');
+            settingsCard.classList.remove('is-hidden');
+            topupsCard.classList.remove('is-hidden');
+            subscriptionPaymentsCard.classList.remove('is-hidden');
+            void topupRequestsController.load(superAdminKey);
+            void subscriptionPaymentRequestsController.load(superAdminKey);
+          } catch (error) {
+            setStatus(loginError, error instanceof Error ? error.message : 'Unable to unlock', 'error');
+          }
+        };
+
+        loginForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const value = keyInput.value.trim();
+          if (value) {
+            unlock(value);
+          }
+        });
+
+        stripeToggle.addEventListener('change', async () => {
+          const superAdminKey = window.sessionStorage.getItem(SESSION_KEY);
+          const nextEnabled = stripeToggle.checked;
+          const confirmed = window.confirm(
+            nextEnabled
+              ? 'Enable Stripe payments for every salon right now?'
+              : 'Disable Stripe payments for every salon right now? Checkout and Connect will stop working immediately.'
+          );
+
+          if (!confirmed) {
+            stripeToggle.checked = !nextEnabled;
+            return;
+          }
+
+          stripeToggle.disabled = true;
+          setStatus(toggleStatus, 'Saving...', null);
+
+          try {
+            const response = await fetch('/api/super-admin/settings/stripe', {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-super-admin-key': superAdminKey || ''
+              },
+              body: JSON.stringify({ enabled: nextEnabled })
+            });
+
+            if (!response.ok) {
+              throw new Error('Failed to save');
+            }
+
+            const payload = await response.json();
+            stripeMeta.textContent = formatMeta(payload.stripe);
+            setStatus(toggleStatus, nextEnabled ? 'Stripe is now enabled.' : 'Stripe is now disabled.', 'success');
+          } catch (error) {
+            stripeToggle.checked = !nextEnabled;
+            setStatus(toggleStatus, 'Could not save the change. Please try again.', 'error');
+          } finally {
+            stripeToggle.disabled = false;
+          }
+        });
+
+        const storedKey = window.sessionStorage.getItem(SESSION_KEY);
+        if (storedKey) {
+          unlock(storedKey);
+        }
+      })();
+    </script>
+  </body>
+</html>

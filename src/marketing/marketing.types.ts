@@ -43,6 +43,18 @@ export interface CampaignRecord {
   recipientsSkipped: number;
   linkOpensCount: number;
   bookingLink: string;
+  // "Promote on QRSchedule Marketplace" — captures the offer data needed for
+  // a future public marketplace listing. Does not itself make the campaign
+  // public; that page does not exist yet (see docs/database-roadmap.md).
+  isPromotedOnMarketplace: boolean;
+  marketplaceOfferTitle?: string;
+  marketplaceServiceIds: string[];
+  marketplaceStartDate?: string;
+  marketplaceEndDate?: string;
+  marketplaceBranchId?: string;
+  marketplaceRedemptionCap?: number;
+  marketplaceNewCustomerOnly: boolean;
+  marketplaceCtaLabel: string;
   createdAt: string;
   updatedAt: string;
   sentAt?: string;
@@ -109,6 +121,15 @@ export interface CreateCampaignInput {
   emailBodyText: string;
   channel: CampaignChannel;
   recipientSource: CampaignRecipientSource;
+  isPromotedOnMarketplace?: boolean;
+  marketplaceOfferTitle?: string;
+  marketplaceServiceIds?: string[];
+  marketplaceStartDate?: string;
+  marketplaceEndDate?: string;
+  marketplaceBranchId?: string;
+  marketplaceRedemptionCap?: number;
+  marketplaceNewCustomerOnly?: boolean;
+  marketplaceCtaLabel?: string;
 }
 
 export interface RecipientPreview {

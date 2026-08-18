@@ -24,6 +24,9 @@ import type { AppointmentRecord } from '../appointments/appointment.types';
 import { normalizeBusinessServices, syncBusinessServicesWithTypes } from './businessServices';
 import { formatInTimeZone } from '../shared/time';
 import { stripePaymentService } from '../payments/stripePayment.service';
+import { billingService } from '../billing/billing.service';
+import { getNextPlanRecommendation } from '../billing/defaultPlans';
+import { platformSettingsService } from './platformSettings.service';
 import type {
   AccountTypeInput,
   AddBranchInput,
@@ -1118,6 +1121,52 @@ const getDefaultTeamMemberRole = (client: Pick<ClientRecord, 'serviceTypes'>): s
 
 const getAvatarInitial = (label: string): string => label.trim().charAt(0).toLowerCase() || 'm';
 
+const countActiveBookableStaffMembers = (client: Pick<ClientRecord, 'teamMembers'>): number =>
+  client.teamMembers.filter(
+    (member) => member.isActive !== false && member.isBookableStaffMember !== false
+  ).length;
+
+// Blocks adding/reactivating a Bookable Staff Member past the current plan's
+// hard cap. Businesses with no resolvable subscription are left unrestricted
+// here (see spec: "Booking should never fail because an optional
+// notification/payment provider is unavailable" - the same principle applies
+// to onboarding before a plan is chosen).
+const assertBookableStaffCapNotExceeded = async (
+  client: Pick<ClientRecord, 'id' | 'teamMembers'>,
+  additionalBookableCount: number
+): Promise<void> => {
+  if (additionalBookableCount <= 0) {
+    return;
+  }
+
+  const overview = await billingService.getBillingOverview(client.id).catch(() => null);
+  const currentPlan = overview?.currentPlan;
+
+  if (!currentPlan) {
+    return;
+  }
+
+  const cap = currentPlan.entitlements.maxBookableStaffCap;
+
+  if (cap === null || cap === undefined) {
+    return;
+  }
+
+  const activeBookableCount = countActiveBookableStaffMembers(client);
+
+  if (activeBookableCount + additionalBookableCount > cap) {
+    const nextPlan = getNextPlanRecommendation(currentPlan.key);
+    const upgradeHint = nextPlan
+      ? ` Upgrade to ${nextPlan.name} to add more.`
+      : ' Contact us to increase your limit.';
+
+    throw new HttpError(
+      402,
+      `You've reached the maximum of ${cap} Bookable Staff Members on the ${currentPlan.name} plan.${upgradeHint}`
+    );
+  }
+};
+
 const sanitizeTeamMember = (
   teamMember: Partial<TeamMemberRecord>,
   fallbackIndex: number,
@@ -1164,6 +1213,7 @@ const sanitizeTeamMember = (
     closingTime: hasValidTimeRange ? closingTime : defaultTimeRange.closingTime,
     offDays: normalizeTeamMemberOffDays(teamMember.offDays),
     isActive: teamMember.isActive !== false,
+    isBookableStaffMember: teamMember.isBookableStaffMember !== false,
     username: typeof teamMember.username === 'string' ? teamMember.username : undefined,
     passwordHash: typeof teamMember.passwordHash === 'string' ? teamMember.passwordHash : undefined,
     staffToken: typeof teamMember.staffToken === 'string' ? teamMember.staffToken : undefined,
@@ -1790,7 +1840,7 @@ const buildDashboardViewModel = (
 ): DashboardViewModel => {
   const uiCopy = getDashboardUiCopyForLanguage(client.preferredLanguage, DASHBOARD_UI_COPY_BY_LANGUAGE);
   const dashboardContent = getDashboardContentForLanguage(client.preferredLanguage);
-  const businessName = client.businessName || 'QR Schedule';
+  const businessName = client.businessName || 'QRschedule';
   const ownerName = client.businessName || formatOwnerName(client.email) || dashboardContent.ownerFallback;
   const businessSettings = normalizeBusinessSettings(client.businessSettings);
   const now = new Date();
@@ -2289,8 +2339,8 @@ export const clientPlatformService = {
     origin: string,
     countryCode?: string
   ): Promise<{ onboardingUrl: string; stripeConnectAccount: StripeConnectAccountRecord }> {
-    if (!env.STRIPE_SECRET_KEY) {
-      throw new HttpError(503, 'Stripe is not configured');
+    if (!(await platformSettingsService.isStripeEnabled()) || !env.STRIPE_SECRET_KEY) {
+      throw new HttpError(503, 'Stripe payments are currently disabled');
     }
 
     const client = await getClientOrThrow(clientId);
@@ -2566,6 +2616,13 @@ export const clientPlatformService = {
     const username = await generateUniqueStaffUsername(input.name);
     const plainPassword = generateStaffPassword();
     const newTeamMemberId = randomUUID();
+    const isBookableStaffMember = input.isBookableStaffMember !== false;
+    const isActive = input.isActive !== false;
+
+    if (isBookableStaffMember && isActive) {
+      const existingClient = await getClientOrThrow(clientId);
+      await assertBookableStaffCapNotExceeded(existingClient, 1);
+    }
 
     const client = await updateClient(clientId, (current) => {
       const now = new Date().toISOString();
@@ -2580,7 +2637,8 @@ export const clientPlatformService = {
           openingTime: input.openingTime,
           closingTime: input.closingTime,
           offDays: input.offDays,
-          isActive: input.isActive !== false,
+          isActive,
+          isBookableStaffMember,
           username,
           passwordHash: hashPassword(plainPassword),
           createdAt: now,
@@ -2608,11 +2666,35 @@ export const clientPlatformService = {
     return { client, teamMember, generatedCredentials: { username, password: plainPassword } };
   },
 
-  updateTeamMember(
+  async updateTeamMember(
     clientId: string,
     teamMemberId: string,
     input: UpdateTeamMemberInput
   ): Promise<ClientRecord> {
+    const existingClient = await getClientOrThrow(clientId);
+    const existingTeamMemberForCapCheck = existingClient.teamMembers.find(
+      (teamMember) => teamMember.id === teamMemberId
+    );
+
+    if (!existingTeamMemberForCapCheck) {
+      throw new HttpError(404, 'Team member not found');
+    }
+
+    const nextIsActive =
+      input.isActive === undefined ? existingTeamMemberForCapCheck.isActive : input.isActive;
+    const nextIsBookableStaffMember =
+      input.isBookableStaffMember === undefined
+        ? existingTeamMemberForCapCheck.isBookableStaffMember
+        : input.isBookableStaffMember;
+    const wasCounted =
+      existingTeamMemberForCapCheck.isActive !== false &&
+      existingTeamMemberForCapCheck.isBookableStaffMember !== false;
+    const willBeCounted = nextIsActive !== false && nextIsBookableStaffMember !== false;
+
+    if (!wasCounted && willBeCounted) {
+      await assertBookableStaffCapNotExceeded(existingClient, 1);
+    }
+
     return updateClient(clientId, (client) => {
       const existingTeamMember = client.teamMembers.find((teamMember) => teamMember.id === teamMemberId);
 
@@ -2632,7 +2714,8 @@ export const clientPlatformService = {
           openingTime: input.openingTime,
           closingTime: input.closingTime,
           offDays: input.offDays,
-          isActive: input.isActive === undefined ? existingTeamMember.isActive : input.isActive,
+          isActive: nextIsActive,
+          isBookableStaffMember: nextIsBookableStaffMember,
           updatedAt: now
         },
         client.teamMembers.findIndex((teamMember) => teamMember.id === teamMemberId),

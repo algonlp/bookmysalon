@@ -137,6 +137,10 @@ app.get('/pricing', (_req, res) => {
   res.sendFile(resolve(publicDir, 'pricing.html'));
 });
 
+app.get('/platform-admin', (_req, res) => {
+  res.sendFile(resolve(publicDir, 'platform-admin.html'));
+});
+
 app.get('/help', (_req, res) => {
   res.sendFile(resolve(publicDir, 'support.html'));
 });
@@ -199,6 +203,10 @@ app.get('/sms-logs', requirePlatformAdminPageAccess, (_req, res) => {
 
 app.get('/email-logs', requirePlatformAdminPageAccess, (_req, res) => {
   res.sendFile(resolve(publicDir, 'email-logs.html'));
+});
+
+app.get('/blog-admin', requirePlatformAdminPageAccess, (_req, res) => {
+  res.sendFile(resolve(publicDir, 'blog-admin.html'));
 });
 
 app.get('/book/:clientId', (_req, res) => {

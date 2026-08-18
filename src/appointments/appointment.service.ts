@@ -57,6 +57,7 @@ import {
 import { env } from '../config/env';
 import { billingService } from '../billing/billing.service';
 import { stripePaymentService } from '../payments/stripePayment.service';
+import { platformSettingsService } from '../platform/platformSettings.service';
 
 const DEFAULT_SLOT_TIMES = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
 const WEEKDAY_IDS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
@@ -2306,8 +2307,11 @@ export const appointmentService = {
     };
 
     if (selectedService.isSpecialService) {
-      if (!env.STRIPE_SECRET_KEY) {
-        throw new HttpError(503, 'Stripe is not configured');
+      if (!(await platformSettingsService.isStripeEnabled()) || !env.STRIPE_SECRET_KEY) {
+        throw new HttpError(
+          503,
+          'This service requires an online deposit which is temporarily unavailable. Please contact the salon directly to book.'
+        );
       }
 
       const fullPriceCents = parseAmountCentsFromPriceLabel(selectedService.priceLabel);
@@ -2903,8 +2907,8 @@ export const appointmentService = {
       business.businessSettings?.currencyCode
     );
 
-    if (!env.STRIPE_SECRET_KEY) {
-      throw new HttpError(503, 'Stripe is not configured');
+    if (!(await platformSettingsService.isStripeEnabled()) || !env.STRIPE_SECRET_KEY) {
+      throw new HttpError(503, 'Online package payments are temporarily unavailable. Please contact the salon directly.');
     }
 
     const destinationAccountId = await resolveStripeDestinationAccountId(business);
