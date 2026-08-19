@@ -17,8 +17,11 @@ export interface StripeSettingsOverview {
 }
 
 export interface CampaignPricing {
-  smsCostCents: number;
-  emailCostCents: number;
+  // Per-message cost (in cents) for a campaign/marketing send.
+  promotionalMessageCostCents: number;
+  // Per-message cost (in cents) for a transactional/utility send (booking
+  // confirmation, reminder, etc.) once any included plan allowance is used up.
+  utilityMessageCostCents: number;
   source: 'override' | 'env';
 }
 
@@ -108,8 +111,8 @@ const mergeAndSave = async (
   const existing = await platformSettingsRepository.get().catch(() => null);
   const record: PlatformSettingsRecord = {
     stripeEnabled: existing?.stripeEnabled ?? null,
-    campaignSmsCostCents: existing?.campaignSmsCostCents ?? null,
-    campaignEmailCostCents: existing?.campaignEmailCostCents ?? null,
+    campaignMessageCostCents: existing?.campaignMessageCostCents ?? null,
+    utilityMessageCostCents: existing?.utilityMessageCostCents ?? null,
     manualPaymentMethods: existing?.manualPaymentMethods ?? null,
     ...patch,
     updatedAt: new Date().toISOString(),
@@ -172,28 +175,28 @@ export const platformSettingsService = {
     const record = await getRecordOrNull();
     const hasOverride =
       record &&
-      ((record.campaignSmsCostCents !== null && record.campaignSmsCostCents !== undefined) ||
-        (record.campaignEmailCostCents !== null && record.campaignEmailCostCents !== undefined));
+      ((record.campaignMessageCostCents !== null && record.campaignMessageCostCents !== undefined) ||
+        (record.utilityMessageCostCents !== null && record.utilityMessageCostCents !== undefined));
 
     return {
-      smsCostCents: record?.campaignSmsCostCents ?? env.WALLET_SMS_COST_CENTS,
-      emailCostCents: record?.campaignEmailCostCents ?? env.WALLET_EMAIL_COST_CENTS,
+      promotionalMessageCostCents: record?.campaignMessageCostCents ?? env.WALLET_PROMOTIONAL_MESSAGE_COST_CENTS,
+      utilityMessageCostCents: record?.utilityMessageCostCents ?? env.WALLET_UTILITY_MESSAGE_COST_CENTS,
       source: hasOverride ? 'override' : 'env'
     };
   },
 
   async setCampaignPricing(
-    input: { smsCostCents?: number; emailCostCents?: number },
+    input: { promotionalMessageCostCents?: number; utilityMessageCostCents?: number },
     updatedBy?: string
   ): Promise<CampaignPricing> {
     const patch: Partial<PlatformSettingsRecord> = {};
 
-    if (typeof input.smsCostCents === 'number') {
-      patch.campaignSmsCostCents = input.smsCostCents;
+    if (typeof input.promotionalMessageCostCents === 'number') {
+      patch.campaignMessageCostCents = input.promotionalMessageCostCents;
     }
 
-    if (typeof input.emailCostCents === 'number') {
-      patch.campaignEmailCostCents = input.emailCostCents;
+    if (typeof input.utilityMessageCostCents === 'number') {
+      patch.utilityMessageCostCents = input.utilityMessageCostCents;
     }
 
     await mergeAndSave(patch, updatedBy);

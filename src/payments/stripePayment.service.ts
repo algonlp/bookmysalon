@@ -43,6 +43,9 @@ interface CreateSubscriptionCheckoutSessionInput {
   businessId: string;
   businessName?: string;
   plan: SubscriptionPlan;
+  // Bookable Staff Members beyond the plan's included count, billed as a
+  // second recurring line item at entitlements.extraBookableStaffPriceCents each.
+  extraBookableStaffCount?: number;
   successUrl: string;
   cancelUrl: string;
 }
@@ -391,37 +394,68 @@ export const stripePaymentService = {
     const chargeMoney = getStripeChargeMoney(input.plan.amountCents, input.plan.currencyCode);
     const salonLabel = input.businessName?.trim() || input.businessId;
     const productName = `${input.plan.name} — ${salonLabel}`;
+    const extraBookableStaffCount = Math.max(0, input.extraBookableStaffCount ?? 0);
 
     const client = await getStripeClient();
     const customerId = await findOrCreateCustomer(client, input.businessId, salonLabel);
 
-    return client.checkout.sessions.create({
-      mode: 'subscription',
-      customer: customerId,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: chargeMoney.currencyCode.toLowerCase(),
-            unit_amount: chargeMoney.amountCents,
-            recurring: {
-              interval: input.plan.billingInterval
-            },
-            product_data: {
-              name: productName,
-              description: input.plan.summary,
-              metadata: {
-                businessId: input.businessId,
-                businessName: salonLabel,
-                planId: input.plan.id,
-                planKey: input.plan.key,
-                sourceAmountCents: String(input.plan.amountCents),
-                sourceCurrencyCode: input.plan.currencyCode
-              }
+    const lineItems: NonNullable<Parameters<StripeClient['checkout']['sessions']['create']>[0]>['line_items'] = [
+      {
+        quantity: 1,
+        price_data: {
+          currency: chargeMoney.currencyCode.toLowerCase(),
+          unit_amount: chargeMoney.amountCents,
+          recurring: {
+            interval: input.plan.billingInterval
+          },
+          product_data: {
+            name: productName,
+            description: input.plan.summary,
+            metadata: {
+              businessId: input.businessId,
+              businessName: salonLabel,
+              planId: input.plan.id,
+              planKey: input.plan.key,
+              sourceAmountCents: String(input.plan.amountCents),
+              sourceCurrencyCode: input.plan.currencyCode
             }
           }
         }
-      ],
+      }
+    ];
+
+    if (extraBookableStaffCount > 0) {
+      const extraStaffChargeMoney = getStripeChargeMoney(
+        input.plan.entitlements.extraBookableStaffPriceCents,
+        input.plan.currencyCode
+      );
+
+      lineItems.push({
+        quantity: extraBookableStaffCount,
+        price_data: {
+          currency: extraStaffChargeMoney.currencyCode.toLowerCase(),
+          unit_amount: extraStaffChargeMoney.amountCents,
+          recurring: {
+            interval: input.plan.billingInterval
+          },
+          product_data: {
+            name: `Additional Bookable Staff Member — ${salonLabel}`,
+            description: `${extraBookableStaffCount} Bookable Staff Member${extraBookableStaffCount === 1 ? '' : 's'} beyond the ${input.plan.name} plan's included allowance`,
+            metadata: {
+              businessId: input.businessId,
+              planId: input.plan.id,
+              planKey: input.plan.key,
+              lineItemKind: 'extra_bookable_staff'
+            }
+          }
+        }
+      });
+    }
+
+    return client.checkout.sessions.create({
+      mode: 'subscription',
+      customer: customerId,
+      line_items: lineItems,
       custom_text: {
         submit: {
           message: `QRschedule — ${input.plan.name} plan for ${salonLabel}`

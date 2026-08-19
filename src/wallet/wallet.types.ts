@@ -14,10 +14,20 @@ export const WALLET_TOPUP_PRESET_AMOUNTS_CENTS = [50000, 100000, 250000, 500000]
 export const WALLET_TOPUP_MIN_CENTS = 10000; // Rs100 floor for custom amounts
 export const WALLET_TOPUP_MAX_CENTS = 100000000; // Rs1,000,000 ceiling for custom amounts
 
+// One-time campaign credit is only usable for this many days after it is
+// granted (first paid activation) - see wallet.service.ts#grantPromotionalCredit.
+export const PROMOTIONAL_CREDIT_EXPIRY_DAYS = 30;
+
 export interface WalletRecord {
   businessId: string;
   balanceCents: number;
   currencyCode: string;
+  // Tracks the still-usable portion of the one-time promotional (campaign)
+  // credit separately from balanceCents, so it can be told apart from paid
+  // top-up funds and forfeited once promotionalCreditExpiresAt passes.
+  // balanceCents already includes this amount - it is not spendable on top.
+  promotionalBalanceCents: number;
+  promotionalCreditExpiresAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -61,6 +71,11 @@ export interface WalletTopupRequestRecord {
 export interface WalletOverview {
   balanceCents: number;
   currencyCode: string;
+  // Still-usable, not-yet-expired portion of the one-time campaign credit
+  // (already included in balanceCents above, shown separately so the salon
+  // can tell it apart from paid top-up funds).
+  promotionalBalanceCents: number;
+  promotionalCreditExpiresAt?: string;
   transactions: WalletTransactionRecord[];
   pendingTopupRequests: WalletTopupRequestRecord[];
 }

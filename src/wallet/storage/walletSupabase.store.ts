@@ -21,6 +21,8 @@ const asTimestamp = (value: unknown): string => asNullableText(value) ?? new Dat
 const walletToRow = (wallet: WalletRecord): Row => ({
   business_id: wallet.businessId,
   balance_cents: wallet.balanceCents,
+  promotional_balance_cents: wallet.promotionalBalanceCents,
+  promotional_credit_expires_at: wallet.promotionalCreditExpiresAt ?? null,
   currency_code: wallet.currencyCode,
   created_at: wallet.createdAt,
   updated_at: wallet.updatedAt
@@ -29,6 +31,8 @@ const walletToRow = (wallet: WalletRecord): Row => ({
 const rowToWallet = (row: Row): WalletRecord => ({
   businessId: asText(row.business_id),
   balanceCents: asNumber(row.balance_cents),
+  promotionalBalanceCents: asNumber(row.promotional_balance_cents),
+  promotionalCreditExpiresAt: asNullableText(row.promotional_credit_expires_at),
   currencyCode: asText(row.currency_code) || 'PKR',
   createdAt: asTimestamp(row.created_at),
   updatedAt: asTimestamp(row.updated_at)

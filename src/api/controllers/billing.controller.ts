@@ -66,6 +66,16 @@ export const billingController = {
     res.status(200).json(await billingService.getBillingOverview(getClientId(req)));
   },
 
+  async getDowngradePlanEligibility(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    if (!req.params.planId) {
+      throw new HttpError(400, 'Plan id is required');
+    }
+
+    res.status(200).json(
+      await billingService.getDowngradePlanEligibility(getClientId(req), req.params.planId)
+    );
+  },
+
   async startSoloFreeTrial(req: Request, res: Response, _next: NextFunction): Promise<void> {
     const input = soloFreeTrialSchema.parse(req.body);
 

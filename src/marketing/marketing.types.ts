@@ -41,6 +41,10 @@ export interface CampaignRecord {
   recipientsSent: number;
   recipientsFailed: number;
   recipientsSkipped: number;
+  // Net wallet cost actually charged for this campaign (reserved amount
+  // minus any refunds for recipients that were never delivered). 0 for a
+  // campaign that hasn't been sent yet.
+  costCents: number;
   linkOpensCount: number;
   bookingLink: string;
   // "Promote on QRSchedule Marketplace" — captures the offer data needed for

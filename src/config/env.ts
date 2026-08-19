@@ -249,15 +249,36 @@ const envSchema = z.object({
   PUBLIC_LOCATION_SEARCH_COUNTRY_CODE: z.string().trim().min(2).max(3).optional(),
   PUBLIC_LOCATION_SEARCH_COUNTRY_LABEL: z.string().trim().min(1).optional(),
   LOCATION_SEARCH_PROVIDER_BASE_URL: z.string().url().optional(),
+  // When set, geocoding/reverse-geocoding uses the Mapbox API per spec 7.1/7.2.
+  // Falls back to the Nominatim-based provider above when unset, so location
+  // search keeps working before a Mapbox token is configured.
+  MAPBOX_ACCESS_TOKEN: z.string().trim().min(1).optional(),
+  // Default 5km search radius for nearby-salon discovery, auto-expanding
+  // through this list until enough results are found (spec 7.1 step 4).
+  NEARBY_SALON_SEARCH_RADII_KM: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) =>
+      value
+        ? value
+            .split(',')
+            .map((entry) => Number(entry.trim()))
+            .filter((entry) => Number.isFinite(entry) && entry > 0)
+        : [5, 10, 20]
+    ),
+  NEARBY_SALON_MIN_RESULTS: z.coerce.number().int().min(1).max(50).default(3),
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_PHONE_NUMBER: z.string().optional(),
   STRIPE_ENABLED: z.boolean().default(false),
   PLATFORM_SUPER_ADMIN_KEY: z.string().trim().min(1).optional(),
-  // Wallet campaign pricing defaults (in cents/paisa). Admin-configurable at
+  // Wallet message pricing defaults (in cents/paisa). Admin-configurable at
   // runtime from /platform-admin, matching the STRIPE_ENABLED override pattern.
-  WALLET_SMS_COST_CENTS: z.coerce.number().int().min(0).default(200),
-  WALLET_EMAIL_COST_CENTS: z.coerce.number().int().min(0).default(0),
+  // Promotional = campaign/marketing sends (SMS or email), Utility = the
+  // system's own transactional sends (booking confirmation, reminders, etc.).
+  WALLET_PROMOTIONAL_MESSAGE_COST_CENTS: z.coerce.number().int().min(0).default(1900),
+  WALLET_UTILITY_MESSAGE_COST_CENTS: z.coerce.number().int().min(0).default(700),
   STRIPE_SECRET_KEY: z
     .string()
     .regex(/^sk_(test|live)_[A-Za-z0-9]+$/, 'STRIPE_SECRET_KEY must start with sk_test_ or sk_live_')
@@ -453,6 +474,9 @@ const resolvedEnv = {
   PUBLIC_LOCATION_SEARCH_COUNTRY_CODE: process.env.PUBLIC_LOCATION_SEARCH_COUNTRY_CODE?.trim().toLowerCase(),
   PUBLIC_LOCATION_SEARCH_COUNTRY_LABEL: process.env.PUBLIC_LOCATION_SEARCH_COUNTRY_LABEL?.trim(),
   LOCATION_SEARCH_PROVIDER_BASE_URL: normalizeUrlWithPath(process.env.LOCATION_SEARCH_PROVIDER_BASE_URL),
+  MAPBOX_ACCESS_TOKEN: normalizeOptionalEnv(process.env.MAPBOX_ACCESS_TOKEN),
+  NEARBY_SALON_SEARCH_RADII_KM: process.env.NEARBY_SALON_SEARCH_RADII_KM,
+  NEARBY_SALON_MIN_RESULTS: process.env.NEARBY_SALON_MIN_RESULTS,
   TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID?.trim() || process.env.TWILIO_SID?.trim(),
   TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN?.trim() || process.env.TWILIO_TOKEN?.trim(),
   TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER?.trim() || process.env.TWILIO_FROM?.trim(),

@@ -75,11 +75,42 @@ const updateTemplateSchema = z.object({
 
 const campaignIdSchema = z.string().uuid('Valid campaign id is required');
 
+const listCampaignsQuerySchema = z.object({
+  status: z.enum(['draft', 'sending', 'sent', 'failed', 'partially_sent']).optional(),
+  channel: z.enum(['sms', 'email', 'both']).optional(),
+  // YYYY-MM-DD, inclusive of the whole day on both ends.
+  from: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'from must use YYYY-MM-DD format')
+    .optional(),
+  to: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'to must use YYYY-MM-DD format')
+    .optional()
+});
+
 export const marketingController = {
   async listCampaigns(req: Request, res: Response, _next: NextFunction): Promise<void> {
-    res.status(200).json({
-      campaigns: await marketingService.listCampaignsWithStats(getBusinessId(req))
+    const query = listCampaignsQuerySchema.parse(req.query);
+    const campaigns = await marketingService.listCampaignsWithStats(getBusinessId(req), {
+      status: query.status,
+      channel: query.channel,
+      fromDate: query.from ? `${query.from}T00:00:00.000Z` : undefined,
+      toDate: query.to ? `${query.to}T23:59:59.999Z` : undefined
     });
+
+    const summary = campaigns.reduce(
+      (totals, campaign) => ({
+        totalMessagesSent: totals.totalMessagesSent + campaign.recipientsSent,
+        totalCostCents: totals.totalCostCents + campaign.costCents,
+        campaignCount: totals.campaignCount + 1
+      }),
+      { totalMessagesSent: 0, totalCostCents: 0, campaignCount: 0 }
+    );
+
+    res.status(200).json({ campaigns, summary });
   },
 
   async createCampaign(req: Request, res: Response, _next: NextFunction): Promise<void> {

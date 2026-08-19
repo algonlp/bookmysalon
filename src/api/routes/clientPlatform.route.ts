@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { clientPlatformController } from '../controllers/clientPlatform.controller';
 import { asyncHandler } from '../middlewares/asyncHandler';
 import { requirePlatformAdminAccess } from '../middlewares/requirePlatformAdminAccess';
+import { requireBillingFeature } from '../middlewares/requireBillingFeature';
 
 export const clientPlatformRouter = Router();
 
@@ -21,6 +22,10 @@ clientPlatformRouter.post(
 clientPlatformRouter.get(
   '/public/salons',
   asyncHandler(clientPlatformController.listPublicSalons)
+);
+clientPlatformRouter.get(
+  '/public/salons/nearby',
+  asyncHandler(clientPlatformController.listNearbySalons)
 );
 clientPlatformRouter.get(
   '/platform/clients/:clientId',
@@ -120,6 +125,7 @@ clientPlatformRouter.delete(
 clientPlatformRouter.post(
   '/platform/clients/:clientId/products',
   asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(requireBillingFeature('products')),
   asyncHandler(clientPlatformController.createProduct)
 );
 clientPlatformRouter.patch(
@@ -150,6 +156,7 @@ clientPlatformRouter.delete(
 clientPlatformRouter.put(
   '/platform/clients/:clientId/loyalty-program',
   asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(requireBillingFeature('loyalty_tools')),
   asyncHandler(clientPlatformController.updateLoyaltyProgram)
 );
 clientPlatformRouter.post(

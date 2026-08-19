@@ -28,7 +28,7 @@ export const billingFeatureCatalog = [
   },
   {
     key: 'client_crm',
-    label: 'Client CRM and loyalty',
+    label: 'Full client CRM',
     requiredPlanKey: 'growth'
   },
   {
@@ -44,16 +44,43 @@ export const billingFeatureCatalog = [
   {
     key: 'marketing',
     label: 'Marketing campaigns',
-    requiredPlanKey: 'multi_branch'
+    requiredPlanKey: 'lite'
+  },
+  {
+    key: 'csv_upload',
+    label: 'Upload CSV/XLSX customer lists',
+    requiredPlanKey: 'growth'
+  },
+  {
+    key: 'customer_segmentation',
+    label: 'Customer segmentation',
+    requiredPlanKey: 'growth'
+  },
+  {
+    key: 'loyalty_tools',
+    label: 'Loyalty and win-back tools',
+    requiredPlanKey: 'professional'
   },
   {
     key: 'premium_support',
     label: 'Premium support',
-    requiredPlanKey: 'multi_branch'
+    requiredPlanKey: 'growth'
   }
 ] as const;
 
 const allFeatureKeys = billingFeatureCatalog.map((feature) => feature.key);
+
+// Lite: unlimited bookings/QR/marketplace listing are always on (not gated
+// by a feature key); Inventory, full CRM, CSV/XLSX upload, segmentation,
+// advanced analytics and loyalty tools are all "No" on this plan per spec.
+const liteFeatureKeys = [
+  'online_booking',
+  'qr_booking',
+  'payments',
+  'service_packages',
+  'team_management',
+  'marketing'
+];
 
 const growthFeatureKeys = [
   'online_booking',
@@ -64,7 +91,10 @@ const growthFeatureKeys = [
   'products',
   'client_crm',
   'advanced_reports',
-  'marketing'
+  'marketing',
+  'csv_upload',
+  'customer_segmentation',
+  'premium_support'
 ];
 
 // Bookable Staff Member = a person who can be selected by customers or
@@ -95,7 +125,7 @@ export const defaultSubscriptionPlans: SubscriptionPlan[] = [
       includedMessages: 100,
       includedMarketingEmails: 50,
       includedAppointmentCredits: 50,
-      featureKeys: allFeatureKeys
+      featureKeys: liteFeatureKeys
     },
     createdAt: timestamp,
     updatedAt: timestamp

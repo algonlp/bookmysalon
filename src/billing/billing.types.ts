@@ -170,6 +170,20 @@ export interface BookableStaffMemberUsage {
   capReached: boolean;
 }
 
+export interface DowngradePlanEligibility {
+  planId: string;
+  planName: string;
+  // null = no fixed ceiling (e.g. admin-configurable Multi-Branch cap).
+  targetCap: number | null;
+  activeBookableStaffCount: number;
+  excessCount: number;
+  // True when the salon must deactivate Bookable Staff Members before this
+  // plan can be activated - the caller should let the admin pick who stays
+  // active rather than silently dropping anyone.
+  requiresStaffSelection: boolean;
+  bookableStaffMembers: Array<{ id: string; name: string; role: string }>;
+}
+
 export interface BillingOverview {
   plans: SubscriptionPlan[];
   subscription: BusinessSubscription | null;

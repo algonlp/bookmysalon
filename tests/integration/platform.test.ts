@@ -1667,6 +1667,89 @@ describe('Client platform API', () => {
     );
   });
 
+  it('finds nearby salons from stored coordinates, expanding the radius and excluding far-away salons', async () => {
+    const onboardSalon = async (
+      email: string,
+      businessName: string,
+      coordinates: { latitude: number; longitude: number; locality: string; city: string }
+    ) => {
+      const createResponse = await createTestClient(app, { email, provider: 'email' });
+      const clientId = createResponse.body.client.id as string;
+      const adminToken = createResponse.body.adminToken as string;
+
+      await request(app)
+        .patch(`/api/platform/clients/${clientId}/business-profile`)
+        .set('x-admin-token', adminToken)
+        .send({ businessName });
+      await request(app)
+        .patch(`/api/platform/clients/${clientId}/service-types`)
+        .set('x-admin-token', adminToken)
+        .send({ serviceTypes: ['Barber'] });
+      await request(app)
+        .patch(`/api/platform/clients/${clientId}/account-type`)
+        .set('x-admin-token', adminToken)
+        .send({ accountType: 'independent' });
+      await request(app)
+        .patch(`/api/platform/clients/${clientId}/service-location`)
+        .set('x-admin-token', adminToken)
+        .send({ serviceLocation: ['physical'] });
+      await request(app)
+        .patch(`/api/platform/clients/${clientId}/venue-location`)
+        .set('x-admin-token', adminToken)
+        .send({
+          venueAddress: `${coordinates.locality}, ${coordinates.city}`,
+          latitude: coordinates.latitude,
+          longitude: coordinates.longitude,
+          locality: coordinates.locality,
+          city: coordinates.city,
+          formattedAddress: `${coordinates.locality}, ${coordinates.city}, Pakistan`
+        });
+      await request(app)
+        .patch(`/api/platform/clients/${clientId}/preferred-language`)
+        .set('x-admin-token', adminToken)
+        .send({ preferredLanguage: 'english' });
+      await request(app)
+        .post(`/api/platform/clients/${clientId}/complete`)
+        .set('x-admin-token', adminToken);
+
+      return clientId;
+    };
+
+    const nearClientId = await onboardSalon('nearby-gulberg@example.com', 'Gulberg Nearby Salon', {
+      latitude: 31.5204,
+      longitude: 74.3587,
+      locality: 'Gulberg',
+      city: 'Lahore'
+    });
+    const farClientId = await onboardSalon('faraway-karachi@example.com', 'Karachi Faraway Salon', {
+      latitude: 24.8607,
+      longitude: 67.0011,
+      locality: 'Clifton',
+      city: 'Karachi'
+    });
+
+    // A point ~1.2km from the Gulberg salon and >1000km from the Karachi one.
+    const nearbyResponse = await request(app)
+      .get('/api/public/salons/nearby')
+      .query({ latitude: 31.5300, longitude: 74.3600 });
+
+    expect(nearbyResponse.status).toBe(200);
+    const foundNear = nearbyResponse.body.salons.find(
+      (salon: { clientId: string }) => salon.clientId === nearClientId
+    );
+    const foundFar = nearbyResponse.body.salons.find(
+      (salon: { clientId: string }) => salon.clientId === farClientId
+    );
+
+    expect(foundNear).toBeTruthy();
+    expect(foundNear.distanceKm).toBeLessThan(5);
+    expect(foundFar).toBeUndefined();
+    // Never enough nearby matches to satisfy the minimum, so the radius
+    // expands all the way to the largest configured value (20km default).
+    expect(nearbyResponse.body.radiusKm).toBe(20);
+    expect(nearbyResponse.body.isFallback).toBe(true);
+  });
+
   it('builds launch links from the configured app origin instead of the request host header', async () => {
     const createResponse = await createTestClient(app, {
       email: 'origin-links@example.com',
@@ -2721,6 +2804,23 @@ describe('Client platform API', () => {
     const clientId = createResponse.body.client.id as string;
     const adminToken = createResponse.body.adminToken as string;
 
+    // Loyalty program configuration requires the loyalty_tools entitlement
+    // (Professional+), so activate a plan that has it before using it below.
+    const commerceCheckoutResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/demo-checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        planId: 'plan_professional',
+        cardholderName: 'Commerce Owner',
+        cardNumber: '4242 4242 4242 4242',
+        expMonth: 12,
+        expYear: 2030,
+        cvc: '123',
+        billingEmail: 'commerce@example.com'
+      });
+
+    expect(commerceCheckoutResponse.status).toBe(201);
+
     await request(app)
       .patch(`/api/platform/clients/${clientId}/business-profile`)
       .set('x-admin-token', adminToken)
@@ -3584,7 +3684,15 @@ describe('Client platform API', () => {
     expect(overviewResponse.body.subscription).toEqual(
       expect.objectContaining({ status: 'trialing', provider: 'trial' })
     );
-    expect(overviewResponse.body.lockedFeatureKeys).toEqual([]);
+    expect(overviewResponse.body.lockedFeatureKeys).toEqual([
+      'products',
+      'client_crm',
+      'advanced_reports',
+      'csv_upload',
+      'customer_segmentation',
+      'loyalty_tools',
+      'premium_support'
+    ]);
 
     const duplicateResponse = await request(app)
       .post('/api/billing/solo-free-trial')
@@ -3788,6 +3896,210 @@ describe('Client platform API', () => {
     });
   });
 
+  it('blocks a downgrade until excess Bookable Staff Members are deactivated', async () => {
+    const createResponse = await createTestClient(app, {
+      email: 'downgrade-staff@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/demo-checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        planId: 'plan_single',
+        cardholderName: 'Growth Owner',
+        cardNumber: '4242 4242 4242 4242',
+        expMonth: 12,
+        expYear: 2030,
+        cvc: '123',
+        billingEmail: 'downgrade-staff@example.com'
+      });
+
+    const teamMemberIds: string[] = [];
+
+    // Lite's cap is 4 - add 6 so the business is over Lite's cap on Growth.
+    for (let index = 1; index <= 6; index += 1) {
+      const response = await request(app)
+        .post(`/api/platform/clients/${clientId}/team-members`)
+        .set('x-admin-token', adminToken)
+        .send({ name: `Bookable Staff ${index}` });
+
+      expect(response.status).toBe(201);
+      teamMemberIds.push(
+        response.body.client.teamMembers.find((member: { name: string }) => member.name === `Bookable Staff ${index}`)
+          .id
+      );
+    }
+
+    const plansResponse = await request(app).get('/api/billing/subscription-plans');
+    const litePlanId = plansResponse.body.plans.find((plan: { key: string }) => plan.key === 'lite').id as string;
+
+    const eligibilityResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}/billing/plans/${litePlanId}/downgrade-eligibility`)
+      .set('x-admin-token', adminToken);
+
+    expect(eligibilityResponse.status).toBe(200);
+    expect(eligibilityResponse.body).toEqual(
+      expect.objectContaining({
+        targetCap: 4,
+        activeBookableStaffCount: 6,
+        excessCount: 2,
+        requiresStaffSelection: true
+      })
+    );
+    expect(eligibilityResponse.body.bookableStaffMembers).toHaveLength(6);
+
+    const blockedPaymentResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/manual-payment`)
+      .set('x-admin-token', adminToken)
+      .send({
+        planId: litePlanId,
+        paymentMethod: 'jazzcash',
+        paymentProofDataUrl: 'data:image/png;base64,fakeproof',
+        transactionReference: 'TXN-DOWNGRADE-1'
+      });
+
+    expect(blockedPaymentResponse.status).toBe(409);
+    expect(blockedPaymentResponse.body.error).toMatch(/Deactivate 2 Bookable Staff Member/);
+
+    const blockedCheckoutResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/demo-checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        planId: litePlanId,
+        cardholderName: 'Growth Owner',
+        cardNumber: '4242 4242 4242 4242',
+        expMonth: 12,
+        expYear: 2030,
+        cvc: '123',
+        billingEmail: 'downgrade-staff@example.com'
+      });
+
+    expect(blockedCheckoutResponse.status).toBe(409);
+    expect(blockedCheckoutResponse.body.error).toMatch(/Deactivate 2 Bookable Staff Member/);
+
+    // Admin chooses which two stay active by deactivating the rest - never
+    // an automatic/silent deletion.
+    for (const teamMemberId of teamMemberIds.slice(0, 2)) {
+      const deactivateResponse = await request(app)
+        .delete(`/api/platform/clients/${clientId}/team-members/${teamMemberId}`)
+        .set('x-admin-token', adminToken);
+
+      expect(deactivateResponse.status).toBe(200);
+    }
+
+    const clearedEligibilityResponse = await request(app)
+      .get(`/api/platform/clients/${clientId}/billing/plans/${litePlanId}/downgrade-eligibility`)
+      .set('x-admin-token', adminToken);
+
+    expect(clearedEligibilityResponse.body).toEqual(
+      expect.objectContaining({ excessCount: 0, requiresStaffSelection: false })
+    );
+
+    const successfulCheckoutResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/demo-checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        planId: litePlanId,
+        cardholderName: 'Growth Owner',
+        cardNumber: '4242 4242 4242 4242',
+        expMonth: 12,
+        expYear: 2030,
+        cvc: '123',
+        billingEmail: 'downgrade-staff@example.com'
+      });
+
+    expect(successfulCheckoutResponse.status).toBe(201);
+    expect(successfulCheckoutResponse.body.overview.currentPlan).toEqual(
+      expect.objectContaining({ key: 'lite' })
+    );
+  });
+
+  it('gates inventory and loyalty tools server-side by plan entitlement', async () => {
+    const createResponse = await createTestClient(app, {
+      email: 'entitlement-gate@example.com',
+      provider: 'email'
+    });
+    const clientId = createResponse.body.client.id as string;
+    const adminToken = createResponse.body.adminToken as string;
+
+    await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/demo-checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        planId: 'plan_solo',
+        cardholderName: 'Lite Owner',
+        cardNumber: '4242 4242 4242 4242',
+        expMonth: 12,
+        expYear: 2030,
+        cvc: '123',
+        billingEmail: 'entitlement-gate@example.com'
+      });
+
+    const blockedProductResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/products`)
+      .set('x-admin-token', adminToken)
+      .send({ name: 'Shampoo', priceLabel: 'PKR 1,500', stockQuantity: 20 });
+
+    expect(blockedProductResponse.status).toBe(403);
+
+    const blockedLoyaltyResponse = await request(app)
+      .put(`/api/platform/clients/${clientId}/loyalty-program`)
+      .set('x-admin-token', adminToken)
+      .send({ isEnabled: true, triggerCompletedVisits: 1, rewardValue: 10 });
+
+    expect(blockedLoyaltyResponse.status).toBe(403);
+
+    await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/demo-checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        planId: 'plan_single',
+        cardholderName: 'Growth Owner',
+        cardNumber: '4242 4242 4242 4242',
+        expMonth: 12,
+        expYear: 2030,
+        cvc: '123',
+        billingEmail: 'entitlement-gate@example.com'
+      });
+
+    const allowedProductResponse = await request(app)
+      .post(`/api/platform/clients/${clientId}/products`)
+      .set('x-admin-token', adminToken)
+      .send({ name: 'Shampoo', priceLabel: 'PKR 1,500', stockQuantity: 20 });
+
+    expect(allowedProductResponse.status).toBe(201);
+
+    const stillBlockedLoyaltyResponse = await request(app)
+      .put(`/api/platform/clients/${clientId}/loyalty-program`)
+      .set('x-admin-token', adminToken)
+      .send({ isEnabled: true, triggerCompletedVisits: 1, rewardValue: 10 });
+
+    expect(stillBlockedLoyaltyResponse.status).toBe(403);
+
+    await request(app)
+      .post(`/api/platform/clients/${clientId}/billing/demo-checkout`)
+      .set('x-admin-token', adminToken)
+      .send({
+        planId: 'plan_professional',
+        cardholderName: 'Pro Owner',
+        cardNumber: '4242 4242 4242 4242',
+        expMonth: 12,
+        expYear: 2030,
+        cvc: '123',
+        billingEmail: 'entitlement-gate@example.com'
+      });
+
+    const allowedLoyaltyResponse = await request(app)
+      .put(`/api/platform/clients/${clientId}/loyalty-program`)
+      .set('x-admin-token', adminToken)
+      .send({ isEnabled: true, triggerCompletedVisits: 1, rewardValue: 10 });
+
+    expect(allowedLoyaltyResponse.status).toBe(200);
+  });
+
   it('keeps services open on the solo plan while appointment credits remain', async () => {
     const createResponse = await createTestClient(app, {
       email: 'solo-credits@example.com',
@@ -3818,7 +4130,15 @@ describe('Client platform API', () => {
       remaining: 50,
       used: 0
     });
-    expect(checkoutResponse.body.overview.lockedFeatureKeys).toEqual([]);
+    expect(checkoutResponse.body.overview.lockedFeatureKeys).toEqual([
+      'products',
+      'client_crm',
+      'advanced_reports',
+      'csv_upload',
+      'customer_segmentation',
+      'loyalty_tools',
+      'premium_support'
+    ]);
 
     await request(app)
       .patch(`/api/platform/clients/${clientId}/business-profile`)
@@ -3881,7 +4201,15 @@ describe('Client platform API', () => {
     expect(updatedBillingResponse.body.currentPlan).toEqual(
       expect.objectContaining({ id: 'plan_solo', key: 'lite' })
     );
-    expect(updatedBillingResponse.body.lockedFeatureKeys).toEqual([]);
+    expect(updatedBillingResponse.body.lockedFeatureKeys).toEqual([
+      'products',
+      'client_crm',
+      'advanced_reports',
+      'csv_upload',
+      'customer_segmentation',
+      'loyalty_tools',
+      'premium_support'
+    ]);
     expect(updatedBillingResponse.body.creditBalance).toEqual({
       granted: 50,
       remaining: 49,

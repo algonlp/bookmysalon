@@ -32,6 +32,7 @@ import type {
 } from './appointment.types';
 import { clientPlatformRepository } from '../platform/clientPlatform.repository';
 import { HttpError } from '../shared/errors/httpError';
+import { logger } from '../shared/logger';
 import { twilioSmsService } from '../notifications/twilioSms.service';
 import { emailService } from '../notifications/email.service';
 import { renderEmailLayout } from '../notifications/emailTemplate';
@@ -58,6 +59,7 @@ import { env } from '../config/env';
 import { billingService } from '../billing/billing.service';
 import { stripePaymentService } from '../payments/stripePayment.service';
 import { platformSettingsService } from '../platform/platformSettings.service';
+import { walletService } from '../wallet/wallet.service';
 
 const DEFAULT_SLOT_TIMES = ['09:00', '10:00', '11:00', '12:00', '14:00', '15:00', '16:00', '17:00'];
 const WEEKDAY_IDS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
@@ -1512,6 +1514,24 @@ const matchesWaitlistEntryForOpenSlot = (
   return true;
 };
 
+// Best-effort utility-message wallet charge for a transactional send that
+// actually went out (booking confirmation, reminder, waitlist offer, etc.).
+// Fire-and-forget and swallows its own errors: notifications must never fail
+// or be delayed because of a billing hiccup.
+const chargeUtilityMessageIfSent = (businessId: string, source: string, status: string): void => {
+  if (status !== 'sent') {
+    return;
+  }
+
+  walletService.chargeUtilityMessage(businessId, source).catch((error) => {
+    logger.error('Failed to charge utility message against wallet', {
+      error: error instanceof Error ? error.message : String(error),
+      businessId,
+      source
+    });
+  });
+};
+
 const sendWaitlistOfferNotification = async (
   waitlistEntry: WaitlistRecord,
   origin: string
@@ -1543,11 +1563,13 @@ const sendWaitlistOfferNotification = async (
     `${waitlistEntry.teamMemberName ? ` Team member: ${waitlistEntry.teamMemberName}.` : ''} ` +
     `Book it here within ${expiresInMinutes} minute${expiresInMinutes === 1 ? '' : 's'}: ${claimLink}`;
 
-  return twilioSmsService.sendSms(waitlistEntry.customerPhone, message, 'customer', {
+  const result = await twilioSmsService.sendSms(waitlistEntry.customerPhone, message, 'customer', {
     businessId: waitlistEntry.businessId,
     waitlistEntryId: waitlistEntry.id,
     source: 'waitlist_offer'
   });
+  chargeUtilityMessageIfSent(waitlistEntry.businessId, 'waitlist_offer', result.status);
+  return result;
 };
 
 const offerWaitlistEntryForOpenSlot = async (
@@ -1652,30 +1674,42 @@ const sendAppointmentConfirmationNotification = async (
     footerNote: "If you didn't request this booking, you can safely ignore this email."
   });
 
+  const confirmationSource = mode === 'rescheduled' ? 'appointment_rescheduled' : 'appointment_confirmation';
+
   return Promise.all([
-    twilioSmsService.sendSms(appointment.customerPhone, customerMessage, 'customer', {
-      appointmentId: appointment.id,
-      businessId: appointment.businessId,
-      source: mode === 'rescheduled' ? 'appointment_rescheduled' : 'appointment_confirmation'
-    }),
-    emailService.sendEmail(
-      {
-        to: appointment.customerEmail,
-        subject: emailSubject,
-        text: emailText,
-        html: emailHtml
-      },
-      'customer',
-      {
+    twilioSmsService
+      .sendSms(appointment.customerPhone, customerMessage, 'customer', {
         appointmentId: appointment.id,
         businessId: appointment.businessId,
-        source: mode === 'rescheduled' ? 'appointment_rescheduled' : 'appointment_confirmation'
-      }
-    ).then((result): NotificationDispatchResult => ({
-      recipient: 'customer',
-      channel: 'email',
-      status: result.status
-    }))
+        source: confirmationSource
+      })
+      .then((result) => {
+        chargeUtilityMessageIfSent(appointment.businessId, confirmationSource, result.status);
+        return result;
+      }),
+    emailService
+      .sendEmail(
+        {
+          to: appointment.customerEmail,
+          subject: emailSubject,
+          text: emailText,
+          html: emailHtml
+        },
+        'customer',
+        {
+          appointmentId: appointment.id,
+          businessId: appointment.businessId,
+          source: confirmationSource
+        }
+      )
+      .then((result): NotificationDispatchResult => {
+        chargeUtilityMessageIfSent(appointment.businessId, confirmationSource, result.status);
+        return {
+          recipient: 'customer',
+          channel: 'email',
+          status: result.status
+        };
+      })
   ]);
 };
 
@@ -1705,6 +1739,9 @@ const sendRunningLateNotification = async (
       appointmentId: appointment.id,
       businessId: appointment.businessId,
       source: 'running_late'
+    }).then((result) => {
+      chargeUtilityMessageIfSent(appointment.businessId, 'running_late', result.status);
+      return result;
     })
   ]);
 };

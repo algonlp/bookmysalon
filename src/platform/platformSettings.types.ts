@@ -11,8 +11,10 @@ export interface PlatformSettingsRecord {
   // null = no override saved yet; falls back to the STRIPE_ENABLED env var.
   stripeEnabled: boolean | null;
   // null/undefined = no override saved yet; falls back to the WALLET_*_COST_CENTS env vars.
-  campaignSmsCostCents?: number | null;
-  campaignEmailCostCents?: number | null;
+  // Promotional = campaign/marketing message cost; Utility = transactional
+  // (booking confirmation/reminder) message cost.
+  campaignMessageCostCents?: number | null;
+  utilityMessageCostCents?: number | null;
   // Per-method QR/instructions for the manual payment picker (Easypaisa,
   // JazzCash, Bank Transfer). A method with no entry (or empty fields) still
   // shows as a selectable option - the buyer can submit proof and ALGONLP

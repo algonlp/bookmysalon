@@ -27,6 +27,12 @@ billingRouter.get(
   asyncHandler(billingController.getBillingOverview)
 );
 
+billingRouter.get(
+  '/platform/clients/:clientId/billing/plans/:planId/downgrade-eligibility',
+  asyncHandler(requirePlatformAdminAccess),
+  asyncHandler(billingController.getDowngradePlanEligibility)
+);
+
 billingRouter.post(
   '/platform/clients/:clientId/billing/checkout',
   asyncHandler(requirePlatformAdminAccess),

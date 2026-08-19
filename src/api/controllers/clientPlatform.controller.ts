@@ -272,7 +272,18 @@ const serviceLocationSchema = z.object({
 });
 
 const venueLocationSchema = z.object({
-  venueAddress: z.string().trim().min(3, 'Venue address is required')
+  venueAddress: z.string().trim().min(3, 'Venue address is required'),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+  locality: z.string().trim().max(200).optional(),
+  city: z.string().trim().max(200).optional(),
+  formattedAddress: z.string().trim().max(500).optional()
+});
+
+const nearbySalonsQuerySchema = z.object({
+  latitude: z.coerce.number().min(-90).max(90),
+  longitude: z.coerce.number().min(-180).max(180),
+  serviceQuery: z.string().trim().max(120).optional()
 });
 
 const preferredLanguageSchema = z.object({
@@ -1072,5 +1083,11 @@ export const clientPlatformController = {
     res.status(200).json({
       salons: await clientPlatformService.getPublicSalons()
     });
+  },
+
+  async listNearbySalons(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    const input = nearbySalonsQuerySchema.parse(req.query);
+    const result = await clientPlatformService.getNearbySalons(input);
+    res.status(200).json(result);
   }
 };

@@ -430,6 +430,9 @@ create table marketing_campaigns (
   recipients_sent integer not null default 0,
   recipients_failed integer not null default 0,
   recipients_skipped integer not null default 0,
+  -- Net wallet cost actually charged (reserved amount minus refunds for
+  -- recipients that were never delivered). 0 for a campaign not yet sent.
+  cost_cents integer not null default 0,
   link_opens_count integer not null default 0,
   booking_link text not null default '',
   -- "Promote on QRSchedule Marketplace" fields (spec 5.3). Data capture only
@@ -618,6 +621,10 @@ create index marketing_campaign_recipients_converted_appointment_idx
 create table communication_wallets (
   business_id text primary key references businesses (id) on delete cascade,
   balance_cents integer not null default 0,
+  -- Still-usable portion of the one-time campaign credit, ring-fenced from
+  -- paid top-up funds; forfeited (and zeroed) once promotional_credit_expires_at passes.
+  promotional_balance_cents integer not null default 0,
+  promotional_credit_expires_at timestamptz null,
   currency_code text not null default 'PKR',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

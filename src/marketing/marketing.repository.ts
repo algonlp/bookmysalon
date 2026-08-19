@@ -61,6 +61,7 @@ const campaignToRow = (campaign: CampaignRecord): Row => ({
   recipients_sent: campaign.recipientsSent,
   recipients_failed: campaign.recipientsFailed,
   recipients_skipped: campaign.recipientsSkipped,
+  cost_cents: campaign.costCents,
   booking_link: campaign.bookingLink,
   is_promoted_on_marketplace: campaign.isPromotedOnMarketplace,
   marketplace_offer_title: campaign.marketplaceOfferTitle ?? null,
@@ -109,6 +110,7 @@ const rowToCampaign = (row: Row): CampaignRecord => ({
   recipientsSent: asNumber(row.recipients_sent),
   recipientsFailed: asNumber(row.recipients_failed),
   recipientsSkipped: asNumber(row.recipients_skipped),
+  costCents: asNumber(row.cost_cents),
   linkOpensCount: asNumber(row.link_opens_count),
   bookingLink: asText(row.booking_link),
   isPromotedOnMarketplace: asBoolean(row.is_promoted_on_marketplace),
@@ -279,13 +281,35 @@ export const marketingRepository = {
     return count ?? 0;
   },
 
-  async listCampaignsByBusinessId(businessId: string): Promise<CampaignRecord[]> {
+  async listCampaignsByBusinessId(
+    businessId: string,
+    filters?: {
+      status?: CampaignStatus;
+      channel?: CampaignChannel;
+      fromDate?: string;
+      toDate?: string;
+    }
+  ): Promise<CampaignRecord[]> {
     const client = getSupabaseClient();
-    const { data, error } = await client
-      .from('marketing_campaigns')
-      .select('*')
-      .eq('business_id', businessId)
-      .order('created_at', { ascending: false });
+    let query = client.from('marketing_campaigns').select('*').eq('business_id', businessId);
+
+    if (filters?.status) {
+      query = query.eq('status', filters.status);
+    }
+
+    if (filters?.channel) {
+      query = query.eq('channel', filters.channel);
+    }
+
+    if (filters?.fromDate) {
+      query = query.gte('created_at', filters.fromDate);
+    }
+
+    if (filters?.toDate) {
+      query = query.lte('created_at', filters.toDate);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
       throw new Error(`Failed to list campaigns for ${businessId}: ${error.message}`);

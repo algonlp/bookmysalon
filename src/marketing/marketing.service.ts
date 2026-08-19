@@ -443,21 +443,27 @@ const dispatchRecipients = async (
       ? 'partially_sent'
       : 'failed';
 
+  let refundCents = 0;
+
+  if (unsentSmsCount > 0 || unsentEmailCount > 0) {
+    const pricing = await platformSettingsService.getCampaignPricing();
+    refundCents = (unsentSmsCount + unsentEmailCount) * pricing.promotionalMessageCostCents;
+  }
+
   await marketingRepository.updateCampaign({
     ...campaign,
     status,
     recipientsSent: sentCount,
     recipientsFailed: failedCount,
     recipientsSkipped: skippedCount,
+    // Net actual spend: what was reserved minus whatever gets refunded below
+    // for recipients that were never delivered.
+    costCents: Math.max(0, campaign.costCents - refundCents),
     sentAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   });
 
-  if (unsentSmsCount > 0 || unsentEmailCount > 0) {
-    const pricing = await platformSettingsService.getCampaignPricing();
-    const refundCents =
-      unsentSmsCount * pricing.smsCostCents + unsentEmailCount * pricing.emailCostCents;
-
+  if (refundCents > 0) {
     await walletService.refundForCampaign(campaign.businessId, campaign.id, refundCents);
   }
 };
@@ -653,6 +659,7 @@ export const marketingService = {
       recipientsSent: 0,
       recipientsFailed: 0,
       recipientsSkipped: 0,
+      costCents: 0,
       linkOpensCount: 0,
       bookingLink,
       isPromotedOnMarketplace,
@@ -745,8 +752,15 @@ export const marketingService = {
     // by campaignId so a retry or double-click on Send can never charge
     // twice. Throws HttpError(402) if the wallet balance is insufficient,
     // which blocks the send entirely (spec 5.2 step 6-7).
-    const smsEligibleCount = merged.filter((entry) => entry.phone).length;
-    const emailEligibleCount = merged.filter((entry) => entry.email).length;
+    // Only count recipients toward the cost for channels this campaign
+    // actually sends on - an email-only campaign must never be charged for
+    // the phone numbers on file, since no SMS will ever be attempted for them.
+    const smsEligibleCount = isChannelRelevant(campaign.channel, 'sms')
+      ? merged.filter((entry) => entry.phone).length
+      : 0;
+    const emailEligibleCount = isChannelRelevant(campaign.channel, 'email')
+      ? merged.filter((entry) => entry.email).length
+      : 0;
     const costPreview = await walletService.previewCampaignCost(businessId, smsEligibleCount, emailEligibleCount);
     await walletService.reserveAndDeductForCampaign(businessId, campaignId, costPreview.estimatedTotalCents);
 
@@ -777,6 +791,7 @@ export const marketingService = {
       recipientSource,
       status: 'sending',
       recipientsTotal: recipientRecords.length,
+      costCents: costPreview.estimatedTotalCents,
       updatedAt: now
     };
     await marketingRepository.updateCampaign(sendingCampaign);
@@ -850,6 +865,7 @@ export const marketingService = {
         recipientsSent: 0,
         recipientsFailed: 0,
         recipientsSkipped: 0,
+        costCents: 0,
         linkOpensCount: 0,
         bookingLink,
         isPromotedOnMarketplace: false,
@@ -884,9 +900,17 @@ export const marketingService = {
     };
   },
 
-  async listCampaignsWithStats(businessId: string): Promise<CampaignWithStats[]> {
+  async listCampaignsWithStats(
+    businessId: string,
+    filters?: {
+      status?: CampaignStatus;
+      channel?: CampaignChannel;
+      fromDate?: string;
+      toDate?: string;
+    }
+  ): Promise<CampaignWithStats[]> {
     const [campaigns, appointments, openCounts] = await Promise.all([
-      marketingRepository.listCampaignsByBusinessId(businessId),
+      marketingRepository.listCampaignsByBusinessId(businessId, filters),
       appointmentRepository.listAppointmentsByBusinessId(businessId),
       marketingRepository.countOpensByBusinessId(businessId)
     ]);

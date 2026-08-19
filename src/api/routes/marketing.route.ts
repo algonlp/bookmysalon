@@ -50,6 +50,7 @@ marketingRouter.post(
 marketingRouter.post(
   '/platform/clients/:clientId/campaigns/contacts/upload',
   ...requireMarketingAccess,
+  asyncHandler(requireBillingFeature('csv_upload')),
   upload.single('file'),
   asyncHandler(marketingController.uploadContactsCsv)
 );

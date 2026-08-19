@@ -27,6 +27,7 @@ import { stripePaymentService } from '../payments/stripePayment.service';
 import { billingService } from '../billing/billing.service';
 import { getNextPlanRecommendation } from '../billing/defaultPlans';
 import { platformSettingsService } from './platformSettings.service';
+import { haversineDistanceKm } from '../shared/geo';
 import type {
   AccountTypeInput,
   AddBranchInput,
@@ -48,6 +49,8 @@ import type {
   GeneratedStaffCredentials,
   LaunchLinksViewModel,
   LoyaltyProgramRecord,
+  NearbySalonResult,
+  NearbySalonSearchInput,
   PackagePlanRecord,
   ProductRecord,
   ProductSaleRecord,
@@ -2455,6 +2458,11 @@ export const clientPlatformService = {
           serviceTypes: client.serviceTypes,
           serviceLocation: client.serviceLocation,
           venueAddress: client.venueAddress,
+          latitude: client.latitude,
+          longitude: client.longitude,
+          locality: client.locality,
+          city: client.city,
+          formattedAddress: client.formattedAddress,
           profileImageUrl: client.profileImageUrl,
           galleryImageUrls: normalizeGalleryImageUrls(client.galleryImageUrls),
           bookingLink: `/book/${client.id}`,
@@ -2472,6 +2480,82 @@ export const clientPlatformService = {
 
     publicSalonsCache = { data: result, expiresAt: now + PUBLIC_SALONS_CACHE_TTL_MS };
     return result;
+  },
+
+  // Server-side nearby search over already-stored salon coordinates (spec
+  // 7.1): never re-geocodes salons on each request, expands the search
+  // radius through NEARBY_SALON_SEARCH_RADII_KM (5/10/20km by default) until
+  // enough results are found, and ranks by distance then review quality.
+  async getNearbySalons(
+    input: NearbySalonSearchInput
+  ): Promise<{ salons: NearbySalonResult[]; radiusKm: number; isFallback: boolean }> {
+    const allSalons = await clientPlatformService.getPublicSalons();
+    const serviceQuery = input.serviceQuery?.trim().toLowerCase();
+
+    const matchesServiceQuery = (salon: PublicSalonShowcaseItem): boolean => {
+      if (!serviceQuery) {
+        return true;
+      }
+
+      return (
+        salon.serviceTypes.some((type) => type.toLowerCase().includes(serviceQuery)) ||
+        salon.services.some(
+          (service) =>
+            service.name.toLowerCase().includes(serviceQuery) ||
+            service.categoryName.toLowerCase().includes(serviceQuery)
+        )
+      );
+    };
+
+    const withDistance: NearbySalonResult[] = allSalons
+      .filter(
+        (salon): salon is PublicSalonShowcaseItem & { latitude: number; longitude: number } =>
+          typeof salon.latitude === 'number' && typeof salon.longitude === 'number'
+      )
+      .filter(matchesServiceQuery)
+      .map((salon) => ({
+        ...salon,
+        distanceKm: haversineDistanceKm(
+          { latitude: input.latitude, longitude: input.longitude },
+          { latitude: salon.latitude, longitude: salon.longitude }
+        )
+      }));
+
+    const radii = env.NEARBY_SALON_SEARCH_RADII_KM.length > 0 ? env.NEARBY_SALON_SEARCH_RADII_KM : [5, 10, 20];
+    const minResults = env.NEARBY_SALON_MIN_RESULTS;
+
+    let selectedRadiusKm = radii[radii.length - 1];
+    let withinRadius: NearbySalonResult[] = [];
+
+    for (const radiusKm of radii) {
+      withinRadius = withDistance.filter((salon) => salon.distanceKm <= radiusKm);
+      selectedRadiusKm = radiusKm;
+
+      if (withinRadius.length >= minResults) {
+        break;
+      }
+    }
+
+    const qualityScore = (salon: NearbySalonResult): number =>
+      (salon.reviewSummary.averageRating ?? 0) * 10 + Math.min(salon.reviewSummary.totalReviews, 50);
+
+    const sorted = [...withinRadius].sort((left, right) => {
+      const distanceDelta = left.distanceKm - right.distanceKm;
+
+      // Treat sub-50m differences as a tie so review quality breaks it,
+      // rather than letting floating-point noise decide the order.
+      if (Math.abs(distanceDelta) > 0.05) {
+        return distanceDelta;
+      }
+
+      return qualityScore(right) - qualityScore(left);
+    });
+
+    return {
+      salons: sorted,
+      radiusKm: selectedRadiusKm,
+      isFallback: withinRadius.length < minResults
+    };
   },
 
   async getSmsLogs(clientId: string) {
@@ -2587,9 +2671,23 @@ export const clientPlatformService = {
   },
 
   updateVenueLocation(clientId: string, input: VenueLocationInput): Promise<ClientRecord> {
+    const hasCoordinates =
+      typeof input.latitude === 'number' &&
+      typeof input.longitude === 'number' &&
+      Number.isFinite(input.latitude) &&
+      Number.isFinite(input.longitude);
+
     return updateClient(clientId, (client) => ({
       ...client,
       venueAddress: input.venueAddress.trim(),
+      // Coordinates are only ever set when the salon confirmed a geocoded
+      // pin (spec 7.2) - typing an address with no matching suggestion never
+      // silently keeps stale coordinates pointed at the old location.
+      latitude: hasCoordinates ? input.latitude : undefined,
+      longitude: hasCoordinates ? input.longitude : undefined,
+      locality: hasCoordinates ? input.locality?.trim() || undefined : undefined,
+      city: hasCoordinates ? input.city?.trim() || undefined : undefined,
+      formattedAddress: hasCoordinates ? input.formattedAddress?.trim() || undefined : undefined,
       updatedAt: new Date().toISOString()
     }));
   },

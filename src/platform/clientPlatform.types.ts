@@ -199,6 +199,14 @@ export interface ClientRecord {
   accountType: AccountType | null;
   serviceLocation: ServiceLocation[];
   venueAddress: string;
+  // Resolved via Mapbox (or the configured geocoding fallback) and confirmed
+  // by the salon during onboarding - see clientPlatform.service.ts#updateVenueLocation.
+  // Undefined until the salon has confirmed a geocoded location.
+  latitude?: number;
+  longitude?: number;
+  locality?: string;
+  city?: string;
+  formattedAddress?: string;
   preferredLanguage: PreferredLanguage | null;
   onboardingCompleted: boolean;
   linkedBusinessIds: string[];
@@ -228,6 +236,14 @@ export interface PublicClientRecord {
   accountType: AccountType | null;
   serviceLocation: ServiceLocation[];
   venueAddress: string;
+  // Resolved via Mapbox (or the configured geocoding fallback) and confirmed
+  // by the salon during onboarding - see clientPlatform.service.ts#updateVenueLocation.
+  // Undefined until the salon has confirmed a geocoded location.
+  latitude?: number;
+  longitude?: number;
+  locality?: string;
+  city?: string;
+  formattedAddress?: string;
   preferredLanguage: PreferredLanguage | null;
   onboardingCompleted: boolean;
   linkedBusinessIds: string[];
@@ -282,6 +298,14 @@ export interface ServiceLocationInput {
 
 export interface VenueLocationInput {
   venueAddress: string;
+  // Set together when the salon confirms the pin shown after geocoding -
+  // never saved from raw text alone (spec 7.2: "show a map pin and ask the
+  // salon to confirm/correct location before saving").
+  latitude?: number;
+  longitude?: number;
+  locality?: string;
+  city?: string;
+  formattedAddress?: string;
 }
 
 export interface UpdatePreferredLanguageInput {
@@ -578,6 +602,11 @@ export interface PublicSalonShowcaseItem {
   serviceTypes: string[];
   serviceLocation: ServiceLocation[];
   venueAddress: string;
+  latitude?: number;
+  longitude?: number;
+  locality?: string;
+  city?: string;
+  formattedAddress?: string;
   profileImageUrl: string;
   galleryImageUrls: string[];
   bookingLink: string;
@@ -607,4 +636,14 @@ export interface PublicSalonShowcaseItem {
     highlightedPackageNames?: string[];
     description: string;
   }>;
+}
+
+export interface NearbySalonResult extends PublicSalonShowcaseItem {
+  distanceKm: number;
+}
+
+export interface NearbySalonSearchInput {
+  latitude: number;
+  longitude: number;
+  serviceQuery?: string;
 }

@@ -4805,9 +4805,6 @@ const initHomeSalonSearch = () => {
     }
   };
 
-  const getSalonCacheKey = (salon) =>
-    String(salon?.clientId || salon?.bookingLink || salon?.businessName || salon?.venueAddress || '');
-
   const getSelectedLocationCoordinates = () => {
     const latitude = toFiniteNumber(selectedLocationDetails?.latitude);
     const longitude = toFiniteNumber(selectedLocationDetails?.longitude);
@@ -4965,36 +4962,42 @@ const initHomeSalonSearch = () => {
     );
   };
 
-  const geocodeSalonLocation = async (salon) => {
-    const cacheKey = getSalonCacheKey(salon);
+  // Single server-side nearby-salons call using the customer's resolved
+  // coordinates against each salon's already-stored latitude/longitude - no
+  // per-salon geocoding from the browser (spec 7.1: search stored
+  // coordinates, don't ask the geocoder to discover salons on each request).
+  const fetchNearbySalonEntries = async (coordinates, serviceQuery) => {
+    const cacheKey = `${coordinates.latitude.toFixed(4)},${coordinates.longitude.toFixed(4)}|${serviceQuery || ''}`;
 
     if (salonCoordinatesCache.has(cacheKey)) {
       return salonCoordinatesCache.get(cacheKey);
     }
 
-    const address = typeof salon?.venueAddress === 'string' ? salon.venueAddress.trim() : '';
+    const params = new URLSearchParams({
+      latitude: String(coordinates.latitude),
+      longitude: String(coordinates.longitude)
+    });
 
-    if (!address) {
-      salonCoordinatesCache.set(cacheKey, null);
-      return null;
+    if (serviceQuery) {
+      params.set('serviceQuery', serviceQuery);
     }
 
     try {
-      const params = new URLSearchParams({ q: address });
-      const payload = await apiRequest(`${locationSearchEndpoint}?${params.toString()}`);
-      const suggestion = Array.isArray(payload?.suggestions) ? payload.suggestions[0] : null;
-      const coordinates = {
-        latitude: toFiniteNumber(suggestion?.latitude),
-        longitude: toFiniteNumber(suggestion?.longitude)
+      const payload = await apiRequest(`/api/public/salons/nearby?${params.toString()}`);
+      const salons = Array.isArray(payload?.salons) ? payload.salons : [];
+      const result = {
+        entries: salons.map((salon) => ({
+          salon,
+          coordinates: { latitude: salon.latitude, longitude: salon.longitude },
+          distanceKilometers: salon.distanceKm
+        })),
+        isFallback: Boolean(payload?.isFallback)
       };
-      const normalizedCoordinates =
-        coordinates.latitude === null || coordinates.longitude === null ? null : coordinates;
 
-      salonCoordinatesCache.set(cacheKey, normalizedCoordinates);
-      return normalizedCoordinates;
+      salonCoordinatesCache.set(cacheKey, result);
+      return result;
     } catch (_error) {
-      salonCoordinatesCache.set(cacheKey, null);
-      return null;
+      return { entries: [], isFallback: true };
     }
   };
 
@@ -5009,33 +5012,13 @@ const initHomeSalonSearch = () => {
     showcaseEmpty.textContent = `No exact salon found in ${locationQuery}. Checking nearby salons...`;
     showcaseStatus.textContent = `Searching closest salons around ${locationQuery}.`;
 
-    const serviceFilteredSalons = serviceQuery
-      ? allSalons.filter((salon) => getSalonServiceScore(salon, serviceQuery) >= 0)
-      : allSalons;
-
-    const entries = await Promise.all(
-      serviceFilteredSalons.map(async (salon) => {
-        const coordinates = await geocodeSalonLocation(salon);
-        const distanceKilometers = getDistanceInKilometers(selectedCoordinates, coordinates);
-
-        return distanceKilometers === null
-          ? null
-          : {
-              salon,
-              coordinates,
-              distanceKilometers
-            };
-      })
-    );
+    const { entries } = await fetchNearbySalonEntries(selectedCoordinates, serviceQuery);
 
     if (requestId !== nearbySearchRequestId) {
       return;
     }
 
-    const nearbySalons = entries
-      .filter(Boolean)
-      .sort((left, right) => left.distanceKilometers - right.distanceKilometers)
-      .slice(0, Math.max(resultsLimit, 3));
+    const nearbySalons = entries.slice(0, Math.max(resultsLimit, 3));
 
     if (nearbySalons.length === 0) {
       showcaseEmpty.textContent = `No salons found near ${locationQuery} yet. Try another area.`;
@@ -5053,44 +5036,16 @@ const initHomeSalonSearch = () => {
       return false;
     }
 
-    const sourceSalons = serviceQuery
-      ? allSalons.filter((salon) => getSalonServiceScore(salon, serviceQuery) >= 0)
-      : allSalons;
-
-    if (sourceSalons.length === 0) {
-      return false;
-    }
-
     showcaseEmpty.classList.add('is-hidden');
     showcaseStatus.textContent = `Checking distance for salons around ${locationQuery}.`;
 
-    const entries = await Promise.all(
-      sourceSalons.map(async (salon) => {
-        const coordinates = await geocodeSalonLocation(salon);
-        const distanceKilometers = getDistanceInKilometers(selectedCoordinates, coordinates);
-
-        return distanceKilometers === null
-          ? null
-          : {
-              salon,
-              coordinates,
-              distanceKilometers
-            };
-      })
-    );
+    const { entries } = await fetchNearbySalonEntries(selectedCoordinates, serviceQuery);
 
     if (requestId !== nearbySearchRequestId) {
       return true;
     }
 
-    const nearbySalons = entries
-      .filter(Boolean)
-      .sort(
-        (left, right) =>
-          left.distanceKilometers - right.distanceKilometers ||
-          String(left.salon.businessName || '').localeCompare(String(right.salon.businessName || ''))
-      )
-      .slice(0, Math.max(resultsLimit, 6));
+    const nearbySalons = entries.slice(0, Math.max(resultsLimit, 6));
 
     if (nearbySalons.length === 0) {
       showcaseEmpty.classList.remove('is-hidden');
@@ -7386,6 +7341,9 @@ const initVenueLocation = () => {
   }
 
   let selectedVenue = '';
+  let selectedCoordinates = null;
+  let selectedLocality = '';
+  let selectedCity = '';
   let activeSearchAbortController = null;
   let latestSearchRequestId = 0;
   let locationCountryLabel = '';
@@ -7429,7 +7387,12 @@ const initVenueLocation = () => {
       }
 
       venueAddressInput.value = detectedLocation;
-      syncVenuePreview(detectedLocation);
+      syncVenuePreview(
+        detectedLocation,
+        { latitude, longitude },
+        payload?.location?.locality ?? '',
+        payload?.location?.city ?? ''
+      );
       setVenueMarkerLabel(detectedLocation.split(',')[0] || 'Your venue');
       clearSearchResults();
       setLocationStatus('Address updated to match the pin location.');
@@ -7529,8 +7492,14 @@ const initVenueLocation = () => {
     venueAddressContinue.disabled = disabled;
   };
 
-  const syncVenuePreview = (nextVenue, coordinates = null) => {
+  const syncVenuePreview = (nextVenue, coordinates = null, locality = '', city = '') => {
     selectedVenue = nextVenue.trim();
+    // Coordinates only carry over when they were actually resolved for this
+    // exact address (search result, current-location, or dragged pin) - free
+    // typing without picking a suggestion must not save stale coordinates.
+    selectedCoordinates = coordinates;
+    selectedLocality = locality;
+    selectedCity = city;
 
     if (!selectedVenue) {
       selectedVenueAddress.textContent = 'Start typing your venue address to preview it here.';
@@ -7564,9 +7533,9 @@ const initVenueLocation = () => {
       : 'Example: Shop number, street, area, city, province, country';
   };
 
-  const applySuggestedVenue = (nextVenue, coordinates = null) => {
+  const applySuggestedVenue = (nextVenue, coordinates = null, locality = '', city = '') => {
     venueAddressInput.value = nextVenue;
-    syncVenuePreview(nextVenue, coordinates);
+    syncVenuePreview(nextVenue, coordinates, locality, city);
     clearSearchResults();
     setResultsStatus(
       locationCountryLabel
@@ -7601,7 +7570,9 @@ const initVenueLocation = () => {
         const longitude = toFiniteNumber(suggestion.longitude);
         applySuggestedVenue(
           suggestion.label || '',
-          latitude === null || longitude === null ? null : { latitude, longitude }
+          latitude === null || longitude === null ? null : { latitude, longitude },
+          suggestion.locality || '',
+          suggestion.city || ''
         );
         venueAddressInput.focus();
       });
@@ -7706,7 +7677,12 @@ const initVenueLocation = () => {
             return;
           }
 
-          applySuggestedVenue(detectedLocation, { latitude, longitude });
+          applySuggestedVenue(
+            detectedLocation,
+            { latitude, longitude },
+            payload?.location?.locality ?? '',
+            payload?.location?.city ?? ''
+          );
           setLocationStatus('Current location detected. You can edit the address if you need changes.');
         } catch (error) {
           setLocationStatus(
@@ -7769,7 +7745,18 @@ const initVenueLocation = () => {
     try {
       const payload = await apiRequest(`/api/platform/clients/${clientId}/venue-location`, {
         method: 'PATCH',
-        body: JSON.stringify({ venueAddress: selectedVenue })
+        body: JSON.stringify({
+          venueAddress: selectedVenue,
+          ...(selectedCoordinates
+            ? {
+                latitude: selectedCoordinates.latitude,
+                longitude: selectedCoordinates.longitude,
+                locality: selectedLocality || undefined,
+                city: selectedCity || undefined,
+                formattedAddress: selectedVenue
+              }
+            : {})
+        })
       });
 
       window.location.assign(payload.nextStep || buildPathWithClientId('/onboarding/salon-images', clientId));
@@ -8272,19 +8259,18 @@ const initCalendar = () => {
   const renderBillingPlanChip = () => {
     const currentPlan = billingPayload?.currentPlan;
     const subscriptionStatus = billingPayload?.subscription?.status;
-    const remainingCredits = Number(billingPayload?.creditBalance?.remaining ?? 0);
-    const grantedCredits = Number(billingPayload?.creditBalance?.granted ?? 0);
+    const walletBalanceLabel = formatWalletBalance(walletOverview?.balanceCents ?? 0);
 
     planChip.classList.toggle('is-active', Boolean(currentPlan));
     planChip.innerHTML = `
       <span>Using plan</span>
-      <strong>${escapeHtml(currentPlan?.name ?? 'No plan')} | ${remainingCredits}/${grantedCredits} credits</strong>
+      <strong>${escapeHtml(currentPlan?.name ?? 'No plan')} | ${walletBalanceLabel} wallet</strong>
     `;
     planChip.setAttribute(
       'aria-label',
       currentPlan
-        ? `Using ${currentPlan.name} plan, status ${subscriptionStatus ?? 'active'}, ${remainingCredits} appointment credits remaining`
-        : 'No subscription plan selected, 0 appointment credits remaining'
+        ? `Using ${currentPlan.name} plan, status ${subscriptionStatus ?? 'active'}, ${walletBalanceLabel} wallet balance`
+        : `No subscription plan selected, ${walletBalanceLabel} wallet balance`
     );
 
     setBillingLockedState(salesToggle, 'payments');
@@ -17012,7 +16998,8 @@ const createTrendCard = (
     delivered: campaigns.reduce((sum, campaign) => sum + (campaign.recipientsSent || 0), 0),
     opened: campaigns.reduce((sum, campaign) => sum + (campaign.linkOpensCount || 0), 0),
     booked: campaigns.reduce((sum, campaign) => sum + (campaign.conversionsCount || 0), 0),
-    failed: campaigns.reduce((sum, campaign) => sum + (campaign.recipientsFailed || 0), 0)
+    failed: campaigns.reduce((sum, campaign) => sum + (campaign.recipientsFailed || 0), 0),
+    spentCents: campaigns.reduce((sum, campaign) => sum + (campaign.costCents || 0), 0)
   });
 
   const setMarketingWorkspaceMode = (mode) => {
@@ -17241,7 +17228,8 @@ const createTrendCard = (
       statGrid.append(
         createMarketingAdminCard('Delivered', totals.delivered, 'Messages sent successfully', 'good'),
         createMarketingAdminCard('Opened', totals.opened, 'Campaign link opens'),
-        createMarketingAdminCard('Failed', totals.failed, 'Messages needing review', totals.failed > 0 ? 'warning' : '')
+        createMarketingAdminCard('Failed', totals.failed, 'Messages needing review', totals.failed > 0 ? 'warning' : ''),
+        createMarketingAdminCard('Wallet spent', formatWalletBalance(totals.spentCents), 'Total campaign cost so far')
       );
       if (marketingCampaigns.length === 0) {
         list.append(createMarketingAdminRow('No message logs yet', 'Send a campaign to start collecting delivery and open logs.'));
@@ -17250,7 +17238,7 @@ const createTrendCard = (
           list.append(
             createMarketingAdminRow(
               campaign.name || 'Untitled campaign',
-              `${campaign.recipientsSent || 0} sent | ${campaign.linkOpensCount || 0} opened | ${campaign.conversionsCount || 0} booked`,
+              `${campaign.recipientsSent || 0} sent | ${campaign.linkOpensCount || 0} opened | ${campaign.conversionsCount || 0} booked | ${formatWalletBalance(campaign.costCents || 0)} spent`,
               marketingStatusLabels[campaign.status] || campaign.status || 'Unknown',
               campaign.status === 'sent' || campaign.status === 'partially_sent' ? 'Details' : ''
             )
@@ -17337,7 +17325,8 @@ const createTrendCard = (
         [reached, 'Reached'],
         [detail.recipientsSent || 0, 'Delivered'],
         [opened, 'Link opens'],
-        [booked, 'Booked']
+        [booked, 'Booked'],
+        [formatWalletBalance(detail.costCents || 0), 'Wallet spent']
       ]) {
         const stat = document.createElement('div');
         stat.className = 'calendar-campaign-detail-stat';
@@ -17585,6 +17574,18 @@ const createTrendCard = (
         { chartType: 'comparison' }
       )
     );
+
+    const spendCard = document.createElement('div');
+    spendCard.className = 'calendar-trend-card calendar-wallet-card';
+    const spendHeading = document.createElement('h3');
+    spendHeading.textContent = 'Total spend';
+    const spendAmount = document.createElement('strong');
+    spendAmount.className = 'calendar-wallet-amount';
+    spendAmount.textContent = formatWalletBalance(totals.spentCents);
+    const spendNote = document.createElement('p');
+    spendNote.textContent = `Across ${totals.sentCampaigns} sent campaign${totals.sentCampaigns === 1 ? '' : 's'}`;
+    spendCard.append(spendHeading, spendAmount, spendNote);
+    marketingSummaryEl.append(spendCard);
 
     const walletCard = document.createElement('div');
     walletCard.className = 'calendar-trend-card calendar-wallet-card';
@@ -17887,7 +17888,9 @@ const createTrendCard = (
       openedStat.innerHTML = `<strong>${campaign.linkOpensCount || 0}</strong> opened`;
       const bookedStat = document.createElement('span');
       bookedStat.innerHTML = `<strong>${campaign.conversionsCount || 0}</strong> booked`;
-      stats.append(reachedStat, sentStat, openedStat, bookedStat);
+      const spentStat = document.createElement('span');
+      spentStat.innerHTML = `<strong>${formatWalletBalance(campaign.costCents || 0)}</strong> spent`;
+      stats.append(reachedStat, sentStat, openedStat, bookedStat, spentStat);
 
       row.append(info, stats);
 
@@ -18979,7 +18982,8 @@ const createTrendCard = (
     const [payload, paymentPayload, billingOverviewPayload] = await Promise.all([
       apiRequest(`/api/platform/clients/${clientId}/dashboard`),
       apiRequest(`/api/platform/clients/${clientId}/payments`),
-      apiRequest(`/api/platform/clients/${clientId}/billing`)
+      apiRequest(`/api/platform/clients/${clientId}/billing`),
+      loadWalletOverview()
     ]);
     const launchLinks = payload.dashboard.launchLinks ?? {
       bookingPageLink: `${window.location.origin}${buildTrackedBookingPath(clientId, 'direct')}`,

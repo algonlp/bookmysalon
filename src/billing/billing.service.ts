@@ -14,6 +14,7 @@ import type {
   CreateSubscriptionCheckoutInput,
   DemoBillingCard,
   DemoCheckoutInput,
+  DowngradePlanEligibility,
   SubscriptionPaymentRequestRecord,
   SubscriptionPlan,
   SubscriptionPlanKey
@@ -21,7 +22,9 @@ import type {
 import { clientPlatformRepository } from '../platform/clientPlatform.repository';
 import type { TeamMemberRecord } from '../platform/clientPlatform.types';
 import { HttpError } from '../shared/errors/httpError';
+import { logger } from '../shared/logger';
 import { stripePaymentService } from '../payments/stripePayment.service';
+import { walletService } from '../wallet/wallet.service';
 import { platformSettingsService, MANUAL_PAYMENT_METHOD_LABELS } from '../platform/platformSettings.service';
 import { env } from '../config/env';
 import {
@@ -83,6 +86,71 @@ const buildBookableStaffMemberUsage = (
     cap,
     capReached: cap !== null && active >= cap
   };
+};
+
+const getExtraBookableStaffCostCents = (plan: SubscriptionPlan, teamMembers: TeamMemberRecord[]): number =>
+  buildBookableStaffMemberUsage(plan, teamMembers)?.extraMonthlyCostCents ?? 0;
+
+const getActiveBookableStaffMembers = (teamMembers: TeamMemberRecord[]): TeamMemberRecord[] =>
+  teamMembers.filter((member) => member.isActive !== false && member.isBookableStaffMember !== false);
+
+// A downgrade (or any plan switch) must never silently drop staff past the
+// new plan's cap. Instead of auto-deactivating anyone, activation is simply
+// refused until the admin has deactivated enough Bookable Staff Members
+// themselves (via the existing team-member endpoints) - see
+// billingService.getDowngradePlanEligibility for the picker data.
+const assertBookableStaffFitsPlanCap = (plan: SubscriptionPlan, teamMembers: TeamMemberRecord[]): void => {
+  const cap = plan.entitlements.maxBookableStaffCap;
+
+  if (cap === null) {
+    return;
+  }
+
+  const activeCount = getActiveBookableStaffMembers(teamMembers).length;
+
+  if (activeCount > cap) {
+    throw new HttpError(
+      409,
+      `The ${plan.name} plan allows up to ${cap} Bookable Staff Member${cap === 1 ? '' : 's'}, but ${activeCount} are currently active. Deactivate ${activeCount - cap} Bookable Staff Member${activeCount - cap === 1 ? '' : 's'} first, then switch plans.`
+    );
+  }
+};
+
+// Grants the one-time campaign wallet credit the first (and only the first)
+// time a business's plan is actually paid for/approved - never on renewals,
+// plan changes, or the separate free-trial-with-no-payment flow. `provider`
+// on every historical subscription tells us whether payment ever happened
+// ('trial' subscriptions never went through checkout/admin approval).
+const grantFirstActivationCampaignCreditIfEligible = async (
+  businessId: string,
+  plan: SubscriptionPlan,
+  priorSubscriptions: BusinessSubscription[]
+): Promise<void> => {
+  if (plan.entitlements.campaignCreditCents <= 0) {
+    return;
+  }
+
+  const hasPriorPaidActivation = priorSubscriptions.some((subscription) => subscription.provider !== 'trial');
+
+  if (hasPriorPaidActivation) {
+    return;
+  }
+
+  // The subscription itself is already committed by the time this runs - a
+  // wallet hiccup here must never surface as a failed activation.
+  try {
+    await walletService.grantPromotionalCredit(
+      businessId,
+      plan.entitlements.campaignCreditCents,
+      `One-time campaign credit for first paid activation (${plan.name})`
+    );
+  } catch (error) {
+    logger.error('Failed to grant first-activation campaign credit', {
+      error: error instanceof Error ? error.message : String(error),
+      businessId,
+      planId: plan.id
+    });
+  }
 };
 
 const addMonths = (date: Date, monthsToAdd: number): Date => {
@@ -257,7 +325,11 @@ const activateSubscriptionForPlan = async (
     demoCard?: DemoBillingCard;
   }
 ): Promise<{ subscription: BusinessSubscription; invoice: BillingInvoice }> => {
-  const plans = await listNormalizedSubscriptionPlans();
+  const [plans, business, allBusinessSubscriptions] = await Promise.all([
+    listNormalizedSubscriptionPlans(),
+    getBusinessOrThrow(businessId),
+    billingRepository.listBusinessSubscriptionsByBusinessId(businessId)
+  ]);
   const now = new Date();
   const nowIso = now.toISOString();
   const periodEnd = addMonths(now, plan.billingInterval === 'year' ? 12 : 1).toISOString();
@@ -265,9 +337,11 @@ const activateSubscriptionForPlan = async (
     plan.trialDays > 0
       ? new Date(now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000).toISOString()
       : undefined;
+  assertBookableStaffFitsPlanCap(plan, business.teamMembers);
+  const extraBookableStaffCostCents = getExtraBookableStaffCostCents(plan, business.teamMembers);
 
-  const existingSubscriptions = (await billingRepository.listBusinessSubscriptionsByBusinessId(businessId)).filter(
-    (subscription) => activeSubscriptionStatuses.includes(subscription.status)
+  const existingSubscriptions = allBusinessSubscriptions.filter((subscription) =>
+    activeSubscriptionStatuses.includes(subscription.status)
   );
   const existingCreditRemainder = existingSubscriptions.reduce((sum, subscription) => {
     const subscriptionPlan = plans.find((entry) => entry.id === subscription.planId);
@@ -318,7 +392,7 @@ const activateSubscriptionForPlan = async (
     businessId,
     subscriptionId: subscription.id,
     planId: plan.id,
-    amountCents: trialEndsAt ? 0 : plan.amountCents,
+    amountCents: trialEndsAt ? 0 : plan.amountCents + extraBookableStaffCostCents,
     currencyCode: plan.currencyCode,
     status: 'paid',
     periodStart: nowIso,
@@ -363,6 +437,8 @@ const activateSubscriptionForPlan = async (
 
     throw error;
   }
+
+  await grantFirstActivationCampaignCreditIfEligible(businessId, plan, allBusinessSubscriptions);
 
   return { subscription, invoice };
 };
@@ -416,6 +492,42 @@ const findStripeSubscriptionByProviderId = async (
   ) ?? null;
 
 export const billingService = {
+  // Lets the frontend show a "choose who stays active" picker before the
+  // salon ever tries to pay for a plan switch that would exceed the target
+  // plan's Bookable Staff Member cap. Mirrors the same check that
+  // requestManualSubscriptionPayment/createStripeSubscriptionCheckout/
+  // activateSubscriptionForPlan enforce server-side either way.
+  async getDowngradePlanEligibility(
+    businessId: string,
+    planId: string
+  ): Promise<DowngradePlanEligibility> {
+    const business = await getBusinessOrThrow(businessId);
+    const plans = await listNormalizedSubscriptionPlans();
+    const plan = plans.find((entry) => entry.id === planId);
+
+    if (!plan) {
+      throw new HttpError(404, 'Subscription plan was not found');
+    }
+
+    const activeBookableStaff = getActiveBookableStaffMembers(business.teamMembers);
+    const cap = plan.entitlements.maxBookableStaffCap;
+    const excessCount = cap === null ? 0 : Math.max(0, activeBookableStaff.length - cap);
+
+    return {
+      planId: plan.id,
+      planName: plan.name,
+      targetCap: cap,
+      activeBookableStaffCount: activeBookableStaff.length,
+      excessCount,
+      requiresStaffSelection: excessCount > 0,
+      bookableStaffMembers: activeBookableStaff.map((member) => ({
+        id: member.id,
+        name: member.name,
+        role: member.role
+      }))
+    };
+  },
+
   async listSubscriptionPlans(): Promise<{ plans: SubscriptionPlan[] }> {
     return {
       plans: await listNormalizedSubscriptionPlans()
@@ -509,7 +621,7 @@ export const billingService = {
     },
     origin: string
   ): Promise<SubscriptionPaymentRequestRecord> {
-    await getBusinessOrThrow(businessId);
+    const business = await getBusinessOrThrow(businessId);
     const plans = await listNormalizedSubscriptionPlans();
     const plan = plans.find((entry) => entry.id === input.planId);
 
@@ -521,13 +633,15 @@ export const billingService = {
       throw new HttpError(400, 'Upload payment proof before submitting a payment request');
     }
 
+    assertBookableStaffFitsPlanCap(plan, business.teamMembers);
+    const extraBookableStaffCostCents = getExtraBookableStaffCostCents(plan, business.teamMembers);
     const { tokenHash, expiresAt, plainToken } = issueVerificationToken();
     const now = new Date().toISOString();
     const request: SubscriptionPaymentRequestRecord = {
       id: randomUUID(),
       businessId,
       planId: plan.id,
-      amountCents: plan.amountCents,
+      amountCents: plan.amountCents + extraBookableStaffCostCents,
       currencyCode: plan.currencyCode,
       paymentMethod: input.paymentMethod,
       paymentProofDataUrl: input.paymentProofDataUrl.trim(),
@@ -716,7 +830,7 @@ export const billingService = {
     input: CreateSubscriptionCheckoutInput,
     origin: string
   ): Promise<{ checkoutUrl: string; checkoutSessionId: string }> {
-    const { businessName } = await getBusinessOrThrow(businessId);
+    const business = await getBusinessOrThrow(businessId);
     const plans = await listNormalizedSubscriptionPlans();
     const plan = plans.find((entry) => entry.id === input.planId);
 
@@ -728,10 +842,17 @@ export const billingService = {
       throw new HttpError(503, 'Stripe payments are currently disabled');
     }
 
+    // Blocked here, before Stripe ever charges the card - activateStripeSubscriptionCheckout
+    // runs after payment has already been collected, which is too late to refuse safely.
+    assertBookableStaffFitsPlanCap(plan, business.teamMembers);
+
+    const bookableStaffMemberUsage = buildBookableStaffMemberUsage(plan, business.teamMembers);
+
     const checkoutSession = await stripePaymentService.createSubscriptionCheckoutSession({
       businessId,
-      businessName,
+      businessName: business.businessName,
       plan,
+      extraBookableStaffCount: bookableStaffMemberUsage?.extra ?? 0,
       successUrl: `${origin}/api/billing/stripe-return?session_id={CHECKOUT_SESSION_ID}`,
       cancelUrl: `${origin}/calendar?clientId=${encodeURIComponent(businessId)}&subscriptionCheckout=cancelled`
     });
@@ -803,7 +924,7 @@ export const billingService = {
     providerCustomerId?: string;
     providerSubscriptionId?: string;
   }): Promise<{ subscription: BusinessSubscription; invoice: BillingInvoice; overview: BillingOverview }> {
-    await getBusinessOrThrow(input.businessId);
+    const business = await getBusinessOrThrow(input.businessId);
     const plans = await listNormalizedSubscriptionPlans();
     const plan = plans.find((entry) => entry.id === input.planId);
 
@@ -818,6 +939,7 @@ export const billingService = {
       plan.trialDays > 0
         ? new Date(now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000).toISOString()
         : undefined;
+    const extraBookableStaffCostCents = getExtraBookableStaffCostCents(plan, business.teamMembers);
     const businessSubscriptions = await billingRepository.listBusinessSubscriptionsByBusinessId(input.businessId);
     const existingSubscriptions = businessSubscriptions.filter(
       (subscription) =>
@@ -857,7 +979,7 @@ export const billingService = {
           businessId: input.businessId,
           subscriptionId: duplicateSubscription.id,
           planId: plan.id,
-          amountCents: plan.amountCents,
+          amountCents: plan.amountCents + extraBookableStaffCostCents,
           currencyCode: plan.currencyCode,
           status: 'paid',
           periodStart: duplicateSubscription.currentPeriodStart,
@@ -903,7 +1025,7 @@ export const billingService = {
       businessId: input.businessId,
       subscriptionId: subscription.id,
       planId: plan.id,
-      amountCents: trialEndsAt ? 0 : plan.amountCents,
+      amountCents: trialEndsAt ? 0 : plan.amountCents + extraBookableStaffCostCents,
       currencyCode: plan.currencyCode,
       status: 'paid',
       periodStart: nowIso,
@@ -925,6 +1047,7 @@ export const billingService = {
     );
     await billingRepository.saveBusinessSubscription(subscription);
     await billingRepository.saveBillingInvoice(invoice);
+    await grantFirstActivationCampaignCreditIfEligible(input.businessId, plan, businessSubscriptions);
 
     return {
       subscription,
