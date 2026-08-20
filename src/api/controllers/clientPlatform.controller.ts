@@ -16,6 +16,8 @@ import {
 import { preferredLanguageValues } from '../../platform/clientPlatform.types';
 import { appointmentService } from '../../appointments/appointment.service';
 import { twilioSmsService } from '../../notifications/twilioSms.service';
+import { whatsappService } from '../../notifications/whatsapp.service';
+import { whatsappTemplates } from '../../notifications/whatsappTemplates';
 import { emailOtpService } from '../../notifications/emailOtp.service';
 import { emailService } from '../../notifications/email.service';
 import { renderEmailLayout, BRAND_NAME } from '../../notifications/emailTemplate';
@@ -491,11 +493,18 @@ export const clientPlatformController = {
         provider: input.provider
       });
 
-      const smsResult = await twilioSmsService.sendSms(
-        mobileNumber,
-        `Your ${BRAND_NAME} verification code is ${code}. It expires in 10 minutes.`,
-        'customer'
-      );
+      const [smsResult] = await Promise.all([
+        twilioSmsService.sendSms(
+          mobileNumber,
+          `Your ${BRAND_NAME} verification code is ${code}. It expires in 10 minutes.`,
+          'customer'
+        ),
+        whatsappService.sendTemplate(
+          mobileNumber,
+          { templateName: whatsappTemplates.otpVerification, bodyParams: [code], buttonCopyCode: code },
+          'customer'
+        )
+      ]);
 
       res.status(200).json({
         otpRequired: true,
@@ -623,11 +632,18 @@ export const clientPlatformController = {
     });
 
     if (client.mobileNumber) {
-      const smsResult = await twilioSmsService.sendSms(
-        client.mobileNumber,
-        `Your ${BRAND_NAME} verification code is ${code}. It expires in 10 minutes.`,
-        'customer'
-      );
+      const [smsResult] = await Promise.all([
+        twilioSmsService.sendSms(
+          client.mobileNumber,
+          `Your ${BRAND_NAME} verification code is ${code}. It expires in 10 minutes.`,
+          'customer'
+        ),
+        whatsappService.sendTemplate(
+          client.mobileNumber,
+          { templateName: whatsappTemplates.otpVerification, bodyParams: [code], buttonCopyCode: code },
+          'customer'
+        )
+      ]);
 
       res.status(200).json({
         otpRequired: true,

@@ -6,8 +6,11 @@ import { appointmentRepository } from '../appointments/appointment.repository';
 import type { AppointmentRecord } from '../appointments/appointment.types';
 import { customerAccountRepository } from '../customers/customerAccount.repository';
 import { twilioSmsService } from '../notifications/twilioSms.service';
+import { whatsappService, toWhatsappButtonSuffix as sharedToWhatsappButtonSuffix } from '../notifications/whatsapp.service';
+import { whatsappTemplates } from '../notifications/whatsappTemplates';
 import { emailService } from '../notifications/email.service';
 import { renderMarketingEmail } from '../notifications/emailTemplate';
+import { env } from '../config/env';
 import { billingService } from '../billing/billing.service';
 import { walletService } from '../wallet/wallet.service';
 import { platformSettingsService } from '../platform/platformSettings.service';
@@ -206,8 +209,17 @@ const buildMergedRecipients = (
   return [...merged.values()];
 };
 
-const isChannelRelevant = (channel: CampaignChannel, target: 'sms' | 'email'): boolean =>
-  channel === target || channel === 'both';
+const isChannelRelevant = (channel: CampaignChannel, target: 'sms' | 'email' | 'whatsapp'): boolean => {
+  if (target === 'sms') {
+    return channel === 'sms' || channel === 'both' || channel === 'all';
+  }
+
+  if (target === 'email') {
+    return channel === 'email' || channel === 'both' || channel === 'all';
+  }
+
+  return channel === 'whatsapp' || channel === 'all';
+};
 
 const isOptedOutOfSms = async (phone: string): Promise<boolean> => {
   if (!phone) {
@@ -225,6 +237,57 @@ const isOptedOutOfEmail = async (email: string): Promise<boolean> => {
 
   const account = await customerAccountRepository.getCustomerByEmail(email);
   return account ? account.notifications.marketingEmail === false : false;
+};
+
+const isOptedOutOfWhatsapp = async (phone: string): Promise<boolean> => {
+  if (!phone) {
+    return false;
+  }
+
+  const account = await customerAccountRepository.getCustomerByPhone(phone);
+  return account ? account.notifications.marketingWhatsapp === false : false;
+};
+
+const toWhatsappButtonSuffix = (fullUrl: string): string =>
+  sharedToWhatsappButtonSuffix(fullUrl, env.PUBLIC_BASE_URL ?? '');
+
+const whatsappTemplateNameByType: Record<CampaignTemplateType, string> = {
+  percent_off: whatsappTemplates.promoPercentOff,
+  flat_amount_off: whatsappTemplates.promoFlatAmountOff,
+  free_service: whatsappTemplates.promoFreeService,
+  custom_offer: whatsappTemplates.promoCustomOffer,
+  happy_hour: whatsappTemplates.promoHappyHour,
+  last_minute_fill: whatsappTemplates.promoLastMinuteFill
+};
+
+const buildWhatsappBodyParams = (
+  templateType: CampaignTemplateType,
+  values: Record<string, string>
+): string[] => {
+  switch (templateType) {
+    case 'percent_off':
+      return [values.customerName, values.businessName, values.discountLabel, values.serviceName];
+    case 'flat_amount_off':
+      return [values.customerName, values.discountLabel, values.serviceName, values.businessName];
+    case 'free_service':
+      return [values.customerName, values.businessName, values.serviceName];
+    case 'custom_offer':
+      return [values.customerName, values.businessName, values.offerName, values.serviceName];
+    case 'happy_hour':
+      return [
+        values.startTime,
+        values.endTime,
+        values.offerName,
+        values.serviceName,
+        values.discountedPrice,
+        values.originalPrice,
+        values.businessName
+      ];
+    case 'last_minute_fill':
+      return [values.slotTime, values.businessName, values.discountLabel, values.serviceName, values.seatsLeft];
+    default:
+      return [];
+  }
 };
 
 const buildPlaceholderValues = (
@@ -262,6 +325,9 @@ const dispatchSingleRecipient = async (
   let smsMessageId = recipient.smsMessageId;
   let emailStatus = recipient.emailStatus;
   let emailReason = recipient.emailReason;
+  let whatsappStatus = recipient.whatsappStatus;
+  let whatsappReason = recipient.whatsappReason;
+  let whatsappMessageId = recipient.whatsappMessageId;
 
   if (isChannelRelevant(campaign.channel, 'sms')) {
     if (!recipient.customerPhone) {
@@ -282,6 +348,33 @@ const dispatchSingleRecipient = async (
       smsStatus = result.status;
       smsReason = result.reason ?? '';
       smsMessageId = result.messageId ?? '';
+    }
+  }
+
+  if (isChannelRelevant(campaign.channel, 'whatsapp')) {
+    if (!recipient.customerPhone) {
+      whatsappStatus = 'skipped';
+      whatsappReason = 'No phone number on file';
+    } else if (await isOptedOutOfWhatsapp(recipient.customerPhone)) {
+      whatsappStatus = 'skipped';
+      whatsappReason = 'Customer opted out of marketing WhatsApp messages';
+    } else if (!(await billingService.consumeMessageCredit(campaign.businessId))) {
+      whatsappStatus = 'skipped';
+      whatsappReason = 'No message credits remaining on your plan';
+    } else {
+      const result = await whatsappService.sendTemplate(
+        recipient.customerPhone,
+        {
+          templateName: whatsappTemplateNameByType[campaign.templateType],
+          bodyParams: buildWhatsappBodyParams(campaign.templateType, placeholderValues),
+          buttonUrlParam: toWhatsappButtonSuffix(placeholderValues.bookingLink)
+        },
+        'customer',
+        { businessId: campaign.businessId, source: 'marketing_campaign' }
+      );
+      whatsappStatus = result.status;
+      whatsappReason = result.reason ?? '';
+      whatsappMessageId = result.messageId ?? '';
     }
   }
 
@@ -357,6 +450,9 @@ const dispatchSingleRecipient = async (
     smsMessageId,
     emailStatus,
     emailReason,
+    whatsappStatus,
+    whatsappReason,
+    whatsappMessageId,
     updatedAt: new Date().toISOString()
   });
 };
@@ -367,7 +463,8 @@ const classifyRecipientOutcome = (
 ): 'sent' | 'failed' | 'skipped' => {
   const relevantStatuses = [
     isChannelRelevant(campaign.channel, 'sms') ? recipient.smsStatus : null,
-    isChannelRelevant(campaign.channel, 'email') ? recipient.emailStatus : null
+    isChannelRelevant(campaign.channel, 'email') ? recipient.emailStatus : null,
+    isChannelRelevant(campaign.channel, 'whatsapp') ? recipient.whatsappStatus : null
   ].filter((status): status is NonNullable<typeof status> => status !== null);
 
   if (relevantStatuses.some((status) => status === 'sent')) {
@@ -416,6 +513,7 @@ const dispatchRecipients = async (
   // permanently consumes wallet balance for messages that were never delivered.
   let unsentSmsCount = 0;
   let unsentEmailCount = 0;
+  let unsentWhatsappCount = 0;
 
   for (const recipient of finalRecipients) {
     const outcome = classifyRecipientOutcome(campaign, recipient);
@@ -435,6 +533,14 @@ const dispatchRecipients = async (
     if (isChannelRelevant(campaign.channel, 'email') && recipient.customerEmail && recipient.emailStatus !== 'sent') {
       unsentEmailCount += 1;
     }
+
+    if (
+      isChannelRelevant(campaign.channel, 'whatsapp') &&
+      recipient.customerPhone &&
+      recipient.whatsappStatus !== 'sent'
+    ) {
+      unsentWhatsappCount += 1;
+    }
   }
 
   const status: CampaignStatus = sentCount === finalRecipients.length
@@ -445,9 +551,9 @@ const dispatchRecipients = async (
 
   let refundCents = 0;
 
-  if (unsentSmsCount > 0 || unsentEmailCount > 0) {
+  if (unsentSmsCount > 0 || unsentEmailCount > 0 || unsentWhatsappCount > 0) {
     const pricing = await platformSettingsService.getCampaignPricing();
-    refundCents = (unsentSmsCount + unsentEmailCount) * pricing.promotionalMessageCostCents;
+    refundCents = (unsentSmsCount + unsentEmailCount + unsentWhatsappCount) * pricing.promotionalMessageCostCents;
   }
 
   await marketingRepository.updateCampaign({
@@ -694,7 +800,8 @@ export const marketingService = {
         .map((entry) => ({ name: entry.name, phone: entry.phone, email: entry.email, origin: entry.origin })),
       total: merged.length,
       smsEligibleCount: merged.filter((entry) => entry.phone).length,
-      emailEligibleCount: merged.filter((entry) => entry.email).length
+      emailEligibleCount: merged.filter((entry) => entry.email).length,
+      whatsappEligibleCount: merged.filter((entry) => entry.phone).length
     };
   },
 
@@ -706,7 +813,12 @@ export const marketingService = {
     csvContacts: CsvContactRow[]
   ): Promise<CampaignCostPreview> {
     const preview = await marketingService.previewRecipients(businessId, recipientSource, csvContacts);
-    return walletService.previewCampaignCost(businessId, preview.smsEligibleCount, preview.emailEligibleCount);
+    return walletService.previewCampaignCost(
+      businessId,
+      preview.smsEligibleCount,
+      preview.emailEligibleCount,
+      preview.whatsappEligibleCount
+    );
   },
 
   // Shows the business owner exactly what a recipient will receive - same
@@ -761,7 +873,15 @@ export const marketingService = {
     const emailEligibleCount = isChannelRelevant(campaign.channel, 'email')
       ? merged.filter((entry) => entry.email).length
       : 0;
-    const costPreview = await walletService.previewCampaignCost(businessId, smsEligibleCount, emailEligibleCount);
+    const whatsappEligibleCount = isChannelRelevant(campaign.channel, 'whatsapp')
+      ? merged.filter((entry) => entry.phone).length
+      : 0;
+    const costPreview = await walletService.previewCampaignCost(
+      businessId,
+      smsEligibleCount,
+      emailEligibleCount,
+      whatsappEligibleCount
+    );
     await walletService.reserveAndDeductForCampaign(businessId, campaignId, costPreview.estimatedTotalCents);
 
     const now = new Date().toISOString();
@@ -780,6 +900,9 @@ export const marketingService = {
       smsMessageId: '',
       emailStatus: 'pending',
       emailReason: '',
+      whatsappStatus: 'pending',
+      whatsappReason: '',
+      whatsappMessageId: '',
       createdAt: now,
       updatedAt: now
     }));

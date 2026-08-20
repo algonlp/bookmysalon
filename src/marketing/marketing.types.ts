@@ -5,7 +5,7 @@ export type CampaignTemplateType =
   | 'custom_offer'
   | 'happy_hour'
   | 'last_minute_fill';
-export type CampaignChannel = 'sms' | 'email' | 'both';
+export type CampaignChannel = 'sms' | 'email' | 'both' | 'whatsapp' | 'all';
 export type CampaignRecipientSource = 'existing_clients' | 'csv_upload' | 'both' | 'random_batch';
 export type CampaignStatus = 'draft' | 'sending' | 'sent' | 'failed' | 'partially_sent';
 export type CampaignDispatchStatus = 'pending' | 'sent' | 'failed' | 'skipped' | 'not_applicable';
@@ -79,6 +79,9 @@ export interface CampaignRecipientRecord {
   smsMessageId: string;
   emailStatus: CampaignDispatchStatus;
   emailReason: string;
+  whatsappStatus: CampaignDispatchStatus;
+  whatsappReason: string;
+  whatsappMessageId: string;
   convertedAppointmentId?: string;
   convertedAt?: string;
   openedAt?: string;
@@ -146,4 +149,5 @@ export interface RecipientPreview {
   total: number;
   smsEligibleCount: number;
   emailEligibleCount: number;
+  whatsappEligibleCount: number;
 }

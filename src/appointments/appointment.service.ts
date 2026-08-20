@@ -34,6 +34,11 @@ import { clientPlatformRepository } from '../platform/clientPlatform.repository'
 import { HttpError } from '../shared/errors/httpError';
 import { logger } from '../shared/logger';
 import { twilioSmsService } from '../notifications/twilioSms.service';
+import { whatsappService, toWhatsappButtonSuffix } from '../notifications/whatsapp.service';
+import type { WhatsappTemplateSendInput } from '../notifications/whatsapp.service';
+import { whatsappTemplates } from '../notifications/whatsappTemplates';
+import type { SmsDispatchContext } from '../notifications/smsLog.types';
+import { customerAccountRepository } from '../customers/customerAccount.repository';
 import { emailService } from '../notifications/email.service';
 import { renderEmailLayout } from '../notifications/emailTemplate';
 import type { DashboardCommerceViewModel } from '../platform/clientPlatform.types';
@@ -81,7 +86,7 @@ interface WaitlistOfferDispatch {
   appointmentTime: string;
   offerExpiresAt: string;
   claimLink: string;
-  notification: NotificationDispatchResult;
+  notifications: NotificationDispatchResult[];
 }
 
 const getBusinessOrThrow = async (businessId: string) => {
@@ -1514,6 +1519,37 @@ const matchesWaitlistEntryForOpenSlot = (
   return true;
 };
 
+const isOptedOutOfAppointmentWhatsapp = async (phone: string): Promise<boolean> => {
+  if (!phone) {
+    return false;
+  }
+
+  const account = await customerAccountRepository.getCustomerByPhone(phone);
+  return account ? account.notifications.appointmentWhatsapp === false : false;
+};
+
+// Wraps whatsappService.sendTemplate with the customer's WhatsApp
+// notification preference (Settings → Notifications) so a customer who
+// opted out doesn't get sent (and the business doesn't get charged for) a
+// WhatsApp message alongside the SMS/email it already sends for the same
+// event.
+const sendAppointmentWhatsapp = async (
+  phone: string,
+  input: WhatsappTemplateSendInput,
+  context: SmsDispatchContext
+): Promise<NotificationDispatchResult> => {
+  if (await isOptedOutOfAppointmentWhatsapp(phone)) {
+    return {
+      recipient: 'customer',
+      channel: 'whatsapp',
+      status: 'skipped',
+      reason: 'Customer opted out of WhatsApp appointment notifications'
+    };
+  }
+
+  return whatsappService.sendTemplate(phone, input, 'customer', context);
+};
+
 // Best-effort utility-message wallet charge for a transactional send that
 // actually went out (booking confirmation, reminder, waitlist offer, etc.).
 // Fire-and-forget and swallows its own errors: notifications must never fail
@@ -1535,19 +1571,21 @@ const chargeUtilityMessageIfSent = (businessId: string, source: string, status: 
 const sendWaitlistOfferNotification = async (
   waitlistEntry: WaitlistRecord,
   origin: string
-): Promise<NotificationDispatchResult> => {
+): Promise<NotificationDispatchResult[]> => {
   if (
     waitlistEntry.status !== 'offered' ||
     !waitlistEntry.offeredAppointmentDate ||
     !waitlistEntry.offeredAppointmentTime ||
     !waitlistEntry.offerExpiresAt
   ) {
-    return {
-      recipient: 'customer',
-      channel: 'sms',
-      status: 'skipped',
-      reason: 'Waitlist offer is not active'
-    };
+    return [
+      {
+        recipient: 'customer',
+        channel: 'sms',
+        status: 'skipped',
+        reason: 'Waitlist offer is not active'
+      }
+    ];
   }
 
   const expiresInMinutes = Math.max(
@@ -1563,13 +1601,33 @@ const sendWaitlistOfferNotification = async (
     `${waitlistEntry.teamMemberName ? ` Team member: ${waitlistEntry.teamMemberName}.` : ''} ` +
     `Book it here within ${expiresInMinutes} minute${expiresInMinutes === 1 ? '' : 's'}: ${claimLink}`;
 
-  const result = await twilioSmsService.sendSms(waitlistEntry.customerPhone, message, 'customer', {
-    businessId: waitlistEntry.businessId,
-    waitlistEntryId: waitlistEntry.id,
-    source: 'waitlist_offer'
-  });
+  const [result, whatsappResult] = await Promise.all([
+    twilioSmsService.sendSms(waitlistEntry.customerPhone, message, 'customer', {
+      businessId: waitlistEntry.businessId,
+      waitlistEntryId: waitlistEntry.id,
+      source: 'waitlist_offer'
+    }),
+    sendAppointmentWhatsapp(
+      waitlistEntry.customerPhone,
+      {
+        templateName: whatsappTemplates.waitlistSlotOpened,
+        bodyParams: [
+          waitlistEntry.serviceName
+            ? waitlistEntry.teamMemberName
+              ? `${waitlistEntry.serviceName} with ${waitlistEntry.teamMemberName}`
+              : waitlistEntry.serviceName
+            : 'the salon',
+          formatSmsDate(waitlistEntry.offeredAppointmentDate, waitlistEntry.offeredAppointmentTime),
+          String(expiresInMinutes)
+        ],
+        buttonUrlParam: toWhatsappButtonSuffix(claimLink, origin)
+      },
+      { businessId: waitlistEntry.businessId, waitlistEntryId: waitlistEntry.id, source: 'waitlist_offer' }
+    )
+  ]);
   chargeUtilityMessageIfSent(waitlistEntry.businessId, 'waitlist_offer', result.status);
-  return result;
+  chargeUtilityMessageIfSent(waitlistEntry.businessId, 'waitlist_offer', whatsappResult.status);
+  return [result, whatsappResult];
 };
 
 const offerWaitlistEntryForOpenSlot = async (
@@ -1592,7 +1650,7 @@ const offerWaitlistEntryForOpenSlot = async (
   };
 
   await appointmentRepository.saveWaitlistEntry(offeredWaitlistEntry);
-  const notification = await sendWaitlistOfferNotification(offeredWaitlistEntry, origin);
+  const notifications = await sendWaitlistOfferNotification(offeredWaitlistEntry, origin);
 
   return {
     waitlistEntryId: offeredWaitlistEntry.id,
@@ -1600,7 +1658,7 @@ const offerWaitlistEntryForOpenSlot = async (
     appointmentTime: openSlot.appointmentTime,
     offerExpiresAt: offeredWaitlistEntry.offerExpiresAt as string,
     claimLink: buildWaitlistClaimLink(offeredWaitlistEntry, origin),
-    notification
+    notifications
   };
 };
 
@@ -1687,6 +1745,28 @@ const sendAppointmentConfirmationNotification = async (
         chargeUtilityMessageIfSent(appointment.businessId, confirmationSource, result.status);
         return result;
       }),
+    sendAppointmentWhatsapp(
+      appointment.customerPhone,
+      {
+        templateName:
+          mode === 'rescheduled'
+            ? whatsappTemplates.appointmentRescheduled
+            : whatsappTemplates.appointmentConfirmed,
+        bodyParams: [
+          appointment.businessName,
+          appointmentDateLabel,
+          appointment.packageName
+            ? `${appointment.serviceName} (${appointment.packageName})`
+            : appointment.serviceName,
+          appointment.id.slice(0, 8)
+        ],
+        buttonUrlParam: toWhatsappButtonSuffix(shortManageLink, origin)
+      },
+      { appointmentId: appointment.id, businessId: appointment.businessId, source: confirmationSource }
+    ).then((result) => {
+      chargeUtilityMessageIfSent(appointment.businessId, confirmationSource, result.status);
+      return result;
+    }),
     emailService
       .sendEmail(
         {
@@ -1734,12 +1814,31 @@ const sendRunningLateNotification = async (
     `${formatSmsDate(appointment.appointmentDate, appointment.appointmentTime)} is delayed.` +
     `${delayCopy}${noteCopy} Click here to view your booking: ${shortManageLink}`;
 
+  const delayNote = `${delayCopy.trim()}${noteCopy}`.trim();
+
   return Promise.all([
     twilioSmsService.sendSms(appointment.customerPhone, customerMessage, 'customer', {
       appointmentId: appointment.id,
       businessId: appointment.businessId,
       source: 'running_late'
     }).then((result) => {
+      chargeUtilityMessageIfSent(appointment.businessId, 'running_late', result.status);
+      return result;
+    }),
+    sendAppointmentWhatsapp(
+      appointment.customerPhone,
+      {
+        templateName: whatsappTemplates.appointmentRunningLate,
+        bodyParams: [
+          appointment.businessName,
+          appointment.serviceName,
+          formatSmsDate(appointment.appointmentDate, appointment.appointmentTime),
+          delayNote
+        ],
+        buttonUrlParam: toWhatsappButtonSuffix(shortManageLink, origin)
+      },
+      { appointmentId: appointment.id, businessId: appointment.businessId, source: 'running_late' }
+    ).then((result) => {
       chargeUtilityMessageIfSent(appointment.businessId, 'running_late', result.status);
       return result;
     })

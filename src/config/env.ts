@@ -271,6 +271,13 @@ const envSchema = z.object({
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_PHONE_NUMBER: z.string().optional(),
+  // Meta WhatsApp Cloud API (see docs/whatsapp-templates.md for the approved
+  // template set this app sends). Optional — sends are skipped until set.
+  WHATSAPP_ACCESS_TOKEN: z.string().optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
+  WHATSAPP_BUSINESS_ACCOUNT_ID: z.string().optional(),
+  WHATSAPP_API_VERSION: z.string().trim().min(1).default('v21.0'),
+  WHATSAPP_TEMPLATE_LANGUAGE: z.string().trim().min(1).default('en_US'),
   STRIPE_ENABLED: z.boolean().default(false),
   PLATFORM_SUPER_ADMIN_KEY: z.string().trim().min(1).optional(),
   // Wallet message pricing defaults (in cents/paisa). Admin-configurable at
@@ -480,6 +487,9 @@ const resolvedEnv = {
   TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID?.trim() || process.env.TWILIO_SID?.trim(),
   TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN?.trim() || process.env.TWILIO_TOKEN?.trim(),
   TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER?.trim() || process.env.TWILIO_FROM?.trim(),
+  WHATSAPP_ACCESS_TOKEN: normalizeOptionalEnv(process.env.WHATSAPP_ACCESS_TOKEN),
+  WHATSAPP_PHONE_NUMBER_ID: normalizeOptionalEnv(process.env.WHATSAPP_PHONE_NUMBER_ID),
+  WHATSAPP_BUSINESS_ACCOUNT_ID: normalizeOptionalEnv(process.env.WHATSAPP_BUSINESS_ACCOUNT_ID),
   STRIPE_ENABLED: parseBooleanEnv(process.env.STRIPE_ENABLED, false),
   PLATFORM_SUPER_ADMIN_KEY: normalizeOptionalEnv(process.env.PLATFORM_SUPER_ADMIN_KEY),
   STRIPE_SECRET_KEY: normalizeOptionalEnv(process.env.STRIPE_SECRET_KEY),

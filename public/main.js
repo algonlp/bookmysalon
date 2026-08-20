@@ -4190,6 +4190,7 @@ const initHomeSalonSearch = () => {
   let locationAutocomplete = null;
   let selectedLocationDetails = null;
   let nearbySearchRequestId = 0;
+  let locationSearchGeneration = 0;
   const salonCoordinatesCache = new Map();
   const cityAreaSuggestionsCache = new Map();
   const currentLocationSuggestion = {
@@ -5239,6 +5240,14 @@ const initHomeSalonSearch = () => {
       return cityAreas.length > 0 ? cityAreas : createPopularCitySuggestions(trimmedQuery);
     }
 
+    // Debounce the network call only (local/popular suggestions above stay
+    // instant) so a fast typist doesn't fire a request per keystroke.
+    const requestGeneration = ++locationSearchGeneration;
+    await new Promise((resolve) => setTimeout(resolve, 220));
+    if (requestGeneration !== locationSearchGeneration) {
+      return [];
+    }
+
     try {
       const params = new URLSearchParams({ q: trimmedQuery });
       const payload = await apiRequest(`${locationSearchEndpoint}?${params.toString()}`);
@@ -5279,7 +5288,7 @@ const initHomeSalonSearch = () => {
           normalizeSearchValue(`${suggestion.primaryLabel} ${suggestion.label}`).includes(normalizedQuery)
         );
 
-        return [...rankedAreas, ...mappedRemoteSuggestions].filter(
+        return [...rankedAreas, ...getLocalLocationSuggestions(trimmedQuery), ...mappedRemoteSuggestions].filter(
           (suggestion, index, suggestions) =>
             suggestions.findIndex(
               (entry) => normalizeSearchValue(entry.label) === normalizeSearchValue(suggestion.label)
@@ -5287,7 +5296,11 @@ const initHomeSalonSearch = () => {
         );
       }
 
+      // Real salon addresses on the platform (e.g. locally-known areas like
+      // "D Ground" that Mapbox may not index) go first — they're the most
+      // actionable result since a salon is already there.
       return [
+        ...getLocalLocationSuggestions(trimmedQuery),
         ...(includePopularCities ? createPopularCitySuggestions(trimmedQuery) : []),
         ...mappedRemoteSuggestions
       ].filter(
@@ -5323,7 +5336,7 @@ const initHomeSalonSearch = () => {
     locationAutocomplete = algoliaAutocomplete({
       container: cityAutocomplete,
       placeholder: cityInput.placeholder || 'Current location',
-      openOnFocus: true,
+      openOnFocus: false,
       detachedMediaQuery: 'none',
       classNames: {
         panel: 'location-autocomplete-panel'
@@ -5356,7 +5369,7 @@ const initHomeSalonSearch = () => {
         applyShowcaseFilters();
       },
       shouldPanelOpen({ state }) {
-        return state.query.trim().length >= 2 || state.collections.some((collection) => collection.items.length > 0);
+        return state.query.trim().length >= 1;
       },
       getSources({ query }) {
         return [
@@ -5428,14 +5441,18 @@ const initHomeSalonSearch = () => {
     }
 
     if (!window.isSecureContext) {
-      setCityLocationStatus(
-        'Current location needs HTTPS. Open this site on a secure public URL, or use localhost while testing.'
-      );
+      if (force) {
+        setCityLocationStatus(
+          'Current location needs HTTPS. Open this site on a secure public URL, or use localhost while testing.'
+        );
+      }
       return;
     }
 
     if (!navigator.geolocation) {
-      setCityLocationStatus('Location access is not available in this browser. Search by city or area instead.');
+      if (force) {
+        setCityLocationStatus('Location access is not available in this browser. Search by city or area instead.');
+      }
       return;
     }
 
@@ -5472,7 +5489,9 @@ const initHomeSalonSearch = () => {
 
           if (!detectedLocation) {
             hasRequestedCurrentLocation = false;
-            setCityLocationStatus('Location detected, but no address could be resolved. Search manually.');
+            if (force) {
+              setCityLocationStatus('Location detected, but no address could be resolved. Search manually.');
+            }
             return;
           }
 
@@ -5489,15 +5508,17 @@ const initHomeSalonSearch = () => {
           hasRequestedCurrentLocation = false;
           if (force) {
             syncLocationQuery('', { updateAutocomplete: true });
+            setCityLocationStatus('Unable to detect the current location right now. Search manually.');
           }
-          setCityLocationStatus('Unable to detect the current location right now. Search manually.');
         }
       },
       (error) => {
         hasRequestedCurrentLocation = false;
-        if (force) {
-          syncLocationQuery('', { updateAutocomplete: true });
+        if (!force) {
+          return;
         }
+
+        syncLocationQuery('', { updateAutocomplete: true });
         const errorMessage =
           error.code === error.PERMISSION_DENIED
             ? 'Location permission was denied. Search by city or area instead.'
@@ -5624,14 +5645,6 @@ const initHomeSalonSearch = () => {
   if (locationTrigger instanceof HTMLButtonElement) {
     locationTrigger.addEventListener('click', () => {
       detectCurrentLocation({ force: true });
-
-      if (hasAlgoliaLocationAutocomplete && locationAutocomplete?.setIsOpen) {
-        locationAutocomplete.setIsOpen(true);
-        locationAutocomplete.refresh?.();
-        return;
-      }
-
-      cityDropdownController.open();
     });
   }
 
@@ -17352,7 +17365,9 @@ const createTrendCard = (
           const tags = document.createElement('div');
           tags.className = 'calendar-campaign-recipient-tags';
           const delivered =
-            recipient.smsStatus === 'sent' || recipient.emailStatus === 'sent';
+            recipient.smsStatus === 'sent' ||
+            recipient.emailStatus === 'sent' ||
+            recipient.whatsappStatus === 'sent';
           const deliveredTag = document.createElement('span');
           deliveredTag.className = `calendar-campaign-tag ${delivered ? 'is-ok' : 'is-muted'}`;
           deliveredTag.textContent = delivered ? 'Delivered' : 'Not delivered';
@@ -18597,7 +18612,9 @@ const createTrendCard = (
     [
       ['sms', 'SMS only'],
       ['email', 'Email only'],
-      ['both', 'SMS and email']
+      ['both', 'SMS and email'],
+      ['whatsapp', 'WhatsApp only'],
+      ['all', 'SMS, email and WhatsApp']
     ].forEach(([value, label]) => {
       const option = document.createElement('option');
       option.value = value;

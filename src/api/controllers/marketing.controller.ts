@@ -48,7 +48,7 @@ const createCampaignSchema = z
     smsBody: z.string().trim().min(1, 'SMS message is required'),
     emailSubject: z.string().trim().min(1, 'Email subject is required'),
     emailBodyText: z.string().trim().min(1, 'Email body is required'),
-    channel: z.enum(['sms', 'email', 'both']),
+    channel: z.enum(['sms', 'email', 'both', 'whatsapp', 'all']),
     recipientSource: z.enum(['existing_clients', 'csv_upload', 'both', 'random_batch']),
     isPromotedOnMarketplace: z.boolean().optional(),
     marketplaceOfferTitle: z.string().trim().optional().or(z.literal('')),
@@ -77,7 +77,7 @@ const campaignIdSchema = z.string().uuid('Valid campaign id is required');
 
 const listCampaignsQuerySchema = z.object({
   status: z.enum(['draft', 'sending', 'sent', 'failed', 'partially_sent']).optional(),
-  channel: z.enum(['sms', 'email', 'both']).optional(),
+  channel: z.enum(['sms', 'email', 'both', 'whatsapp', 'all']).optional(),
   // YYYY-MM-DD, inclusive of the whole day on both ends.
   from: z
     .string()

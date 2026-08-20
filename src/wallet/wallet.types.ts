@@ -83,6 +83,7 @@ export interface WalletOverview {
 export interface CampaignCostPreview {
   smsCostCents: number;
   emailCostCents: number;
+  whatsappCostCents: number;
   estimatedTotalCents: number;
   balanceCents: number;
   balanceAfterCents: number;

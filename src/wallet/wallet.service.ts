@@ -360,7 +360,8 @@ export const walletService = {
   async previewCampaignCost(
     businessId: string,
     smsEligibleCount: number,
-    emailEligibleCount: number
+    emailEligibleCount: number,
+    whatsappEligibleCount = 0
   ): Promise<CampaignCostPreview> {
     const [wallet, pricing] = await Promise.all([
       getOrCreateWallet(businessId),
@@ -369,12 +370,14 @@ export const walletService = {
 
     const smsCostCents = Math.max(0, smsEligibleCount) * pricing.promotionalMessageCostCents;
     const emailCostCents = Math.max(0, emailEligibleCount) * pricing.promotionalMessageCostCents;
-    const estimatedTotalCents = smsCostCents + emailCostCents;
+    const whatsappCostCents = Math.max(0, whatsappEligibleCount) * pricing.promotionalMessageCostCents;
+    const estimatedTotalCents = smsCostCents + emailCostCents + whatsappCostCents;
     const balanceAfterCents = wallet.balanceCents - estimatedTotalCents;
 
     return {
       smsCostCents,
       emailCostCents,
+      whatsappCostCents,
       estimatedTotalCents,
       balanceCents: wallet.balanceCents,
       balanceAfterCents,

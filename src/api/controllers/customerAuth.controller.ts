@@ -2,6 +2,8 @@ import type { Request, Response } from 'express';
 import { randomInt } from 'crypto';
 import { z } from 'zod';
 import { twilioSmsService } from '../../notifications/twilioSms.service';
+import { whatsappService } from '../../notifications/whatsapp.service';
+import { whatsappTemplates } from '../../notifications/whatsappTemplates';
 import { emailOtpService } from '../../notifications/emailOtp.service';
 import { customerAccountService } from '../../customers/customerAccount.service';
 import { BRAND_NAME } from '../../notifications/emailTemplate';
@@ -48,11 +50,18 @@ export const customerAuthController = {
       email: input.email?.trim() ?? ''
     });
 
-    const smsResult = await twilioSmsService.sendSms(
-      input.phone,
-      `Your ${BRAND_NAME} verification code is ${code}. It expires in 10 minutes.`,
-      'customer'
-    );
+    const [smsResult] = await Promise.all([
+      twilioSmsService.sendSms(
+        input.phone,
+        `Your ${BRAND_NAME} verification code is ${code}. It expires in 10 minutes.`,
+        'customer'
+      ),
+      whatsappService.sendTemplate(
+        input.phone,
+        { templateName: whatsappTemplates.otpVerification, bodyParams: [code], buttonCopyCode: code },
+        'customer'
+      )
+    ]);
 
     res.status(200).json({
       message:

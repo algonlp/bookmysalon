@@ -1056,6 +1056,13 @@ describe('Client platform API', () => {
     expect(bookingResponse.body.notifications).toEqual([
       expect.objectContaining({
         recipient: 'customer',
+        channel: 'sms',
+        status: 'failed',
+        reason: expect.stringContaining('valid country code')
+      }),
+      expect.objectContaining({
+        recipient: 'customer',
+        channel: 'whatsapp',
         status: 'failed',
         reason: expect.stringContaining('valid country code')
       }),
@@ -1068,13 +1075,23 @@ describe('Client platform API', () => {
       .set('x-admin-token', adminToken);
 
     expect(smsLogsResponse.status).toBe(200);
-    expect(smsLogsResponse.body.logs).toEqual([
-      expect.objectContaining({
-        status: 'failed',
-        destination: '03001234567',
-        reason: expect.stringContaining('valid country code')
-      })
-    ]);
+    expect(smsLogsResponse.body.logs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          channel: 'sms',
+          status: 'failed',
+          destination: '03001234567',
+          reason: expect.stringContaining('valid country code')
+        }),
+        expect.objectContaining({
+          channel: 'whatsapp',
+          status: 'failed',
+          destination: '03001234567',
+          reason: expect.stringContaining('valid country code')
+        })
+      ])
+    );
+    expect(smsLogsResponse.body.logs).toHaveLength(2);
   });
 
   it('stores the Twilio error code in SMS logs when the provider rejects a message', async () => {
@@ -1145,6 +1162,7 @@ describe('Client platform API', () => {
           status: 'failed',
           reason: expect.stringContaining('Twilio error 21608')
         }),
+        expect.objectContaining({ recipient: 'customer', channel: 'whatsapp', status: 'skipped' }),
         expect.objectContaining({ recipient: 'customer', channel: 'email', status: 'skipped' })
       ]);
 
@@ -1153,13 +1171,22 @@ describe('Client platform API', () => {
         .set('Cookie', adminCookie);
 
       expect(smsLogsResponse.status).toBe(200);
-      expect(smsLogsResponse.body.logs).toEqual([
-        expect.objectContaining({
-          status: 'failed',
-          destination: '+923001234567',
-          reason: expect.stringContaining('Twilio error 21608')
-        })
-      ]);
+      expect(smsLogsResponse.body.logs).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            channel: 'sms',
+            status: 'failed',
+            destination: '+923001234567',
+            reason: expect.stringContaining('Twilio error 21608')
+          }),
+          expect.objectContaining({
+            channel: 'whatsapp',
+            status: 'skipped',
+            destination: '+923001234567'
+          })
+        ])
+      );
+      expect(smsLogsResponse.body.logs).toHaveLength(2);
       expect(fetchSpy).toHaveBeenCalled();
     } finally {
       env.APP_ENV = originalAppEnv;
@@ -2204,7 +2231,8 @@ describe('Client platform API', () => {
       })
     );
     expect(runningLateResponse.body.notifications).toEqual([
-      expect.objectContaining({ recipient: 'customer', status: 'skipped' })
+      expect.objectContaining({ recipient: 'customer', channel: 'sms', status: 'skipped' }),
+      expect.objectContaining({ recipient: 'customer', channel: 'whatsapp', status: 'skipped' })
     ]);
 
     const completeResponse = await request(app)
@@ -2585,6 +2613,7 @@ describe('Client platform API', () => {
     );
     expect(bookingResponse.body.notifications).toEqual([
       expect.objectContaining({ recipient: 'customer', channel: 'sms', status: 'skipped' }),
+      expect.objectContaining({ recipient: 'customer', channel: 'whatsapp', status: 'skipped' }),
       expect.objectContaining({ recipient: 'customer', channel: 'email', status: 'skipped' })
     ]);
     expect(bookingResponse.body.manageLink).toContain(
@@ -2640,6 +2669,7 @@ describe('Client platform API', () => {
     expect(rescheduleResponse.body.appointment.appointmentTime).toBe('10:00');
     expect(rescheduleResponse.body.notifications).toEqual([
       expect.objectContaining({ recipient: 'customer', channel: 'sms', status: 'skipped' }),
+      expect.objectContaining({ recipient: 'customer', channel: 'whatsapp', status: 'skipped' }),
       expect.objectContaining({ recipient: 'customer', channel: 'email', status: 'skipped' })
     ]);
 
@@ -3564,10 +3594,13 @@ describe('Client platform API', () => {
       expect.objectContaining({
         appointmentDate: bookingDateValue,
         appointmentTime: '09:00',
-        notification: expect.objectContaining({
-          recipient: 'customer',
-          status: 'skipped'
-        })
+        notifications: expect.arrayContaining([
+          expect.objectContaining({
+            recipient: 'customer',
+            channel: 'sms',
+            status: 'skipped'
+          })
+        ])
       })
     ]);
 

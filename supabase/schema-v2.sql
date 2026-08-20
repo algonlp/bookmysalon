@@ -67,7 +67,7 @@ create type loyalty_reward_type as enum ('discount_percent');
 create type marketing_template_type as enum (
   'percent_off', 'flat_amount_off', 'free_service', 'custom_offer', 'happy_hour', 'last_minute_fill'
 );
-create type marketing_channel as enum ('sms', 'email', 'both');
+create type marketing_channel as enum ('sms', 'email', 'both', 'whatsapp', 'all');
 create type marketing_recipient_source as enum (
   'existing_clients', 'csv_upload', 'both', 'random_batch'
 );
@@ -591,6 +591,9 @@ create table marketing_campaign_recipients (
   sms_message_id text not null default '',
   email_status marketing_dispatch_status not null default 'pending',
   email_reason text not null default '',
+  whatsapp_status marketing_dispatch_status not null default 'pending',
+  whatsapp_reason text not null default '',
+  whatsapp_message_id text not null default '',
   converted_appointment_id text null references appointments (id) on delete set null,
   converted_at timestamptz null,
   -- First-open tracking for the campaign link (src/marketing/marketing.repository.ts

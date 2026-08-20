@@ -1285,6 +1285,14 @@ textarea:focus-visible {
   display: none;
 }
 
+/* The Algolia panel has its own in-panel feedback (noResults template), so
+   the plain-text status banner below is redundant once it's active — and
+   its box is narrower/differently positioned than the panel, so showing
+   both at once lets this banner poke out from behind the panel. */
+.location-autocomplete-shell.is-enhanced + .search-location-status {
+  display: none !important;
+}
+
 .search-location-status {
   position: absolute;
   top: calc(100% + 8px);
