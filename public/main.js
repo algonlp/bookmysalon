@@ -461,6 +461,7 @@ const splitPhoneNumberParts = (phoneValue, defaultCountryCode = '') => {
 
 const serviceInput = document.querySelector('#service-query');
 const cityInput = document.querySelector('#city-query');
+const citySelect = document.querySelector('#city-select');
 const timeInput = document.querySelector('#time-query');
 const timePeriodInput = document.querySelector('#time-period-query');
 const searchPanel = document.querySelector('#search-panel');
@@ -2326,6 +2327,14 @@ const getDistanceInKilometers = (from, to) => {
 };
 
 const formatDistanceLabel = (distanceKilometers) => {
+  // Number(null) is 0, not NaN - so a genuinely unknown distance (null,
+  // meaning "we couldn't resolve coordinates for this salon") would
+  // silently become "0 km" and round to a fake "1 m away" for every salon
+  // instead of hiding the distance. Reject null/undefined before coercing.
+  if (distanceKilometers === null || distanceKilometers === undefined || distanceKilometers === '') {
+    return '';
+  }
+
   const distance = Number(distanceKilometers);
 
   if (!Number.isFinite(distance)) {
@@ -3006,10 +3015,22 @@ const resolveSalonDistanceText = async (salon) => {
   try {
     const params = new URLSearchParams({ q: address });
     const payload = await apiRequest(`/api/public/locations/search?${params.toString()}`);
-    const suggestion = Array.isArray(payload?.suggestions) ? payload.suggestions[0] : null;
+    const suggestions = Array.isArray(payload?.suggestions) ? payload.suggestions : [];
+    // A bare city/district-level match (isPreciseMatch: false) isn't this
+    // salon's actual location - it's just as far as the provider could
+    // resolve the address. Treating it as the salon's coordinates would
+    // collapse every unresolvable address onto the same city-center point,
+    // reporting a fake near-zero distance for salons that could be
+    // anywhere in that city. Skip straight to "no distance shown" instead.
+    const suggestion = suggestions.find((entry) => entry?.isPreciseMatch);
+
+    if (!suggestion) {
+      return '';
+    }
+
     const salonCoordinates = {
-      latitude: toFiniteNumber(suggestion?.latitude),
-      longitude: toFiniteNumber(suggestion?.longitude)
+      latitude: toFiniteNumber(suggestion.latitude),
+      longitude: toFiniteNumber(suggestion.longitude)
     };
     const distanceKilometers = getDistanceInKilometers(storedLocation, salonCoordinates);
 
@@ -4180,6 +4201,8 @@ const initHomeSalonSearch = () => {
     searchPanel.dataset.locationSearchEndpoint?.trim() || '/api/public/locations/search';
   const locationReverseEndpoint =
     searchPanel.dataset.locationReverseEndpoint?.trim() || '/api/public/locations/reverse';
+  const locationAreasEndpoint =
+    searchPanel.dataset.locationAreasEndpoint?.trim() || '/api/public/locations/areas';
   const defaultTitle = showcaseTitle.textContent ?? 'Newly launched salons ready for booking';
   const defaultStatus = showcaseStatus.textContent ?? 'Showing all salons ready for booking.';
   let allSalons = [];
@@ -4191,6 +4214,9 @@ const initHomeSalonSearch = () => {
   let selectedLocationDetails = null;
   let nearbySearchRequestId = 0;
   let locationSearchGeneration = 0;
+  let dynamicSalonCities = [];
+  let selectedCityFilter = '';
+  const locationCitiesEndpoint = '/api/public/locations/cities';
   const salonCoordinatesCache = new Map();
   const cityAreaSuggestionsCache = new Map();
   const currentLocationSuggestion = {
@@ -4583,21 +4609,14 @@ const initHomeSalonSearch = () => {
     }
 
     const container = input.closest('.search-item');
+    let openGeneration = 0;
 
     const close = () => {
       dropdown.classList.add('is-hidden');
       input.setAttribute('aria-expanded', 'false');
     };
 
-    const open = () => {
-      onOpen?.();
-      const normalizedQuery = normalizeSearchValue(input.value);
-
-      if (requireQuery && !normalizedQuery) {
-        close();
-        return;
-      }
-
+    const renderCopy = () => {
       dropdown.classList.toggle('search-dropdown-list', variant === 'list');
       dropdown.replaceChildren();
 
@@ -4618,61 +4637,99 @@ const initHomeSalonSearch = () => {
       description.textContent = subtitle;
       copy.append(heading, description);
       dropdown.append(copy);
+    };
 
-      const suggestions = getSuggestions(input.value);
-
+    const renderSuggestions = (suggestions) => {
       if (suggestions.length === 0) {
         const emptyState = document.createElement('p');
         emptyState.className = 'search-dropdown-empty';
         emptyState.textContent = 'No matching locations found. Continue typing to search all salons.';
         dropdown.append(emptyState);
-      } else {
-        const options = document.createElement('div');
-        options.className =
+        return;
+      }
+
+      const options = document.createElement('div');
+      options.className =
+        variant === 'list'
+          ? 'search-dropdown-options search-dropdown-options-list'
+          : 'search-dropdown-options';
+
+      for (const suggestion of suggestions) {
+        const optionButton = document.createElement('button');
+        optionButton.type = 'button';
+        optionButton.className =
           variant === 'list'
-            ? 'search-dropdown-options search-dropdown-options-list'
-            : 'search-dropdown-options';
+            ? 'search-dropdown-option search-dropdown-option-list'
+            : 'search-dropdown-option';
+        optionButton.classList.toggle('is-current-location', suggestion.kind === 'current-location');
+        optionButton.setAttribute('role', 'option');
+        optionButton.dataset.suggestionValue = suggestion.value;
 
-        for (const suggestion of suggestions) {
-          const optionButton = document.createElement('button');
-          optionButton.type = 'button';
-          optionButton.className =
-            variant === 'list'
-              ? 'search-dropdown-option search-dropdown-option-list'
-              : 'search-dropdown-option';
-          optionButton.classList.toggle('is-current-location', suggestion.kind === 'current-location');
-          optionButton.setAttribute('role', 'option');
-          optionButton.dataset.suggestionValue = suggestion.value;
-
-          const optionCopy = document.createElement('div');
-          optionCopy.className = 'search-dropdown-option-copy';
-          const optionTitle = document.createElement('strong');
-          optionTitle.textContent = suggestion.value;
-          optionCopy.append(optionTitle);
-          if (variant !== 'list' || suggestion.secondaryLabel) {
-            const optionMeta = document.createElement('span');
-            optionMeta.textContent = suggestion.secondaryLabel || suggestion.meta;
-            optionCopy.append(optionMeta);
-          }
-
-          optionButton.append(optionCopy);
-          if (variant !== 'list') {
-            const optionChip = document.createElement('span');
-            optionChip.className = 'search-dropdown-option-chip';
-            optionChip.textContent = suggestion.chipLabel;
-            optionButton.append(optionChip);
-          }
-          optionButton.addEventListener('pointerdown', (event) => {
-            event.preventDefault();
-          });
-          optionButton.addEventListener('click', () => {
-            onSelect(suggestion.value);
-            close();
-          });
-          options.append(optionButton);
+        const optionCopy = document.createElement('div');
+        optionCopy.className = 'search-dropdown-option-copy';
+        const optionTitle = document.createElement('strong');
+        optionTitle.textContent = suggestion.value;
+        optionCopy.append(optionTitle);
+        if (variant !== 'list' || suggestion.secondaryLabel) {
+          const optionMeta = document.createElement('span');
+          optionMeta.textContent = suggestion.secondaryLabel || suggestion.meta;
+          optionCopy.append(optionMeta);
         }
 
-        dropdown.append(options);
+        optionButton.append(optionCopy);
+        if (variant !== 'list') {
+          const optionChip = document.createElement('span');
+          optionChip.className = 'search-dropdown-option-chip';
+          optionChip.textContent = suggestion.chipLabel;
+          optionButton.append(optionChip);
+        }
+        optionButton.addEventListener('pointerdown', (event) => {
+          event.preventDefault();
+        });
+        optionButton.addEventListener('click', () => {
+          onSelect(suggestion.value, suggestion);
+          close();
+        });
+        options.append(optionButton);
+      }
+
+      dropdown.append(options);
+    };
+
+    // getSuggestions may return a plain array (rendered synchronously, as
+    // before) or a Promise (e.g. a geocoder-backed lookup) - in the async
+    // case a "Searching..." placeholder shows until it resolves, guarded by
+    // openGeneration so a stale response from an earlier keystroke never
+    // overwrites a newer one.
+    const open = () => {
+      onOpen?.();
+      const normalizedQuery = normalizeSearchValue(input.value);
+
+      if (requireQuery && !normalizedQuery) {
+        close();
+        return;
+      }
+
+      const generation = ++openGeneration;
+      renderCopy();
+
+      const result = getSuggestions(input.value);
+
+      if (result && typeof result.then === 'function') {
+        const loadingState = document.createElement('p');
+        loadingState.className = 'search-dropdown-empty';
+        loadingState.textContent = 'Searching…';
+        dropdown.append(loadingState);
+
+        result.then((suggestions) => {
+          if (generation !== openGeneration || dropdown.classList.contains('is-hidden')) {
+            return;
+          }
+          renderCopy();
+          renderSuggestions(suggestions ?? []);
+        });
+      } else {
+        renderSuggestions(result ?? []);
       }
 
       dropdown.classList.remove('is-hidden');
@@ -5100,14 +5157,34 @@ const initHomeSalonSearch = () => {
     setStoredPublicLocation(selectedLocationDetails);
   };
 
-  const getLocalLocationSuggestions = (query) =>
-    getRankedSuggestions(citySuggestions, query).map((suggestion) => ({
-      id: `venue-${normalizeSearchValue(suggestion.value)}`,
-      label: suggestion.value,
-      primaryLabel: suggestion.value,
-      secondaryLabel: suggestion.meta,
-      sourceLabel: suggestion.chipLabel
-    }));
+  // Every value here always includes the city (buildCompactLocationSuggestions
+  // only ever emits "<city>", "<city>, <region>", or "<area>, <city>"), so a
+  // selected city filter can safely be enforced as a plain substring check -
+  // without this, real salon addresses from other cities (e.g. "Model Town,
+  // Lahore") leaked into the dropdown while a different city was selected.
+  const getLocalLocationSuggestions = (query) => {
+    const normalizedCityFilter = normalizeSearchValue(selectedCityFilter);
+
+    return getRankedSuggestions(citySuggestions, query)
+      .filter(
+        (suggestion) =>
+          !normalizedCityFilter || normalizeSearchValue(suggestion.value).includes(normalizedCityFilter)
+      )
+      .map((suggestion) => ({
+        id: `venue-${normalizeSearchValue(suggestion.value)}`,
+        label: suggestion.value,
+        primaryLabel: suggestion.value,
+        secondaryLabel: suggestion.meta,
+        sourceLabel: suggestion.chipLabel
+      }));
+  };
+
+  const isKnownCityName = (normalizedCityName) => {
+    if (dynamicSalonCities.length > 0) {
+      return dynamicSalonCities.some((city) => normalizeSearchValue(city.name) === normalizedCityName);
+    }
+    return popularLocationCities.some((city) => normalizeSearchValue(city) === normalizedCityName);
+  };
 
   const getCityKeyFromQuery = (query) => {
     const normalizedQuery = normalizeSearchValue(query);
@@ -5169,53 +5246,61 @@ const initHomeSalonSearch = () => {
       (suggestion) => normalizeSearchValue(suggestion.primaryLabel) === cityKey
     ) ?? cityLocationResults[0];
 
-    const suggestions = await Promise.all(
-      areaSeeds.map(async (area) => {
-        if (normalizeSearchValue(area) === 'others') {
-          return {
-            id: `area-${cityKey}-others`,
-            label: `Others, ${cityLabel}`,
-            primaryLabel: 'Others',
-            secondaryLabel: cityLabel,
-            latitude: toFiniteNumber(cityFallback?.latitude),
-            longitude: toFiniteNumber(cityFallback?.longitude),
-            sourceLabel: 'Area',
-            kind: 'area'
-          };
-        }
+    const namedAreas = areaSeeds.filter((area) => normalizeSearchValue(area) !== 'others');
+    const resolvedByArea = new Map();
 
-        try {
-          const params = new URLSearchParams({ q: `${area} ${cityLabel}` });
-          const payload = await apiRequest(`${locationSearchEndpoint}?${params.toString()}`);
-          const suggestion = Array.isArray(payload?.suggestions) ? payload.suggestions[0] : null;
+    // Resolve every named area for this city in a single batched request
+    // instead of firing one geocoding lookup per area - that used to fan
+    // out into up to ~40 simultaneous Mapbox/Nominatim calls the first time
+    // someone typed a full city name. The server resolves them with
+    // bounded concurrency and a long-lived shared cache, so repeat
+    // sessions (from any user) hit neither provider again.
+    if (namedAreas.length > 0) {
+      try {
+        const params = new URLSearchParams({ city: cityLabel, areas: namedAreas.join(',') });
+        const payload = await apiRequest(`${locationAreasEndpoint}?${params.toString()}`);
+        const resolvedAreas = Array.isArray(payload?.areas) ? payload.areas : [];
 
-          return {
-            id: suggestion?.id || `area-${cityKey}-${normalizeSearchValue(area)}`,
-            label: `${area}, ${cityLabel}`,
-            primaryLabel: area,
-            secondaryLabel:
-              typeof suggestion?.secondaryLabel === 'string' && suggestion.secondaryLabel.trim()
-                ? suggestion.secondaryLabel.trim()
-                : cityLabel,
-            latitude: toFiniteNumber(suggestion?.latitude) ?? toFiniteNumber(cityFallback?.latitude),
-            longitude: toFiniteNumber(suggestion?.longitude) ?? toFiniteNumber(cityFallback?.longitude),
-            sourceLabel: 'Area',
-            kind: 'area'
-          };
-        } catch (_error) {
-          return {
-            id: `area-${cityKey}-${normalizeSearchValue(area)}`,
-            label: `${area}, ${cityLabel}`,
-            primaryLabel: area,
-            secondaryLabel: cityLabel,
-            latitude: toFiniteNumber(cityFallback?.latitude),
-            longitude: toFiniteNumber(cityFallback?.longitude),
-            sourceLabel: 'Area',
-            kind: 'area'
-          };
-        }
-      })
-    );
+        resolvedAreas.forEach((entry) => {
+          if (entry && typeof entry.name === 'string') {
+            resolvedByArea.set(normalizeSearchValue(entry.name), entry);
+          }
+        });
+      } catch (_error) {
+        // Fall through - each area below falls back to the city-center point.
+      }
+    }
+
+    const suggestions = areaSeeds.map((area) => {
+      if (normalizeSearchValue(area) === 'others') {
+        return {
+          id: `area-${cityKey}-others`,
+          label: `Others, ${cityLabel}`,
+          primaryLabel: 'Others',
+          secondaryLabel: cityLabel,
+          latitude: toFiniteNumber(cityFallback?.latitude),
+          longitude: toFiniteNumber(cityFallback?.longitude),
+          sourceLabel: 'Area',
+          kind: 'area'
+        };
+      }
+
+      const resolved = resolvedByArea.get(normalizeSearchValue(area));
+
+      return {
+        id: resolved?.id || `area-${cityKey}-${normalizeSearchValue(area)}`,
+        label: `${area}, ${cityLabel}`,
+        primaryLabel: area,
+        secondaryLabel:
+          typeof resolved?.secondaryLabel === 'string' && resolved.secondaryLabel.trim()
+            ? resolved.secondaryLabel.trim()
+            : cityLabel,
+        latitude: toFiniteNumber(resolved?.latitude) ?? toFiniteNumber(cityFallback?.latitude),
+        longitude: toFiniteNumber(resolved?.longitude) ?? toFiniteNumber(cityFallback?.longitude),
+        sourceLabel: 'Area',
+        kind: 'area'
+      };
+    });
 
     cityAreaSuggestionsCache.set(cityKey, suggestions);
     return suggestions;
@@ -5233,7 +5318,17 @@ const initHomeSalonSearch = () => {
         : getLocalLocationSuggestions(trimmedQuery);
     }
 
-    const cityKey = includeAreaSuggestions ? getCityKeyFromQuery(trimmedQuery) : '';
+    // Falling back to the selected city filter (not just text typed in the
+    // box) matters because Mapbox/Nominatim can't reliably autocomplete a
+    // short partial word against Pakistan's local colony/neighborhood names
+    // (their place data for these is thin - "civ" typed under a Faisalabad
+    // filter finds nothing from either provider even though "Civil Lines"
+    // is a real, already-known area). Matching the typed prefix against our
+    // own seeded area list below fixes that class of query regardless of
+    // what the remote geocoder can do with it.
+    const cityKey = includeAreaSuggestions
+      ? getCityKeyFromQuery(trimmedQuery) || normalizeSearchValue(selectedCityFilter)
+      : '';
 
     if (cityKey && normalizeSearchValue(trimmedQuery) === cityKey) {
       const cityAreas = await getCityAreaSuggestions(cityKey);
@@ -5250,6 +5345,9 @@ const initHomeSalonSearch = () => {
 
     try {
       const params = new URLSearchParams({ q: trimmedQuery });
+      if (selectedCityFilter) {
+        params.set('city', selectedCityFilter);
+      }
       const payload = await apiRequest(`${locationSearchEndpoint}?${params.toString()}`);
       const remoteSuggestions = Array.isArray(payload?.suggestions) ? payload.suggestions : [];
       const mappedRemoteSuggestions = remoteSuggestions
@@ -5269,14 +5367,8 @@ const initHomeSalonSearch = () => {
               typeof suggestion.secondaryLabel === 'string' ? suggestion.secondaryLabel.trim() : '',
             latitude: toFiniteNumber(suggestion.latitude),
             longitude: toFiniteNumber(suggestion.longitude),
-            sourceLabel: popularLocationCities.some(
-              (city) => normalizeSearchValue(city) === normalizedPrimary
-            )
-              ? 'City'
-              : 'Location',
-            kind: popularLocationCities.some((city) => normalizeSearchValue(city) === normalizedPrimary)
-              ? 'city'
-              : 'location',
+            sourceLabel: isKnownCityName(normalizedPrimary) ? 'City' : 'Location',
+            kind: isKnownCityName(normalizedPrimary) ? 'city' : 'location',
             hasAreas: Boolean(cityAreaSeeds[normalizedPrimary]?.length)
           };
         });
@@ -5540,7 +5632,8 @@ const initHomeSalonSearch = () => {
 
   const applyShowcaseFilters = ({ scrollIntoView = false } = {}) => {
     const requestId = ++nearbySearchRequestId;
-    const locationQuery = cityInput instanceof HTMLInputElement ? cityInput.value.trim() : '';
+    const locationQuery =
+      (cityInput instanceof HTMLInputElement ? cityInput.value.trim() : '') || selectedCityFilter;
     const serviceQuery = serviceInput instanceof HTMLInputElement ? serviceInput.value.trim() : '';
     const shouldLimitResults = Boolean(locationQuery || serviceQuery);
 
@@ -5610,29 +5703,86 @@ const initHomeSalonSearch = () => {
     subtitle: 'Search by city, area, or address.',
     variant: 'list',
     requireQuery: false,
-    getSuggestions: (query) => [currentLocationSuggestion, ...getRankedSuggestions(citySuggestions, query)],
-    onSelect: (value) => {
-      if (value === currentLocationSuggestion.label) {
+    // Always resolve through the real geocoder (searchLocationSuggestions),
+    // same as the Algolia-enhanced path - this is the fallback dropdown used
+    // whenever the Algolia CDN hasn't loaded, and it must never silently
+    // degrade to "only locations that already have a salon".
+    getSuggestions: async (query) => {
+      const suggestions = await searchLocationSuggestions(query);
+      return [
+        currentLocationSuggestion,
+        ...suggestions.map((suggestion) => ({
+          ...suggestion,
+          value: suggestion.label || suggestion.primaryLabel || ''
+        }))
+      ];
+    },
+    onSelect: (value, suggestion) => {
+      if (suggestion?.kind === 'current-location') {
         detectCurrentLocation({ force: true });
         return;
       }
 
-      if (cityInput instanceof HTMLInputElement) {
-        cityInput.value = value;
-      }
-
-      applyShowcaseFilters();
+      const selectedValue = suggestion?.label || suggestion?.primaryLabel || value;
+      syncLocationQuery(selectedValue);
+      setSelectedLocationDetails(suggestion ?? null);
+      applyShowcaseFilters({ scrollIntoView: true });
     }
   });
 
   const hasAlgoliaLocationAutocomplete = setupAlgoliaLocationAutocomplete();
   initTimeQueryPopover();
 
+  // Submitting a typed query (e.g. a business name like "KFC") that never
+  // got clicked from the suggestion dropdown leaves selectedLocationDetails
+  // unset, so applyShowcaseFilters can only text-match salon addresses -
+  // zero matches there for a query like a landmark name. When that happens,
+  // resolve the typed text through the geocoder ourselves and fall back to
+  // the same closest-salons-by-distance search a dropdown pick would have
+  // triggered, instead of leaving the user with a bare "no salons found".
+  const submitLocationSearch = async () => {
+    const locationQuery =
+      (cityInput instanceof HTMLInputElement ? cityInput.value.trim() : '') || selectedCityFilter;
+    const serviceQuery = serviceInput instanceof HTMLInputElement ? serviceInput.value.trim() : '';
+
+    // applyShowcaseFilters bumps nearbySearchRequestId itself - read it back
+    // afterward rather than incrementing our own copy first, or this
+    // function's requestId would never match by the time the geocoder
+    // resolves and the fallback below would always look "stale" and bail.
+    applyShowcaseFilters({ scrollIntoView: true });
+    const requestId = nearbySearchRequestId;
+
+    const hasResolvedCoordinates = Boolean(getSelectedLocationCoordinates());
+    const showedEmptyState = !showcaseEmpty.classList.contains('is-hidden');
+
+    if (!locationQuery || hasResolvedCoordinates || !showedEmptyState) {
+      return;
+    }
+
+    const suggestions = await searchLocationSuggestions(locationQuery);
+
+    if (requestId !== nearbySearchRequestId) {
+      return;
+    }
+
+    const resolved = suggestions.find(
+      (suggestion) =>
+        toFiniteNumber(suggestion.latitude) !== null && toFiniteNumber(suggestion.longitude) !== null
+    );
+
+    if (!resolved) {
+      return;
+    }
+
+    setSelectedLocationDetails(resolved);
+    await renderNearbyFallback({ locationQuery, serviceQuery, requestId });
+  };
+
   searchPanel.addEventListener('submit', (event) => {
     event.preventDefault();
     serviceDropdownController.close();
     cityDropdownController.close();
-    applyShowcaseFilters({ scrollIntoView: true });
+    void submitLocationSearch();
   });
 
   if (cityInput instanceof HTMLInputElement) {
@@ -5641,6 +5791,72 @@ const initHomeSalonSearch = () => {
       cityDropdownController.refresh();
     });
   }
+
+  const populateCitySelectOptions = () => {
+    if (!(citySelect instanceof HTMLSelectElement)) {
+      return;
+    }
+
+    const previousValue = citySelect.value;
+    citySelect.replaceChildren();
+
+    const allCitiesOption = document.createElement('option');
+    allCitiesOption.value = '';
+    allCitiesOption.textContent = 'All cities';
+    citySelect.append(allCitiesOption);
+
+    const cityNames =
+      dynamicSalonCities.length > 0 ? dynamicSalonCities.map((city) => city.name) : popularLocationCities;
+
+    for (const cityName of cityNames) {
+      const option = document.createElement('option');
+      option.value = cityName;
+      option.textContent = cityName;
+      citySelect.append(option);
+    }
+
+    if (cityNames.includes(previousValue)) {
+      citySelect.value = previousValue;
+    }
+  };
+
+  if (citySelect instanceof HTMLSelectElement) {
+    populateCitySelectOptions();
+
+    citySelect.addEventListener('change', () => {
+      selectedCityFilter = citySelect.value;
+
+      if (cityInput instanceof HTMLInputElement) {
+        cityInput.value = '';
+        cityInput.placeholder = selectedCityFilter
+          ? `Search area in ${selectedCityFilter}`
+          : 'Current location';
+        cityInput.focus();
+      }
+
+      selectedLocationDetails = null;
+      setStoredPublicLocation(null);
+      applyShowcaseFilters();
+
+      if (selectedCityFilter) {
+        cityDropdownController.open();
+      }
+
+      if (locationAutocomplete?.setQuery) {
+        locationAutocomplete.setQuery('');
+        locationAutocomplete.refresh?.();
+      }
+    });
+  }
+
+  apiRequest(locationCitiesEndpoint)
+    .then((payload) => {
+      dynamicSalonCities = Array.isArray(payload?.cities) ? payload.cities : [];
+      populateCitySelectOptions();
+    })
+    .catch(() => {
+      // Keep the hardcoded popularLocationCities fallback already rendered.
+    });
 
   if (locationTrigger instanceof HTMLButtonElement) {
     locationTrigger.addEventListener('click', () => {
@@ -18297,7 +18513,9 @@ const createTrendCard = (
         body: JSON.stringify({ recipientSource, csvContacts: marketingCsvContacts })
       });
       closeMarketingBuilder();
-      await loadMarketingCampaigns();
+      await Promise.all([loadMarketingCampaigns(), loadWalletOverview()]);
+      renderMarketingSummary();
+      renderBillingPlanChip();
     } catch (error) {
       safeAlert(error instanceof Error ? error.message : 'Unable to send this campaign.');
     }

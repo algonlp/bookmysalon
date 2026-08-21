@@ -5,4 +5,5 @@ import { locationController } from '../controllers/location.controller';
 export const locationRouter = Router();
 
 locationRouter.get('/public/locations/search', asyncHandler(locationController.search));
+locationRouter.get('/public/locations/areas', asyncHandler(locationController.areas));
 locationRouter.get('/public/locations/reverse', asyncHandler(locationController.reverse));
