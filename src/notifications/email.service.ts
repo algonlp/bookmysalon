@@ -7,12 +7,20 @@ import { emailLogRepository } from './emailLog.repository';
 import type { EmailDispatchContext } from './emailLog.types';
 import type { NotificationDispatchResult } from '../appointments/appointment.types';
 
+export interface EmailAttachment {
+  filename: string;
+  // Base64-encoded file content (no "data:...;base64," prefix).
+  contentBase64: string;
+  contentType: string;
+}
+
 export interface EmailMessage {
   to: string;
   subject: string;
   text: string;
   html: string;
   replyTo?: string;
+  attachments?: EmailAttachment[];
 }
 
 export interface EmailSendResult {
@@ -69,7 +77,13 @@ const sendViaSendgrid = async (message: EmailMessage): Promise<EmailSendResult> 
             type: 'text/plain',
             value: message.text
           }
-        ]
+        ],
+        attachments: message.attachments?.map((attachment) => ({
+          filename: attachment.filename,
+          content: attachment.contentBase64,
+          type: attachment.contentType,
+          disposition: 'attachment'
+        }))
       })
     });
 
@@ -100,7 +114,13 @@ const sendViaSmtp = async (message: EmailMessage): Promise<EmailSendResult> => {
       subject: message.subject,
       text: message.text,
       html: message.html,
-      replyTo: message.replyTo
+      replyTo: message.replyTo,
+      attachments: message.attachments?.map((attachment) => ({
+        filename: attachment.filename,
+        content: attachment.contentBase64,
+        encoding: 'base64',
+        contentType: attachment.contentType
+      }))
     });
 
     return { status: 'sent' };

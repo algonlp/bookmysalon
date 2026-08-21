@@ -1101,6 +1101,13 @@ export const clientPlatformController = {
     });
   },
 
+  async listSalonCities(req: Request, res: Response, _next: NextFunction): Promise<void> {
+    res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+    res.status(200).json({
+      cities: await clientPlatformService.getSalonCities()
+    });
+  },
+
   async listNearbySalons(req: Request, res: Response, _next: NextFunction): Promise<void> {
     const input = nearbySalonsQuerySchema.parse(req.query);
     const result = await clientPlatformService.getNearbySalons(input);

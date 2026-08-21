@@ -28,6 +28,10 @@ clientPlatformRouter.get(
   asyncHandler(clientPlatformController.listNearbySalons)
 );
 clientPlatformRouter.get(
+  '/public/locations/cities',
+  asyncHandler(clientPlatformController.listSalonCities)
+);
+clientPlatformRouter.get(
   '/platform/clients/:clientId',
   asyncHandler(requirePlatformAdminAccess),
   asyncHandler(clientPlatformController.getClient)

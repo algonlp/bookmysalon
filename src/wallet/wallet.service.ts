@@ -314,14 +314,17 @@ export const walletService = {
     return saved;
   },
 
-  // Grants the one-time campaign credit. Only meant to be called once per
-  // business (on first paid activation - see billing.service.ts), but is
-  // idempotent via a fixed referenceId regardless, so a retry never grants it
-  // twice. Expires PROMOTIONAL_CREDIT_EXPIRY_DAYS days after this call.
+  // Grants a promotional campaign credit, idempotent per `referenceId` so a
+  // retry/duplicate call for the same event never grants it twice. Callers
+  // pass a referenceId scoped to the specific event being credited (e.g. a
+  // fixed key for a true one-time grant, or a per-subscription id for a
+  // grant that should repeat on every renewal - see billing.service.ts).
+  // Expires PROMOTIONAL_CREDIT_EXPIRY_DAYS days after this call.
   async grantPromotionalCredit(
     businessId: string,
     amountCents: number,
     note: string,
+    referenceId: string = 'first_activation_credit',
     operator?: string
   ): Promise<WalletRecord> {
     if (amountCents <= 0) {
@@ -330,7 +333,7 @@ export const walletService = {
 
     const existing = await walletRepository.findTransactionByReference(
       businessId,
-      'first_activation_credit',
+      referenceId,
       'promotional_credit'
     );
 
@@ -348,7 +351,7 @@ export const walletService = {
       amountCents,
       source: 'promotional_credit',
       operator,
-      referenceId: 'first_activation_credit',
+      referenceId,
       note,
       promotionalDeltaCents: amountCents,
       promotionalCreditExpiresAt: expiresAt

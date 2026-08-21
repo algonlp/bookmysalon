@@ -116,23 +116,23 @@ const assertBookableStaffFitsPlanCap = (plan: SubscriptionPlan, teamMembers: Tea
   }
 };
 
-// Grants the one-time campaign wallet credit the first (and only the first)
-// time a business's plan is actually paid for/approved - never on renewals,
-// plan changes, or the separate free-trial-with-no-payment flow. `provider`
-// on every historical subscription tells us whether payment ever happened
-// ('trial' subscriptions never went through checkout/admin approval).
-const grantFirstActivationCampaignCreditIfEligible = async (
+// Grants the FULL amount actually paid for a subscription activation back
+// into the business's wallet, on every paid activation of a plan - both the
+// first purchase and every subsequent renewal - but never for the separate
+// free-trial-with-no-payment flow (only ever called with the real amount
+// paid: demo checkout, manual/Raast approval, or Stripe create/renew; a
+// trial period's invoice amount is 0, which is a no-op here). Idempotent
+// per `activationKey`, so a retry/duplicate webhook for the same billing
+// event can never grant it twice, while each new activation/renewal (its
+// own fresh subscription id, or subscription id + invoice id for a Stripe
+// renewal) gets its own grant.
+const grantCampaignCreditForActivation = async (
   businessId: string,
   plan: SubscriptionPlan,
-  priorSubscriptions: BusinessSubscription[]
+  activationKey: string,
+  amountPaidCents: number
 ): Promise<void> => {
-  if (plan.entitlements.campaignCreditCents <= 0) {
-    return;
-  }
-
-  const hasPriorPaidActivation = priorSubscriptions.some((subscription) => subscription.provider !== 'trial');
-
-  if (hasPriorPaidActivation) {
+  if (amountPaidCents <= 0) {
     return;
   }
 
@@ -141,14 +141,16 @@ const grantFirstActivationCampaignCreditIfEligible = async (
   try {
     await walletService.grantPromotionalCredit(
       businessId,
-      plan.entitlements.campaignCreditCents,
-      `One-time campaign credit for first paid activation (${plan.name})`
+      amountPaidCents,
+      `Wallet credit for ${plan.name} subscription payment`,
+      `subscription_activation_credit:${activationKey}`
     );
   } catch (error) {
-    logger.error('Failed to grant first-activation campaign credit', {
+    logger.error('Failed to grant subscription-activation wallet credit', {
       error: error instanceof Error ? error.message : String(error),
       businessId,
-      planId: plan.id
+      planId: plan.id,
+      activationKey
     });
   }
 };
@@ -438,7 +440,16 @@ const activateSubscriptionForPlan = async (
     throw error;
   }
 
-  await grantFirstActivationCampaignCreditIfEligible(businessId, plan, allBusinessSubscriptions);
+  // The plan's real price, not invoice.amountCents - that's zeroed out
+  // whenever this activation happens to start with a trial period, which is
+  // a deferred-charge bookkeeping detail unrelated to whether a manual/demo/
+  // Stripe payment was actually made for this plan.
+  await grantCampaignCreditForActivation(
+    businessId,
+    plan,
+    subscription.id,
+    plan.amountCents + extraBookableStaffCostCents
+  );
 
   return { subscription, invoice };
 };
@@ -1047,7 +1058,12 @@ export const billingService = {
     );
     await billingRepository.saveBusinessSubscription(subscription);
     await billingRepository.saveBillingInvoice(invoice);
-    await grantFirstActivationCampaignCreditIfEligible(input.businessId, plan, businessSubscriptions);
+    await grantCampaignCreditForActivation(
+      input.businessId,
+      plan,
+      subscription.id,
+      plan.amountCents + extraBookableStaffCostCents
+    );
 
     return {
       subscription,
@@ -1133,6 +1149,18 @@ export const billingService = {
       createdAt: existingInvoice?.createdAt ?? paidAt,
       updatedAt: paidAt
     });
+
+    // Same "actually a new billing period" guard as the credit top-up above -
+    // activateStripeSubscriptionCheckout already granted it for the very
+    // first invoice, this covers every renewal after that.
+    if (isNewerPeriod && !existingInvoice && plan) {
+      await grantCampaignCreditForActivation(
+        subscription.businessId,
+        plan,
+        `${subscription.id}:${input.providerInvoiceId}`,
+        input.amountPaidCents ?? plan.amountCents ?? 0
+      );
+    }
   },
 
   async markStripeInvoicePaymentFailed(input: {

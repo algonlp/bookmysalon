@@ -2482,6 +2482,32 @@ export const clientPlatformService = {
     return result;
   },
 
+  // Distinct cities that currently have at least one visible salon, so the
+  // homepage city selector only ever offers cities with real results.
+  async getSalonCities(): Promise<Array<{ name: string; count: number }>> {
+    const salons = await clientPlatformService.getPublicSalons();
+    const cityCounts = new Map<string, { name: string; count: number }>();
+
+    for (const salon of salons) {
+      const city = salon.city?.trim();
+      if (!city) {
+        continue;
+      }
+
+      const key = city.toLowerCase();
+      const existing = cityCounts.get(key);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        cityCounts.set(key, { name: city, count: 1 });
+      }
+    }
+
+    return Array.from(cityCounts.values()).sort(
+      (left, right) => right.count - left.count || left.name.localeCompare(right.name)
+    );
+  },
+
   // Server-side nearby search over already-stored salon coordinates (spec
   // 7.1): never re-geocodes salons on each request, expands the search
   // radius through NEARBY_SALON_SEARCH_RADII_KM (5/10/20km by default) until

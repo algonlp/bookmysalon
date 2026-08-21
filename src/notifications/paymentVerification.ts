@@ -2,7 +2,7 @@ import { randomBytes } from 'crypto';
 import { env } from '../config/env';
 import { logger } from '../shared/logger';
 import { hashAdminToken, verifyAdminToken } from '../shared/hashToken';
-import { emailService } from './email.service';
+import { emailService, type EmailAttachment } from './email.service';
 import { renderEmailLayout, BRAND_NAME, INK, MUTED } from './emailTemplate';
 import type { EmailLogSource } from './emailLog.types';
 
@@ -40,6 +40,27 @@ export interface PaymentVerificationAdapter<T extends VerifiableRequest> {
   // Async because it typically needs to look up the business name/email.
   describe(request: T): Promise<PaymentVerificationDescription>;
 }
+
+// Most email clients (Gmail included) strip inline data: URIs from <img
+// src="data:...">, so the proof image can't be embedded inline in the
+// email body itself - only as a real file attachment, which every client
+// supports.
+const proofUrlToAttachment = (proofUrl: string): EmailAttachment | undefined => {
+  const match = /^data:([^;,]+);base64,(.+)$/s.exec(proofUrl.trim());
+
+  if (!match) {
+    return undefined;
+  }
+
+  const [, contentType, contentBase64] = match;
+  const extension = contentType.split('/')[1]?.split('+')[0] || 'bin';
+
+  return {
+    filename: `payment-proof.${extension}`,
+    contentBase64,
+    contentType
+  };
+};
 
 const escapeHtml = (value: string): string =>
   value
@@ -103,6 +124,8 @@ export const sendAdminVerificationEmail = async <T extends VerifiableRequest>(
       .map((line) => `<p style="margin:4px 0">${escapeHtml(line)}</p>`)
       .join('');
 
+    const attachment = proofUrlToAttachment(description.proofUrl);
+
     const html = renderEmailLayout({
       preheader: `${description.kindLabel} awaiting verification - ${description.amountLabel}`,
       eyebrow: 'Payment verification needed',
@@ -112,17 +135,24 @@ export const sendAdminVerificationEmail = async <T extends VerifiableRequest>(
         <p style="margin:0 0 4px"><strong style="color:${INK}">Type:</strong> ${escapeHtml(description.kindLabel)}</p>
         <p style="margin:0 0 4px"><strong style="color:${INK}">Amount:</strong> ${escapeHtml(description.amountLabel)}</p>
         ${extraLinesHtml}
-        <p style="margin:16px 0 0;color:${MUTED}">Click below to view the payment proof and approve or reject this payment. The link expires in ${TOKEN_TTL_HOURS} hours.</p>
+        ${attachment ? `<p style="margin:16px 0 0;color:${MUTED}">Payment proof is attached to this email (${escapeHtml(attachment.filename)}).</p>` : ''}
+        <p style="margin:8px 0 0;color:${MUTED}">Click below to approve or reject this payment. The link expires in ${TOKEN_TTL_HOURS} hours.</p>
       `,
       button: { label: 'Review & verify payment', url: confirmUrl }
     });
 
-    const text = `${description.kindLabel} awaiting verification\nBusiness: ${description.businessName}\nAmount: ${description.amountLabel}\nReview & verify: ${confirmUrl}`;
+    const text = `${description.kindLabel} awaiting verification\nBusiness: ${description.businessName}\nAmount: ${description.amountLabel}${attachment ? `\nPayment proof attached: ${attachment.filename}` : ''}\nReview & verify: ${confirmUrl}`;
 
     const to = env.PLATFORM_PAYMENTS_ADMIN_EMAIL?.trim() || env.PUBLIC_SUPPORT_EMAIL?.trim() || '';
 
     await emailService.sendEmail(
-      { to, subject: `[Verify] ${description.kindLabel} - ${description.amountLabel} - ${description.businessName}`, text, html },
+      {
+        to,
+        subject: `[Verify] ${description.kindLabel} - ${description.amountLabel} - ${description.businessName}`,
+        text,
+        html,
+        attachments: attachment ? [attachment] : undefined
+      },
       'admin',
       { businessId: request.businessId, source: 'manual_payment_admin_notice' as EmailLogSource }
     );
