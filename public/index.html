@@ -145,9 +145,27 @@
                   <circle cx="12" cy="10" r="2.5"></circle>
                 </svg>
               </button>
-              <select id="city-select" class="city-select" aria-label="Select city">
-                <option value="">All cities</option>
-              </select>
+              <div class="city-select-wrap" id="city-select-wrap">
+                <button
+                  type="button"
+                  class="city-select-trigger"
+                  id="city-select-trigger"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                  aria-controls="city-select-panel"
+                >
+                  <span id="city-select-label">All cities</span>
+                </button>
+                <select id="city-select" class="city-select-native" tabindex="-1" aria-hidden="true">
+                  <option value="">All cities</option>
+                </select>
+                <ul
+                  class="city-select-panel is-hidden"
+                  id="city-select-panel"
+                  role="listbox"
+                  aria-label="Select city"
+                ></ul>
+              </div>
               <span class="location-autocomplete-shell">
                 <span
                   class="city-autocomplete"

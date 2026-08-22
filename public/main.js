@@ -462,6 +462,10 @@ const splitPhoneNumberParts = (phoneValue, defaultCountryCode = '') => {
 const serviceInput = document.querySelector('#service-query');
 const cityInput = document.querySelector('#city-query');
 const citySelect = document.querySelector('#city-select');
+const citySelectWrap = document.querySelector('#city-select-wrap');
+const citySelectTrigger = document.querySelector('#city-select-trigger');
+const citySelectLabel = document.querySelector('#city-select-label');
+const citySelectPanel = document.querySelector('#city-select-panel');
 const timeInput = document.querySelector('#time-query');
 const timePeriodInput = document.querySelector('#time-period-query');
 const searchPanel = document.querySelector('#search-panel');
@@ -2865,7 +2869,7 @@ const createSalonDetailMeta = (salon) => {
   if (distanceText || (address && getStoredPublicLocation())) {
     distanceSeparatorElement = createDetailText('span', 'salon-detail-meta-separator', '-');
     distanceValueElement = createDetailText('span', '', distanceText);
-    distanceValueElement.className = distanceText ? '' : 'is-hidden';
+    distanceValueElement.className = distanceText ? 'salon-detail-meta-distance' : 'salon-detail-meta-distance is-hidden';
     distanceValueElement.dataset.salonDistance = 'true';
     distanceSeparatorElement.classList.toggle('is-hidden', !distanceText);
     meta.append(distanceSeparatorElement, distanceValueElement);
@@ -3906,25 +3910,32 @@ const initSalonHeaderSearch = (salon, { onLocationChange } = {}) => {
     popover.append(createDetailText('h3', '', title), createDetailText('p', '', message));
   };
 
-  const detectCurrentLocation = () => {
+  const detectCurrentLocation = ({ silent = false } = {}) => {
     closePopover();
 
     if (!navigator.geolocation) {
-      locationButton.textContent = 'Search manually';
-      showLocationMessage('Location unavailable', 'Your browser does not support location detection. You can still use directions from the salon address.');
+      if (!silent) {
+        locationButton.textContent = 'Search manually';
+        showLocationMessage('Location unavailable', 'Your browser does not support location detection. You can still use directions from the salon address.');
+      }
       return;
     }
 
     if (!window.isSecureContext) {
-      locationButton.textContent = 'Current location';
-      showLocationMessage(
-        'Secure connection needed',
-        'Current location works on HTTPS or localhost. Open the public secure URL, then try again.'
-      );
+      if (!silent) {
+        locationButton.textContent = 'Current location';
+        showLocationMessage(
+          'Secure connection needed',
+          'Current location works on HTTPS or localhost. Open the public secure URL, then try again.'
+        );
+      }
       return;
     }
 
-    locationButton.textContent = 'Detecting...';
+    if (!silent) {
+      locationButton.textContent = 'Detecting...';
+    }
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         try {
@@ -3970,13 +3981,15 @@ const initSalonHeaderSearch = (salon, { onLocationChange } = {}) => {
         }
       },
       (error) => {
-        locationButton.textContent = 'Current location';
-        showLocationMessage(
-          'Location not allowed',
-          error?.code === error?.PERMISSION_DENIED
-            ? 'Please allow location permission in the browser to show distance from you.'
-            : 'Unable to detect your current location right now. Please try again.'
-        );
+        if (!silent) {
+          locationButton.textContent = 'Current location';
+          showLocationMessage(
+            'Location not allowed',
+            error?.code === error?.PERMISSION_DENIED
+              ? 'Please allow location permission in the browser to show distance from you.'
+              : 'Unable to detect your current location right now. Please try again.'
+          );
+        }
       },
       {
         enableHighAccuracy: true,
@@ -3988,7 +4001,16 @@ const initSalonHeaderSearch = (salon, { onLocationChange } = {}) => {
 
   serviceButton.addEventListener('click', showServicePopover);
   timeButton.addEventListener('click', showTimePopover);
-  locationButton.addEventListener('click', detectCurrentLocation);
+  locationButton.addEventListener('click', () => detectCurrentLocation());
+
+  // Ask for the visitor's location as soon as the salon page opens (silently -
+  // no button text churn or permission-denied popover) so the distance-from-you
+  // label and the "Get directions" origin are populated without a manual click.
+  // Skipped when a location is already cached (e.g. carried over from the home
+  // page search) to avoid re-prompting/re-geocoding on every visit.
+  if (!getStoredPublicLocation()) {
+    detectCurrentLocation({ silent: true });
+  }
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -5792,6 +5814,48 @@ const initHomeSalonSearch = () => {
     });
   }
 
+  const closeCitySelectPanel = () => {
+    citySelectPanel?.classList.add('is-hidden');
+    citySelectWrap?.classList.remove('is-open');
+    citySelectTrigger?.setAttribute('aria-expanded', 'false');
+  };
+
+  const openCitySelectPanel = () => {
+    citySelectPanel?.classList.remove('is-hidden');
+    citySelectWrap?.classList.add('is-open');
+    citySelectTrigger?.setAttribute('aria-expanded', 'true');
+  };
+
+  const syncCitySelectDisplay = () => {
+    if (!(citySelect instanceof HTMLSelectElement)) {
+      return;
+    }
+
+    const selectedOption = citySelect.options[citySelect.selectedIndex];
+
+    if (citySelectLabel) {
+      citySelectLabel.textContent = selectedOption?.textContent || 'All cities';
+    }
+
+    citySelectPanel?.querySelectorAll('.city-select-option').forEach((optionButton) => {
+      optionButton.setAttribute('aria-selected', String(optionButton.dataset.value === citySelect.value));
+    });
+  };
+
+  // Custom panel writes back through the real <select> (value + a dispatched
+  // 'change' event) instead of duplicating the filter logic below, so every
+  // existing listener on citySelect keeps working unchanged.
+  const selectCityOption = (cityValue) => {
+    if (!(citySelect instanceof HTMLSelectElement) || citySelect.value === cityValue) {
+      closeCitySelectPanel();
+      return;
+    }
+
+    citySelect.value = cityValue;
+    citySelect.dispatchEvent(new Event('change', { bubbles: true }));
+    closeCitySelectPanel();
+  };
+
   const populateCitySelectOptions = () => {
     if (!(citySelect instanceof HTMLSelectElement)) {
       return;
@@ -5799,25 +5863,40 @@ const initHomeSalonSearch = () => {
 
     const previousValue = citySelect.value;
     citySelect.replaceChildren();
-
-    const allCitiesOption = document.createElement('option');
-    allCitiesOption.value = '';
-    allCitiesOption.textContent = 'All cities';
-    citySelect.append(allCitiesOption);
+    citySelectPanel?.replaceChildren();
 
     const cityNames =
       dynamicSalonCities.length > 0 ? dynamicSalonCities.map((city) => city.name) : popularLocationCities;
+    const entries = [{ value: '', label: 'All cities' }, ...cityNames.map((name) => ({ value: name, label: name }))];
 
-    for (const cityName of cityNames) {
+    for (const entry of entries) {
       const option = document.createElement('option');
-      option.value = cityName;
-      option.textContent = cityName;
+      option.value = entry.value;
+      option.textContent = entry.label;
       citySelect.append(option);
+
+      if (citySelectPanel) {
+        const item = document.createElement('li');
+        item.setAttribute('role', 'presentation');
+
+        const optionButton = document.createElement('button');
+        optionButton.type = 'button';
+        optionButton.className = 'city-select-option';
+        optionButton.setAttribute('role', 'option');
+        optionButton.dataset.value = entry.value;
+        optionButton.textContent = entry.label;
+        optionButton.addEventListener('click', () => selectCityOption(entry.value));
+
+        item.append(optionButton);
+        citySelectPanel.append(item);
+      }
     }
 
     if (cityNames.includes(previousValue)) {
       citySelect.value = previousValue;
     }
+
+    syncCitySelectDisplay();
   };
 
   if (citySelect instanceof HTMLSelectElement) {
@@ -5825,6 +5904,7 @@ const initHomeSalonSearch = () => {
 
     citySelect.addEventListener('change', () => {
       selectedCityFilter = citySelect.value;
+      syncCitySelectDisplay();
 
       if (cityInput instanceof HTMLInputElement) {
         cityInput.value = '';
@@ -5848,6 +5928,36 @@ const initHomeSalonSearch = () => {
       }
     });
   }
+
+  if (citySelectTrigger instanceof HTMLButtonElement) {
+    citySelectTrigger.addEventListener('click', (event) => {
+      event.stopPropagation();
+
+      if (citySelectPanel?.classList.contains('is-hidden')) {
+        openCitySelectPanel();
+      } else {
+        closeCitySelectPanel();
+      }
+    });
+
+    citySelectTrigger.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeCitySelectPanel();
+      }
+    });
+  }
+
+  document.addEventListener('click', (event) => {
+    if (citySelectWrap && !citySelectWrap.contains(event.target)) {
+      closeCitySelectPanel();
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeCitySelectPanel();
+    }
+  });
 
   apiRequest(locationCitiesEndpoint)
     .then((payload) => {
